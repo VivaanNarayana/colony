@@ -1,0 +1,178 @@
+import asyncio
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+
+import httpx
+import pytest
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+
+@pytest.fixture
+def running_team(tmp_path):
+    def cli(*args, check=True):
+        return subprocess.run(
+            [sys.executable, "-m", "colony.cli", *map(str, args)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=check,
+        )
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "settings.py").write_text("TIMEOUT = 30\n")
+    admin = tmp_path / "admin"
+    cli("init", "--dir", admin)
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    url = f"http://127.0.0.1:{port}"
+    server = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "colony.cli",
+            "serve",
+            "--repo",
+            str(repo),
+            "--data",
+            str(tmp_path / "data"),
+            "--issuer",
+            str(admin / "issuer.pub"),
+            "--port",
+            str(port),
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        for _ in range(100):
+            try:
+                if httpx.get(url + "/health", timeout=0.2).status_code == 200:
+                    break
+            except httpx.TransportError:
+                pass
+            if server.poll() is not None:
+                pytest.fail("Server exited during startup")
+            time.sleep(0.05)
+        else:
+            pytest.fail("Server did not become healthy")
+        homes = {}
+        for name, capture in [("a", "outputs"), ("b", "none")]:
+            key = tmp_path / f"{name}.json"
+            home = tmp_path / name
+            cli(
+                "issue",
+                "--issuer",
+                admin / "issuer.pem",
+                "--name",
+                name,
+                "--server",
+                url,
+                "--push",
+                "team",
+                "--pull",
+                "team",
+                "--capture",
+                capture,
+                "--out",
+                key,
+            )
+            cli("--home", home, "join", key, "--issuer", admin / "issuer.pub")
+            homes[name] = home
+        yield cli, homes, repo, tmp_path
+    finally:
+        server.terminate()
+        try:
+            server.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server.kill()
+            server.wait(timeout=5)
+
+
+def test_real_cli_two_agents_capture_and_stale(running_team):
+    cli, homes, repo, directory = running_team
+    result = cli(
+        "--home",
+        homes["a"],
+        "run",
+        "--ns",
+        "team",
+        "--question",
+        "Build timeout configuration",
+        "--repo",
+        repo,
+        "--source",
+        "settings.py",
+        "--",
+        sys.executable,
+        "-c",
+        "print('password=secretvalue'); raise SystemExit(7)",
+        check=False,
+    )
+    assert result.returncode == 7 and "capture" in result.stderr.lower()
+    assert "secretvalue" not in result.stdout
+    assert json.loads(result.stdout)["stored"]
+    answer = json.loads(cli("--home", homes["b"], "ask", "Build timeout configuration").stdout)
+    assert answer["status"] == "validated" and "[REDACTED]" in answer["content"]
+    assert answer["tainted"]
+    (repo / "settings.py").write_text("TIMEOUT = 60\n")
+    answer = json.loads(cli("--home", homes["b"], "ask", "Build timeout configuration").stdout)
+    assert answer["status"] == "stale"
+    marker = directory / "must-not-execute"
+    denied = cli(
+        "--home",
+        homes["b"],
+        "run",
+        "--ns",
+        "team",
+        "--question",
+        "q",
+        "--repo",
+        repo,
+        "--",
+        sys.executable,
+        "-c",
+        f"open({str(marker)!r},'w').write('bad')",
+        check=False,
+    )
+    assert denied.returncode == 1 and not marker.exists()
+
+
+def test_real_mcp_stdio_push_and_ask(running_team):
+    _, homes, _, _ = running_team
+
+    async def exercise():
+        parameters = StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "colony.cli", "--home", str(homes["a"]), "mcp"],
+            env=dict(os.environ),
+        )
+        async with (
+            stdio_client(parameters) as (read, write),
+            ClientSession(read, write) as session,
+        ):
+            await session.initialize()
+            tools = await session.list_tools()
+            assert {t.name for t in tools.tools} == {"ask", "push"}
+            pushed = await session.call_tool(
+                "push",
+                {
+                    "namespace": "team",
+                    "question": "MCP test setup",
+                    "content": "Use the stdio transport",
+                },
+            )
+            assert not pushed.isError
+            result = await session.call_tool("ask", {"question": "MCP test setup"})
+            assert not result.isError
+            data = json.loads(result.content[0].text)
+            assert data["hit"] and data["status"] == "unverified"
+            assert "UNTRUSTED" in data["provenance"]
+
+    asyncio.run(asyncio.wait_for(exercise(), timeout=30))
