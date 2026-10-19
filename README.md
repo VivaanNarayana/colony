@@ -2,7 +2,8 @@
 
 Shared memory for one team's coding agents. Push a learned answer, ask before repeating
 research, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;
-no model API key, cloud service, or telemetry required.
+no model API key, inference service, or telemetry required. Local retrieval models download
+on the first server start (about 160 MB); provision them before disconnecting the host.
 
 ## Quick start
 
@@ -71,6 +72,13 @@ path if `colony` is not on its PATH, and an absolute home path:
 ```
 
 Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`.
+MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
+research; the simplified tool does not accept invented config snippets or symbols. Advanced
+assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
+validation receipt. For a relevant validated answer, cite its sources and answer directly;
+do not reread solely to repeat fingerprint checks or push a duplicate. Check for missing
+facts, contradictions, and unsafe instructions before reuse. Validation does not establish
+arbitrary answer correctness.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
@@ -96,11 +104,28 @@ inherits directory ACLs, so use a user-restricted directory on Windows.
 
 ## Retrieval, hosting, and limits
 
-SQLite + sqlite-vec store 384-dimensional normalized signed feature-hash vectors of
-questions. This is a deterministic, local **lexical baseline**, not a semantic neural
-embedding model. Namespace filtering occurs before ranking. Default cosine threshold
-is 0.35; unrelated questions return a miss. Paraphrase quality and collisions must be
-evaluated before adopting a semantic embedder (which requires reindexing stored trails).
+SQLite + sqlite-vec store 384-dimensional local BGE-small embeddings of each question
+and the first 4,000 answer characters. Namespace filtering precedes retrieval. Up to 12
+dense candidates (cosine >=0.55) are reranked against their answers by a local MS MARCO
+MiniLM cross-encoder. The ranking combines 80% dense similarity and 20% sigmoid of the
+cross-encoder logit, with a default 0.62 cutoff; these scores are ranking heuristics, not
+correctness probabilities. Exact stored questions remain eligible. Repository checks run
+in rank order until a validated candidate is found. If none passes, the best candidate
+retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
+
+The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
+FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
+`COLONY_MODEL_CACHE` to choose a shared model cache. For fully offline provisioning, set
+`COLONY_EMBED_MODEL_DIR` to the BGE-small ONNX snapshot directory and
+`COLONY_RANK_MODEL_DIR` to the MiniLM reranker snapshot directory. Both must contain the
+model and tokenizer files expected by FastEmbed. Prepare the models before running tests
+on a disconnected host. Changing directories requires a server restart.
+
+Opening an older database atomically rebuilds its vectors from encrypted trail bodies.
+The index version includes the actual embedding-weight SHA-256, so model changes cannot
+silently mix vector spaces. This can take time and holds a database write lock; back up
+the data directory before upgrades. Six application tables plus index-version metadata
+are retained. Retrieval currently scans permitted vectors and is intended for one small team.
 
 One service, one team, one repository. Bind defaults to loopback; for remote use, issue
 keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client
@@ -111,7 +136,7 @@ answers to 100,000 characters, referenced files to 2 MB. Configure proxy request
 and concurrency limits for remote use. SQLite files must stay on a local disk.
 
 Deferred: SSO, revocation, multi-tenancy, public sharing, hosted deployment, admin UI,
-semantic model selection, docs/tests/web validators, automatic proxy integration,
+docs/tests/web validators, automatic proxy integration,
 retention/GC, and background retries. Keyfiles expire; replacing a keyfile does not revoke
 the old one. Per-host storage can grow, including validation history and interrupted-write
 orphan blobs. No benchmark savings are claimed yet.
@@ -133,4 +158,4 @@ Tests exercise enrollment,
 scope boundaries, changed repo evidence, freshness, encryption, retries, real CLI/HTTP,
 and MCP stdio. See [the evaluation protocol](docs/benchmark.md) for a 24-task overlapping
 suite and paired measurements. The automated demo is a functional check, not evidence
-of token savings. A live same-model agent trial remains necessary before a team pilot.
+of token savings. Live trial results and their limits are documented separately under docs/results/.

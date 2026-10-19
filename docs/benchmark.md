@@ -38,3 +38,30 @@ reviewer rubrics; withhold these answers/rubrics from the evaluated agents.
 The live CLI/MCP integration tests automate the functional core of this demo. A real
 agent trial, savings chart, and recording remain evaluation work after implementation;
 do not substitute synthetic token estimates for measured savings.
+
+## Live runner
+
+With an authorized Codex CLI ChatGPT login and Colony installed in the current Python
+environment, run `python scripts/live_benchmark.py --work <new-private-runtime-dir>
+--output <new-results-dir>`. The runner fixes GPT-6 Luna low, seed 20261019, and the
+original 24 questions and outer prompts. It alternates baseline/Colony order, uses fresh
+sessions, starts with empty memory, and disables unrelated apps, plugins, web, shell and
+multi-agent tools. Both arms use the same read-only repository MCP adapter. Only the
+Colony arm gets the actual ask/push tools. Native JSONL token usage and all results are
+retained, including model failures. The repository source is frozen with git archive;
+only README.md, pyproject.toml and src/colony files can be researched. Use `--ref` to pin
+a commit. No model API key is provisioned. The limit is 48 sessions, 240 seconds each,
+and an 8-million-token stop checked between sessions; it is not a hard in-flight or
+provider dollar cap. The Python environment must have installed the exact pinned checkout.
+
+`--limit` can stop at a completed task boundary. `--resume` requires identical metadata,
+an intact private server database, and a clean completed-task boundary. If a task was
+interrupted after a push, start a new run; replaying it could contaminate the experiment.
+The public output directory contains no credentials; the separate private work directory
+contains keyfiles, encryption keys, and server state and must never be committed.
+
+Grade retrieval relevance and answer correctness against frozen evidence before feeding
+rows to the reporter. The initial live runs used primary-assistant review, not independent
+blind human review. Report gross input+output tokens and cached-input-subtracted tokens
+separately; neither is a measured dollar charge. Report validation both among useful hits
+and among all raw candidates, and distinguish relevant returns from research-free reuse.

@@ -145,7 +145,7 @@ def test_real_cli_two_agents_capture_and_stale(running_team):
 
 
 def test_real_mcp_stdio_push_and_ask(running_team):
-    _, homes, _, _ = running_team
+    _, homes, repo, _ = running_team
 
     async def exercise():
         parameters = StdioServerParameters(
@@ -160,6 +160,12 @@ def test_real_mcp_stdio_push_and_ask(running_team):
             await session.initialize()
             tools = await session.list_tools()
             assert {t.name for t in tools.tools} == {"ask", "push"}
+            push_schema = next(t.inputSchema for t in tools.tools if t.name == "push")
+            assert set(push_schema["$defs"]["FileEvidence"]["properties"]) == {
+                "ref",
+                "content_hash",
+                "kind",
+            }
             pushed = await session.call_tool(
                 "push",
                 {
@@ -174,5 +180,30 @@ def test_real_mcp_stdio_push_and_ask(running_team):
             data = json.loads(result.content[0].text)
             assert data["hit"] and data["status"] == "unverified"
             assert "UNTRUSTED" in data["provenance"]
+            import hashlib
+
+            stored = await session.call_tool(
+                "push",
+                {
+                    "namespace": "team",
+                    "question": "MCP evidence setup",
+                    "content": "Use stdio",
+                    "sources": [
+                        {
+                            "ref": "settings.py",
+                            "content_hash": hashlib.sha256(
+                                (repo / "settings.py").read_bytes()
+                            ).hexdigest(),
+                        }
+                    ],
+                },
+            )
+            assert not stored.isError
+            validated = await session.call_tool("ask", {"question": "MCP evidence setup"})
+            receipt = json.loads(validated.content[0].text)
+            assert receipt["status"] == "validated"
+            assert receipt["recommendation"] == "reuse_if_relevant"
+            assert receipt["sources"][0]["ref"] == "settings.py"
+            assert "checks" not in receipt
 
     asyncio.run(asyncio.wait_for(exercise(), timeout=30))
