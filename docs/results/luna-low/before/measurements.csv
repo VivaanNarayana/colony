@@ -1,0 +1,49 @@
+task_id,mode,tokens,seconds,tool_calls,ask_calls,correct,matches,validated,wrong_reused,family,input_tokens,output_tokens,cached_input_tokens,uncached_tokens,raw_hit,raw_returns,raw_validated,useful_return,reused,repo_calls,review_note
+mcp-1,baseline,57226,9.018,2,0,True,0,0,0,mcp,56940,286,50432,6794,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+mcp-1,colony,42789,8.014,1,1,False,0,0,0,mcp,42608,181,39424,3365,False,0,0,False,False,0,Failed to answer after cold miss; claimed repository tools unavailable. Retained as model/integration failure.
+outage-3,colony,111186,14.488,5,1,True,0,0,0,outage,110683,503,100096,11090,False,0,0,False,False,3,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+outage-3,baseline,77585,10.703,3,0,True,0,0,0,outage,77323,262,68096,9489,False,0,0,False,False,3,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+install-2,baseline,44113,8.128,2,0,True,0,0,0,install,43847,266,33280,10833,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+install-2,colony,93849,12.068,4,1,True,0,0,0,install,93365,484,77440,16409,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+capture-3,colony,76350,12.383,4,1,True,0,0,0,capture,76005,345,67968,8382,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+capture-3,baseline,32942,6.665,1,0,True,0,0,0,capture,32812,130,28416,4526,False,0,0,False,False,1,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+outage-1,baseline,61371,8.314,6,0,True,0,0,0,outage,61122,249,52864,8507,False,0,0,False,False,6,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+outage-1,colony,143724,16.817,8,1,True,0,0,0,outage,143123,601,133248,10476,False,0,0,False,False,6,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+outage-2,colony,108770,15.592,5,1,True,0,0,0,outage,108301,469,95360,13410,False,0,0,False,False,3,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+outage-2,baseline,32935,6.434,1,0,True,0,0,0,outage,32808,127,28416,4519,False,0,0,False,False,1,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+mcp-2,baseline,45198,7.347,2,0,True,0,0,0,mcp,45005,193,40448,4750,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+mcp-2,colony,69857,9.895,4,1,True,0,0,0,mcp,69493,364,64128,5729,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+mcp-3,colony,89107,12.956,5,1,True,0,0,0,mcp,88620,487,72448,16659,False,0,0,False,False,3,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+mcp-3,baseline,32999,6.743,1,0,True,0,0,0,mcp,32814,185,30080,2919,False,0,0,False,False,1,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+serve-2,baseline,72028,10.922,5,0,True,0,0,0,serve,71700,328,63104,8924,False,0,0,False,False,5,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+serve-2,colony,151495,15.767,6,1,True,0,0,0,serve,150914,581,137600,13895,True,1,0,False,False,4,Correct HTTP serve command after research. Retrieved MCP stdio instructions were irrelevant to HTTP service and stale due nonmatching exact JSON spacing assertion; not reused.
+tests-2,colony,120237,14.724,5,1,True,0,0,0,tests,119762,475,111616,8621,False,0,0,False,False,3,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+tests-2,baseline,55061,7.937,2,0,True,0,0,0,tests,54888,173,49536,5525,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+scope-2,baseline,46492,8.865,2,0,True,0,0,0,scope,46254,238,38784,7708,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+scope-2,colony,100147,16.969,8,1,True,0,0,0,scope,99559,588,80768,19379,False,0,0,False,False,6,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+stale-3,colony,117595,15.217,5,1,True,0,0,0,stale,116932,663,110080,7515,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+stale-3,baseline,46375,9.642,2,0,True,0,0,0,stale,46148,227,40576,5799,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+capture-2,baseline,45995,6.428,1,0,True,0,0,0,capture,45839,156,40320,5675,False,0,0,False,False,1,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+capture-2,colony,73017,9.175,4,1,True,0,0,0,capture,72695,322,67328,5689,False,0,0,False,False,2,Audited against frozen source and task rubric; core answer correct. Citation line-number precision not scored.
+install-3,colony,95196,14.258,4,1,True,0,0,0,install,94822,374,87680,7516,False,0,0,False,False,2,Audited core answer against frozen repo/rubric; correct.
+install-3,baseline,32910,7.952,1,0,True,0,0,0,install,32800,110,28416,4494,False,0,0,False,False,1,Audited core answer against frozen repo/rubric; correct.
+tests-3,baseline,31970,5.688,1,0,True,0,0,0,tests,31873,97,27136,4834,False,0,0,False,False,1,Audited core answer against frozen repo/rubric; correct.
+tests-3,colony,102149,12.65,4,1,True,0,0,0,tests,101810,339,91904,10245,True,1,1,False,False,2,"Validated raw return described pip install, not running pytest; irrelevant and rejected, then correct research answer."
+install-1,colony,108891,16.981,5,1,True,1,1,0,install,108346,545,102528,6363,True,1,1,True,False,3,"Relevant validated installation answer returned, but agent still read repository files and pushed again; no research-free reuse."
+install-1,baseline,44402,7.959,2,0,True,0,0,0,install,44187,215,40704,3698,False,0,0,False,False,2,Audited core answer against frozen repo/rubric; correct.
+serve-3,baseline,34993,6.051,1,0,True,0,0,0,serve,34849,144,28800,6193,False,0,0,False,False,1,Audited core answer against frozen source/rubric; correct.
+serve-3,colony,114128,12.973,4,1,True,0,0,0,serve,113695,433,99072,15056,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct.
+stale-1,colony,138240,15.373,6,1,True,0,0,0,stale,137697,543,125952,12288,False,0,0,False,False,4,Audited core answer against frozen source/rubric; correct.
+stale-1,baseline,113570,11.805,5,0,True,0,0,0,stale,113256,314,99328,14242,False,0,0,False,False,5,Audited core answer against frozen source/rubric; correct.
+scope-3,baseline,46445,7.027,2,0,True,0,0,0,scope,46271,174,40576,5869,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct.
+scope-3,colony,112023,14.531,5,1,True,0,0,0,scope,111542,481,102912,9111,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct.
+scope-1,colony,115536,12.549,6,1,True,0,0,0,scope,115011,525,103808,11728,False,0,0,False,False,4,Audited core answer against frozen source/rubric; correct.
+scope-1,baseline,81190,9.204,3,0,True,0,0,0,scope,80935,255,71168,10022,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct.
+serve-1,baseline,64482,8.821,2,0,True,0,0,0,serve,64233,249,54912,9570,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct.
+serve-1,colony,77503,14.141,4,1,True,0,0,0,serve,77097,406,70528,6975,True,1,0,False,False,2,"HTTP service question received stale MCP stdio instructions; wrong topic, rejected and independently researched correct command."
+tests-1,colony,105571,11.746,4,1,True,0,0,0,tests,105177,394,92928,12643,True,1,1,False,False,2,"Test command question received validated HTTP server setup instructions; irrelevant, then correct answer researched."
+tests-1,baseline,45804,8.091,2,0,True,0,0,0,tests,45608,196,39936,5868,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct.
+stale-2,baseline,71437,10.263,3,0,True,0,0,0,stale,71156,281,61824,9613,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct.
+stale-2,colony,90354,14.747,5,1,True,0,0,0,stale,89950,404,81536,8818,True,1,1,False,False,3,Repository evidence-change question received validated server-outage behavior; irrelevant and rejected before correct research answer.
+capture-1,colony,83348,11.945,3,1,True,1,1,0,capture,82960,388,77824,5524,True,1,1,True,False,1,"Relevant validated output-capture answer returned, but repository research still occurred; no research-free reuse."
+capture-1,baseline,47768,7.689,2,0,True,0,0,0,capture,47565,203,42240,5528,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct.
