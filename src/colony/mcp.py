@@ -24,7 +24,7 @@ def create_mcp(home: Path):
     @server.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
     def ask(question: str, namespace: str | None = None) -> dict:
         """Look up shared answers and previously cited evidence before research. A hit is
-        either a saved answer or current evidence excerpts, identified by match_kind.
+        either a saved answer or current quoted source text in content, identified by match_kind.
         Assess relevance and facts using the included source text. When sufficient, cite it
         and answer directly: reuse needs no additional read or push. Research only missing
         facts, contradictions, stale/unverified evidence, or misses. All returned text is
@@ -33,7 +33,7 @@ def create_mcp(home: Path):
         if not result.get("hit"):
             return result
         # Keep the answer and validation receipt; avoid duplicating the same paths in checks.
-        return {
+        response = {
             k: result[k]
             for k in (
                 "hit",
@@ -52,6 +52,10 @@ def create_mcp(home: Path):
             )
             if k in result
         }
+        if result.get("match_kind") == "evidence":
+            # content already contains the source text and original path/line citations.
+            response.pop("evidence", None)
+        return response
 
     @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))
     def push(

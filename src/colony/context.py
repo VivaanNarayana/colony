@@ -29,8 +29,8 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
         for pattern in PATTERNS:
             text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
         lines = text.splitlines()
-        for start in range(0, min(len(lines), 2000), 8):
-            block = "\n".join(lines[start : start + 16])
+        for start in range(0, min(len(lines), 2000), 16):
+            block = "\n".join(lines[start : start + 32])
             if block.strip():
                 candidates.append((source.ref, start + 1, block[:2400]))
             if len(candidates) >= 96:
@@ -50,7 +50,7 @@ def excerpts(root: Path, sources: list[Source], question: str) -> list[dict]:
         # Avoid spending the response on overlapping windows from the same file.
         if scores[index] < best - 2:
             continue
-        if any(s["ref"] == ref and abs(s["line"] - start) < 16 for s in selected):
+        if any(s["ref"] == ref and abs(s["line"] - start) < 32 for s in selected):
             continue
         if len(selected) >= 2 or budget < 300:
             break

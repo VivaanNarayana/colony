@@ -89,6 +89,11 @@ for row in rows:
         reused=reused,
         repo_calls=repo_calls,
         review_note=review["note"],
+        return_kinds=[h.get("match_kind", "answer") for h in hits if h.get("hit")],
+        relevant_return_kinds=[
+            h.get("match_kind", "answer") for h, label in zip(hits, labels, strict=True) if label
+        ],
+        saved_answer_relevant=review.get("answer_relevant", relevant),
     )
     measured.append(data)
 summary = benchmark.report(measured)
@@ -122,6 +127,17 @@ summary["validated_relevant_hits"] = sum(r["validated"] for r in colony)
 summary["relevant_query_hits"] = sum(r["useful_return"] for r in colony)
 summary["query_reuse_rate"] = summary["relevant_query_hits"] / len(colony)
 summary["reused_without_research"] = sum(r["reused"] for r in colony)
+summary["retrieval_kinds"] = {
+    kind: {
+        "raw_return_events": sum(r["return_kinds"].count(kind) for r in colony),
+        "relevant_return_events": sum(r["relevant_return_kinds"].count(kind) for r in colony),
+        "research_free_queries": sum(
+            r["reused"] and kind in r["relevant_return_kinds"] for r in colony
+        ),
+    }
+    for kind in ["answer", "evidence"]
+}
+summary["relevant_saved_answer_queries"] = sum(r["saved_answer_relevant"] for r in colony)
 summary["raw_hit_rate"] = summary["raw_hits"] / sum(r["ask_calls"] for r in colony)
 summary["all_returned_validated_rate"] = (
     summary["raw_validated_hits"] / summary["raw_hits"] if summary["raw_hits"] else None

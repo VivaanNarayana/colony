@@ -1,0 +1,17 @@
+{
+  "status": "Stopped development iteration; not a complete benchmark comparison",
+  "planned_sessions": 48,
+  "completed_sessions": 11,
+  "reason": "Evidence-hit content contained only a match description, encouraging duplicate research. One short excerpt retrieved an example question while omitting its nearby answer. Stopped to fix response content and excerpt boundaries; every completed and interrupted trace retained.",
+  "completed_native_usage": {
+    "baseline": {
+      "sessions": 5,
+      "tokens": 283360
+    },
+    "colony": {
+      "sessions": 6,
+      "tokens": 491852
+    }
+  },
+  "incomplete_usage": "An interrupted session may have consumed additional unreported tokens. No savings, correctness, or reuse comparison is computed for this partial trial."
+}
