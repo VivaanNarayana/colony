@@ -74,6 +74,12 @@ def create_app(
             if query.namespace not in namespaces:
                 raise HTTPException(403, "Namespace pull denied")
             namespaces = [query.namespace]
-        return store.ask(query.question, namespaces, max_age, threshold)
+        return store.ask(
+            query.question,
+            namespaces,
+            max_age,
+            threshold,
+            include_evidence_files=query.include_evidence_files,
+        )
 
     return app

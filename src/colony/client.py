@@ -58,9 +58,14 @@ class Client:
         response.raise_for_status()
         return response.json()
 
-    def ask(self, question: str, namespace: str | None = None):
+    def ask(
+        self, question: str, namespace: str | None = None, *, include_evidence_files: bool = False
+    ):
         try:
-            return self.request("/ask", {"question": scrub(question), "namespace": namespace})
+            payload = {"question": scrub(question), "namespace": namespace}
+            if include_evidence_files:
+                payload["include_evidence_files"] = True
+            return self.request("/ask", payload)
         except httpx.TransportError:
             return {"hit": False, "reason": "server_unavailable"}
 

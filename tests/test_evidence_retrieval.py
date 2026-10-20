@@ -35,6 +35,9 @@ def test_reuses_only_previously_attached_current_source_context(team):
     # Scope filtering applies to the evidence index as well as the answer index.
     assert not app.state.store.ask(question, ["another-team"], 604800, 0.62)["hit"]
     assert not app.state.store.ask(question, [], 604800, 0.62)["hit"]
+    assert not app.state.store.ask(
+        question, ["another-team"], 604800, 0.62, include_evidence_files=True
+    )["hit"]
     # A previously indexed source does not survive a content change as validated.
     (repo / "guide.md").write_text("The backup procedure changed.")
     changed = api.post("/ask", json={"question": question}, headers=auth(key)).json()

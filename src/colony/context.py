@@ -82,7 +82,22 @@ def excerpts(
     *,
     preferred: list[tuple[str, int]] | None = None,
     claims: str | None = None,
+    whole_files: bool = False,
 ) -> list[dict]:
+    unique = {s.ref: s for s in sources}
+    if whole_files and 1 <= len(unique) <= 4:
+        files = []
+        for source in unique.values():
+            lines = source_lines(root, source)
+            text = "\n".join(lines)
+            if not lines or len(text) > 16000:
+                break
+            files.append({"ref": source.ref, "line": 1, "text": text, "complete_file": True})
+        else:
+            # Complete small, redacted files remove the need to reread an identical
+            # file through another tool. Large/many files retain focused excerpts.
+            if sum(len(f["text"]) for f in files) <= 24000:
+                return files
     candidates = source_chunks(root, sources)
     if preferred is not None:
         # A second reranking must not replace the globally selected passage
@@ -121,7 +136,7 @@ def excerpts(
         if len(selected) >= 2 or budget < 300:
             break
         text = text[:budget]
-        selected.append({"ref": ref, "line": start, "text": text})
+        selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
         occupied.append((ref, start, end))
         budget -= len(text)
     return selected

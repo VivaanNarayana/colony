@@ -85,3 +85,23 @@ def test_saved_command_is_grounded_in_usage_section_instead_of_generic_intro(tmp
     )
     assert result[0]["text"].startswith("## Usage")
     assert "launch --config service.toml --port 8080" in result[0]["text"]
+
+
+def test_complete_file_context_is_bounded_scrubbed_and_hash_checked(tmp_path):
+    path = tmp_path / "guide.md"
+    path.write_text("# Setup\n\nlaunch --config service.toml\n\npassword='private-value'\n")
+    source = snapshot(tmp_path, "guide.md")
+    full = excerpts(tmp_path, [source], "Start the service", whole_files=True)
+    assert full[0]["complete_file"] and full[0]["line"] == 1
+    assert "launch --config service.toml" in full[0]["text"]
+    assert "[REDACTED]" in full[0]["text"] and "private-value" not in full[0]["text"]
+    path.write_text("changed")
+    assert excerpts(tmp_path, [source], "Start the service", whole_files=True) == []
+    path.write_text(
+        "# Setup\n\nlaunch --config service.toml\n\n" + "Long unrelated prose.\n" * 1000
+    )
+    large = excerpts(
+        tmp_path, [snapshot(tmp_path, "guide.md")], "Start the service", whole_files=True
+    )
+    assert large and all(not e["complete_file"] for e in large)
+    assert sum(len(e["text"]) for e in large) <= 2800

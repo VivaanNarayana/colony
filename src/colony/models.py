@@ -49,3 +49,4 @@ class Trail(Model):
 class Ask(Model):
     question: str = Field(min_length=1, max_length=2000)
     namespace: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
+    include_evidence_files: bool = False

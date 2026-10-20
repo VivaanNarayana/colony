@@ -204,6 +204,8 @@ def test_real_mcp_stdio_push_and_ask(running_team):
             assert receipt["status"] == "validated"
             assert receipt["recommendation"] == "reuse_if_relevant"
             assert receipt["sources"][0]["ref"] == "settings.py"
+            assert receipt["evidence"][0]["complete_file"]
+            assert "TIMEOUT" in receipt["evidence"][0]["text"]
             assert "checks" not in receipt
 
     asyncio.run(asyncio.wait_for(exercise(), timeout=30))

@@ -51,6 +51,11 @@ def parser():
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     ask.add_argument("--ns")
+    ask.add_argument(
+        "--evidence-files",
+        action="store_true",
+        help="Include bounded complete current source files when small",
+    )
     push = sub.add_parser("push", help="Push a JSON trail, with optional local file fingerprints")
     push.add_argument("file", type=Path)
     push.add_argument("--ns", required=True)
@@ -66,7 +71,10 @@ def parser():
     run.add_argument("--source", action="append", default=[])
     run.add_argument("cmd", nargs=argparse.REMAINDER)
     sub.add_parser("retry", help="Retry encrypted, scrubbed offline pushes")
-    sub.add_parser("mcp", help="Run ask/push tools on MCP stdio")
+    mcp = sub.add_parser("mcp", help="Run ask/push tools on MCP stdio")
+    mcp.add_argument(
+        "--compact", action="store_true", help="Use excerpts instead of complete small cited files"
+    )
     return p
 
 
@@ -105,11 +113,11 @@ def execute(args):
     if args.command == "mcp":
         from colony.mcp import serve
 
-        serve(args.home)
+        serve(args.home, compact=args.compact)
         return None
     client = Client(args.home)
     if args.command == "ask":
-        return client.ask(args.question, args.ns)
+        return client.ask(args.question, args.ns, include_evidence_files=args.evidence_files)
     if args.command == "retry":
         return client.retry()
     if args.command == "push":
