@@ -69,3 +69,19 @@ def test_selected_passage_keeps_its_section_without_second_reranking(tmp_path, m
     assert "ship artifacts/release.tar" in result[0]["text"]
     assert result[0]["text"].startswith("## Release")
     assert "Unrelated audit" not in result[0]["text"]
+
+
+def test_saved_command_is_grounded_in_usage_section_instead_of_generic_intro(tmp_path):
+    (tmp_path / "guide.md").write_text(
+        "# Application\n\nA local service for developers. The server starts on demand.\n\n"
+        "## Usage\n\n```sh\nlaunch --config service.toml --port 8080\n```\n\n"
+        "## Integration\n\nConnect another agent using a stdio adapter.\n"
+    )
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "How do I start the local service?",
+        claims="Run launch --config service.toml --port 8080.",
+    )
+    assert result[0]["text"].startswith("## Usage")
+    assert "launch --config service.toml --port 8080" in result[0]["text"]

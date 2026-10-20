@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from colony.models import Source
-from colony.retrieval import rank
+from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
 from colony.validation import repo_file
 
@@ -81,6 +81,7 @@ def excerpts(
     question: str,
     *,
     preferred: list[tuple[str, int]] | None = None,
+    claims: str | None = None,
 ) -> list[dict]:
     candidates = source_chunks(root, sources)
     if preferred is not None:
@@ -90,12 +91,24 @@ def excerpts(
         scores = [0.0] * len(candidates)
     else:
         scores = rank(question, [c[2] for c in candidates])
+        if claims is not None:
+            query_coverage = keyword_coverage(question, [c[2] for c in candidates])
+            # Concrete code/commands identify the claim better than background
+            # prose such as model-download notes in the same saved answer.
+            code_claims = re.findall(r"`([^`\n]+)`", claims[:4000])
+            claim_coverage = keyword_coverage(
+                "\n".join(code_claims) if code_claims else claims[:4000], [c[2] for c in candidates]
+            )
+            scores = [
+                0.2 * q + 0.7 * a + 0.5 * fused_score(0, s)
+                for q, a, s in zip(query_coverage, claim_coverage, scores, strict=True)
+            ]
     selected, occupied, cache, budget = [], [], {}, 2800
     best = max(scores, default=0)
     by_ref = {s.ref: s for s in sources}
     for index in sorted(range(len(scores)), key=scores.__getitem__, reverse=True):
         ref, line, core = candidates[index]
-        if scores[index] < best - 2:
+        if scores[index] < best - (0.15 if claims is not None else 2):
             continue
         if ref not in cache:
             cache[ref] = source_lines(root, by_ref[ref])

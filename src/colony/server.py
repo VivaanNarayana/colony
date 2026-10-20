@@ -12,7 +12,7 @@ from colony.store import Store
 
 
 def create_app(
-    data: Path, repo: Path, issuer: Path, *, max_age: int = 604800, threshold: float = 0.62
+    data: Path, repo: Path, issuer: Path, *, max_age: int = 604800, threshold: float = 0.60
 ) -> FastAPI:
     if not repo.is_dir() or not issuer.is_file():
         raise ValueError("Configure an existing repository and trusted issuer public key")

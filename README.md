@@ -111,7 +111,7 @@ similarities supplies the dense score, preserving short paraphrases when answers
 Namespace filtering precedes retrieval. Up to 12
 dense candidates (cosine >=0.55) are reranked against their answers by a local MS MARCO
 MiniLM cross-encoder. The ranking combines 80% dense similarity and 20% sigmoid of the
-cross-encoder logit, with a default 0.62 cutoff; these scores are ranking heuristics, not
+cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuristics, not
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
@@ -119,6 +119,9 @@ Validated hits include at most two current evidence excerpts, totaling 2,800 cha
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
 not a truth certificate; incomplete or contradictory answers still require research.
+For a saved answer, excerpt selection also uses its specific claims, weighted alongside
+the question and reranker. This grounds a concrete command or behavior instead of merely
+returning a passage about the same broad topic. The agent still checks relevance and truth.
 
 When no validated saved answer matches, Colony can reuse evidence from an earlier trail.
 On push it indexes bounded, scrubbed passages from the cited files whose hashes match
