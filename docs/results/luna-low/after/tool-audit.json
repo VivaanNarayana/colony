@@ -46,7 +46,13 @@
     "mode": "colony",
     "repo_calls": 4,
     "memory_calls": 2,
-    "errors": []
+    "errors": [
+      {
+        "server": "repo",
+        "tool": "search",
+        "message": "Error executing tool search: 1 validation error for searchArguments\ntext\n  Field required [type=missing, input_value={'query': 'run capture input output'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+      }
+    ]
   },
   {
     "task_id": "capture-3",
@@ -256,14 +262,26 @@
     "mode": "baseline",
     "repo_calls": 3,
     "memory_calls": 0,
-    "errors": []
+    "errors": [
+      {
+        "server": "repo",
+        "tool": "read_file",
+        "message": "Error executing tool read_file: [Errno 2] No such file or directory: 'C:\\\\Users\\\\b3vel\\\\Documents\\\\Codex\\\\2026-10-19\\\\colony-summary-what-it-is-colony\\\\work\\\\live-benchmark-luna-improved\\\\repo\\\\src\\\\colony\\\\auth.py'"
+      }
+    ]
   },
   {
     "task_id": "scope-3",
     "mode": "colony",
     "repo_calls": 4,
     "memory_calls": 2,
-    "errors": []
+    "errors": [
+      {
+        "server": "repo",
+        "tool": "search",
+        "message": "Error executing tool search: 1 validation error for searchArguments\ntext\n  Field required [type=missing, input_value={'query': 'namespace ungranted pull agent'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+      }
+    ]
   },
   {
     "task_id": "scope-1",

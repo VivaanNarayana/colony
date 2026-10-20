@@ -49,7 +49,13 @@ for row in rows:
             "mode": row["mode"],
             "repo_calls": repo_calls,
             "memory_calls": len(calls) - repo_calls,
-            "errors": [c["error"] for c in calls if c.get("error")],
+            "errors": [c["error"] for c in calls if c.get("error")]
+            + [
+                {"server": c.get("server"), "tool": c.get("tool"), "message": b["text"]}
+                for c in calls
+                for b in (c.get("result") or {}).get("content", [])
+                if b.get("text", "").startswith("Error executing tool ")
+            ],
         }
     )
     data = {k: row[k] for k in ["task_id", "mode", "tokens", "seconds", "tool_calls", "ask_calls"]}

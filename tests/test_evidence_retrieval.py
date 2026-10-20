@@ -30,7 +30,7 @@ def test_reuses_only_previously_attached_current_source_context(team):
     assert result["hit"] and result["match_kind"] == "evidence"
     assert result["status"] == "validated" and result["id"] == trail.id
     assert "pg_dump -Fc" in str(result["evidence"])
-    assert "not an authored answer" in result["provenance"]
+    assert "read from the current checkout" in result["provenance"]
     assert "pg_dump -Fc" in result["content"]
     # Scope filtering applies to the evidence index as well as the answer index.
     assert not app.state.store.ask(question, ["another-team"], 604800, 0.62)["hit"]

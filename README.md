@@ -123,7 +123,10 @@ not a truth certificate; incomplete or contradictory answers still require resea
 When no validated saved answer matches, Colony can reuse evidence from an earlier trail.
 On push it indexes bounded, scrubbed passages from the cited files whose hashes match
 the server checkout. It never crawls uncited files or initializes memory from the repo.
-Evidence matches use a separate 0.54 fused-score cutoff after a 0.55 dense filter;
+Evidence candidates use a 0.45 dense filter, reject reranker logits below -8,
+and use the same 80/20 fused ranking, without
+treating a ranking score as answer confidence. Selected passages retain their identity
+through excerpt expansion into their Markdown section or nearby source lines;
 all attached sources and the age limit must still pass on pull. `match_kind: "answer"`
 identifies a saved answer; `match_kind: "evidence"` identifies supporting source context
 with no matching saved answer. Agents must read that context and assess whether it

@@ -47,3 +47,25 @@ def test_unverified_and_stale_hits_never_include_source_context(team):
     (repo / "build.py").write_text("TIMEOUT = 99")
     hit = api.post("/ask", json={"question": "Build timeout"}, headers=auth(key)).json()
     assert hit["status"] == "stale" and not hit["evidence"]
+
+
+def test_selected_passage_keeps_its_section_without_second_reranking(tmp_path, monkeypatch):
+    import colony.context
+
+    text = (
+        "## Release\n\n```sh\n# Prepare artifacts\nship artifacts/release.tar\n```\n"
+        + "\n" * 20
+        + "## Audit\n\nUnrelated audit instructions belong to another section.\n"
+    )
+    (tmp_path / "guide.md").write_text(text)
+    source = snapshot(tmp_path, "guide.md")
+
+    def unexpected_rerank(*args):
+        raise AssertionError("The globally selected passage must be preserved")
+
+    monkeypatch.setattr(colony.context, "rank", unexpected_rerank)
+    result = excerpts(tmp_path, [source], "Upload release artifacts", preferred=[("guide.md", 1)])
+    assert result[0]["line"] == 1
+    assert "ship artifacts/release.tar" in result[0]["text"]
+    assert result[0]["text"].startswith("## Release")
+    assert "Unrelated audit" not in result[0]["text"]

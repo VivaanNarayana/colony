@@ -1,6 +1,7 @@
 """Local ONNX semantic retrieval. No trail data is sent to a model service."""
 
 import hashlib
+import math
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -13,7 +14,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v4:{EMBED_MODEL}:questions-answers-source-blocks32-16"
+INDEX_VERSION = f"semantic-v5:{EMBED_MODEL}:questions-answers-source-blocks16-8-sections"
 CANDIDATES = 12
 
 
@@ -76,3 +77,8 @@ def embed_passages(texts: list[str]) -> list[bytes]:
         if texts
         else []
     )
+
+
+def fused_score(cosine: float, logit: float) -> float:
+    """A ranking heuristic, never an answer-correctness probability."""
+    return 0.8 * cosine + 0.2 / (1 + math.exp(-max(-30, min(30, logit))))
