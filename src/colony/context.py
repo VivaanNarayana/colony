@@ -153,13 +153,21 @@ def excerpts(
             cache[ref] = source_lines(root, by_ref[ref])
         if not cache[ref]:
             continue
+        if len(selected) >= 2 or budget < 300:
+            break
         start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
+        limit = min(2400, budget)
+        offset = len("\n".join(cache[ref][start - 1 : line - 1])) + int(line > start)
+        core_text = "\n".join(cache[ref][line - 1 : line + core.count("\n")])
+        if start > line or offset + min(limit, len(core_text)) > limit:
+            # Section expansion and the remaining response budget must never clip
+            # away the selected paragraph. Anchor at its original source line.
+            start = line
+            text = "\n".join(cache[ref][line - 1 : line + 31])
+        text = text[:limit]
         end = start + text.count("\n")
         if any(r == ref and start <= b and end >= a for r, a, b in occupied):
             continue
-        if len(selected) >= 2 or budget < 300:
-            break
-        text = text[:budget]
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
         occupied.append((ref, start, end))
         budget -= len(text)

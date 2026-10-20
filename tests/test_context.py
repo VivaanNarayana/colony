@@ -123,3 +123,23 @@ def test_ranked_sections_keep_order_and_original_source_text(tmp_path):
     )
     assert result[0]["text"].startswith("## Deployment")
     assert 'logger --question "Deploy the service?"' in result[1]["text"]
+
+
+def test_remaining_budget_keeps_the_selected_paragraph_in_late_section(tmp_path):
+    (tmp_path / "guide.md").write_text(
+        "# First\n\n"
+        + "A" * 1900
+        + "\n\n# Second\n\n"
+        + "B" * 1300
+        + "\n\nThe selected answer is: deploy the signed artifact.\n"
+    )
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "Release procedure",
+        preferred=[("guide.md", 3), ("guide.md", 9)],
+    )
+    assert len(result) == 2
+    assert result[1]["line"] == 9
+    assert "deploy the signed artifact" in result[1]["text"]
+    assert sum(len(e["text"]) for e in result) <= 2800

@@ -427,8 +427,8 @@
     "relevant_hit": true,
     "answer_relevant": false,
     "reused": false,
-    "wrong_reused": true,
-    "note": "Incorrectly dismisses the returned capture example containing the right pytest command and does not research further. The packet contains useful command evidence, but the final answer declines to identify it as the test invocation. Counted as a correctness regression and failed reuse, not a success."
+    "wrong_reused": false,
+    "note": "Incorrectly dismisses the returned capture example containing the right pytest command and does not research further. The packet contains useful command evidence, but the final answer declines to identify it as the test invocation. Counted as a correctness regression, not a successful reuse. It rejects the example rather than asserting a wrong reused fact, so wrong_reused is false."
   },
   "tests-1.baseline": {
     "correct": true,

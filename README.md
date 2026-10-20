@@ -141,7 +141,7 @@ When no validated saved answer matches, Colony can reuse evidence from an earlie
 On push it indexes bounded, scrubbed passages from the cited files whose hashes match
 the server checkout. It never crawls uncited files or initializes memory from the repo.
 Evidence retrieval merges 24 dense candidates (cosine >=0.45) with 24 lexical candidates
-(query-term coverage >=0.15), rejects reranker logits below -8, and ranks paragraphs
+(query-term coverage >=0.15), rejects reranker logits below -5, and ranks paragraphs
 with 40% dense similarity, 20% bounded reranker signal and 40% query-term coverage
 (weighted by inverse document frequency). Repeated citations of the same passage are
 grouped before selecting at most 48 distinct candidates, retaining alternative
@@ -159,6 +159,9 @@ The response can include two distinct sections from the same validated trail's c
 files when their ranking scores are within 0.15, retaining ranking order and the existing
 2,800-character cap. Displayed text is always the original scrubbed file text with its
 original line numbers, without synthetic ranking headings or masked question values.
+When expansion exceeds the remaining budget, excerpts anchor at the selected paragraph
+so its relevant text survives trimming. A memory result does not determine other tools'
+availability; incomplete hits and misses still require configured research tools.
 Lexical selection rereads scoped, cited files with matching hashes; this bounded-file
 approach is intended for small teams and does not provide a scalable full-text index.
 

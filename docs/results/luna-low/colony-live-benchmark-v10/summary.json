@@ -2,7 +2,7 @@
   "paired_tasks": 24,
   "reuse_rate": 0.8333333333333334,
   "validated_hit_rate": 1.0,
-  "wrong_reuse_rate": 0.05,
+  "wrong_reuse_rate": 0.0,
   "correct_tasks": {
     "baseline": 24,
     "colony": 23
@@ -262,7 +262,7 @@
       "paired_tasks": 3,
       "reuse_rate": 1.0,
       "validated_hit_rate": 1.0,
-      "wrong_reuse_rate": 0.3333333333333333,
+      "wrong_reuse_rate": 0.0,
       "correct_tasks": {
         "baseline": 3,
         "colony": 2

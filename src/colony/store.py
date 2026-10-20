@@ -275,7 +275,7 @@ class Store:
                     for (linked, _), score, coverage in zip(
                         candidates, scores, lexical, strict=True
                     )
-                    if score >= -8.0
+                    if score >= -5.0
                 ],
                 key=lambda item: item[1],
                 reverse=True,
