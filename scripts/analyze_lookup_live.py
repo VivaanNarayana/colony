@@ -3,6 +3,7 @@
 import argparse
 import json
 import random
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
@@ -100,7 +101,24 @@ def compare(results, local):
     assert all(p["main"] == p["feature"] for p in prompts.values())
     assert metadata["main"]["implementation_commit"] == protocol["baseline_commit"]
     assert metadata["feature"]["implementation_commit"] == protocol["feature_commit"]
-    assert local["feature_commit"] == protocol["feature_commit"]
+    assert local["baseline_commit"] == protocol["baseline_commit"]
+    # Benchmark tooling/results may be committed between local and live trials.
+    # Verify that the measured runtime code itself has not changed.
+    subprocess.run(
+        [
+            "git",
+            "diff",
+            "--exit-code",
+            local["feature_commit"],
+            protocol["feature_commit"],
+            "--",
+            "src/colony",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+        capture_output=True,
+    )
+    report["local_runtime_code_unchanged"] = True
     main, feature = report["arms"]["main"], report["arms"]["feature"]
     report["observed_reductions"] = {
         field: 1 - feature[field] / main[field]
