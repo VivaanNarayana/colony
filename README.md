@@ -123,14 +123,21 @@ not a truth certificate; incomplete or contradictory answers still require resea
 When no validated saved answer matches, Colony can reuse evidence from an earlier trail.
 On push it indexes bounded, scrubbed passages from the cited files whose hashes match
 the server checkout. It never crawls uncited files or initializes memory from the repo.
-Evidence candidates use a 0.45 dense filter, reject reranker logits below -8,
-and use the same 80/20 fused ranking, without
+Evidence retrieval merges 24 dense candidates (cosine >=0.45) with 24 lexical candidates
+(query-term coverage >=0.15), rejects reranker logits below -8, and ranks paragraphs
+with 40% dense similarity, 20% bounded reranker signal and 40% query-term coverage
+(weighted by inverse document frequency). Repeated citations of the same passage are
+grouped before selecting at most 48 distinct candidates, retaining alternative
+trail origins when assertions fail. This avoids duplicate passages crowding out evidence,
+without
 treating a ranking score as answer confidence. Selected passages retain their identity
 through excerpt expansion into their Markdown section or nearby source lines;
 all attached sources and the age limit must still pass on pull. `match_kind: "answer"`
 identifies a saved answer; `match_kind: "evidence"` identifies supporting source context
 with no matching saved answer. Agents must read that context and assess whether it
 answers the question. This broadens reuse beyond paraphrases of stored questions.
+Lexical selection rereads scoped, cited files with matching hashes; this bounded-file
+approach is intended for small teams and does not provide a scalable full-text index.
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
 FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set

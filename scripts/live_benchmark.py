@@ -90,6 +90,7 @@ def setup():
         "withheld": ["scripts/", "tests/", "docs/benchmark.md"],
         "temperature": "provider default; CLI does not expose temperature",
         "research_tools": "Identical restricted read-only MCP search/read_file in both arms; reads include SHA256",
+        "repository_mcp_namespace": "repository (descriptive name for discovery; previously repo)",
         "tool_policy": "Explicitly approve only benchmark repo read/search and Colony ask/push; shell remains read-only",
         "excluded_preflight": "None in this run; every completed final-trial task is retained",
         "isolation": "Apps, plugins, browser, web search, shell tools, multi-agent, and memories disabled. Only explicit repo and Colony MCP servers.",
@@ -169,16 +170,16 @@ def run_subject(task, mode):
     args.extend(
         [
             "-c",
-            "mcp_servers.repo.command=" + json.dumps(str(PYTHON)),
+            "mcp_servers.repository.command=" + json.dumps(str(PYTHON)),
             "-c",
-            "mcp_servers.repo.args="
+            "mcp_servers.repository.args="
             + json.dumps([str(ROOT / "scripts/benchmark_repo_mcp.py"), str(RUN / "repo")]),
             "-c",
-            'mcp_servers.repo.tools.read_file.approval_mode="approve"',
+            'mcp_servers.repository.tools.read_file.approval_mode="approve"',
             "-c",
-            'mcp_servers.repo.tools.search.approval_mode="approve"',
+            'mcp_servers.repository.tools.search.approval_mode="approve"',
             "-c",
-            "mcp_servers.repo.required=true",
+            "mcp_servers.repository.required=true",
         ]
     )
     if mode == "colony":
@@ -245,7 +246,8 @@ def run_subject(task, mode):
     items = [e["item"] for e in events if e.get("type") == "item.completed"]
     calls = [i for i in items if i["type"] in {"command_execution", "mcp_tool_call", "web_search"}]
     if any(
-        i["type"] != "mcp_tool_call" or i.get("server") not in {"repo", "colony"} for i in calls
+        i["type"] != "mcp_tool_call" or i.get("server") not in {"repository", "colony"}
+        for i in calls
     ):
         raise RuntimeError(f"Out-of-protocol tool call: {name}")
     asks = [i for i in calls if i["type"] == "mcp_tool_call" and i.get("tool") == "ask"]

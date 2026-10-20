@@ -82,4 +82,4 @@ def test_existing_vector_index_is_rebuilt_without_losing_trails(team):
     assert result["id"] == trail and result["content"] == "Set TIMEOUT = 30"
     with migrated.connect() as db:
         assert db.execute("SELECT count(*) FROM trail_vectors").fetchone()[0] == 1
-        assert db.execute("SELECT value FROM settings").fetchone()[0].startswith("semantic-v5:")
+        assert db.execute("SELECT value FROM settings").fetchone()[0].startswith("semantic-v6:")

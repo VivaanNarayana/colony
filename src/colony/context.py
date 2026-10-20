@@ -31,11 +31,24 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
     candidates = []
     # Only explicitly attached, matching files supply context. Never crawl uncited files.
     for source in sources[:8]:
-        lines = source_lines(root, source)
-        for start in range(0, min(len(lines), 2000), 8):
-            block = "\n".join(lines[start : start + 16])
-            if block.strip():
-                candidates.append((source.ref, start + 1, block[:2400]))
+        lines = source_lines(root, source)[:2000]
+        start = None
+        for end, text in enumerate([*lines, ""]):
+            if text.strip():
+                if start is None:
+                    start = end
+                continue
+            if start is None:
+                continue
+            # Paragraphs keep independent topics apart. Long code/prose paragraphs
+            # still use bounded overlapping windows.
+            starts = [start] if end - start <= 16 else range(start, end, 8)
+            for begin in starts:
+                block = "\n".join(lines[begin : min(end, begin + 16)])
+                candidates.append((source.ref, begin + 1, block[:2400]))
+                if len(candidates) >= 96:
+                    break
+            start = None
             if len(candidates) >= 96:
                 break
         if len(candidates) >= 96:
@@ -43,9 +56,9 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
     return candidates
 
 
-def context_window(ref: str, lines: list[str], line: int) -> tuple[int, str]:
+def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[int, str]:
     """Retrieve narrowly; display the containing section or surrounding source lines."""
-    center = min(line - 1 + 8, len(lines) - 1)
+    center = min(line - 1 + min(8, span // 2), len(lines) - 1)
     low, high = 0, len(lines)
     if Path(ref).suffix.lower() in {".md", ".markdown"}:
         headings, fenced = [], False
@@ -81,14 +94,14 @@ def excerpts(
     best = max(scores, default=0)
     by_ref = {s.ref: s for s in sources}
     for index in sorted(range(len(scores)), key=scores.__getitem__, reverse=True):
-        ref, line, _ = candidates[index]
+        ref, line, core = candidates[index]
         if scores[index] < best - 2:
             continue
         if ref not in cache:
             cache[ref] = source_lines(root, by_ref[ref])
         if not cache[ref]:
             continue
-        start, text = context_window(ref, cache[ref], line)
+        start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
         end = start + text.count("\n")
         if any(r == ref and start <= b and end >= a for r, a, b in occupied):
             continue

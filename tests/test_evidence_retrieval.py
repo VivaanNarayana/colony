@@ -63,3 +63,31 @@ def test_failed_source_assertions_and_age_block_evidence_reuse(team):
         db.execute("UPDATE trails SET created_at=0")
     result = api.post("/ask", json={"question": question}, headers=auth(key)).json()
     assert result.get("status") != "validated"
+
+
+def test_grouped_source_passage_keeps_alternative_valid_trail_origins(team):
+    _, api, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Operations\n\nStart the web application using uvicorn.\n\n"
+        "# Backup\n\nCreate a PostgreSQL backup using pg_dump -Fc appdb.\n"
+    )
+    good = None
+    for invalid in [False, True, True]:
+        source = snapshot(repo, "guide.md")
+        if invalid:
+            source = source.model_copy(update={"contains": "absent"})
+        trail = Trail(
+            id=uuid.uuid4().hex,
+            namespace="team",
+            question="Launch web application",
+            content="Start uvicorn.",
+            sources=[source],
+        )
+        api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+        if not invalid:
+            good = trail.id
+    result = api.post(
+        "/ask", json={"question": "How do I make a PostgreSQL backup?"}, headers=auth(key)
+    ).json()
+    assert result["status"] == "validated" and result["match_kind"] == "evidence"
+    assert result["id"] == good and "pg_dump" in result["content"]

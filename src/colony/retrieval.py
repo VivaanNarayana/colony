@@ -3,6 +3,8 @@
 import hashlib
 import math
 import os
+import re
+from collections import Counter
 from functools import lru_cache
 from pathlib import Path
 
@@ -14,7 +16,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v5:{EMBED_MODEL}:questions-answers-source-blocks16-8-sections"
+INDEX_VERSION = f"semantic-v6:{EMBED_MODEL}:questions-answers-source-paragraphs-sections"
 CANDIDATES = 12
 
 
@@ -82,3 +84,80 @@ def embed_passages(texts: list[str]) -> list[bytes]:
 def fused_score(cosine: float, logit: float) -> float:
     """A ranking heuristic, never an answer-correctness probability."""
     return 0.8 * cosine + 0.2 / (1 + math.exp(-max(-30, min(30, logit))))
+
+
+STOP_WORDS = set(
+    [
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "do",
+        "does",
+        "did",
+        "can",
+        "could",
+        "would",
+        "should",
+        "how",
+        "why",
+        "what",
+        "which",
+        "when",
+        "during",
+        "where",
+        "who",
+        "to",
+        "of",
+        "in",
+        "on",
+        "for",
+        "from",
+        "with",
+        "and",
+        "or",
+        "as",
+        "at",
+        "it",
+        "its",
+        "this",
+        "that",
+        "i",
+        "we",
+        "you",
+        "our",
+        "your",
+        "up",
+    ]
+)
+
+
+def terms(text: str) -> set[str]:
+    text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
+    # Shared prefixes cover plural/inflected prose and common code identifiers.
+    words = re.findall(r"[a-z][a-z0-9]+", text.lower())
+    return {
+        (w[:-1] if len(w) > 4 and w.endswith("s") and not w.endswith("ss") else w)[:6]
+        for w in words
+        if w not in STOP_WORDS
+    }
+
+
+def keyword_coverage(question: str, passages: list[str]) -> list[float]:
+    query = terms(question)
+    docs = [terms(p) for p in passages]
+    if not query:
+        return [0.0] * len(docs)
+    frequency = Counter(t for doc in docs for t in doc)
+    weights = {t: 1 + math.log((len(docs) + 1) / (frequency[t] + 1)) for t in query}
+    total = sum(weights.values())
+    return [sum(weights[t] for t in query & doc) / total for doc in docs]
+
+
+def evidence_score(cosine: float, logit: float, coverage: float) -> float:
+    return 0.4 * cosine + 0.2 / (1 + math.exp(-max(-30, min(30, logit)))) + 0.4 * coverage

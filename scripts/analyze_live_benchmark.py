@@ -41,8 +41,8 @@ for row in rows:
         and e["item"].get("type") in {"mcp_tool_call", "command_execution", "web_search"}
     ]
     assert len(calls) == row["tool_calls"]
-    assert all(c.get("server") in {"repo", "colony"} for c in calls)
-    repo_calls = sum(c.get("server") == "repo" for c in calls)
+    assert all(c.get("server") in {"repo", "repository", "colony"} for c in calls)
+    repo_calls = sum(c.get("server") in {"repo", "repository"} for c in calls)
     tool_audit.append(
         {
             "task_id": row["task_id"],

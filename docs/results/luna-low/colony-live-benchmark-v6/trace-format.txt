@@ -1,0 +1,1 @@
+Native CLI events are wrapped with task_id and mode. Local repository path prefixes are replaced with <BENCHMARK_REPO>; numeric usage and outcomes are unchanged. Full local traces are retained. Credentials and private server state are excluded.

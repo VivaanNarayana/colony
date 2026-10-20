@@ -1,0 +1,49 @@
+task_id,mode,tokens,seconds,tool_calls,ask_calls,correct,matches,validated,wrong_reused,family,input_tokens,output_tokens,cached_input_tokens,uncached_tokens,raw_hit,raw_returns,raw_validated,useful_return,reused,repo_calls,review_note,return_kinds,relevant_return_kinds,saved_answer_relevant
+mcp-1,baseline,47075,8.197,2,0,True,0,0,0,mcp,46823,252,38144,8931,False,0,0,False,False,2,Correct stdio connection or tool names.,[],[],False
+mcp-1,colony,106893,17.629,4,1,True,0,0,0,mcp,106377,516,95488,11405,False,0,0,False,False,2,Correct stdio connection or tool names.,[],[],False
+outage-3,colony,33062,8.628,1,1,True,1,1,0,outage,32909,153,29184,3878,True,1,1,True,True,0,Correct outage miss/queue/explicit retry behavior.,['evidence'],['evidence'],False
+outage-3,baseline,33754,6.599,1,0,True,0,0,0,outage,33606,148,28416,5338,False,0,0,False,False,1,Correct outage miss/queue/explicit retry behavior.,[],[],False
+install-2,baseline,42213,7.871,1,0,True,0,0,0,install,42031,182,38784,3429,False,0,0,False,False,1,Correct editable dev-extra installation.,[],[],False
+install-2,colony,33050,8.765,1,1,True,1,1,0,install,32883,167,29184,3866,True,1,1,True,True,0,Correct editable dev-extra installation.,['evidence'],['evidence'],False
+capture-3,colony,32499,10.417,1,1,True,1,1,0,capture,32363,136,28928,3571,True,1,1,True,True,0,Correct output fields or always-tainted behavior.,['evidence'],['evidence'],False
+capture-3,baseline,33729,7.27,1,0,True,0,0,0,capture,33600,129,28416,5313,False,0,0,False,False,1,Correct output fields or always-tainted behavior.,[],[],False
+outage-1,baseline,79885,10.386,6,0,True,0,0,0,outage,79597,288,64384,15501,False,0,0,False,False,6,Correct outage miss/queue/explicit retry behavior.,[],[],False
+outage-1,colony,156274,24.266,7,1,True,0,0,0,outage,155615,659,142848,13426,True,1,1,False,False,5,Correct outage miss/queue/explicit retry behavior. Retrieval not relevant: Hosting/limits passage omits offline behavior.,['evidence'],[],False
+outage-2,colony,56703,11.863,1,1,True,1,1,0,outage,56469,234,50560,6143,True,1,1,True,True,0,Correct outage miss/queue/explicit retry behavior.,['answer'],['answer'],True
+outage-2,baseline,33719,6.174,1,0,True,0,0,0,outage,33597,122,28416,5303,False,0,0,False,False,1,Correct outage miss/queue/explicit retry behavior.,[],[],False
+mcp-2,baseline,55938,8.709,2,0,True,0,0,0,mcp,55723,215,50432,5506,False,0,0,False,False,2,Correct stdio connection or tool names.,[],[],False
+mcp-2,colony,44269,10.837,1,1,True,1,1,0,mcp,44062,207,39680,4589,True,1,1,True,True,0,Correct stdio connection or tool names.,['answer'],['answer'],True
+mcp-3,colony,84744,17.114,3,1,True,1,1,0,mcp,84302,442,74752,9992,True,1,1,True,False,1,Correct stdio connection or tool names.,['answer'],['answer'],True
+mcp-3,baseline,33591,6.778,1,0,True,0,0,0,mcp,33393,198,28416,5175,False,0,0,False,False,1,Correct stdio connection or tool names.,[],[],False
+serve-2,baseline,73158,9.819,4,0,True,0,0,0,serve,72862,296,61184,11974,False,0,0,False,False,4,Correct server command or required flags.,[],[],False
+serve-2,colony,104271,19.065,4,1,True,1,1,0,serve,103761,510,93696,10575,True,1,1,True,False,2,Correct server command or required flags.,['evidence'],['evidence'],False
+tests-2,colony,32717,8.233,1,1,True,1,1,0,tests,32605,112,29184,3533,True,1,1,True,True,0,Correct pytest invocation.,['evidence'],['evidence'],False
+tests-2,baseline,45185,8.303,2,0,True,0,0,0,tests,44883,302,40448,4737,False,0,0,False,False,2,Correct pytest invocation.,[],[],False
+scope-2,baseline,63477,8.424,3,0,True,0,0,0,scope,63198,279,55424,8053,False,0,0,False,False,3,"Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits.",[],[],False
+scope-2,colony,43950,9.042,1,1,False,0,0,0,scope,43771,179,39936,4014,True,1,1,False,False,0,Refusal: client identity/join excerpt does not answer namespace authorization. Claims repository tools unavailable without attempting a repository call. Failure retained.,['evidence'],[],False
+stale-3,colony,138562,21.723,6,1,True,0,0,0,stale,138039,523,126080,12482,True,1,1,False,False,4,Correct fingerprint change and stale behavior. Retrieval not relevant: Capture/privacy passage omits file-change detection.,['evidence'],[],False
+stale-3,baseline,45769,8.984,2,0,True,0,0,0,stale,45578,191,37120,8649,False,0,0,False,False,2,Correct fingerprint change and stale behavior.,[],[],False
+capture-2,baseline,49338,7.136,2,0,True,0,0,0,capture,49151,187,41344,7994,False,0,0,False,False,2,Correct output fields or always-tainted behavior.,[],[],False
+capture-2,colony,32484,8.281,1,1,True,1,1,0,capture,32359,125,30592,1892,True,1,1,True,True,0,Correct output fields or always-tainted behavior.,['evidence'],['evidence'],False
+install-3,colony,32691,8.836,1,1,True,1,1,0,install,32567,124,28800,3891,True,1,1,True,True,0,Correct editable dev-extra installation.,['evidence'],['evidence'],False
+install-3,baseline,31881,5.716,1,0,True,0,0,0,install,31780,101,28288,3593,False,0,0,False,False,1,Correct editable dev-extra installation.,[],[],False
+tests-3,baseline,31969,6.159,1,0,True,0,0,0,tests,31871,98,30464,1505,False,0,0,False,False,1,Correct pytest invocation.,[],[],False
+tests-3,colony,32392,11.71,1,1,True,1,1,0,tests,32279,113,30720,1672,True,1,1,True,True,0,Correct pytest invocation.,['evidence'],['evidence'],False
+install-1,colony,32739,9.191,1,1,True,1,1,0,install,32565,174,28928,3811,True,1,1,True,True,0,Correct editable dev-extra installation.,['evidence'],['evidence'],False
+install-1,baseline,31426,5.839,1,0,True,0,0,0,install,31291,135,26624,4802,False,0,0,False,False,1,Correct editable dev-extra installation.,[],[],False
+serve-3,baseline,67638,9.719,2,0,True,0,0,0,serve,67407,231,52992,14646,False,0,0,False,False,2,Correct server command or required flags.,[],[],False
+serve-3,colony,110628,18.171,4,1,True,0,0,0,serve,110176,452,100224,10404,True,1,1,False,False,2,Correct server command or required flags. Retrieval not relevant: MCP stdio setup does not identify required HTTP serve flags.,['evidence'],[],False
+stale-1,colony,32729,8.299,1,1,True,1,1,0,stale,32572,157,28928,3801,True,1,1,True,True,0,Correct fingerprint change and stale behavior.,['answer'],['answer'],True
+stale-1,baseline,92057,11.03,4,0,True,0,0,0,stale,91747,310,86016,6041,False,0,0,False,False,4,Correct fingerprint change and stale behavior.,[],[],False
+scope-3,baseline,65549,8.671,2,0,True,0,0,0,scope,65321,228,57344,8205,False,0,0,False,False,2,"Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits.",[],[],False
+scope-3,colony,184368,20.751,8,2,True,0,0,0,scope,183678,690,165248,19120,True,2,2,False,False,4,"Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits. Retrieval not relevant: Quick-start flags do not establish the requested ungranted-namespace behavior; agent researched. Two identical irrelevant lookups retained.","['evidence', 'evidence']",[],False
+scope-1,colony,32473,7.614,1,1,True,1,1,0,scope,32305,168,30720,1753,True,1,1,True,True,0,"Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits.",['answer'],['answer'],True
+scope-1,baseline,92930,11.879,3,0,True,0,0,0,scope,92602,328,77312,15618,False,0,0,False,False,3,"Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits.",[],[],False
+serve-1,baseline,65688,9.015,2,0,True,0,0,0,serve,65401,287,55168,10520,False,0,0,False,False,2,Correct server command or required flags.,[],[],False
+serve-1,colony,33102,9.992,1,1,True,1,1,0,serve,32890,212,30592,2510,True,1,1,True,True,0,"Correct server command or required flags. Saved MCP answer differs from HTTP server question, but attached Quick-start source supplies the command; evidence-assisted relevance only.",['answer'],['answer'],False
+tests-1,colony,43192,9.634,1,1,True,1,1,0,tests,43034,158,41088,2104,True,1,1,True,True,0,Correct pytest invocation.,['evidence'],['evidence'],False
+tests-1,baseline,44500,9.102,1,0,True,0,0,0,tests,44343,157,38784,5716,False,0,0,False,False,1,Correct pytest invocation.,[],[],False
+stale-2,baseline,60517,8.973,3,0,True,0,0,0,stale,60280,237,56192,4325,False,0,0,False,False,3,Correct fingerprint change and stale behavior.,[],[],False
+stale-2,colony,145430,18.738,6,2,True,2,2,0,stale,144900,530,124032,21398,True,2,2,True,False,3,"Correct fingerprint change and stale behavior. Two asks for the same relevant packet count as two calls, one question.","['answer', 'answer']","['answer', 'answer']",True
+capture-1,colony,59892,12.168,1,1,True,1,1,0,capture,59693,199,52480,7412,True,1,1,True,True,0,Correct output fields or always-tainted behavior.,['evidence'],['evidence'],False
+capture-1,baseline,62729,8.691,3,0,True,0,0,0,capture,62488,241,51328,11401,False,0,0,False,False,3,Correct output fields or always-tainted behavior.,[],[],False

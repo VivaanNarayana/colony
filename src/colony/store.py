@@ -14,8 +14,10 @@ from colony.retrieval import (
     CANDIDATES,
     embed,
     embed_passages,
+    evidence_score,
     fused_score,
     index_version,
+    keyword_coverage,
     models,
     passage,
     rank,
@@ -217,46 +219,68 @@ class Store:
                 FROM source_chunks c JOIN source_vectors v ON c.id=v.rowid
                 JOIN trails t ON c.trail_id=t.id
                 WHERE t.namespace IN ({placeholders}) AND t.created_at>=?
-                ORDER BY distance LIMIT 24""",
+                ORDER BY distance, t.created_at DESC""",
                 [embed(question, query=True), *namespaces, time.time() - max_age],
             ).fetchall()
-            cache, candidates = {}, []
+            cache, groups, candidates = {}, {}, []
             for row in rows:
-                if row["distance"] is None or 1 - row["distance"] < 0.45:
+                if row["distance"] is None:
                     continue
-                key = (row["ref"], row["content_hash"])
+                key = (row["namespace"], row["ref"], row["content_hash"], row["line"])
+                groups.setdefault(key, []).append(row)
+            for (_, ref, digest, line), linked in groups.items():
+                key = (ref, digest)
                 if key not in cache:
                     cache[key] = {
                         line: text
                         for _, line, text in source_chunks(
-                            self.repo, [Source(ref=row["ref"], content_hash=row["content_hash"])]
+                            self.repo, [Source(ref=ref, content_hash=digest)]
                         )
                     }
-                if row["line"] in cache[key]:
-                    candidates.append((row, cache[key][row["line"]]))
+                if line in cache[key]:
+                    candidates.append((linked, cache[key][line]))
+            lexical = keyword_coverage(question, [text for _, text in candidates])
+            dense = [
+                i for i, (linked, _) in enumerate(candidates) if 1 - linked[0]["distance"] >= 0.45
+            ][:24]
+            sparse = [
+                i
+                for i in sorted(range(len(lexical)), key=lexical.__getitem__, reverse=True)
+                if lexical[i] >= 0.15
+            ][:24]
+            # A lexical candidate can rescue evidence below the dense cutoff. Keep
+            # the expensive cross-encoder bounded to at most 48 distinct passages.
+            chosen = sorted(set(dense) | set(sparse))
+            candidates = [candidates[i] for i in chosen]
+            lexical = [lexical[i] for i in chosen]
             scores = rank(question, [text for _, text in candidates])
             ordered = sorted(
                 [
-                    (row, fused_score(1 - row["distance"], score))
-                    for (row, _), score in zip(candidates, scores, strict=True)
+                    (linked, evidence_score(1 - linked[0]["distance"], score, coverage))
+                    for (linked, _), score, coverage in zip(
+                        candidates, scores, lexical, strict=True
+                    )
                     if score >= -8.0
                 ],
                 key=lambda item: item[1],
                 reverse=True,
             )
             checked = set()
-            for row, relevance in ordered:
-                if row["id"] in checked:
-                    continue
-                checked.add(row["id"])
-                sources = self.sources(db, row["id"])
-                status, checks = validate(self.repo, sources)
-                if status != "validated":
-                    continue
-                evidence = excerpts(
-                    self.repo, sources, question, preferred=[(row["ref"], row["line"])]
-                )
-                if not evidence:
+            for linked, relevance in ordered:
+                for row in linked:
+                    if row["id"] in checked:
+                        continue
+                    checked.add(row["id"])
+                    sources = self.sources(db, row["id"])
+                    status, checks = validate(self.repo, sources)
+                    if status != "validated":
+                        continue
+                    evidence = excerpts(
+                        self.repo, sources, question, preferred=[(row["ref"], row["line"])]
+                    )
+                    if evidence:
+                        break
+                else:
                     continue
                 now = time.time()
                 db.execute(
