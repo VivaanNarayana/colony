@@ -214,20 +214,38 @@ class Store:
         *,
         include_evidence_files: bool = False,
     ):
+        if not namespaces:
+            return {"hit": False, "reason": "no_pull_scope"}
+        query_vector = embed(question, query=True)
         answer = self.find_answer(
-            question, namespaces, max_age, threshold, include_evidence_files=include_evidence_files
+            question,
+            namespaces,
+            max_age,
+            threshold,
+            include_evidence_files=include_evidence_files,
+            query_vector=query_vector,
         )
         if answer.get("status") == "validated" or not namespaces:
             return answer
         return (
             self.find_evidence(
-                question, namespaces, max_age, include_evidence_files=include_evidence_files
+                question,
+                namespaces,
+                max_age,
+                include_evidence_files=include_evidence_files,
+                query_vector=query_vector,
             )
             or answer
         )
 
-    def find_evidence(self, question, namespaces, max_age, *, include_evidence_files=False):
+    def find_evidence(
+        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None
+    ):
         """Reuse previously cited sources, never index or search untouched repository files."""
+        if not namespaces:
+            return None
+        if query_vector is None:
+            query_vector = embed(question, query=True)
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
             rows = db.execute(
@@ -237,7 +255,7 @@ class Store:
                 JOIN trails t ON c.trail_id=t.id
                 WHERE t.namespace IN ({placeholders}) AND t.created_at>=?
                 ORDER BY distance, t.created_at DESC""",
-                [embed(question, query=True), *namespaces, time.time() - max_age],
+                [query_vector, *namespaces, time.time() - max_age],
             ).fetchall()
             cache, groups, candidates = {}, {}, []
             for row in rows:
@@ -363,12 +381,13 @@ class Store:
         threshold: float,
         *,
         include_evidence_files: bool = False,
+        query_vector: bytes | None = None,
     ):
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
-            vector = embed(question, query=True)
+            vector = query_vector if query_vector is not None else embed(question, query=True)
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
             rows = db.execute(
                 f"""SELECT t.*, min(vec_distance_cosine(v.embedding, ?),
