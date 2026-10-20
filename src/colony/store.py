@@ -290,6 +290,18 @@ class Store:
             # A lexical candidate can rescue evidence below the dense cutoff. Keep
             # the expensive cross-encoder bounded to at most 48 distinct passages.
             chosen = sorted(set(dense) | set(sparse))
+            # These eligibility guards do not use model scores. Apply them after
+            # candidate selection so IDF, cutoffs and tie order stay unchanged,
+            # but before spending inference on passages that cannot be returned.
+            chosen = [
+                i
+                for i in chosen
+                if (
+                    procedural_text(candidates[i][1])
+                    if procedure
+                    else lexical[i] >= 0.5 and local_term_support(query_terms, candidates[i][1])
+                )
+            ]
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
             scores = rank(question, [text for _, text in candidates])
@@ -301,10 +313,7 @@ class Store:
                     )
                     if score >= -5.0
                     and (
-                        (
-                            coverage >= 0.5
-                            and (procedure or local_term_support(query_terms, text))
-                        )
+                        (coverage >= 0.5 and (procedure or local_term_support(query_terms, text)))
                         or (procedure and procedural_text(text) and score >= -2)
                     )
                     and (not procedure or procedural_text(text))

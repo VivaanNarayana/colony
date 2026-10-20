@@ -70,3 +70,22 @@ candidates, including wrong-topic hits; such hits do not become useful matches m
 because an agent used them. Legacy reporter rows without raw counts fall back to matches.
 This accounting correction changes no questions, prompts, native usage, relevance labels,
 or correctness rubric.
+
+## Comparing lookup implementations
+
+`python scripts/benchmark_lookup_live.py --baseline-ref <main-commit> --work
+<fresh-private-runtime-dir> --output <fresh-results-dir>` compares main and the
+current committed feature directly. It runs the same original 24 questions and
+prompts through both Colony implementations, alternating which arm goes first
+on each question. Both stores start empty and retain their own learned history;
+both research the identical frozen main corpus. The runner exports main's code
+and sets each subprocess's import path explicitly, so `--baseline-ref` selects
+the implementation as well as the corpus in this runner.
+
+All 48 completed sessions, native usage and answers are retained. Incomplete runs
+and protocol violations fail closed; there is no best-of selection or automatic
+retry. Results still require relevance, correctness, citation and protocol review.
+This repeatedly observed suite is a regression check, and an observed wall-time
+or token win does not by itself establish statistically significant production
+savings. Use the separate provider-free `scripts/benchmark_lookup.py` for paired
+local latency and inference-work measurements on identical seeded memory.

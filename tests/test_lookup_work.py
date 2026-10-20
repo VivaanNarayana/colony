@@ -128,3 +128,49 @@ def test_procedure_guard_skips_reranking_ineligible_overview(team, monkeypatch):
         "hit"
     ]
     assert not reranked
+
+
+@pytest.mark.parametrize(
+    "question, text, coverage, expected",
+    [
+        ("What detects configuration changes?", "Configuration changes use digests.", 0.49, False),
+        ("What detects configuration changes?", "Configuration changes use digests.", 0.5, True),
+        ("What detects configuration changes?", "Unrelated audit retention details.", 0.9, False),
+        ("Start the worker", "The worker executes background jobs.", 0.9, False),
+        ("Start the worker", "Run `workerctl launch`.", 0.1, True),
+    ],
+)
+def test_evidence_guards_skip_impossible_passages_before_reranking(
+    team, monkeypatch, question, text, coverage, expected
+):
+    app, _, repo, _, key = team
+    store = app.state.store
+    (repo / "guide.md").write_text(text)
+    store.push(
+        Trail(
+            id="3" * 32,
+            namespace="team",
+            question="Audit settings",
+            content="Retain audit records.",
+            sources=[snapshot(repo, "guide.md")],
+        ),
+        key.grant,
+    )
+    vector = sqlite_vec.serialize_float32([1.0] + [0.0] * 383)
+    with store.connect() as db:
+        db.execute("UPDATE source_vectors SET embedding=?", (vector,))
+    monkeypatch.setattr(
+        colony.store, "keyword_coverage", lambda q, passages: [coverage] * len(passages)
+    )
+    reranked = []
+
+    def rank(question, passages):
+        reranked.extend(passages)
+        return [8.0] * len(passages)
+
+    monkeypatch.setattr(colony.store, "rank", rank)
+    result = store.find_evidence(question, ["team"], 604800, query_vector=vector)
+    assert bool(result) == expected
+    assert bool(reranked) == expected
+    if expected:
+        assert text in result["content"]
