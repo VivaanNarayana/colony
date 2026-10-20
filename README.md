@@ -109,7 +109,10 @@ pinned because the v2 interface differs.
 `run` launches an explicitly provided command with `shell=False`, prints a capture notice,
 and records only the final 90 KB of combined stdout/stderr plus exit code. The command's
 exit code is preserved. Inputs, environment, and tool traces are not captured. Output is
-temporarily spooled to a local OS temporary file, removed when capture completes; disk
+temporarily spooled to a local OS temporary file. Secret patterns are matched against
+the complete spool before overlapping secret bytes are removed from the retained tail;
+truncation cannot hide their opening markers. Unterminated private-key blocks are
+redacted through the end of output. The file is removed when capture completes; disk
 usage can grow with command output. Captures are always tainted because an arbitrary
 child process's external reads cannot be detected reliably. A signed `--capture none`
 grant blocks capture before the command starts. Paths are fingerprinted before launch.

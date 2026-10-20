@@ -5,6 +5,7 @@ import httpx
 import pytest
 from cryptography.fernet import Fernet
 
+from colony.cli import execute, parser
 from colony.client import Client
 from colony.models import Trail
 from colony.security import issue, private_write
@@ -86,3 +87,60 @@ def test_join_rejects_forgery_and_remote_plaintext_before_network(team, tmp_path
         with pytest.raises(ValueError):
             Client.join(home, keyfile, admin / "issuer.pub")
         assert not home.exists()
+
+
+@pytest.mark.parametrize("offline", [False, True])
+def test_capture_redacts_key_crossing_tail_boundary(team, tmp_path, monkeypatch, offline):
+    import sys
+
+    app, api, repo, admin, key = team
+    client = local_client(tmp_path, key, admin)
+
+    def post(url, **kwargs):
+        if offline:
+            raise httpx.ConnectError("offline")
+        kwargs.pop("timeout", None)
+        return api.post(httpx.URL(url).path, **kwargs)
+
+    monkeypatch.setattr(httpx, "post", post)
+    # Exactly ten bytes of the opening delimiter fall outside the retained tail.
+    pem = "-----BEGIN RSA PRIVATE KEY-----\nSYNTHETIC_KEY_BODY\n-----END RSA PRIVATE KEY-----\n"
+    code = f"import sys; p={pem!r}; sys.stdout.write(p + 'x'*(90010-len(p))); sys.exit(7)"
+    args = parser().parse_args(
+        [
+            "--home",
+            str(client.home),
+            "run",
+            "--ns",
+            "team",
+            "--question",
+            "capture regression",
+            "--repo",
+            str(repo),
+            "--",
+            sys.executable,
+            "-c",
+            code,
+        ]
+    )
+    assert execute(args) == 7
+    if offline:
+        queued = next((client.home / "queue").glob("*.enc"))
+        payload = json.loads(
+            Fernet((client.home / "queue.key").read_bytes()).decrypt(queued.read_bytes())
+        )
+        content = payload["trail"]["content"]
+        offline = False
+        assert client.retry() == {"sent": 1, "pending": False}
+        with app.state.store.connect() as db:
+            row = db.execute("SELECT content_ref FROM trails").fetchone()
+        assert app.state.store.read_content(row["content_ref"]) == content
+    else:
+        with app.state.store.connect() as db:
+            row = db.execute("SELECT content_ref FROM trails").fetchone()
+        content = app.state.store.read_content(row["content_ref"])
+    assert "SYNTHETIC_KEY_BODY" not in content
+    assert "PRIVATE KEY" not in content
+    assert "[REDACTED]" in content
+    assert "Exit code: 7\nTruncated: True\n" in content
+    assert content.endswith("x" * 100)

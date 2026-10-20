@@ -11,6 +11,7 @@ from pathlib import Path
 import httpx
 import uvicorn
 
+from colony.capture import scrubbed_tail
 from colony.client import Client
 from colony.models import Grant, Scope, Trail
 from colony.security import generate_keys, issue, private_write
@@ -154,14 +155,12 @@ def execute(args):
                 shell=False,
                 check=False,
             )
-            size = output.tell()
-            output.seek(max(0, size - 90000))
-            content = output.read().decode("utf-8", errors="replace")
+            content, truncated = scrubbed_tail(output)
         trail = Trail(
             id=uuid.uuid4().hex,
             namespace=args.ns,
             question=args.question,
-            content=f"Exit code: {process.returncode}\nTruncated: {size > 90000}\n{content}",
+            content=f"Exit code: {process.returncode}\nTruncated: {truncated}\n{content}",
             sources=sources,
             capture="outputs",
             tainted=True,
