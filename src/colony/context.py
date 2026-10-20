@@ -10,7 +10,7 @@ from colony.security import PATTERNS
 from colony.validation import repo_file
 
 
-def excerpts(root: Path, sources: list[Source], question: str) -> list[dict]:
+def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str]]:
     candidates = []
     # Only files explicitly attached to this scoped trail can supply context. Never search
     # the checkout on a miss, follow links, or expose unrelated repository content.
@@ -29,22 +29,30 @@ def excerpts(root: Path, sources: list[Source], question: str) -> list[dict]:
         for pattern in PATTERNS:
             text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
         lines = text.splitlines()
-        for start in range(0, min(len(lines), 2000), 16):
-            block = "\n".join(lines[start : start + 24])
+        for start in range(0, min(len(lines), 2000), 8):
+            block = "\n".join(lines[start : start + 16])
             if block.strip():
                 candidates.append((source.ref, start + 1, block[:2400]))
             if len(candidates) >= 96:
                 break
         if len(candidates) >= 96:
             break
+    return candidates
+
+
+def excerpts(root: Path, sources: list[Source], question: str) -> list[dict]:
+    candidates = source_chunks(root, sources)
     scores = rank(question, [c[2] for c in candidates])
-    selected, budget = [], 4800
+    selected, budget = [], 2800
+    best = max(scores, default=0)
     for index in sorted(range(len(scores)), key=scores.__getitem__, reverse=True):
         ref, start, text = candidates[index]
         # Avoid spending the response on overlapping windows from the same file.
-        if any(s["ref"] == ref and abs(s["line"] - start) < 24 for s in selected):
+        if scores[index] < best - 2:
             continue
-        if len(selected) >= 3 or budget < 300:
+        if any(s["ref"] == ref and abs(s["line"] - start) < 16 for s in selected):
+            continue
+        if len(selected) >= 2 or budget < 300:
             break
         text = text[:budget]
         selected.append({"ref": ref, "line": start, "text": text})

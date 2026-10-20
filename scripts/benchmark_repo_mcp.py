@@ -16,7 +16,12 @@ def read_file(path: str) -> dict:
     """Read README.md, pyproject.toml, or src/colony/*.py; return content and actual SHA256."""
     target = (ROOT / path).resolve()
     target.relative_to(ROOT)
-    if not (path in {"README.md", "pyproject.toml"} or path.startswith("src/colony/")):
+    allowed = {
+        ROOT / "README.md",
+        ROOT / "pyproject.toml",
+        *list((ROOT / "src/colony").glob("*.py")),
+    }
+    if target not in {p.resolve() for p in allowed}:
         raise ValueError("Outside research corpus")
     data = target.read_bytes()
     return {

@@ -1,0 +1,482 @@
+{
+  "mcp-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection command/configuration or ask/push tool names."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection command/configuration or ask/push tool names."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+  },
+  "outage-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+  },
+  "install-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output-only capture fields or always-tainted rule for the question."
+  },
+  "capture-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output-only capture fields or always-tainted rule for the question."
+  },
+  "outage-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+  },
+  "outage-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+  },
+  "mcp-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection command/configuration or ask/push tool names."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection command/configuration or ask/push tool names."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio connection command/configuration or ask/push tool names."
+  },
+  "mcp-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection command/configuration or ask/push tool names."
+  },
+  "serve-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required repo/data/issuer flags."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required repo/data/issuer flags."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored."
+  },
+  "tests-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored. Names pytest and tests directory but omits an explicit shell invocation; accepted at runner-level factual correctness, conservatively favoring baseline."
+  },
+  "scope-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed-grant namespace push/pull restrictions for the question."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed-grant namespace push/pull restrictions for the question."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed SHA256 / stale evidence behavior."
+  },
+  "stale-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed SHA256 / stale evidence behavior."
+  },
+  "capture-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output-only capture fields or always-tainted rule for the question."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output-only capture fields or always-tainted rule for the question. Saved answer lacks taint, but current README evidence explicitly supplies it; evidence-assisted reuse."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject."
+  },
+  "install-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject."
+  },
+  "tests-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject."
+  },
+  "install-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject."
+  },
+  "serve-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required repo/data/issuer flags."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required repo/data/issuer flags."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed SHA256 / stale evidence behavior."
+  },
+  "stale-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed SHA256 / stale evidence behavior."
+  },
+  "scope-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed-grant namespace push/pull restrictions for the question."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed-grant namespace push/pull restrictions for the question."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed-grant namespace push/pull restrictions for the question."
+  },
+  "scope-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed-grant namespace push/pull restrictions for the question."
+  },
+  "serve-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required repo/data/issuer flags."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct server command or required repo/data/issuer flags."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored."
+  },
+  "tests-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored."
+  },
+  "stale-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed SHA256 / stale evidence behavior."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed SHA256 / stale evidence behavior."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output-only capture fields or always-tainted rule for the question."
+  },
+  "capture-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output-only capture fields or always-tainted rule for the question."
+  }
+}

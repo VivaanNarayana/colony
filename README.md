@@ -115,10 +115,19 @@ cross-encoder logit, with a default 0.62 cutoff; these scores are ranking heuris
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
-Validated hits include at most three current evidence excerpts, totaling 4,800 characters,
+Validated hits include at most two current evidence excerpts, totaling 2,800 characters,
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
 not a truth certificate; incomplete or contradictory answers still require research.
+
+When no validated saved answer matches, Colony can reuse evidence from an earlier trail.
+On push it indexes bounded, scrubbed passages from the cited files whose hashes match
+the server checkout. It never crawls uncited files or initializes memory from the repo.
+Evidence matches use a separate 0.54 fused-score cutoff after a 0.55 dense filter;
+all attached sources and the age limit must still pass on pull. `match_kind: "answer"`
+identifies a saved answer; `match_kind: "evidence"` identifies supporting source context
+with no matching saved answer. Agents must read that context and assess whether it
+answers the question. This broadens reuse beyond paraphrases of stored questions.
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
 FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
@@ -131,8 +140,9 @@ on a disconnected host. Changing directories requires a server restart.
 Opening an older database atomically rebuilds its vectors from encrypted trail bodies.
 The index version includes the actual embedding-weight SHA-256, so model changes cannot
 silently mix vector spaces. This can take time and holds a database write lock; back up
-the data directory before upgrades. Six application tables plus index-version metadata
-are retained. Retrieval currently scans permitted vectors and is intended for one small team.
+the data directory before upgrades. Source-passage metadata and vectors are stored alongside
+the original application tables; excerpt text is reread from matching files, not stored in
+plaintext. Retrieval currently scans permitted vectors and is intended for one small team.
 
 One service, one team, one repository. Bind defaults to loopback; for remote use, issue
 keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client

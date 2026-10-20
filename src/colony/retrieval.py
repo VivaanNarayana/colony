@@ -13,7 +13,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v2:{EMBED_MODEL}:question-answer-and-question"
+INDEX_VERSION = f"semantic-v3:{EMBED_MODEL}:questions-answers-source-blocks16-8"
 CANDIDATES = 12
 
 
@@ -67,3 +67,12 @@ def rank(question: str, passages: list[str]) -> list[float]:
         return []
     _, model = models()
     return [float(score) for score in model.rerank(question, passages)]
+
+
+def embed_passages(texts: list[str]) -> list[bytes]:
+    model, _ = models()
+    return (
+        [sqlite_vec.serialize_float32(v.tolist()) for v in model.passage_embed(texts)]
+        if texts
+        else []
+    )
