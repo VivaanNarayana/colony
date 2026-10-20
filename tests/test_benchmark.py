@@ -1,4 +1,8 @@
 import importlib.util
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -8,6 +12,39 @@ spec = importlib.util.spec_from_file_location(
 )
 benchmark = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(benchmark)
+
+
+@pytest.mark.parametrize("selected", ["main", "feature"])
+def test_live_launcher_pins_imports_despite_conflicting_pythonpath(tmp_path, monkeypatch, selected):
+    scripts = Path(__file__).parents[1] / "scripts"
+    monkeypatch.syspath_prepend(str(scripts))
+    import benchmark_lookup_live as paired
+
+    sources = {}
+    for name in ["main", "feature"]:
+        source = tmp_path / name / "src"
+        package = source / "colony"
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text(f"MARKER = {name!r}\n")
+        (package / "mcp.py").write_text("# MCP implementation marker\n")
+        (package / "cli.py").write_text(
+            "from colony import MARKER\ndef main():\n    print(MARKER)\n"
+        )
+        sources[name] = source
+    launcher = tmp_path / "runner/implementation.py"
+    paired.write_bootstrap(sources[selected], launcher, selected)
+    result = subprocess.run(
+        [sys.executable, str(launcher), "mcp"],
+        env={**os.environ, "PYTHONPATH": str(sources["feature"])},
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    )
+    assert result.stdout.strip() == selected
+    proof = json.loads(launcher.with_name("mcp-implementation.json").read_text())
+    assert proof["revision"] == selected
+    assert Path(proof["module_paths"]["colony.mcp"]).is_relative_to(sources[selected])
 
 
 def test_task_set_and_paired_metrics():

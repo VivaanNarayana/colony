@@ -79,8 +79,11 @@ current committed feature directly. It runs the same original 24 questions and
 prompts through both Colony implementations, alternating which arm goes first
 on each question. Both stores start empty and retain their own learned history;
 both research the identical frozen main corpus. The runner exports main's code
-and sets each subprocess's import path explicitly, so `--baseline-ref` selects
-the implementation as well as the corpus in this runner.
+and launches both frozen implementations through explicit bootstrap scripts,
+so `--baseline-ref` selects the implementation as well as the corpus. Each server
+and subject MCP process records its actual imported module paths and source hashes;
+the runner and analyzer compare these with the pinned revisions. This avoids
+relying on `PYTHONPATH` surviving a child tool process's environment filtering.
 
 All 48 completed sessions, native usage and answers are retained. Incomplete runs
 and protocol violations fail closed; there is no best-of selection or automatic

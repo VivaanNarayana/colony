@@ -1,9 +1,12 @@
 """Audit native paired lookup trials and explicit per-answer reviewer labels."""
 
 import argparse
+import hashlib
+import io
 import json
 import random
 import subprocess
+import zipfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -28,9 +31,36 @@ def compare(results, local):
         ],
     }
     paired, prompts, metadata, manifests = {}, {}, {}, {}
+    implementations_verified = True
     for arm in ["main", "feature"]:
         directory = results / arm
         metadata[arm] = read_json(directory / "metadata.json")
+        proof_path = directory / "loaded-implementations.json"
+        if not proof_path.exists():
+            implementations_verified = False
+        else:
+            revision = protocol["baseline_commit" if arm == "main" else "feature_commit"]
+            archive = subprocess.check_output(
+                ["git", "archive", "--format=zip", revision, "src"],
+                cwd=Path(__file__).resolve().parents[1],
+            )
+            with zipfile.ZipFile(io.BytesIO(archive)) as z:
+                expected = {
+                    name.removeprefix("src/"): hashlib.sha256(z.read(name)).hexdigest()
+                    for name in z.namelist()
+                    if name.endswith(".py")
+                }
+            proofs = read_json(proof_path)
+            assert len(proofs) == 25
+            assert proofs[0]["role"] == "server"
+            assert [p["task_id"] for p in proofs[1:]] == protocol["tasks"]
+            for proof in proofs:
+                assert proof["revision"] == revision and proof["source_sha256"] == expected
+                assert all(
+                    Path(p).is_relative_to(Path(proof["source"]))
+                    for p in proof["module_paths"].values()
+                )
+                assert "colony." + proof["role"] in proof["module_paths"]
         manifests[arm] = read_json(directory / "corpus-sha256.json")
         reviews = read_json(directory / "reviews.json")
         rows = [
@@ -165,6 +195,7 @@ def compare(results, local):
     report["descriptive_family_bootstrap_reduction_95pct"] = intervals
     report["same_prompts_order_and_corpus"] = True
     report["gate"] = {
+        "loaded_implementations_verified": implementations_verified,
         "tests_and_lint_pass": verification["tests_passed"] > 0
         and verification["tests_failed"] == 0
         and verification["ruff_passed"],

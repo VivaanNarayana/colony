@@ -18,6 +18,65 @@ from pathlib import Path
 import httpx
 import live_benchmark as live
 
+BOOTSTRAP = '''"""Load only this arm's frozen implementation, independent of inherited PYTHONPATH."""
+import hashlib
+import importlib
+import json
+import os
+import sys
+from pathlib import Path
+
+config = json.loads(Path(__file__).with_suffix(".json").read_text(encoding="utf-8"))
+source = Path(config["source"]).resolve()
+sys.path.insert(0, str(source))
+cli = importlib.import_module("colony.cli")
+role = "mcp" if "mcp" in sys.argv[1:] else "server" if "serve" in sys.argv[1:] else "cli"
+if role in {"mcp", "server"}:
+    importlib.import_module("colony." + role)
+paths = {name: str(Path(module.__file__).resolve())
+         for name, module in sys.modules.items()
+         if (name == "colony" or name.startswith("colony.")) and getattr(module, "__file__", None)}
+if not all(Path(path).is_relative_to(source) for path in paths.values()):
+    raise RuntimeError("Implementation import escaped its frozen source")
+hashes = {p.relative_to(source).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+          for p in source.rglob("*.py")}
+if hashes != config["source_sha256"]:
+    raise RuntimeError("Frozen implementation changed")
+proof = {"revision": config["revision"], "role": role, "pid": os.getpid(),
+         "source": str(source), "module_paths": paths, "source_sha256": hashes}
+Path(__file__).with_name(role + "-implementation.json").write_text(json.dumps(proof, indent=2))
+cli.main()
+'''
+
+
+def write_bootstrap(source, path, revision):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        p.relative_to(source).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in source.rglob("*.py")
+    }
+    path.write_text(BOOTSTRAP, encoding="utf-8")
+    path.with_suffix(".json").write_text(
+        json.dumps(
+            {"source": str(source.resolve()), "revision": revision, "source_sha256": manifest}
+        ),
+        encoding="utf-8",
+    )
+    return manifest
+
+
+def record_implementation(arm, role, task_id=None):
+    proof = json.loads((arm["runtime"] / f"{role}-implementation.json").read_text())
+    if proof["revision"] != arm["commit"] or proof["source_sha256"] != arm["manifest"]:
+        raise RuntimeError("Loaded implementation does not match pinned revision")
+    if "colony." + ("mcp" if role == "mcp" else "server") not in proof["module_paths"]:
+        raise RuntimeError("Expected implementation module was not loaded")
+    proof["task_id"] = task_id
+    path = arm["output"] / "loaded-implementations.json"
+    proofs = json.loads(path.read_text()) if path.exists() else []
+    proofs.append(proof)
+    path.write_text(json.dumps(proofs, indent=2), encoding="utf-8")
+
 
 def git(*args):
     return subprocess.check_output(["git", *args], cwd=live.ROOT, text=True).strip()
@@ -59,28 +118,31 @@ def main():
     feature = git("rev-parse", "HEAD")
     runtime.mkdir(parents=True)
     output.mkdir(parents=True)
-    reference = runtime / "implementation"
-    archive = subprocess.check_output(
-        ["git", "archive", "--format=zip", baseline, "src"], cwd=live.ROOT
-    )
-    with zipfile.ZipFile(io.BytesIO(archive)) as z:
-        z.extractall(reference)
+    for name, revision in [("main", baseline), ("feature", feature)]:
+        archive = subprocess.check_output(
+            ["git", "archive", "--format=zip", revision, "src"], cwd=live.ROOT
+        )
+        with zipfile.ZipFile(io.BytesIO(archive)) as z:
+            z.extractall(runtime / "implementation" / name)
     arms = {
         "main": {
             "runtime": runtime / "main",
             "output": output / "main",
-            "source": reference / "src",
+            "source": runtime / "implementation/main/src",
             "commit": baseline,
             "port": args.port,
         },
         "feature": {
             "runtime": runtime / "feat",
             "output": output / "feature",
-            "source": live.ROOT / "src",
+            "source": runtime / "implementation/feature/src",
             "commit": feature,
             "port": args.port + 1,
         },
     }
+    for arm in arms.values():
+        arm["bootstrap"] = arm["runtime"] / "implementation.py"
+        arm["manifest"] = write_bootstrap(arm["source"], arm["bootstrap"], arm["commit"])
     live.REF = baseline
     processes, logs = [], []
     original_pythonpath = os.environ.get("PYTHONPATH")
@@ -95,6 +157,7 @@ def main():
                 arm=name,
                 method="24 main/feature pairs; alternating first arm; independent empty stores",
                 excluded_preflight="None; every completed task is retained; no retries",
+                import_isolation="Explicit frozen-source launcher; actual server/MCP module paths and hashes verified",
             )
             metadata_path.write_text(json.dumps(metadata, indent=2))
             manifest = {
@@ -110,8 +173,7 @@ def main():
             process = subprocess.Popen(
                 [
                     str(live.PYTHON),
-                    "-m",
-                    "colony.cli",
+                    str(arm["bootstrap"]),
                     "serve",
                     "--repo",
                     str(live.RUN / "repo"),
@@ -127,6 +189,7 @@ def main():
             )
             processes.append(process)
             wait_ready(process, live.PORT)
+            record_implementation(arm, "server")
             subprocess.run(
                 [
                     str(live.PYTHON),
@@ -159,6 +222,7 @@ def main():
             "limits": "8 million aggregate tokens, 240s per task; no best-of runs or retries",
             "grading": "Primary-assistant core-fact review; also audit citation paths and protocol",
             "limitations": "Observed 24-question regression suite; sampling and cache variation remain",
+            "implementation_verification": "Frozen exports of both revisions; explicit launcher sets sys.path and records actual module paths and source SHA256 before serving; verified for both servers and every subject MCP session",
         }
         (output / "protocol.json").write_text(json.dumps(protocol, indent=2))
         tokens = 0
@@ -168,7 +232,8 @@ def main():
                     raise RuntimeError("Aggregate token stop reached")
                 activate(arms[name])
                 print(json.dumps({"arm": name, "task": task["task_id"]}), flush=True)
-                row = live.run_subject(task, "colony")
+                row = live.run_subject(task, "colony", implementation=arms[name]["bootstrap"])
+                record_implementation(arms[name], "mcp", task["task_id"])
                 tokens += row["tokens"]
                 events = [
                     json.loads(s)

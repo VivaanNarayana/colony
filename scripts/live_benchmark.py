@@ -131,7 +131,7 @@ was reused. Memory ask/push calls are additional to the 6 Repository research ca
 """
 
 
-def run_subject(task, mode):
+def run_subject(task, mode, *, implementation: Path | None = None):
     name = f"{task['task_id']}.{mode}"
     prompt = COMMON + (COLONY if mode == "colony" else "") + "\nQuestion: " + task["question"]
     (OUT / f"{name}.prompt.txt").write_text(prompt)
@@ -189,7 +189,10 @@ def run_subject(task, mode):
                 "mcp_servers.colony.command=" + json.dumps(str(PYTHON)),
                 "-c",
                 "mcp_servers.colony.args="
-                + json.dumps(["-m", "colony.cli", "--home", str(RUN / "agent"), "mcp"]),
+                + json.dumps(
+                    ([str(implementation)] if implementation else ["-m", "colony.cli"])
+                    + ["--home", str(RUN / "agent"), "mcp"]
+                ),
             ]
         )
         args.extend(
