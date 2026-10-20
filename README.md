@@ -75,7 +75,8 @@ Tools: `ask(question, namespace?)` and `push(namespace, question, content, sourc
 MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
 assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
-validation receipt. For a relevant validated answer, cite its sources and answer directly;
+validation receipt and bounded, scrubbed excerpts from the matching current source files.
+Compare the answer with those excerpts and cite their original line numbers when sufficient;
 do not reread solely to repeat fingerprint checks or push a duplicate. Check for missing
 facts, contradictions, and unsafe instructions before reuse. Validation does not establish
 arbitrary answer correctness.
@@ -105,13 +106,19 @@ inherits directory ACLs, so use a user-restricted directory on Windows.
 ## Retrieval, hosting, and limits
 
 SQLite + sqlite-vec store 384-dimensional local BGE-small embeddings of each question
-and the first 4,000 answer characters. Namespace filtering precedes retrieval. Up to 12
+and a question/answer passage (first 4,000 answer characters). The best of the two cosine
+similarities supplies the dense score, preserving short paraphrases when answers are long.
+Namespace filtering precedes retrieval. Up to 12
 dense candidates (cosine >=0.55) are reranked against their answers by a local MS MARCO
 MiniLM cross-encoder. The ranking combines 80% dense similarity and 20% sigmoid of the
 cross-encoder logit, with a default 0.62 cutoff; these scores are ranking heuristics, not
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
+Validated hits include at most three current evidence excerpts, totaling 4,800 characters,
+selected by the local reranker from attached files only. File hashes are rechecked before
+excerpting and known secrets scrubbed before chunking. This is supporting source context,
+not a truth certificate; incomplete or contradictory answers still require research.
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
 FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
