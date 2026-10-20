@@ -105,3 +105,21 @@ def test_complete_file_context_is_bounded_scrubbed_and_hash_checked(tmp_path):
     )
     assert large and all(not e["complete_file"] for e in large)
     assert sum(len(e["text"]) for e in large) <= 2800
+
+
+def test_ranked_sections_keep_order_and_original_source_text(tmp_path):
+    from colony.context import source_chunks
+
+    (tmp_path / "guide.md").write_text(
+        '# Service\n\n## Logging\n\nlogger --question "Deploy the service?"\n\n'
+        "## Deployment\n\nshipctl deploy --target production\n"
+    )
+    source = snapshot(tmp_path, "guide.md")
+    chunks = source_chunks(tmp_path, [source])
+    assert any("Section: Service > Deployment" in text for _, _, text in chunks)
+    assert all('"Deploy the service?"' not in text for _, _, text in chunks)
+    result = excerpts(
+        tmp_path, [source], "Deployment procedure", preferred=[("guide.md", 9), ("guide.md", 5)]
+    )
+    assert result[0]["text"].startswith("## Deployment")
+    assert 'logger --question "Deploy the service?"' in result[1]["text"]

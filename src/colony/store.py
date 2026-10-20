@@ -290,11 +290,21 @@ class Store:
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
                         continue
+                    permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
+                    # Near-tied passages can describe different parts of an answer.
+                    # Supply a second distinct section within the existing token cap,
+                    # using only this validated trail's already-cited files.
+                    preferred = [
+                        (alternatives[0]["ref"], alternatives[0]["line"])
+                        for alternatives, score in ordered
+                        if score >= relevance - 0.15
+                        and (alternatives[0]["ref"], alternatives[0]["content_hash"]) in permitted
+                    ][:8]
                     evidence = excerpts(
                         self.repo,
                         sources,
                         question,
-                        preferred=[(row["ref"], row["line"])],
+                        preferred=preferred,
                         whole_files=include_evidence_files,
                     )
                     if evidence:

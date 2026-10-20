@@ -6,6 +6,29 @@ from colony.models import Trail
 from colony.validation import snapshot
 
 
+def test_question_example_does_not_hide_deployment_in_a_different_section(team):
+    _, api, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Service\n\n## Command logging\n\n"
+        '```sh\nlogger run --question "How do I deploy the service?" -- echo placeholder\n```\n\n'
+        "## Deployment\n\nPublish a new production release using this command:\n\n"
+        "```sh\nshipctl deploy --target production\n```\n"
+    )
+    trail = Trail(
+        id=uuid.uuid4().hex,
+        namespace="team",
+        question="Record command output",
+        content="Use the logger wrapper.",
+        sources=[snapshot(repo, "guide.md")],
+    )
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    result = api.post(
+        "/ask", json={"question": "How do I deploy the service?"}, headers=auth(key)
+    ).json()
+    assert result["status"] == "validated" and result["match_kind"] == "evidence"
+    assert "shipctl deploy --target production" in result["content"]
+
+
 def test_reuses_only_previously_attached_current_source_context(team):
     app, api, repo, _, key = team
     (repo / "guide.md").write_text(

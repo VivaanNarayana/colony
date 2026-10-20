@@ -32,6 +32,16 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
     # Only explicitly attached, matching files supply context. Never crawl uncited files.
     for source in sources[:8]:
         lines = source_lines(root, source)[:2000]
+        headings, stack, fenced = {}, [], False
+        if Path(source.ref).suffix.lower() in {".md", ".markdown"}:
+            for i, text in enumerate(lines):
+                if text.lstrip().startswith(("```", "~~~")):
+                    fenced = not fenced
+                elif not fenced and (match := re.match(r"^(#{1,6}) (.+)", text)):
+                    level = len(match[1])
+                    stack = [(depth, title) for depth, title in stack if depth < level]
+                    stack.append((level, match[2]))
+                headings[i] = " > ".join(title for _, title in stack)
         start = None
         for end, text in enumerate([*lines, ""]):
             if text.strip():
@@ -45,7 +55,17 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
             starts = [start] if end - start <= 16 else range(start, end, 8)
             for begin in starts:
                 block = "\n".join(lines[begin : min(end, begin + 16)])
-                candidates.append((source.ref, begin + 1, block[:2400]))
+                # Rank paragraphs with their section meaning, including short code
+                # blocks. Example question arguments must not win by echoing a query.
+                # Display still rereads untouched source lines, preserving citations.
+                block = re.sub(
+                    r'(--question\s+)(["\'])([^\n]*?)\2',
+                    r"\1<question>",
+                    block,
+                )
+                title = headings.get(begin, "")
+                indexed = f"Section: {title}\n{block}" if title else block
+                candidates.append((source.ref, begin + 1, indexed[:2400]))
                 if len(candidates) >= 96:
                     break
             start = None
@@ -102,7 +122,11 @@ def excerpts(
     if preferred is not None:
         # A second reranking must not replace the globally selected passage
         # with unrelated text from the same file.
-        candidates = [c for c in candidates if (c[0], c[1]) in preferred]
+        order = {key: i for i, key in enumerate(preferred)}
+        candidates = sorted(
+            [c for c in candidates if (c[0], c[1]) in order],
+            key=lambda c: order[(c[0], c[1])],
+        )
         scores = [0.0] * len(candidates)
     else:
         scores = rank(question, [c[2] for c in candidates])

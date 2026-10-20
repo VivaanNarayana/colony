@@ -16,7 +16,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v6:{EMBED_MODEL}:questions-answers-source-paragraphs-sections"
+INDEX_VERSION = f"semantic-v7:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked"
 CANDIDATES = 12
 
 

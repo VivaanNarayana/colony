@@ -153,6 +153,12 @@ all attached sources and the age limit must still pass on pull. `match_kind: "an
 identifies a saved answer; `match_kind: "evidence"` identifies supporting source context
 with no matching saved answer. Agents must read that context and assess whether it
 answers the question. This broadens reuse beyond paraphrases of stored questions.
+Paragraph ranking includes its Markdown heading hierarchy; example `--question` values
+are masked for ranking so echoing a query cannot displace the section that answers it.
+The response can include two distinct sections from the same validated trail's cited
+files when their ranking scores are within 0.15, retaining ranking order and the existing
+2,800-character cap. Displayed text is always the original scrubbed file text with its
+original line numbers, without synthetic ranking headings or masked question values.
 Lexical selection rereads scoped, cited files with matching hashes; this bounded-file
 approach is intended for small teams and does not provide a scalable full-text index.
 
