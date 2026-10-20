@@ -1,0 +1,23 @@
+{
+  "schema_bytes": {
+    "main": 2290,
+    "feature": 2135
+  },
+  "receipt_bytes": {
+    "miss": {
+      "main": 237,
+      "feature": 171
+    },
+    "validated": {
+      "main": 958,
+      "feature": 983
+    },
+    "unverified": {
+      "main": 658,
+      "feature": 592
+    }
+  },
+  "same_factual_fields_and_content": true,
+  "same_input_contract_and_annotations": true,
+  "metric": "Serialized UTF-8 bytes; not estimated model tokens or measured LLM savings."
+}

@@ -91,13 +91,13 @@
   },
   "tests-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation."
+    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "scope-2.colony": {
     "correct": true,
@@ -131,13 +131,13 @@
   },
   "install-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "tests-3.colony": {
     "correct": true,
@@ -161,13 +161,13 @@
   },
   "serve-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "stale-1.colony": {
     "correct": true,
@@ -231,12 +231,13 @@
   },
   "capture-1.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
+      true,
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
   }
 }

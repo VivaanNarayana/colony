@@ -1,23 +1,23 @@
 {
   "mcp-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "outage-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
   },
   "install-2.colony": {
     "correct": true,
@@ -31,45 +31,35 @@
   },
   "capture-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "outage-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "outage-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
   },
   "mcp-2.colony": {
-    "correct": true,
-    "citation_valid": false,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
-  },
-  "mcp-3.colony": {
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
@@ -78,6 +68,16 @@
     "reused": true,
     "wrong_reused": false,
     "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "serve-2.colony": {
     "correct": true,
@@ -131,26 +131,6 @@
   },
   "install-3.colony": {
     "correct": true,
-    "citation_valid": false,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
-  },
-  "tests-3.colony": {
-    "correct": true,
-    "citation_valid": true,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct pytest invocation."
-  },
-  "install-1.colony": {
-    "correct": true,
     "citation_valid": true,
     "relevant_asks": [
       true
@@ -159,15 +139,35 @@
     "wrong_reused": false,
     "note": "Correct editable development-extras install command."
   },
-  "serve-3.colony": {
+  "tests-3.colony": {
     "correct": true,
     "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct server invocation or required data/repo/issuer flags."
   },
   "stale-1.colony": {
     "correct": true,
@@ -211,13 +211,13 @@
   },
   "tests-1.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct pytest invocation."
   },
   "stale-2.colony": {
     "correct": true,

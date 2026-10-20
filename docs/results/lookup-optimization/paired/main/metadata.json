@@ -51,5 +51,7 @@
     "colony": "52a86fa12a85e39287c0382595a311d2c27966541a081f9dcbc6d49d25ca2b41"
   },
   "implementation_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
-  "arm": "main"
+  "arm": "main",
+  "import_isolation": "Explicit frozen-source launcher; actual server/MCP module paths and hashes verified",
+  "research_adapter_sha256": "e0c4f74d2cb6ba2881ad4a296d51976677011acbb751dcd53c2509f04e067d98"
 }

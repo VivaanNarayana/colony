@@ -1,36 +1,38 @@
 {
   "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
-  "feature_commit": "5bbdfb9723f09e3c9b103d5a81984be88dd8e0f8",
+  "feature_commit": "6245d60f6052aa8dbacd54eb07b955b2443faa61",
   "arms": {
     "main": {
+      "protocol_violations": 0,
       "correct": 23,
       "valid_citations": 15,
       "raw_hits": 18,
       "relevant_hits": 17,
       "research_free_correct": 17,
-      "tokens": 1142619,
-      "cached_input_tokens": 1018112,
+      "tokens": 1141073,
+      "cached_input_tokens": 995968,
       "tool_calls": 45,
       "research_calls": 15,
       "ask_calls": 24,
-      "seconds": 279.548,
+      "seconds": 275.387,
       "tasks": 24,
-      "uncached_input_plus_output": 124507
+      "uncached_input_plus_output": 145105
     },
     "feature": {
+      "protocol_violations": 1,
       "correct": 24,
-      "valid_citations": 19,
-      "raw_hits": 18,
-      "relevant_hits": 18,
+      "valid_citations": 17,
+      "raw_hits": 19,
+      "relevant_hits": 19,
       "research_free_correct": 18,
-      "tokens": 1159316,
-      "cached_input_tokens": 1018496,
-      "tool_calls": 50,
+      "tokens": 1146383,
+      "cached_input_tokens": 1002112,
+      "tool_calls": 51,
       "research_calls": 20,
-      "ask_calls": 24,
-      "seconds": 234.184,
+      "ask_calls": 25,
+      "seconds": 233.875,
       "tasks": 24,
-      "uncached_input_plus_output": 140820
+      "uncached_input_plus_output": 144271
     }
   },
   "limitations": [
@@ -41,119 +43,122 @@
   ],
   "local_lookup_code_unchanged": true,
   "verification": {
-    "commit": "4f321c0cbdd088eb19c59ada00b410aae4277cfb",
+    "commit": "aa6f320d32360f59a397cce7f012b7ec86dd4f42",
     "command": "python -m pytest -q; python -m ruff check .; git diff --check",
-    "tests_passed": 83,
+    "tests_passed": 86,
     "tests_failed": 0,
     "tests_skipped": 1,
     "ruff_passed": true,
     "skip_reason": "Windows host does not permit symlinks",
     "platform": "Windows / Python 3.13.1",
-    "scope": "Local verification; no hosted CI configured"
+    "scope": "Local verification; no hosted CI configured",
+    "pytest_seconds": 46.67
   },
   "observed_reductions": {
-    "tokens": -0.014612919967198268,
-    "seconds": 0.16227624593987433,
-    "tool_calls": -0.11111111111111116,
-    "uncached_input_plus_output": -0.13102074582152
+    "tokens": -0.004653514718164331,
+    "seconds": 0.15074059414569319,
+    "tool_calls": -0.1333333333333333,
+    "uncached_input_plus_output": 0.005747562110196114
   },
   "families": {
     "mcp": {
       "main": {
-        "tokens": 145027.0,
-        "seconds": 36.998
+        "tokens": 145915.0,
+        "seconds": 41.178000000000004
       },
       "feature": {
-        "tokens": 152180.0,
-        "seconds": 33.931
+        "tokens": 144747.0,
+        "seconds": 28.994999999999997
       }
     },
     "outage": {
       "main": {
-        "tokens": 151699.0,
-        "seconds": 40.059
+        "tokens": 167992.0,
+        "seconds": 35.644
       },
       "feature": {
-        "tokens": 165512.0,
-        "seconds": 31.682999999999996
+        "tokens": 170271.0,
+        "seconds": 35.318
       }
     },
     "install": {
       "main": {
-        "tokens": 98768.0,
-        "seconds": 25.738999999999997
+        "tokens": 98871.0,
+        "seconds": 27.747999999999998
       },
       "feature": {
-        "tokens": 99334.0,
-        "seconds": 21.578
+        "tokens": 99071.0,
+        "seconds": 23.308
       }
     },
     "capture": {
       "main": {
-        "tokens": 98331.0,
-        "seconds": 31.031000000000002
+        "tokens": 98794.0,
+        "seconds": 27.04
       },
       "feature": {
-        "tokens": 98292.0,
-        "seconds": 21.233
+        "tokens": 110811.0,
+        "seconds": 27.11
       }
     },
     "serve": {
       "main": {
-        "tokens": 205055.0,
-        "seconds": 49.295
+        "tokens": 231060.0,
+        "seconds": 49.400999999999996
       },
       "feature": {
-        "tokens": 209731.0,
-        "seconds": 42.308
+        "tokens": 229997.0,
+        "seconds": 42.224000000000004
       }
     },
     "tests": {
       "main": {
-        "tokens": 97874.0,
-        "seconds": 25.450000000000003
+        "tokens": 98032.0,
+        "seconds": 26.374000000000002
       },
       "feature": {
-        "tokens": 97820.0,
-        "seconds": 23.653
+        "tokens": 97557.0,
+        "seconds": 21.779
       }
     },
     "scope": {
       "main": {
-        "tokens": 194173.0,
-        "seconds": 34.897999999999996
+        "tokens": 148630.0,
+        "seconds": 32.402
       },
       "feature": {
-        "tokens": 178741.0,
-        "seconds": 31.012
+        "tokens": 157120.0,
+        "seconds": 27.079
       }
     },
     "stale": {
       "main": {
-        "tokens": 151692.0,
-        "seconds": 36.078
+        "tokens": 151779.0,
+        "seconds": 35.6
       },
       "feature": {
-        "tokens": 157706.0,
-        "seconds": 28.786
+        "tokens": 136809.0,
+        "seconds": 28.062
       }
     }
   },
   "descriptive_family_bootstrap_reduction_95pct": {
     "tokens": [
-      -0.048848704542645116,
-      0.02697082113658955
+      -0.04322789390621873,
+      0.03270334260010832
     ],
     "seconds": [
-      0.11697226104679426,
-      0.21449014994199433
+      0.08475139289435141,
+      0.21242593187191683
     ]
   },
   "same_prompts_order_and_corpus": true,
   "gate": {
+    "loaded_implementations_verified": true,
     "tests_and_lint_pass": true,
     "local_lookup_improves": true,
     "correctness_not_reduced": true,
+    "feature_follows_tool_protocol": false,
     "observed_live_tokens_improve": false,
     "observed_live_time_improves": true
   },

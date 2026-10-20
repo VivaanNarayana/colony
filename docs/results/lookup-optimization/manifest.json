@@ -21,7 +21,7 @@
       "reason": "Validation refusal repeated before the descriptive evidence precision fix; full native traces retained."
     }
   },
-  "trace_format": "native-events.jsonl.gz contains JSONL records with run, session, event. Reconstruct each session's .events.jsonl by writing its event objects in order. Local workspace prefixes alone are redacted; native numeric usage and outcomes are unchanged. The separate paired/native-events.jsonl.gz uses the same wrapper format. Earlier native sessions and unsuccessful comparisons remain unchanged.",
+  "trace_format": "Each native-events.jsonl.gz is an independent trace container of JSONL records {run,session,event}. Identify sessions by (trace path,run,session). Only workspace prefixes are redacted; native numerical usage/outcomes are unchanged. All prior failed and interrupted trials are retained.",
   "status": "End-to-end gate remains open; retain draft and pause other features.",
   "plan": [
     "Review the current first feature before considering a merge; no other feature has been resumed.",
@@ -47,13 +47,20 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1142619
+      "native_tokens": 1141073
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1159316
+      "native_tokens": 1146383
     }
   },
   "primary_comparison": "paired/comparison.json",
-  "prior_comparison": "history/sequential-comparison.json (failed live token/time gates; fully retained)"
+  "prior_comparison": "history/sequential-comparison.json (failed live token/time gates; fully retained)",
+  "history_trials": {
+    "pruned-paired": "48 completed sessions; 24/24 feature vs 23/24 main; time improved but gross tokens +1.46%; gate failed. MCP source was identical on both arms at this revision; no runtime import proof was recorded.",
+    "compact-protocol": "6 completed sessions; rejected for duplicate ask and affected by MCP import isolation bug.",
+    "isolation-invalid": "16 completed sessions plus one interrupted native session; rejected because both arms loaded feature MCP code; known usage retained, interrupted usage unavailable.",
+    "verified-budget-abort": "9 completed import-verified sessions; original fail-fast policy stopped on main's seventh research operation. Retained in full. Current methodology instead enforces identical data budgets, counts all attempts and finishes the trial; feature policy failures still fail its gate."
+  },
+  "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision."
 }
