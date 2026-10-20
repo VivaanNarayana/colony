@@ -144,13 +144,15 @@ def test_real_cli_two_agents_capture_and_stale(running_team):
     assert denied.returncode == 1 and not marker.exists()
 
 
-def test_real_mcp_stdio_push_and_ask(running_team):
+@pytest.mark.parametrize("evidence_files", [False, True])
+def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
     _, homes, repo, _ = running_team
 
     async def exercise():
         parameters = StdioServerParameters(
             command=sys.executable,
-            args=["-m", "colony.cli", "--home", str(homes["a"]), "mcp"],
+            args=["-m", "colony.cli", "--home", str(homes["a"]), "mcp"]
+            + (["--evidence-files"] if evidence_files else []),
             env=dict(os.environ),
         )
         async with (
@@ -204,7 +206,8 @@ def test_real_mcp_stdio_push_and_ask(running_team):
             assert receipt["status"] == "validated"
             assert receipt["recommendation"] == "reuse_if_relevant"
             assert receipt["sources"][0]["ref"] == "settings.py"
-            assert receipt["evidence"][0]["complete_file"]
+            assert receipt["evidence"][0]["complete_file"] == evidence_files
+            assert "SHA-256 matched" in receipt["verification"]
             assert "TIMEOUT" in receipt["evidence"][0]["text"]
             assert "checks" not in receipt
 

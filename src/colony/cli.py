@@ -72,9 +72,12 @@ def parser():
     run.add_argument("cmd", nargs=argparse.REMAINDER)
     sub.add_parser("retry", help="Retry encrypted, scrubbed offline pushes")
     mcp = sub.add_parser("mcp", help="Run ask/push tools on MCP stdio")
-    mcp.add_argument(
-        "--compact", action="store_true", help="Use excerpts instead of complete small cited files"
+    context = mcp.add_mutually_exclusive_group()
+    context.add_argument(
+        "--evidence-files", action="store_true", help="Include bounded complete small cited files"
     )
+    context.add_argument("--compact", dest="evidence_files", action="store_false")
+    mcp.set_defaults(evidence_files=False)
     return p
 
 
@@ -113,7 +116,7 @@ def execute(args):
     if args.command == "mcp":
         from colony.mcp import serve
 
-        serve(args.home, compact=args.compact)
+        serve(args.home, evidence_files=args.evidence_files)
         return None
     client = Client(args.home)
     if args.command == "ask":
