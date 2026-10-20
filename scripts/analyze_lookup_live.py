@@ -14,6 +14,7 @@ def read_json(path):
 
 def compare(results, local):
     protocol = read_json(results / "protocol.json")
+    verification = read_json(results / "verification.json")
     assert read_json(results / "completed.json")["sessions"] == 48
     report = {
         "baseline_commit": protocol["baseline_commit"],
@@ -102,8 +103,8 @@ def compare(results, local):
     assert metadata["main"]["implementation_commit"] == protocol["baseline_commit"]
     assert metadata["feature"]["implementation_commit"] == protocol["feature_commit"]
     assert local["baseline_commit"] == protocol["baseline_commit"]
-    # Benchmark tooling/results may be committed between local and live trials.
-    # Verify that the measured runtime code itself has not changed.
+    # MCP presentation/tooling may change between local and live trials. Verify
+    # every runtime dependency exercised by the provider-free Store benchmark.
     subprocess.run(
         [
             "git",
@@ -112,13 +113,33 @@ def compare(results, local):
             local["feature_commit"],
             protocol["feature_commit"],
             "--",
+            "src/colony/store.py",
+            "src/colony/context.py",
+            "src/colony/retrieval.py",
+            "src/colony/models.py",
+            "src/colony/security.py",
+            "src/colony/validation.py",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+        capture_output=True,
+    )
+    report["local_lookup_code_unchanged"] = True
+    subprocess.run(
+        [
+            "git",
+            "diff",
+            "--exit-code",
+            verification["commit"],
+            protocol["feature_commit"],
+            "--",
             "src/colony",
         ],
         cwd=Path(__file__).resolve().parents[1],
         check=True,
         capture_output=True,
     )
-    report["local_runtime_code_unchanged"] = True
+    report["verification"] = verification
     main, feature = report["arms"]["main"], report["arms"]["feature"]
     report["observed_reductions"] = {
         field: 1 - feature[field] / main[field]
@@ -144,6 +165,9 @@ def compare(results, local):
     report["descriptive_family_bootstrap_reduction_95pct"] = intervals
     report["same_prompts_order_and_corpus"] = True
     report["gate"] = {
+        "tests_and_lint_pass": verification["tests_passed"] > 0
+        and verification["tests_failed"] == 0
+        and verification["ruff_passed"],
         "local_lookup_improves": local["lookup_time_reduction"] > 0,
         "correctness_not_reduced": feature["correct"] >= main["correct"],
         "observed_live_tokens_improve": feature["tokens"] < main["tokens"],
