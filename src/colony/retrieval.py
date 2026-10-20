@@ -63,7 +63,8 @@ def requires_procedure(question: str) -> bool:
     """Recognize explicit how-to/imperative requests, not descriptive questions."""
     return bool(
         re.match(
-            r"(?:how\s+(?:do|can|should)\s+(?:i|we)\s+|(?:please\s+)?"
+            r"(?:(?:which|what)\s+(?:[\w-]+\s+){0,2}(?:command|flags|options)\b|"
+            r"how\s+(?:do|can|should)\s+(?:i|we)\s+|(?:please\s+)?"
             r"(?:start|run|launch|install|deploy|configure|set\s+up|create|restore|rollback|roll\s+back)\b)",
             question.strip(),
             re.I,

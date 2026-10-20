@@ -124,7 +124,7 @@ and a question/answer passage (first 4,000 answer characters). The best of the t
 similarities supplies the dense score, preserving short paraphrases when answers are long.
 Namespace filtering precedes retrieval. Up to 12
 dense candidates (cosine >=0.55) are reranked against their answers by a local MS MARCO
-MiniLM cross-encoder. The ranking combines 80% dense similarity and 20% sigmoid of the
+MiniLM cross-encoder. The eligibility score combines 80% dense similarity and 20% sigmoid of the
 cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuristics, not
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
@@ -161,9 +161,14 @@ files when their ranking scores are within 0.15, retaining ranking order and the
 original line numbers, without synthetic ranking headings or masked question values.
 Procedural requests require command or instruction cues; capability overviews alone do
 not qualify. Weak evidence also requires at least 50% weighted query-term coverage or
-a nonnegative reranker logit. Saved answers must also have at least 0.70 semantic
-question-to-question similarity (exact questions remain eligible), limiting answer-vector
+a nonnegative reranker logit. For procedural requests, command/instruction passages with
+logits at least -2 can pass without literal query-word coverage; short commands often
+answer the question without repeating its words. Saved answers must also have at least
+0.70 semantic question-to-question similarity for procedures, or 0.65 for descriptions
+(exact questions remain eligible), limiting answer-vector
 topic drift while retaining paraphrases. Exact records retain their diagnostic/capture content.
+Eligible answers are ordered by raw reranker logits, with fused scores as a tiebreaker.
+This preserves differences between strong positive matches that sigmoid saturation lost.
 These are conservative retrieval heuristics, not answerability guarantees.
 When expansion exceeds the remaining budget, excerpts anchor at the selected paragraph
 so its relevant text survives trimming. A memory result does not determine other tools'

@@ -278,7 +278,11 @@ class Store:
                         candidates, scores, lexical, strict=True
                     )
                     if score >= -5.0
-                    and (coverage >= 0.5 or score >= 0)
+                    and (
+                        coverage >= 0.5
+                        or score >= 0
+                        or (requires_procedure(question) and procedural_text(text) and score >= -2)
+                    )
                     and (not requires_procedure(question) or procedural_text(text))
                 ],
                 key=lambda item: item[1],
@@ -384,8 +388,10 @@ class Store:
                 fused_score(1 - r["distance"], s) for r, s in zip(rows, scores, strict=True)
             ]
             candidates = sorted(
-                zip(rows, contents, relevance_scores, strict=True),
-                key=lambda item: item[2],
+                zip(rows, contents, relevance_scores, scores, strict=True),
+                # Raw logits retain the difference between strong positive matches;
+                # sigmoid saturation must not let a weaker answer win on dense score.
+                key=lambda item: (item[3], item[2]),
                 reverse=True,
             )
             candidates = [
@@ -401,14 +407,15 @@ class Store:
                     or item[0]["question"].strip().casefold() == question.strip().casefold()
                 )
                 and (
-                    1 - item[0]["question_distance"] >= 0.70
+                    1 - item[0]["question_distance"]
+                    >= (0.70 if requires_procedure(question) else 0.65)
                     or item[0]["question"].strip().casefold() == question.strip().casefold()
                 )
             ]
             if not candidates:
                 return {"hit": False, "reason": "no_relevant_trail"}
             fallback = None
-            for row, content, relevance in candidates:
+            for row, content, relevance, _ in candidates:
                 sources = [
                     Source(**dict(s))
                     for s in db.execute(

@@ -83,3 +83,17 @@ def test_existing_vector_index_is_rebuilt_without_losing_trails(team):
     with migrated.connect() as db:
         assert db.execute("SELECT count(*) FROM trail_vectors").fetchone()[0] == 1
         assert db.execute("SELECT value FROM settings").fetchone()[0].startswith("semantic-v7:")
+
+
+def test_stronger_positive_rerank_wins_over_higher_dense_question_match(team, monkeypatch):
+    import colony.store
+
+    _, api, repo, _, key = team
+    push(api, key, repo, "Start the service", "Run the stdio bridge with worker mcp.")
+    correct = push(
+        api, key, repo, "Start the local service", "Start the HTTP listener with worker serve."
+    )
+    monkeypatch.setattr(
+        colony.store, "rank", lambda q, passages: [9.0 if "HTTP" in p else 6.0 for p in passages]
+    )
+    assert ask(api, key, "Start the service")["id"] == correct

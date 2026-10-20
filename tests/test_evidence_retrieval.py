@@ -51,6 +51,31 @@ def test_saved_bridge_answer_does_not_displace_http_backend_evidence(team):
     assert "beacon serve --config api.toml" in result["content"]
 
 
+def test_short_command_with_semantic_support_does_not_need_literal_query_words(team, monkeypatch):
+    import colony.store
+
+    _, api, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Project\n\n## Verification\n\n```sh\npython -m mypy src/\n```\n"
+    )
+    trail = Trail(
+        id=uuid.uuid4().hex,
+        namespace="team",
+        question="Formatting configuration",
+        content="Use Black.",
+        sources=[snapshot(repo, "guide.md")],
+    )
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    monkeypatch.setattr(
+        colony.store, "rank", lambda q, passages: [-1.0 if "mypy" in p else -10.0 for p in passages]
+    )
+    result = api.post(
+        "/ask", json={"question": "Which command runs static typing checks?"}, headers=auth(key)
+    ).json()
+    assert result["status"] == "validated" and result["match_kind"] == "evidence"
+    assert "python -m mypy src/" in result["content"]
+
+
 def test_question_example_does_not_hide_deployment_in_a_different_section(team):
     _, api, repo, _, key = team
     (repo / "guide.md").write_text(
