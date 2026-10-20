@@ -47,11 +47,11 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1141073
+      "native_tokens": 1189966
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1146383
+      "native_tokens": 1264796
     }
   },
   "primary_comparison": "paired/comparison.json",
@@ -60,7 +60,8 @@
     "pruned-paired": "48 completed sessions; 24/24 feature vs 23/24 main; time improved but gross tokens +1.46%; gate failed. MCP source was identical on both arms at this revision; no runtime import proof was recorded.",
     "compact-protocol": "6 completed sessions; rejected for duplicate ask and affected by MCP import isolation bug.",
     "isolation-invalid": "16 completed sessions plus one interrupted native session; rejected because both arms loaded feature MCP code; known usage retained, interrupted usage unavailable.",
-    "verified-budget-abort": "9 completed import-verified sessions; original fail-fast policy stopped on main's seventh research operation. Retained in full. Current methodology instead enforces identical data budgets, counts all attempts and finishes the trial; feature policy failures still fail its gate."
+    "verified-budget-abort": "9 completed import-verified sessions; original fail-fast policy stopped on main's seventh research operation. Retained in full. Current methodology instead enforces identical data budgets, counts all attempts and finishes the trial; feature policy failures still fail its gate.",
+    "capped-duplicate": "48 completed import-verified, equally capped sessions; feature 24/24 vs main 23/24 and 15.1% faster, but one repeated ask and gross tokens +0.47%; failed gates retained in full before reuse guidance moved ahead of source text."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision."
 }

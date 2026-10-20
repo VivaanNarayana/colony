@@ -1,38 +1,38 @@
 {
   "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
-  "feature_commit": "6245d60f6052aa8dbacd54eb07b955b2443faa61",
+  "feature_commit": "9e6ca7cb023809daf89a5bf957e22770b6a2e423",
   "arms": {
     "main": {
       "protocol_violations": 0,
-      "correct": 23,
-      "valid_citations": 15,
-      "raw_hits": 18,
-      "relevant_hits": 17,
+      "correct": 24,
+      "valid_citations": 18,
+      "raw_hits": 19,
+      "relevant_hits": 18,
       "research_free_correct": 17,
-      "tokens": 1141073,
-      "cached_input_tokens": 995968,
-      "tool_calls": 45,
-      "research_calls": 15,
+      "tokens": 1189966,
+      "cached_input_tokens": 1053952,
+      "tool_calls": 50,
+      "research_calls": 20,
       "ask_calls": 24,
-      "seconds": 275.387,
+      "seconds": 267.949,
       "tasks": 24,
-      "uncached_input_plus_output": 145105
+      "uncached_input_plus_output": 136014
     },
     "feature": {
-      "protocol_violations": 1,
+      "protocol_violations": 4,
       "correct": 24,
-      "valid_citations": 17,
-      "raw_hits": 19,
-      "relevant_hits": 19,
-      "research_free_correct": 18,
-      "tokens": 1146383,
-      "cached_input_tokens": 1002112,
-      "tool_calls": 51,
-      "research_calls": 20,
-      "ask_calls": 25,
-      "seconds": 233.875,
+      "valid_citations": 24,
+      "raw_hits": 22,
+      "relevant_hits": 22,
+      "research_free_correct": 14,
+      "tokens": 1264796,
+      "cached_input_tokens": 1111680,
+      "tool_calls": 58,
+      "research_calls": 22,
+      "ask_calls": 28,
+      "seconds": 250.631,
       "tasks": 24,
-      "uncached_input_plus_output": 144271
+      "uncached_input_plus_output": 153116
     }
   },
   "limitations": [
@@ -43,7 +43,7 @@
   ],
   "local_lookup_code_unchanged": true,
   "verification": {
-    "commit": "aa6f320d32360f59a397cce7f012b7ec86dd4f42",
+    "commit": "e304fa1312563e56d8a2a7523c0f63315a2ba1d7",
     "command": "python -m pytest -q; python -m ruff check .; git diff --check",
     "tests_passed": 86,
     "tests_failed": 0,
@@ -52,104 +52,104 @@
     "skip_reason": "Windows host does not permit symlinks",
     "platform": "Windows / Python 3.13.1",
     "scope": "Local verification; no hosted CI configured",
-    "pytest_seconds": 46.67
+    "pytest_seconds": 44.48
   },
   "observed_reductions": {
-    "tokens": -0.004653514718164331,
-    "seconds": 0.15074059414569319,
-    "tool_calls": -0.1333333333333333,
-    "uncached_input_plus_output": 0.005747562110196114
+    "tokens": -0.06288414963116584,
+    "seconds": 0.06463170230155746,
+    "tool_calls": -0.15999999999999992,
+    "uncached_input_plus_output": -0.12573705647947997
   },
   "families": {
     "mcp": {
       "main": {
-        "tokens": 145915.0,
-        "seconds": 41.178000000000004
+        "tokens": 145440.0,
+        "seconds": 38.326
       },
       "feature": {
-        "tokens": 144747.0,
-        "seconds": 28.994999999999997
+        "tokens": 181065.0,
+        "seconds": 34.707
       }
     },
     "outage": {
       "main": {
-        "tokens": 167992.0,
-        "seconds": 35.644
+        "tokens": 165507.0,
+        "seconds": 40.726
       },
       "feature": {
-        "tokens": 170271.0,
-        "seconds": 35.318
+        "tokens": 165151.0,
+        "seconds": 31.929000000000002
       }
     },
     "install": {
       "main": {
-        "tokens": 98871.0,
-        "seconds": 27.747999999999998
+        "tokens": 99325.0,
+        "seconds": 25.240000000000002
       },
       "feature": {
-        "tokens": 99071.0,
-        "seconds": 23.308
+        "tokens": 136918.0,
+        "seconds": 33.006
       }
     },
     "capture": {
       "main": {
-        "tokens": 98794.0,
-        "seconds": 27.04
+        "tokens": 98275.0,
+        "seconds": 26.351999999999997
       },
       "feature": {
-        "tokens": 110811.0,
-        "seconds": 27.11
+        "tokens": 154539.0,
+        "seconds": 31.659999999999997
       }
     },
     "serve": {
       "main": {
-        "tokens": 231060.0,
-        "seconds": 49.400999999999996
+        "tokens": 230726.0,
+        "seconds": 46.936
       },
       "feature": {
-        "tokens": 229997.0,
-        "seconds": 42.224000000000004
+        "tokens": 199941.0,
+        "seconds": 39.607
       }
     },
     "tests": {
       "main": {
-        "tokens": 98032.0,
-        "seconds": 26.374000000000002
+        "tokens": 97865.0,
+        "seconds": 26.141999999999996
       },
       "feature": {
-        "tokens": 97557.0,
-        "seconds": 21.779
+        "tokens": 98242.0,
+        "seconds": 22.102
       }
     },
     "scope": {
       "main": {
-        "tokens": 148630.0,
-        "seconds": 32.402
+        "tokens": 173741.0,
+        "seconds": 31.024
       },
       "feature": {
-        "tokens": 157120.0,
-        "seconds": 27.079
+        "tokens": 180988.0,
+        "seconds": 29.881999999999998
       }
     },
     "stale": {
       "main": {
-        "tokens": 151779.0,
-        "seconds": 35.6
+        "tokens": 179087.0,
+        "seconds": 33.203
       },
       "feature": {
-        "tokens": 136809.0,
-        "seconds": 28.062
+        "tokens": 147952.0,
+        "seconds": 27.738000000000003
       }
     }
   },
   "descriptive_family_bootstrap_reduction_95pct": {
     "tokens": [
-      -0.04322789390621873,
-      0.03270334260010832
+      -0.2400255808831202,
+      0.061476938586910834
     ],
     "seconds": [
-      0.08475139289435141,
-      0.21242593187191683
+      -0.06242582182031664,
+      0.15382760450038924
     ]
   },
   "same_prompts_order_and_corpus": true,

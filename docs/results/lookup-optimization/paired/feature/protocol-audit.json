@@ -3,7 +3,23 @@
     {
       "task": "mcp-1",
       "result": {
-        "id": "40f827e24e4347689050caac7900b274",
+        "id": "c0dea3ba2574427eb4f9750cc35aa5b5",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "install-2",
+      "result": {
+        "id": "805de46a9e2b4745b78e3b3c0305a797",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "capture-3",
+      "result": {
+        "id": "e0913125d90641b9bd7f985e3f700dd4",
         "stored": false,
         "queued": true
       }
@@ -11,7 +27,7 @@
     {
       "task": "outage-1",
       "result": {
-        "id": "0f52569c2a8140f5ab04f8a60a817af4",
+        "id": "bd1f0893523a4797ba300dcccbf12534",
         "stored": false,
         "queued": true
       }
@@ -19,7 +35,7 @@
     {
       "task": "serve-2",
       "result": {
-        "id": "b8e1b38cd14d4d4bb8f8946b54884bf1",
+        "id": "3198e490367544adbebed6568ca4ba8f",
         "stored": false,
         "queued": true
       }

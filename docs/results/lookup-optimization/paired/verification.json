@@ -1,5 +1,5 @@
 {
-  "commit": "aa6f320d32360f59a397cce7f012b7ec86dd4f42",
+  "commit": "e304fa1312563e56d8a2a7523c0f63315a2ba1d7",
   "command": "python -m pytest -q; python -m ruff check .; git diff --check",
   "tests_passed": 86,
   "tests_failed": 0,
@@ -8,5 +8,5 @@
   "skip_reason": "Windows host does not permit symlinks",
   "platform": "Windows / Python 3.13.1",
   "scope": "Local verification; no hosted CI configured",
-  "pytest_seconds": 46.67
+  "pytest_seconds": 44.48
 }

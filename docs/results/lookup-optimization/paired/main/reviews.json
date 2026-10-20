@@ -1,23 +1,23 @@
 {
   "mcp-1.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
   },
   "outage-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "install-2.colony": {
     "correct": true,
@@ -31,13 +31,13 @@
   },
   "capture-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
   },
   "outage-1.colony": {
     "correct": true,
@@ -81,13 +81,13 @@
   },
   "serve-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "tests-2.colony": {
     "correct": true,
@@ -101,33 +101,33 @@
   },
   "scope-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
   },
   "stale-3.colony": {
-    "correct": false,
-    "citation_valid": false,
+    "correct": true,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Incorrect refusal: rejected unrelated MCP evidence but did not research the available repository; omitted SHA-256 comparison. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
   },
   "capture-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
   },
   "install-3.colony": {
     "correct": true,
@@ -151,13 +151,13 @@
   },
   "install-1.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct editable development-extras install command."
   },
   "serve-3.colony": {
     "correct": true,
@@ -171,13 +171,13 @@
   },
   "stale-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
-    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "scope-3.colony": {
     "correct": true,
@@ -223,9 +223,9 @@
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
-      false
+      true
     ],
-    "reused": false,
+    "reused": true,
     "wrong_reused": false,
     "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
   },
