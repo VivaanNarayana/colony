@@ -1,0 +1,37 @@
+{
+  "repository_call_limit": 6,
+  "call_limit_violations": [],
+  "queued_push_responses": [
+    {
+      "session": "mcp-1.colony",
+      "result": {
+        "id": "5a1b847eadde4bd1bfcefe6f7042ab85",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "session": "outage-1.colony",
+      "result": {
+        "id": "0559737c8b214bb5a5a07df9bd1b1ed3",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "session": "serve-2.colony",
+      "result": {
+        "id": "11c375e51cae4af897780aa91465a586",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "successful_outside_corpus": [],
+  "notes": [
+    "All original completed sessions retained; no replacement trials.",
+    "Sequential live comparison against main, without per-query arm randomization; provider latency, sampling, and cache variation prevent a causal end-to-end latency/token claim.",
+    "24 Colony sessions, compared with the Colony arm of the frozen-main run. Same model, prompts, task order and frozen corpus.",
+    "Primary assistant review against frozen source and core-fact rubrics, not independent blind human review. Citation precision and exhaustive completeness are not scored."
+  ]
+}
