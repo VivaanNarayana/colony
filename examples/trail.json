@@ -1,0 +1,5 @@
+{
+  "question": "How do I install the development dependencies?",
+  "content": "Create and activate a Python virtual environment, then run python -m pip install -e '.[dev]' from the Colony checkout.",
+  "tainted": true
+}

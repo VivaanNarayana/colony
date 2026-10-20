@@ -1,0 +1,7 @@
+{
+  "sessions": 48,
+  "verified_reads": 67,
+  "verified_searches": 53,
+  "outside_corpus_accesses": 0,
+  "verification": "All native repository tool results match the frozen README, pyproject, and source corpus; no evaluator artifacts accessed."
+}

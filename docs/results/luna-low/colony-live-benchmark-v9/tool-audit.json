@@ -1,0 +1,350 @@
+[
+  {
+    "task_id": "mcp-1",
+    "mode": "baseline",
+    "repo_calls": 3,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "mcp-1",
+    "mode": "colony",
+    "repo_calls": 2,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "outage-3",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 1,
+    "errors": []
+  },
+  {
+    "task_id": "outage-3",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "install-2",
+    "mode": "baseline",
+    "repo_calls": 1,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "install-2",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "capture-3",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 1,
+    "errors": []
+  },
+  {
+    "task_id": "capture-3",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "outage-1",
+    "mode": "baseline",
+    "repo_calls": 5,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "outage-1",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "outage-2",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 1,
+    "errors": []
+  },
+  {
+    "task_id": "outage-2",
+    "mode": "baseline",
+    "repo_calls": 3,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "mcp-2",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "mcp-2",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "mcp-3",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "mcp-3",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "serve-2",
+    "mode": "baseline",
+    "repo_calls": 4,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "serve-2",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "tests-2",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "tests-2",
+    "mode": "baseline",
+    "repo_calls": 1,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "scope-2",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "scope-2",
+    "mode": "colony",
+    "repo_calls": 3,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "stale-3",
+    "mode": "colony",
+    "repo_calls": 2,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "stale-3",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "capture-2",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "capture-2",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 1,
+    "errors": []
+  },
+  {
+    "task_id": "install-3",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "install-3",
+    "mode": "baseline",
+    "repo_calls": 3,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "tests-3",
+    "mode": "baseline",
+    "repo_calls": 1,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "tests-3",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "install-1",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "install-1",
+    "mode": "baseline",
+    "repo_calls": 1,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "serve-3",
+    "mode": "baseline",
+    "repo_calls": 1,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "serve-3",
+    "mode": "colony",
+    "repo_calls": 2,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "stale-1",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "stale-1",
+    "mode": "baseline",
+    "repo_calls": 5,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "scope-3",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "scope-3",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": [
+      {
+        "server": "colony",
+        "tool": "push",
+        "message": "Error executing tool push: 1 validation error for pushArguments\nsources.0.content_hash\n  String should match pattern '^[a-f0-9]{64}$' [type=string_pattern_mismatch, input_value='35ddf149763227dcd443f3c9...aae47cf65604f6f19a60a36', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_pattern_mismatch"
+      }
+    ]
+  },
+  {
+    "task_id": "scope-1",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": [
+      {
+        "server": "colony",
+        "tool": "push",
+        "message": "Error executing tool push: 1 validation error for pushArguments\nsources.0.content_hash\n  String should match pattern '^[a-f0-9]{64}$' [type=string_pattern_mismatch, input_value='35ddf149763227dcd443f3c9...aae47cf65604f6f19a60a36', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_pattern_mismatch"
+      }
+    ]
+  },
+  {
+    "task_id": "scope-1",
+    "mode": "baseline",
+    "repo_calls": 3,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "serve-1",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "serve-1",
+    "mode": "colony",
+    "repo_calls": 1,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "tests-1",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 1,
+    "errors": []
+  },
+  {
+    "task_id": "tests-1",
+    "mode": "baseline",
+    "repo_calls": 2,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "stale-2",
+    "mode": "baseline",
+    "repo_calls": 4,
+    "memory_calls": 0,
+    "errors": []
+  },
+  {
+    "task_id": "stale-2",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 1,
+    "errors": []
+  },
+  {
+    "task_id": "capture-1",
+    "mode": "colony",
+    "repo_calls": 0,
+    "memory_calls": 2,
+    "errors": []
+  },
+  {
+    "task_id": "capture-1",
+    "mode": "baseline",
+    "repo_calls": 3,
+    "memory_calls": 0,
+    "errors": []
+  }
+]

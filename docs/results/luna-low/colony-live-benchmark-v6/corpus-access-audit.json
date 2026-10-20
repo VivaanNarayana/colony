@@ -1,0 +1,8 @@
+{
+  "sessions": 48,
+  "verified_reads": 41,
+  "verified_searches": 31,
+  "failed_repository_calls": 2,
+  "outside_corpus_accesses": 0,
+  "verification": "All successful native repository tool results match the frozen README, pyproject, and source corpus; no evaluator artifacts accessed. Failed tool calls remain in the trace and cost totals."
+}

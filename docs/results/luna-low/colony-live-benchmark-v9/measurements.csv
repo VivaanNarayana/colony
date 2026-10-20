@@ -1,0 +1,49 @@
+task_id,mode,tokens,seconds,tool_calls,ask_calls,correct,matches,validated,wrong_reused,family,input_tokens,output_tokens,cached_input_tokens,uncached_tokens,raw_hit,raw_returns,raw_validated,useful_return,reused,repo_calls,review_note,return_kinds,relevant_return_kinds,saved_answer_relevant
+mcp-1,baseline,52767,9.039,3,0,True,0,0,0,mcp,52456,311,42880,9887,False,0,0,False,False,3,Correct stdio connection or ask/push tools.,[],[],False
+mcp-1,colony,78080,15.846,4,1,True,0,0,0,mcp,77652,428,60928,17152,False,0,0,False,False,2,Correct stdio connection or ask/push tools.,[],[],False
+outage-3,colony,50873,10.041,1,1,True,1,1,0,outage,50679,194,43648,7225,True,1,1,True,True,0,"Correct encrypted queue, explicit retry, or outage miss behavior.",['evidence'],['evidence'],False
+outage-3,baseline,56496,9.981,2,0,True,0,0,0,outage,56241,255,50944,5552,False,0,0,False,False,2,"Correct encrypted queue, explicit retry, or outage miss behavior.",[],[],False
+install-2,baseline,31625,10.783,1,0,True,0,0,0,install,31480,145,28544,3081,False,0,0,False,False,1,Correct editable dev-extra command.,[],[],False
+install-2,colony,66641,11.155,3,1,True,1,1,0,install,66246,395,58496,8145,True,1,1,True,False,1,Correct editable dev-extra command.,['evidence'],['evidence'],False
+capture-3,colony,35979,9.18,1,1,True,1,1,0,capture,35846,133,29312,6667,True,1,1,True,True,0,Correct captured fields or always-tainted behavior.,['evidence'],['evidence'],False
+capture-3,baseline,49584,7.672,2,0,True,0,0,0,capture,49371,213,37120,12464,False,0,0,False,False,2,Correct captured fields or always-tainted behavior.,[],[],False
+outage-1,baseline,59290,10.589,5,0,True,0,0,0,outage,58987,303,42752,16538,False,0,0,False,False,5,"Correct encrypted queue, explicit retry, or outage miss behavior.",[],[],False
+outage-1,colony,50921,15.647,2,1,True,1,1,0,outage,50592,329,37632,13289,True,1,1,True,True,0,"Correct encrypted queue, explicit retry, or outage miss behavior.",['evidence'],['evidence'],False
+outage-2,colony,36009,9.064,1,1,True,1,1,0,outage,35887,122,26752,9257,True,1,1,True,True,0,"Correct encrypted queue, explicit retry, or outage miss behavior.",['answer'],['answer'],True
+outage-2,baseline,59804,8.266,3,0,True,0,0,0,outage,59581,223,52352,7452,False,0,0,False,False,3,"Correct encrypted queue, explicit retry, or outage miss behavior.",[],[],False
+mcp-2,baseline,46086,9.604,2,0,True,0,0,0,mcp,45918,168,33408,12678,False,0,0,False,False,2,Correct stdio connection or ask/push tools.,[],[],False
+mcp-2,colony,51066,14.395,2,1,True,1,1,0,mcp,50808,258,43776,7290,True,1,1,True,True,0,Correct stdio connection or ask/push tools.,['answer'],['answer'],True
+mcp-3,colony,51145,16.54,2,1,True,1,1,0,mcp,50797,348,45440,5705,True,1,1,True,True,0,Correct stdio connection or ask/push tools.,['answer'],['answer'],True
+mcp-3,baseline,45601,10.188,2,0,True,0,0,0,mcp,45415,186,37248,8353,False,0,0,False,False,2,Correct stdio connection or ask/push tools.,[],[],False
+serve-2,baseline,61770,10.321,4,0,True,0,0,0,serve,61502,268,53888,7882,False,0,0,False,False,4,Correct HTTP server command or required flags.,[],[],False
+serve-2,colony,50924,15.669,2,1,True,1,1,0,serve,50587,337,45312,5612,True,1,1,True,True,0,Correct HTTP server command or required flags.,['evidence'],['evidence'],False
+tests-2,colony,71771,19.549,3,1,True,1,1,0,tests,71488,283,56064,15707,True,1,1,True,False,1,Correct pytest command.,['evidence'],['evidence'],False
+tests-2,baseline,32192,7.201,1,0,False,0,0,0,tests,32031,161,28800,3392,False,0,0,False,False,1,"Names pytest and its configured directory, but supplies no test invocation. Read-only restriction correctly prevents execution, but does not prevent giving the expected command. Scored incomplete against the command rubric.",[],[],False
+scope-2,baseline,65789,11.005,2,0,True,0,0,0,scope,65515,274,55680,10109,False,0,0,False,False,2,Correct signed-grant namespace restrictions.,[],[],False
+scope-2,colony,125267,23.061,5,1,True,0,0,0,scope,124687,580,112768,12499,True,1,1,False,False,3,"Correct signed-grant namespace restrictions. Full README does not explain the signature/expiry and exact push/pull checks; irrelevant/incomplete returned packet, followed by correct source research.",['evidence'],[],False
+stale-3,colony,85594,16.595,4,1,True,1,1,0,stale,85166,428,77312,8282,True,1,1,True,False,2,"Correct file fingerprint/stale behavior. Complete README explains stored SHA-256 fingerprints and changes; useful evidence, although the agent researches implementation details.",['evidence'],['evidence'],False
+stale-3,baseline,44755,8.514,2,0,True,0,0,0,stale,44563,192,36480,8275,False,0,0,False,False,2,Correct file fingerprint/stale behavior.,[],[],False
+capture-2,baseline,47409,7.723,2,0,True,0,0,0,capture,47243,166,40064,7345,False,0,0,False,False,2,Correct captured fields or always-tainted behavior.,[],[],False
+capture-2,colony,35983,9.421,1,1,True,1,1,0,capture,35837,146,29312,6671,True,1,1,True,True,0,Correct captured fields or always-tainted behavior.,['evidence'],['evidence'],False
+install-3,colony,58789,11.985,3,1,True,1,1,0,install,58507,282,49152,9637,True,1,1,True,False,1,Correct editable dev-extra command.,['answer'],['answer'],True
+install-3,baseline,53368,8.396,3,0,True,0,0,0,install,53164,204,48000,5368,False,0,0,False,False,3,Correct editable dev-extra command.,[],[],False
+tests-3,baseline,31419,6.584,1,0,True,0,0,0,tests,31316,103,29952,1467,False,0,0,False,False,1,Correct pytest command.,[],[],False
+tests-3,colony,71865,14.432,3,1,True,1,1,0,tests,71595,270,62848,9017,True,1,1,True,False,1,Correct pytest command.,['answer'],['answer'],True
+install-1,colony,58885,10.73,3,1,True,1,1,0,install,58508,377,52864,6021,True,1,1,True,False,1,Correct editable dev-extra command.,['answer'],['answer'],True
+install-1,baseline,31364,7.017,1,0,True,0,0,0,install,31234,130,26624,4740,False,0,0,False,False,1,Correct editable dev-extra command.,[],[],False
+serve-3,baseline,34889,6.597,1,0,True,0,0,0,serve,34748,141,28544,6345,False,0,0,False,False,1,Correct HTTP server command or required flags.,[],[],False
+serve-3,colony,83064,22.016,4,1,True,0,0,0,serve,82696,368,70656,12408,False,0,0,False,False,2,Correct HTTP server command or required flags.,[],[],False
+stale-1,colony,60870,12.653,3,1,True,1,1,0,stale,60509,361,54400,6470,True,1,1,True,False,1,Correct file fingerprint/stale behavior.,['answer'],['answer'],True
+stale-1,baseline,110473,10.976,5,0,True,0,0,0,stale,110151,322,89728,20745,False,0,0,False,False,5,Correct file fingerprint/stale behavior.,[],[],False
+scope-3,baseline,50973,8.64,2,0,True,0,0,0,scope,50791,182,41088,9885,False,0,0,False,False,2,Correct signed-grant namespace restrictions.,[],[],False
+scope-3,colony,64865,12.806,3,1,True,1,1,0,scope,64542,323,47744,17121,True,1,1,True,False,1,Correct signed-grant namespace restrictions.,['answer'],['answer'],True
+scope-1,colony,63980,10.739,3,1,True,1,1,0,scope,63583,397,58368,5612,True,1,1,True,False,1,Correct signed-grant namespace restrictions.,['answer'],['answer'],True
+scope-1,baseline,82677,10.421,3,0,True,0,0,0,scope,82415,262,62976,19701,False,0,0,False,False,3,Correct signed-grant namespace restrictions.,[],[],False
+serve-1,baseline,49906,7.641,2,0,True,0,0,0,serve,49671,235,43008,6898,False,0,0,False,False,2,Correct HTTP server command or required flags.,[],[],False
+serve-1,colony,72156,16.089,3,1,True,1,1,0,serve,71788,368,53760,18396,True,1,1,True,False,1,"Correct HTTP server command or required flags. Saved MCP answer is irrelevant to HTTP launch. Complete current README includes the correct HTTP command, so source-assisted packet relevance only; agent nevertheless researches.",['answer'],['answer'],False
+tests-1,colony,36563,7.237,1,1,True,1,1,0,tests,36433,130,29568,6995,True,1,1,True,True,0,Correct pytest command.,['answer'],['answer'],True
+tests-1,baseline,46275,8.383,2,0,True,0,0,0,tests,46050,225,29824,16451,False,0,0,False,False,2,Correct pytest command.,[],[],False
+stale-2,baseline,66792,8.438,4,0,True,0,0,0,stale,66519,273,55552,11240,False,0,0,False,False,4,Correct file fingerprint/stale behavior.,[],[],False
+stale-2,colony,33855,8.214,1,1,True,1,1,0,stale,33678,177,28416,5439,True,1,1,True,True,0,Correct file fingerprint/stale behavior.,['answer'],['answer'],True
+capture-1,colony,50891,16.216,2,1,True,1,1,0,capture,50574,317,43648,7243,True,1,1,True,True,0,Correct captured fields or always-tainted behavior.,['evidence'],['evidence'],False
+capture-1,baseline,60110,9.268,3,0,True,0,0,0,capture,59870,240,52864,7246,False,0,0,False,False,3,Correct captured fields or always-tainted behavior.,[],[],False

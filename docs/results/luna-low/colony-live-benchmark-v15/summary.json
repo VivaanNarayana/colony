@@ -1,0 +1,322 @@
+{
+  "paired_tasks": 24,
+  "reuse_rate": 0.75,
+  "validated_hit_rate": 1.0,
+  "wrong_reuse_rate": 0.0,
+  "correct_tasks": {
+    "baseline": 24,
+    "colony": 24
+  },
+  "savings": {
+    "tokens": {
+      "baseline": 1172032,
+      "colony": 1296636,
+      "reduction": -0.10631450335826997
+    },
+    "seconds": {
+      "baseline": 226.025,
+      "colony": 312.986,
+      "reduction": -0.3847406260369428
+    },
+    "tool_calls": {
+      "baseline": 50,
+      "colony": 56,
+      "reduction": -0.1200000000000001
+    }
+  },
+  "token_breakdown": {
+    "baseline": {
+      "input_tokens": 1167401,
+      "output_tokens": 4631,
+      "cached_input_tokens": 929152,
+      "uncached_tokens": 242880,
+      "tokens": 1172032,
+      "seconds": 226.025,
+      "tool_calls": 50
+    },
+    "colony": {
+      "input_tokens": 1290371,
+      "output_tokens": 6265,
+      "cached_input_tokens": 1102976,
+      "uncached_tokens": 193660,
+      "tokens": 1296636,
+      "seconds": 312.986,
+      "tool_calls": 56
+    }
+  },
+  "uncached_token_reduction": 0.20265151515151514,
+  "ask_calls": 24,
+  "raw_hits": 19,
+  "raw_validated_hits": 19,
+  "relevant_hits": 18,
+  "validated_relevant_hits": 18,
+  "relevant_query_hits": 18,
+  "query_reuse_rate": 0.75,
+  "reused_without_research": 13,
+  "retrieval_kinds": {
+    "answer": {
+      "raw_return_events": 8,
+      "relevant_return_events": 8,
+      "research_free_queries": 5
+    },
+    "evidence": {
+      "raw_return_events": 11,
+      "relevant_return_events": 10,
+      "research_free_queries": 8
+    }
+  },
+  "relevant_saved_answer_queries": 8,
+  "raw_hit_rate": 0.7916666666666666,
+  "all_returned_validated_rate": 1.0,
+  "families": {
+    "capture": {
+      "paired_tasks": 3,
+      "reuse_rate": 1.0,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 143790,
+          "colony": 110051,
+          "reduction": 0.2346407956047013
+        },
+        "seconds": {
+          "baseline": 41.194,
+          "colony": 29.725,
+          "reduction": 0.2784143321842987
+        },
+        "tool_calls": {
+          "baseline": 6,
+          "colony": 3,
+          "reduction": 0.5
+        }
+      }
+    },
+    "install": {
+      "paired_tasks": 3,
+      "reuse_rate": 1.0,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 94909,
+          "colony": 99083,
+          "reduction": -0.04397896932851464
+        },
+        "seconds": {
+          "baseline": 20.487000000000002,
+          "colony": 26.948999999999998,
+          "reduction": -0.31541953433884884
+        },
+        "tool_calls": {
+          "baseline": 3,
+          "colony": 3,
+          "reduction": 0.0
+        }
+      }
+    },
+    "mcp": {
+      "paired_tasks": 3,
+      "reuse_rate": 0.6666666666666666,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 142916,
+          "colony": 146595,
+          "reduction": -0.025742394133617008
+        },
+        "seconds": {
+          "baseline": 30.006,
+          "colony": 41.357,
+          "reduction": -0.37829100846497354
+        },
+        "tool_calls": {
+          "baseline": 7,
+          "colony": 6,
+          "reduction": 0.1428571428571429
+        }
+      }
+    },
+    "outage": {
+      "paired_tasks": 3,
+      "reuse_rate": 0.6666666666666666,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 194342,
+          "colony": 222469,
+          "reduction": -0.14472939457245482
+        },
+        "seconds": {
+          "baseline": 27.945,
+          "colony": 47.373,
+          "reduction": -0.6952227589908748
+        },
+        "tool_calls": {
+          "baseline": 10,
+          "colony": 11,
+          "reduction": -0.10000000000000009
+        }
+      }
+    },
+    "scope": {
+      "paired_tasks": 3,
+      "reuse_rate": 0.6666666666666666,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 155693,
+          "colony": 187515,
+          "reduction": -0.20438940735935462
+        },
+        "seconds": {
+          "baseline": 24.919,
+          "colony": 35.867,
+          "reduction": -0.43934347285204045
+        },
+        "tool_calls": {
+          "baseline": 6,
+          "colony": 9,
+          "reduction": -0.5
+        }
+      }
+    },
+    "serve": {
+      "paired_tasks": 3,
+      "reuse_rate": 0.3333333333333333,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 150179,
+          "colony": 207657,
+          "reduction": -0.38272994226889256
+        },
+        "seconds": {
+          "baseline": 31.26,
+          "colony": 49.507000000000005,
+          "reduction": -0.5837172104926425
+        },
+        "tool_calls": {
+          "baseline": 6,
+          "colony": 9,
+          "reduction": -0.5
+        }
+      }
+    },
+    "stale": {
+      "paired_tasks": 3,
+      "reuse_rate": 0.6666666666666666,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 165128,
+          "colony": 179268,
+          "reduction": -0.0856305411559517
+        },
+        "seconds": {
+          "baseline": 28.262,
+          "colony": 43.176,
+          "reduction": -0.5277050456443282
+        },
+        "tool_calls": {
+          "baseline": 7,
+          "colony": 9,
+          "reduction": -0.2857142857142858
+        }
+      }
+    },
+    "tests": {
+      "paired_tasks": 3,
+      "reuse_rate": 1.0,
+      "validated_hit_rate": 1.0,
+      "wrong_reuse_rate": 0.0,
+      "correct_tasks": {
+        "baseline": 3,
+        "colony": 3
+      },
+      "savings": {
+        "tokens": {
+          "baseline": 125075,
+          "colony": 143998,
+          "reduction": -0.15129322406556067
+        },
+        "seconds": {
+          "baseline": 21.951999999999998,
+          "colony": 39.032,
+          "reduction": -0.778061224489796
+        },
+        "tool_calls": {
+          "baseline": 5,
+          "colony": 6,
+          "reduction": -0.19999999999999996
+        }
+      }
+    }
+  },
+  "review": "Primary assistant audit against frozen repo/rubrics; not independent blind human review",
+  "scope": "One run per arm, 24 read-only questions about Colony itself; not a production coding workload",
+  "both_correct_pairs_only": {
+    "paired_tasks": 24,
+    "reuse_rate": 0.75,
+    "validated_hit_rate": 1.0,
+    "wrong_reuse_rate": 0.0,
+    "correct_tasks": {
+      "baseline": 24,
+      "colony": 24
+    },
+    "savings": {
+      "tokens": {
+        "baseline": 1172032,
+        "colony": 1296636,
+        "reduction": -0.10631450335826997
+      },
+      "seconds": {
+        "baseline": 226.025,
+        "colony": 312.986,
+        "reduction": -0.3847406260369428
+      },
+      "tool_calls": {
+        "baseline": 50,
+        "colony": 56,
+        "reduction": -0.1200000000000001
+      }
+    }
+  },
+  "paired_bootstrap_token_reduction_95pct": [
+    -0.2951142527086974,
+    0.07546826380522309
+  ]
+}

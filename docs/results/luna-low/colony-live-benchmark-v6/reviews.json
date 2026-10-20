@@ -1,0 +1,484 @@
+{
+  "mcp-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection or tool names."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection or tool names."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct outage miss/queue/explicit retry behavior."
+  },
+  "outage-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct outage miss/queue/explicit retry behavior."
+  },
+  "install-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output fields or always-tainted behavior."
+  },
+  "capture-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output fields or always-tainted behavior."
+  },
+  "outage-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct outage miss/queue/explicit retry behavior."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct outage miss/queue/explicit retry behavior. Retrieval not relevant: Hosting/limits passage omits offline behavior."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct outage miss/queue/explicit retry behavior."
+  },
+  "outage-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct outage miss/queue/explicit retry behavior."
+  },
+  "mcp-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection or tool names."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio connection or tool names."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection or tool names."
+  },
+  "mcp-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio connection or tool names."
+  },
+  "serve-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required flags."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required flags."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "tests-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "scope-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits."
+  },
+  "scope-2.colony": {
+    "correct": false,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Refusal: client identity/join excerpt does not answer namespace authorization. Claims repository tools unavailable without attempting a repository call. Failure retained."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct fingerprint change and stale behavior. Retrieval not relevant: Capture/privacy passage omits file-change detection."
+  },
+  "stale-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct fingerprint change and stale behavior."
+  },
+  "capture-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output fields or always-tainted behavior."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output fields or always-tainted behavior."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation."
+  },
+  "install-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation."
+  },
+  "tests-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation."
+  },
+  "install-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct editable dev-extra installation."
+  },
+  "serve-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required flags."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required flags. Retrieval not relevant: MCP stdio setup does not identify required HTTP serve flags."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct fingerprint change and stale behavior."
+  },
+  "stale-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct fingerprint change and stale behavior."
+  },
+  "scope-3.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "relevant_asks": [
+      false,
+      false
+    ],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits. Retrieval not relevant: Quick-start flags do not establish the requested ungranted-namespace behavior; agent researched. Two identical irrelevant lookups retained."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits."
+  },
+  "scope-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct namespace-grant restriction for the question; conditional pull-only explanation accepted as core factual correctness, as in earlier audits."
+  },
+  "serve-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server command or required flags."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct server command or required flags. Saved MCP answer differs from HTTP server question, but attached Quick-start source supplies the command; evidence-assisted relevance only."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "tests-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "stale-2.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct fingerprint change and stale behavior."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true,
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct fingerprint change and stale behavior. Two asks for the same relevant packet count as two calls, one question."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "relevant_asks": [
+      true
+    ],
+    "relevant_hit": true,
+    "answer_relevant": false,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output fields or always-tainted behavior."
+  },
+  "capture-1.baseline": {
+    "correct": true,
+    "relevant_asks": [],
+    "relevant_hit": false,
+    "answer_relevant": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct output fields or always-tainted behavior."
+  }
+}

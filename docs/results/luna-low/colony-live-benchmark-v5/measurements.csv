@@ -1,0 +1,49 @@
+task_id,mode,tokens,seconds,tool_calls,ask_calls,correct,matches,validated,wrong_reused,family,input_tokens,output_tokens,cached_input_tokens,uncached_tokens,raw_hit,raw_returns,raw_validated,useful_return,reused,repo_calls,review_note,return_kinds,relevant_return_kinds,saved_answer_relevant
+mcp-1,baseline,33768,7.188,1,0,True,0,0,0,mcp,33559,209,28416,5352,False,0,0,False,False,1,Correct stdio connection configuration or ask/push tool names.,[],[],False
+mcp-1,colony,114427,16.993,6,1,True,0,0,0,mcp,113881,546,100480,13947,False,0,0,False,False,4,Correct stdio connection configuration or ask/push tool names.,[],[],False
+outage-3,colony,32834,9.103,1,1,True,1,1,0,outage,32669,165,29056,3778,True,1,1,True,True,0,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question.",['evidence'],['evidence'],False
+outage-3,baseline,45458,8.418,2,0,True,0,0,0,outage,45269,189,39296,6162,False,0,0,False,False,2,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question.",[],[],False
+install-2,baseline,58351,8.672,2,0,True,0,0,0,install,58153,198,48640,9711,False,0,0,False,False,2,Correct editable installation with the dev extra.,[],[],False
+install-2,colony,118947,20.188,5,1,True,0,0,0,install,118377,570,103168,15779,False,0,0,False,False,3,Correct editable installation with the dev extra.,[],[],False
+capture-3,colony,62391,17.677,3,1,True,1,1,0,capture,62071,320,48128,14263,True,1,1,True,False,1,Correct output-only capture fields or always-tainted rule.,['evidence'],['evidence'],False
+capture-3,baseline,33686,9.482,1,0,True,0,0,0,capture,33554,132,23168,10518,False,0,0,False,False,1,Correct output-only capture fields or always-tainted rule.,[],[],False
+outage-1,baseline,84467,12.389,4,0,True,0,0,0,outage,84180,287,74880,9587,False,0,0,False,False,4,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question.",[],[],False
+outage-1,colony,135121,20.922,6,1,True,0,0,0,outage,134611,510,123264,11857,False,0,0,False,False,4,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question.",[],[],False
+outage-2,colony,32903,8.214,1,1,True,1,1,0,outage,32762,141,26752,6151,True,1,1,True,True,0,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question.",['answer'],['answer'],True
+outage-2,baseline,33678,6.222,1,0,True,0,0,0,outage,33552,126,28416,5262,False,0,0,False,False,1,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question.",[],[],False
+mcp-2,baseline,56676,8.162,3,0,True,0,0,0,mcp,56458,218,51072,5604,False,0,0,False,False,3,Correct stdio connection configuration or ask/push tool names.,[],[],False
+mcp-2,colony,76555,13.713,4,1,True,1,1,0,mcp,76216,339,68352,8203,True,1,1,True,False,2,Correct stdio connection configuration or ask/push tool names.,['answer'],['answer'],True
+mcp-3,colony,33174,9.866,1,1,True,1,1,0,mcp,32974,200,29056,4118,True,1,1,True,True,0,Correct stdio connection configuration or ask/push tool names.,['answer'],['answer'],True
+mcp-3,baseline,61351,7.808,2,0,True,0,0,0,mcp,61146,205,48000,13351,False,0,0,False,False,2,Correct stdio connection configuration or ask/push tool names.,[],[],False
+serve-2,baseline,87119,10.489,3,0,True,0,0,0,serve,86790,329,78080,9039,False,0,0,False,False,3,Correct server command or required repo/data/issuer flags.,[],[],False
+serve-2,colony,33458,9.196,1,1,True,1,1,0,serve,33301,157,31232,2226,True,1,1,True,True,0,Correct server command or required repo/data/issuer flags.,['evidence'],['evidence'],False
+tests-2,colony,32330,11.46,1,1,True,1,1,0,tests,32204,126,28928,3402,True,1,1,True,True,0,Correct documented pytest invocation/runner.,['evidence'],['evidence'],False
+tests-2,baseline,36156,7.642,4,0,True,0,0,0,tests,35946,210,28800,7356,False,0,0,False,False,4,Correct documented pytest invocation/runner.,[],[],False
+scope-2,baseline,66673,8.195,2,0,True,0,0,0,scope,66410,263,58112,8561,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.,[],[],False
+scope-2,colony,104491,20.271,4,1,True,0,0,0,scope,104034,457,91776,12715,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.,[],[],False
+stale-3,colony,149904,26.421,8,1,True,0,0,0,stale,149327,577,133888,16016,True,1,1,False,False,6,Correct file fingerprint / stale evidence behavior. Returned capture/privacy and partial status excerpts omit the requested detection mechanism; not counted as a relevant hit. Agent researched.,['evidence'],[],False
+stale-3,baseline,55693,8.721,2,0,True,0,0,0,stale,55450,243,48640,7053,False,0,0,False,False,2,Correct file fingerprint / stale evidence behavior.,[],[],False
+capture-2,baseline,46790,7.207,2,0,True,0,0,0,capture,46643,147,40064,6726,False,0,0,False,False,2,Correct output-only capture fields or always-tainted rule.,[],[],False
+capture-2,colony,32962,7.697,1,1,True,1,1,0,capture,32850,112,28416,4546,True,1,1,True,True,0,"Correct output-only capture fields or always-tainted rule. Saved answer is insufficient/different topic, but the attached current source excerpt supports the answer; counted as evidence-assisted relevance, not a relevant saved answer.",['answer'],['answer'],False
+install-3,colony,32432,8.401,1,1,True,1,1,0,install,32314,118,26752,5680,True,1,1,True,True,0,Correct editable installation with the dev extra.,['answer'],['answer'],True
+install-3,baseline,31337,5.856,1,0,True,0,0,0,install,31228,109,26624,4713,False,0,0,False,False,1,Correct editable installation with the dev extra.,[],[],False
+tests-3,baseline,31965,5.936,1,0,True,0,0,0,tests,31865,100,28800,3165,False,0,0,False,False,1,Correct documented pytest invocation/runner.,[],[],False
+tests-3,colony,32700,7.961,1,1,True,1,1,0,tests,32587,113,28544,4156,True,1,1,True,True,0,"Correct documented pytest invocation/runner. Saved answer is insufficient/different topic, but the attached current source excerpt supports the answer; counted as evidence-assisted relevance, not a relevant saved answer.",['answer'],['answer'],False
+install-1,colony,54523,10.631,1,1,True,1,1,0,install,54331,192,49536,4987,True,1,1,True,True,0,Correct editable installation with the dev extra.,['answer'],['answer'],True
+install-1,baseline,44854,7.5,2,0,True,0,0,0,install,44608,246,40704,4150,False,0,0,False,False,2,Correct editable installation with the dev extra.,[],[],False
+serve-3,baseline,49322,7.754,3,0,True,0,0,0,serve,49112,210,41344,7978,False,0,0,False,False,3,Correct server command or required repo/data/issuer flags.,[],[],False
+serve-3,colony,108216,18.713,6,1,True,0,0,0,serve,107701,515,98560,9656,False,0,0,False,False,4,Correct server command or required repo/data/issuer flags.,[],[],False
+stale-1,colony,32580,9.589,1,1,True,1,1,0,stale,32443,137,25344,7236,True,1,1,True,True,0,Correct file fingerprint / stale evidence behavior.,['answer'],['answer'],True
+stale-1,baseline,91668,9.317,4,0,True,0,0,0,stale,91411,257,82944,8724,False,0,0,False,False,4,Correct file fingerprint / stale evidence behavior.,[],[],False
+scope-3,baseline,66613,10.635,2,0,True,0,0,0,scope,66395,218,54272,12341,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.,[],[],False
+scope-3,colony,44290,12.223,1,1,False,0,0,0,scope,44110,180,41856,2434,True,1,1,False,False,0,Incorrect/refusal: irrelevant README evidence does not explain namespace grants. Agent claims Repository tools unavailable without attempting a repository call. Failure retained.,['evidence'],[],False
+scope-1,colony,86381,14.951,3,1,True,1,1,0,scope,85955,426,79872,6509,True,1,1,True,False,1,Correct signed-grant namespace push/pull restrictions for the question.,['answer'],['answer'],True
+scope-1,baseline,78122,9.504,2,0,True,0,0,0,scope,77860,262,67840,10282,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.,[],[],False
+serve-1,baseline,33760,6.674,1,0,True,0,0,0,serve,33560,200,28416,5344,False,0,0,False,False,1,Correct server command or required repo/data/issuer flags.,[],[],False
+serve-1,colony,63670,23.535,4,2,True,2,2,0,serve,63239,431,57216,6454,True,2,2,True,False,1,"Correct server command or required repo/data/issuer flags. Saved answer is insufficient/different topic, but the attached current source excerpt supports the answer; counted as evidence-assisted relevance, not a relevant saved answer. Two asks for the same packet count as two calls, one question.","['answer', 'answer']","['answer', 'answer']",False
+tests-1,colony,64124,16.919,3,1,True,1,1,0,tests,63831,293,54400,9724,True,1,1,True,False,1,Correct documented pytest invocation/runner.,['evidence'],['evidence'],False
+tests-1,baseline,47458,7.019,2,0,True,0,0,0,tests,47265,193,41216,6242,False,0,0,False,False,2,Correct documented pytest invocation/runner.,[],[],False
+stale-2,baseline,68746,11.712,3,0,True,0,0,0,stale,68476,270,58624,10122,False,0,0,False,False,3,Correct file fingerprint / stale evidence behavior.,[],[],False
+stale-2,colony,167770,24.519,8,1,True,0,0,0,stale,167149,621,157952,9818,True,1,1,False,False,6,Correct file fingerprint / stale evidence behavior. Returned retrieval-diagnostics passage omits the evidence-change trigger; conservatively not a useful hit. Agent researched.,['evidence'],[],False
+capture-1,colony,43700,9.088,1,1,True,1,1,0,capture,43506,194,40832,2868,True,1,1,True,True,0,Correct output-only capture fields or always-tainted rule.,['answer'],['answer'],True
+capture-1,baseline,59599,8.851,3,0,True,0,0,0,capture,59404,195,53120,6479,False,0,0,False,False,3,Correct output-only capture fields or always-tainted rule.,[],[],False

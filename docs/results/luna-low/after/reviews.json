@@ -1,0 +1,359 @@
+{
+  "mcp-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "outage-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "install-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "install-2.colony": {
+    "correct": false,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "After a cold miss, model claimed repo tools unavailable and refused to answer; retained failure."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "capture-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "outage-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Relevant validated queue behavior returned, but agent reread client.py and pushed another answer."
+  },
+  "outage-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "mcp-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "mcp-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Primary assistant checked core answer against frozen source/rubric; citation line precision not scored."
+  },
+  "serve-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "tests-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "scope-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "stale-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "capture-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited core answer against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Server-setup trail also contains the exact requested development installation command; relevant across families, answered without another repo tool call."
+  },
+  "install-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "tests-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "install-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "serve-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "stale-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "scope-3.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; correct. Citation line precision not scored."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Relevant grant-scope explanation for pull denial; answer explicitly focuses on /ask and is factually correct, though narrower than baseline."
+  },
+  "scope-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "relevant_asks": [],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  },
+  "serve-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "relevant_asks": [],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  },
+  "tests-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "relevant_asks": [],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  },
+  "stale-2.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "relevant_asks": [],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "relevant_hit": true,
+    "relevant_asks": [
+      true,
+      true
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Two lookups returned the same relevant validated file-change explanation. Both calls are retained in call-based rates; count one question for query reuse."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "relevant_hit": false,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Returned trail only says captures are tainted, not what output fields are captured; insufficient for the question. Agent researched correct capture fields."
+  },
+  "capture-1.baseline": {
+    "correct": true,
+    "relevant_hit": false,
+    "relevant_asks": [],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Audited against frozen source/rubric; core facts correct. Citation line precision not scored."
+  }
+}

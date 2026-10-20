@@ -1,0 +1,49 @@
+task_id,mode,tokens,seconds,tool_calls,ask_calls,correct,matches,validated,wrong_reused,family,input_tokens,output_tokens,cached_input_tokens,uncached_tokens,raw_hit,raw_returns,raw_validated,useful_return,reused,repo_calls,review_note
+mcp-1,baseline,47559,8.356,2,0,True,0,0,0,mcp,47314,245,40576,6983,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+mcp-1,colony,105742,13.706,4,1,True,0,0,0,mcp,105250,492,94848,10894,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+outage-3,colony,114789,12.887,5,1,True,0,0,0,outage,114274,515,97792,16997,False,0,0,False,False,3,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+outage-3,baseline,61271,7.816,2,0,True,0,0,0,outage,61084,187,51584,9687,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+install-2,baseline,59139,8.61,2,0,True,0,0,0,install,58902,237,50048,9091,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+install-2,colony,53728,9.852,1,1,False,0,0,0,install,53523,205,47872,5856,False,0,0,False,False,0,"After a cold miss, model claimed repo tools unavailable and refused to answer; retained failure."
+capture-3,colony,122897,17.747,6,1,True,0,0,0,capture,122371,526,98944,23953,False,0,0,False,False,4,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+capture-3,baseline,59516,8.275,2,0,True,0,0,0,capture,59291,225,51456,8060,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+outage-1,baseline,76741,9.1,3,0,True,0,0,0,outage,76464,277,65280,11461,False,0,0,False,False,3,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+outage-1,colony,98256,14.268,4,1,True,0,0,0,outage,97708,548,90240,8016,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+outage-2,colony,83245,12.881,3,1,True,1,1,0,outage,82803,442,72704,10541,True,1,1,True,False,1,"Relevant validated queue behavior returned, but agent reread client.py and pushed another answer."
+outage-2,baseline,99343,12.83,5,0,True,0,0,0,outage,98937,406,83200,16143,False,0,0,False,False,5,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+mcp-2,baseline,57239,9.22,2,0,True,0,0,0,mcp,57003,236,48896,8343,False,0,0,False,False,2,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+mcp-2,colony,57106,9.067,2,1,True,1,1,0,mcp,56887,219,47872,9234,True,1,1,True,False,1,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+mcp-3,colony,61888,10.809,3,1,True,1,1,0,mcp,61474,414,54784,7104,True,1,1,True,False,1,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+mcp-3,baseline,33434,6.125,1,0,True,0,0,0,mcp,33261,173,28416,5018,False,0,0,False,False,1,Primary assistant checked core answer against frozen source/rubric; citation line precision not scored.
+serve-2,baseline,82905,10.392,3,0,True,0,0,0,serve,82611,294,71808,11097,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+serve-2,colony,89247,14.706,5,1,True,0,0,0,serve,88782,465,81536,7711,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+tests-2,colony,99243,12.899,5,1,True,0,0,0,tests,98821,422,90368,8875,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+tests-2,baseline,42054,8.708,1,0,True,0,0,0,tests,41873,181,33536,8518,False,0,0,False,False,1,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+scope-2,baseline,96151,13.352,4,0,True,0,0,0,scope,95765,386,86400,9751,False,0,0,False,False,4,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+scope-2,colony,129113,15.569,5,1,True,0,0,0,scope,128557,556,116096,13017,False,0,0,False,False,3,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+stale-3,colony,104388,14.739,4,1,True,0,0,0,stale,103899,489,92672,11716,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+stale-3,baseline,45431,8.052,2,0,True,0,0,0,stale,45247,184,38144,7287,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+capture-2,baseline,57240,8.804,2,0,True,0,0,0,capture,57066,174,50432,6808,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+capture-2,colony,98943,13.385,4,1,True,0,0,0,capture,98543,400,89856,9087,False,0,0,False,False,2,Audited core answer against frozen source/rubric; correct. Citation line precision not scored.
+install-3,colony,44542,7.534,1,1,True,1,1,0,install,44394,148,41984,2558,True,1,1,True,True,0,"Server-setup trail also contains the exact requested development installation command; relevant across families, answered without another repo tool call."
+install-3,baseline,31412,5.777,1,0,True,0,0,0,install,31291,121,26752,4660,False,0,0,False,False,1,Audited against frozen source/rubric; correct. Citation line precision not scored.
+tests-3,baseline,45648,9.438,1,0,True,0,0,0,tests,45530,118,40448,5200,False,0,0,False,False,1,Audited against frozen source/rubric; correct. Citation line precision not scored.
+tests-3,colony,43278,7.612,1,1,True,1,1,0,tests,43132,146,38912,4366,True,1,1,True,True,0,Audited against frozen source/rubric; correct. Citation line precision not scored.
+install-1,colony,95984,12.608,4,1,True,0,0,0,install,95576,408,88064,7920,False,0,0,False,False,2,Audited against frozen source/rubric; correct. Citation line precision not scored.
+install-1,baseline,41817,7.105,1,0,True,0,0,0,install,41648,169,36736,5081,False,0,0,False,False,1,Audited against frozen source/rubric; correct. Citation line precision not scored.
+serve-3,baseline,62615,8.652,3,0,True,0,0,0,serve,62419,196,54272,8343,False,0,0,False,False,3,Audited against frozen source/rubric; correct. Citation line precision not scored.
+serve-3,colony,99570,14.218,4,1,True,0,0,0,serve,99148,422,89984,9586,False,0,0,False,False,2,Audited against frozen source/rubric; correct. Citation line precision not scored.
+stale-1,colony,67967,11.254,3,1,True,1,1,0,stale,67561,406,64256,3711,True,1,1,True,False,1,Audited against frozen source/rubric; correct. Citation line precision not scored.
+stale-1,baseline,47253,6.86,2,0,True,0,0,0,stale,47039,214,39296,7957,False,0,0,False,False,2,Audited against frozen source/rubric; correct. Citation line precision not scored.
+scope-3,baseline,47473,7.663,3,0,True,0,0,0,scope,47270,203,38400,9073,False,0,0,False,False,3,Audited against frozen source/rubric; correct. Citation line precision not scored.
+scope-3,colony,136977,15.081,6,1,True,0,0,0,scope,136482,495,126848,10129,False,0,0,False,False,4,Audited against frozen source/rubric; correct. Citation line precision not scored.
+scope-1,colony,57381,23.758,3,1,True,1,1,0,scope,57068,313,52096,5285,True,1,1,True,False,1,"Relevant grant-scope explanation for pull denial; answer explicitly focuses on /ask and is factually correct, though narrower than baseline."
+scope-1,baseline,78219,10.129,4,0,True,0,0,0,scope,77919,300,71296,6923,False,0,0,False,False,4,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.
+serve-1,baseline,56666,8.087,2,0,True,0,0,0,serve,56437,229,49536,7130,False,0,0,False,False,2,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.
+serve-1,colony,71243,11.563,3,1,True,1,1,0,serve,70798,445,65920,5323,True,1,1,True,False,1,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.
+tests-1,colony,32131,6.54,1,1,True,1,1,0,tests,32003,128,30720,1411,True,1,1,True,True,0,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.
+tests-1,baseline,33373,5.656,1,0,True,0,0,0,tests,33254,119,28416,4957,False,0,0,False,False,1,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.
+stale-2,baseline,57912,8.425,2,0,True,0,0,0,stale,57716,196,48640,9272,False,0,0,False,False,2,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.
+stale-2,colony,104488,17.677,4,2,True,2,2,0,stale,104009,479,98176,6312,True,2,2,True,False,1,Two lookups returned the same relevant validated file-change explanation. Both calls are retained in call-based rates; count one question for query reuse.
+capture-1,colony,123775,15.418,5,1,True,0,0,0,capture,123357,418,110976,12799,True,1,1,False,False,3,"Returned trail only says captures are tainted, not what output fields are captured; insufficient for the question. Agent researched correct capture fields."
+capture-1,baseline,77523,11.504,3,0,True,0,0,0,capture,77245,278,69248,8275,False,0,0,False,False,3,Audited against frozen source/rubric; core facts correct. Citation line precision not scored.

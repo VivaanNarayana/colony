@@ -1,0 +1,49 @@
+task_id,mode,tokens,seconds,tool_calls,ask_calls,correct,matches,validated,wrong_reused,family,input_tokens,output_tokens,cached_input_tokens,uncached_tokens,raw_hit,raw_returns,raw_validated,useful_return,reused,repo_calls,review_note
+mcp-1,baseline,57539,10.535,2,0,True,0,0,0,mcp,57286,253,50432,7107,False,0,0,False,False,2,Correct stdio connection command/configuration or ask/push tool names.
+mcp-1,colony,106536,12.957,4,1,True,0,0,0,mcp,106045,491,93056,13480,False,0,0,False,False,2,Correct stdio connection command/configuration or ask/push tool names.
+outage-3,colony,112579,15.266,5,1,True,0,0,0,outage,112049,530,97536,15043,False,0,0,False,False,3,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+outage-3,baseline,33530,7.507,1,0,True,0,0,0,outage,33375,155,30080,3450,False,0,0,False,False,1,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+install-2,baseline,58326,12.986,2,0,True,0,0,0,install,58122,204,52864,5462,False,0,0,False,False,2,Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject.
+install-2,colony,105699,12.999,4,1,True,0,0,0,install,105162,537,93440,12259,False,0,0,False,False,2,Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject.
+capture-3,colony,102966,12.939,4,1,True,0,0,0,capture,102561,405,92544,10422,False,0,0,False,False,2,Correct output-only capture fields or always-tainted rule for the question.
+capture-3,baseline,44024,7.364,1,0,True,0,0,0,capture,43852,172,38784,5240,False,0,0,False,False,1,Correct output-only capture fields or always-tainted rule for the question.
+outage-1,baseline,33528,6.722,1,0,True,0,0,0,outage,33374,154,28416,5112,False,0,0,False,False,1,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+outage-1,colony,45992,8.866,1,1,True,1,1,0,outage,45794,198,42880,3112,True,1,1,True,True,0,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+outage-2,colony,44682,12.327,1,1,True,1,1,0,outage,44499,183,39680,5002,True,1,1,True,True,0,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+outage-2,baseline,33503,6.717,1,0,True,0,0,0,outage,33371,132,28416,5087,False,0,0,False,False,1,"Correct miss, encrypted push queue, and/or explicit retry behavior for the question."
+mcp-2,baseline,45945,7.484,2,0,True,0,0,0,mcp,45743,202,40576,5369,False,0,0,False,False,2,Correct stdio connection command/configuration or ask/push tool names.
+mcp-2,colony,64753,10.424,3,1,True,1,1,0,mcp,64476,277,54784,9969,True,1,1,True,False,1,Correct stdio connection command/configuration or ask/push tool names.
+mcp-3,colony,33331,7.995,1,1,True,1,1,0,mcp,33140,191,28928,4403,True,1,1,True,True,0,Correct stdio connection command/configuration or ask/push tool names.
+mcp-3,baseline,61241,8.369,2,0,True,0,0,0,mcp,61024,217,54784,6457,False,0,0,False,False,2,Correct stdio connection command/configuration or ask/push tool names.
+serve-2,baseline,47179,7.61,4,0,True,0,0,0,serve,46941,238,40960,6219,False,0,0,False,False,4,Correct server command or required repo/data/issuer flags.
+serve-2,colony,123704,13.21,5,1,True,0,0,0,serve,123206,498,111232,12472,False,0,0,False,False,3,Correct server command or required repo/data/issuer flags.
+tests-2,colony,110814,14.557,5,1,True,0,0,0,tests,110269,545,94336,16478,False,0,0,False,False,3,Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored.
+tests-2,baseline,31423,6.15,1,0,True,0,0,0,tests,31288,135,26624,4799,False,0,0,False,False,1,"Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored. Names pytest and tests directory but omits an explicit shell invocation; accepted at runner-level factual correctness, conservatively favoring baseline."
+scope-2,baseline,47575,8.064,2,0,True,0,0,0,scope,47372,203,39552,8023,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.
+scope-2,colony,132590,19.573,5,1,True,0,0,0,scope,131990,600,122880,9710,False,0,0,False,False,3,Correct signed-grant namespace push/pull restrictions for the question.
+stale-3,colony,102572,15.629,4,1,True,0,0,0,stale,102137,435,78976,23596,False,0,0,False,False,2,Correct changed SHA256 / stale evidence behavior.
+stale-3,baseline,55471,8.532,2,0,True,0,0,0,stale,55245,226,48512,6959,False,0,0,False,False,2,Correct changed SHA256 / stale evidence behavior.
+capture-2,baseline,33492,5.687,1,0,True,0,0,0,capture,33370,122,30080,3412,False,0,0,False,False,1,Correct output-only capture fields or always-tainted rule for the question.
+capture-2,colony,33305,7.465,1,1,True,1,1,0,capture,33181,124,28928,4377,True,1,1,True,True,0,"Correct output-only capture fields or always-tainted rule for the question. Saved answer lacks taint, but current README evidence explicitly supplies it; evidence-assisted reuse."
+install-3,colony,56263,9.983,1,1,True,1,1,0,install,56068,195,50688,5575,True,1,1,True,True,0,Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject.
+install-3,baseline,31903,6.708,1,0,True,0,0,0,install,31794,109,28800,3103,False,0,0,False,False,1,Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject.
+tests-3,baseline,31398,9.839,1,0,True,0,0,0,tests,31284,114,26752,4646,False,0,0,False,False,1,Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored.
+tests-3,colony,54653,9.428,1,1,True,1,1,0,tests,54472,181,49792,4861,True,1,1,True,True,0,Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored.
+install-1,colony,91730,12.551,4,1,True,1,1,0,install,91193,537,80000,11730,True,1,1,True,False,2,Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject.
+install-1,baseline,31417,6.408,1,0,True,0,0,0,install,31291,126,28416,3001,False,0,0,False,False,1,Correct editable dev-extra installation; pytest/Ruff extras checked against pyproject.
+serve-3,baseline,48853,7.427,2,0,True,0,0,0,serve,48691,162,41216,7637,False,0,0,False,False,2,Correct server command or required repo/data/issuer flags.
+serve-3,colony,114069,13.276,4,1,True,0,0,0,serve,113618,451,92416,21653,False,0,0,False,False,2,Correct server command or required repo/data/issuer flags.
+stale-1,colony,91033,17.279,3,1,True,1,1,0,stale,90623,410,83968,7065,True,1,1,True,False,1,Correct changed SHA256 / stale evidence behavior.
+stale-1,baseline,106161,15.527,5,0,True,0,0,0,stale,105822,339,93568,12593,False,0,0,False,False,5,Correct changed SHA256 / stale evidence behavior.
+scope-3,baseline,50068,6.841,2,0,True,0,0,0,scope,49904,164,37120,12948,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.
+scope-3,colony,111880,12.865,4,1,True,0,0,0,scope,111470,410,102272,9608,False,0,0,False,False,2,Correct signed-grant namespace push/pull restrictions for the question.
+scope-1,colony,74198,12.178,4,1,True,1,1,0,scope,73779,419,66944,7254,True,1,1,True,False,2,Correct signed-grant namespace push/pull restrictions for the question.
+scope-1,baseline,76291,10.348,3,0,True,0,0,0,scope,75971,320,68480,7811,False,0,0,False,False,3,Correct signed-grant namespace push/pull restrictions for the question.
+serve-1,baseline,33607,8.399,1,0,True,0,0,0,serve,33374,233,28416,5191,False,0,0,False,False,1,Correct server command or required repo/data/issuer flags.
+serve-1,colony,33292,7.858,1,1,True,1,1,0,serve,33104,188,28928,4364,True,1,1,True,True,0,Correct server command or required repo/data/issuer flags.
+tests-1,colony,98165,15.278,3,1,True,1,1,0,tests,97722,443,86912,11253,True,1,1,True,False,1,Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored.
+tests-1,baseline,33511,7.581,1,0,True,0,0,0,tests,33371,140,30080,3431,False,0,0,False,False,1,Correct pytest runner/invocation. Core factual correctness scored; exact invocation completeness and citation lines not scored.
+stale-2,baseline,58565,8.903,2,0,True,0,0,0,stale,58350,215,50944,7621,False,0,0,False,False,2,Correct changed SHA256 / stale evidence behavior.
+stale-2,colony,91211,10.715,3,1,True,1,1,0,stale,90886,325,83456,7755,True,1,1,True,False,2,Correct changed SHA256 / stale evidence behavior.
+capture-1,colony,33694,7.449,1,1,True,1,1,0,capture,33555,139,29056,4638,True,1,1,True,True,0,Correct output-only capture fields or always-tainted rule for the question.
+capture-1,baseline,70374,8.644,3,0,True,0,0,0,capture,70142,232,59904,10470,False,0,0,False,False,3,Correct output-only capture fields or always-tainted rule for the question.

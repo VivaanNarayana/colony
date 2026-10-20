@@ -1,0 +1,1 @@
+"""Colony shared agent memory."""
