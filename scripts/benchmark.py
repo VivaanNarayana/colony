@@ -116,8 +116,12 @@ def report(rows):
             value = row[field]
             if type(value) not in {int, float} or not math.isfinite(value) or value < 0:
                 raise ValueError(f"Invalid {field}")
+        raw = row.get("raw_returns", row["matches"])
+        if type(raw) is not int or not row["matches"] <= raw <= row["ask_calls"]:
+            raise ValueError("Invalid raw return count")
         if not (
-            row["wrong_reused"] <= row["matches"] <= row["ask_calls"]
+            row["wrong_reused"] <= raw
+            and row["matches"] <= row["ask_calls"]
             and row["validated"] <= row["matches"]
         ):
             raise ValueError("Invalid ask/match/validation counts")
@@ -146,7 +150,9 @@ def report(rows):
         "paired_tasks": len(pairs),
         "reuse_rate": ratio(total(colony, "matches"), total(colony, "ask_calls")),
         "validated_hit_rate": ratio(total(colony, "validated"), total(colony, "matches")),
-        "wrong_reuse_rate": ratio(total(colony, "wrong_reused"), total(colony, "matches")),
+        "wrong_reuse_rate": ratio(
+            total(colony, "wrong_reused"), sum(r.get("raw_returns", r["matches"]) for r in colony)
+        ),
         "correct_tasks": {
             "baseline": total(baseline, "correct"),
             "colony": total(colony, "correct"),

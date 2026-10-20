@@ -6,6 +6,51 @@ from colony.models import Trail
 from colony.validation import snapshot
 
 
+def test_service_overview_is_not_a_procedure_but_remains_descriptive_evidence(team):
+    _, api, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Worker\n\nThe local processing worker is a background service that executes queued jobs.\n"
+    )
+    trail = Trail(
+        id=uuid.uuid4().hex,
+        namespace="team",
+        question="Audit retention period",
+        content="Keep audit records for fourteen days.",
+        sources=[snapshot(repo, "guide.md")],
+    )
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    procedure = api.post(
+        "/ask", json={"question": "Start the local processing worker."}, headers=auth(key)
+    ).json()
+    assert not procedure["hit"]
+    description = api.post(
+        "/ask", json={"question": "What is the local processing worker?"}, headers=auth(key)
+    ).json()
+    assert description["status"] == "validated" and description["match_kind"] == "evidence"
+    assert "executes queued jobs" in description["content"]
+
+
+def test_saved_bridge_answer_does_not_displace_http_backend_evidence(team):
+    _, api, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Beacon\n\n## Agent bridge\n\nRun the stdio bridge with `beacon mcp`.\n\n"
+        "## HTTP backend\n\nStart the local HTTP server with `beacon serve --config api.toml`.\n"
+    )
+    trail = Trail(
+        id=uuid.uuid4().hex,
+        namespace="team",
+        question="Connect an agent through the stdio bridge",
+        content="Run the Beacon stdio server with `beacon mcp` to connect an agent.",
+        sources=[snapshot(repo, "guide.md")],
+    )
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    result = api.post(
+        "/ask", json={"question": "Start the local HTTP server."}, headers=auth(key)
+    ).json()
+    assert result["status"] == "validated" and result["match_kind"] == "evidence"
+    assert "beacon serve --config api.toml" in result["content"]
+
+
 def test_question_example_does_not_hide_deployment_in_a_different_section(team):
     _, api, repo, _, key = team
     (repo / "guide.md").write_text(

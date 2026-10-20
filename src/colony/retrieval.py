@@ -59,6 +59,33 @@ def passage(question: str, content: str) -> str:
     return f"Question: {question}\nAnswer: {content[:4000]}"
 
 
+def requires_procedure(question: str) -> bool:
+    """Recognize explicit how-to/imperative requests, not descriptive questions."""
+    return bool(
+        re.match(
+            r"(?:how\s+(?:do|can|should)\s+(?:i|we)\s+|(?:please\s+)?"
+            r"(?:start|run|launch|install|deploy|configure|set\s+up|create|restore|rollback|roll\s+back)\b)",
+            question.strip(),
+            re.I,
+        )
+    )
+
+
+def procedural_text(text: str) -> bool:
+    """Prefer concrete commands or instructions over a capability overview."""
+    return bool(
+        "```" in text
+        or "~~~" in text
+        or re.search(r"`[^`\n]+`", text)
+        or re.search(
+            r"(?:^|\n)(?:run|use|execute|start|launch|install|build|create|add|set|configure|open|invoke|call|connect|deploy|retry|issue|join|activate|copy|edit|apply|export|restore|revert)\b",
+            text,
+            re.I,
+        )
+        or re.search(r"(?:^|\n)[^\n]*\s--?[a-zA-Z][\w-]*", text)
+    )
+
+
 def embed(text: str, *, query: bool = False) -> bytes:
     model, _ = models()
     vectors = model.query_embed(text) if query else model.passage_embed(text)

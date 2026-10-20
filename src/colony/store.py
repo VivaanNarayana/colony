@@ -20,7 +20,9 @@ from colony.retrieval import (
     keyword_coverage,
     models,
     passage,
+    procedural_text,
     rank,
+    requires_procedure,
 )
 from colony.security import fingerprint, private_write
 from colony.validation import validate
@@ -272,10 +274,12 @@ class Store:
             ordered = sorted(
                 [
                     (linked, evidence_score(1 - linked[0]["distance"], score, coverage))
-                    for (linked, _), score, coverage in zip(
+                    for (linked, text), score, coverage in zip(
                         candidates, scores, lexical, strict=True
                     )
                     if score >= -5.0
+                    and (coverage >= 0.5 or score >= 0)
+                    and (not requires_procedure(question) or procedural_text(text))
                 ],
                 key=lambda item: item[1],
                 reverse=True,
@@ -364,11 +368,12 @@ class Store:
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
             rows = db.execute(
                 f"""SELECT t.*, min(vec_distance_cosine(v.embedding, ?),
-                vec_distance_cosine(q.embedding, ?)) AS distance
+                vec_distance_cosine(q.embedding, ?)) AS distance,
+                vec_distance_cosine(q.embedding, ?) AS question_distance
                 FROM trails t JOIN trail_vectors v ON t.rowid=v.rowid
                 JOIN trail_questions q ON t.rowid=q.rowid
                 WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?""",
-                [vector, vector, *namespaces, CANDIDATES],
+                [vector, vector, vector, *namespaces, CANDIDATES],
             ).fetchall()
             rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
             contents = [self.read_content(r["content_ref"]) for r in rows]
@@ -386,8 +391,19 @@ class Store:
             candidates = [
                 item
                 for item in candidates
-                if item[2] >= threshold
-                or item[0]["question"].strip().casefold() == question.strip().casefold()
+                if (
+                    item[2] >= threshold
+                    or item[0]["question"].strip().casefold() == question.strip().casefold()
+                )
+                and (
+                    not requires_procedure(question)
+                    or procedural_text(item[1])
+                    or item[0]["question"].strip().casefold() == question.strip().casefold()
+                )
+                and (
+                    1 - item[0]["question_distance"] >= 0.70
+                    or item[0]["question"].strip().casefold() == question.strip().casefold()
+                )
             ]
             if not candidates:
                 return {"hit": False, "reason": "no_relevant_trail"}

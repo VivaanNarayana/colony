@@ -159,6 +159,12 @@ The response can include two distinct sections from the same validated trail's c
 files when their ranking scores are within 0.15, retaining ranking order and the existing
 2,800-character cap. Displayed text is always the original scrubbed file text with its
 original line numbers, without synthetic ranking headings or masked question values.
+Procedural requests require command or instruction cues; capability overviews alone do
+not qualify. Weak evidence also requires at least 50% weighted query-term coverage or
+a nonnegative reranker logit. Saved answers must also have at least 0.70 semantic
+question-to-question similarity (exact questions remain eligible), limiting answer-vector
+topic drift while retaining paraphrases. Exact records retain their diagnostic/capture content.
+These are conservative retrieval heuristics, not answerability guarantees.
 When expansion exceeds the remaining budget, excerpts anchor at the selected paragraph
 so its relevant text survives trimming. A memory result does not determine other tools'
 availability; incomplete hits and misses still require configured research tools.

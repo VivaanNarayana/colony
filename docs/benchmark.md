@@ -65,3 +65,8 @@ rows to the reporter. The initial live runs used primary-assistant review, not i
 blind human review. Report gross input+output tokens and cached-input-subtracted tokens
 separately; neither is a measured dollar charge. Report validation both among useful hits
 and among all raw candidates, and distinguish relevant returns from research-free reuse.
+Live measurements also provide `raw_returns`. Incorrect reuse is divided by all returned
+candidates, including wrong-topic hits; such hits do not become useful matches merely
+because an agent used them. Legacy reporter rows without raw counts fall back to matches.
+This accounting correction changes no questions, prompts, native usage, relevance labels,
+or correctness rubric.
