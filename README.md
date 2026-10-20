@@ -169,8 +169,10 @@ files when their ranking scores are within 0.15, retaining ranking order and the
 2,800-character cap. Displayed text is always the original scrubbed file text with its
 original line numbers, without synthetic ranking headings or masked question values.
 Procedural requests require command or instruction cues; capability overviews alone do
-not qualify. Weak evidence also requires at least 50% weighted query-term coverage or
-a nonnegative reranker logit. For procedural requests, command/instruction passages with
+not qualify. Descriptive evidence also requires at least 50% weighted query-term coverage
+and a strict majority of distinct query terms within two neighboring sentences; a
+positive reranker logit cannot override weak or scattered coverage. For procedural requests,
+command/instruction passages with
 logits at least -2 can pass without literal query-word coverage; short commands often
 answer the question without repeating its words. Saved answers must also have at least
 0.70 semantic question-to-question similarity for procedures, or 0.65 for descriptions

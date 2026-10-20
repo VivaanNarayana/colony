@@ -18,11 +18,13 @@ from colony.retrieval import (
     fused_score,
     index_version,
     keyword_coverage,
+    local_term_support,
     models,
     passage,
     procedural_text,
     rank,
     requires_procedure,
+    terms,
 )
 from colony.security import fingerprint, private_write
 from colony.validation import validate
@@ -246,6 +248,8 @@ class Store:
             return None
         if query_vector is None:
             query_vector = embed(question, query=True)
+        procedure = requires_procedure(question)
+        query_terms = terms(question)
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
             rows = db.execute(
@@ -297,11 +301,13 @@ class Store:
                     )
                     if score >= -5.0
                     and (
-                        coverage >= 0.5
-                        or score >= 0
-                        or (requires_procedure(question) and procedural_text(text) and score >= -2)
+                        (
+                            coverage >= 0.5
+                            and (procedure or local_term_support(query_terms, text))
+                        )
+                        or (procedure and procedural_text(text) and score >= -2)
                     )
-                    and (not requires_procedure(question) or procedural_text(text))
+                    and (not procedure or procedural_text(text))
                 ],
                 key=lambda item: item[1],
                 reverse=True,
