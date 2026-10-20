@@ -85,9 +85,14 @@ and subject MCP process records its actual imported module paths and source hash
 the runner and analyzer compare these with the pinned revisions. This avoids
 relying on `PYTHONPATH` surviving a child tool process's environment filtering.
 
-All 48 completed sessions, native usage and answers are retained. Incomplete runs
-and protocol violations fail closed; there is no best-of selection or automatic
-retry. Results still require relevance, correctness, citation and protocol review.
+All 48 completed sessions, native usage and answers are retained. Both arms' research
+adapters enforce a shared six-operation budget across search/read; later attempts
+return errors without repository data, and their time/tokens still count. Model
+policy failures are recorded throughout the full trial instead of selecting runs
+by restarting at the first mistake. Feature-side policy violations fail its gate;
+baseline violations are reported as observed baseline behavior. Import-integrity
+failures still stop the run. There is no best-of selection or automatic retry.
+Results still require relevance, correctness, citation and protocol review.
 This repeatedly observed suite is a regression check, and an observed wall-time
 or token win does not by itself establish statistically significant production
 savings. Use the separate provider-free `scripts/benchmark_lookup.py` for paired

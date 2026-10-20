@@ -118,6 +118,13 @@ def main():
     feature = git("rev-parse", "HEAD")
     runtime.mkdir(parents=True)
     output.mkdir(parents=True)
+    adapter = runtime / "research-adapter.py"
+    adapter.write_bytes(
+        subprocess.check_output(
+            ["git", "show", f"{feature}:scripts/benchmark_repo_mcp.py"], cwd=live.ROOT
+        )
+    )
+    adapter_hash = hashlib.sha256(adapter.read_bytes()).hexdigest()
     for name, revision in [("main", baseline), ("feature", feature)]:
         archive = subprocess.check_output(
             ["git", "archive", "--format=zip", revision, "src"], cwd=live.ROOT
@@ -158,6 +165,7 @@ def main():
                 method="24 main/feature pairs; alternating first arm; independent empty stores",
                 excluded_preflight="None; every completed task is retained; no retries",
                 import_isolation="Explicit frozen-source launcher; actual server/MCP module paths and hashes verified",
+                research_adapter_sha256=adapter_hash,
             )
             metadata_path.write_text(json.dumps(metadata, indent=2))
             manifest = {
@@ -211,6 +219,7 @@ def main():
             "corpus_commit": baseline,
             "tasks": [t["task_id"] for t in tasks],
             "sessions": 48,
+            "research_adapter_sha256": adapter_hash,
             "order": "main then feature on even task indexes, reversed on odd indexes",
             "gates": [
                 "full suite passes",
@@ -218,11 +227,13 @@ def main():
                 "live core-fact correctness does not decrease",
                 "live gross input+output tokens lower",
                 "live summed subject wall time lower",
+                "feature follows requested tool protocol",
             ],
             "limits": "8 million aggregate tokens, 240s per task; no best-of runs or retries",
             "grading": "Primary-assistant core-fact review; also audit citation paths and protocol",
             "limitations": "Observed 24-question regression suite; sampling and cache variation remain",
             "implementation_verification": "Frozen exports of both revisions; explicit launcher sets sys.path and records actual module paths and source SHA256 before serving; verified for both servers and every subject MCP session",
+            "model_failures": "Retain all model policy failures and finish all pairs. Research adapter delivers at most 6 operations per session; extra attempts return a budget error and their usage is counted. Feature-side protocol violations fail its gate. Execution-integrity failures still stop the run.",
         }
         (output / "protocol.json").write_text(json.dumps(protocol, indent=2))
         tokens = 0
@@ -232,7 +243,13 @@ def main():
                     raise RuntimeError("Aggregate token stop reached")
                 activate(arms[name])
                 print(json.dumps({"arm": name, "task": task["task_id"]}), flush=True)
-                row = live.run_subject(task, "colony", implementation=arms[name]["bootstrap"])
+                row = live.run_subject(
+                    task,
+                    "colony",
+                    implementation=arms[name]["bootstrap"],
+                    max_research_calls=6,
+                    repository_adapter=adapter,
+                )
                 record_implementation(arms[name], "mcp", task["task_id"])
                 tokens += row["tokens"]
                 events = [
@@ -248,9 +265,19 @@ def main():
                     if e.get("type") == "item.completed" and e["item"].get("server") == "repository"
                 ]
                 if len(research) > 6 or row["ask_calls"] != 1:
-                    raise RuntimeError(
-                        "Tool-budget/ask-once protocol violation; retained as failure"
-                    )
+                    path = output / "model-policy-failures.jsonl"
+                    with path.open("a", encoding="utf-8") as stream:
+                        stream.write(
+                            json.dumps(
+                                {
+                                    "arm": name,
+                                    "task_id": task["task_id"],
+                                    "research_calls": len(research),
+                                    "ask_calls": row["ask_calls"],
+                                }
+                            )
+                            + "\n"
+                        )
         (output / "completed.json").write_text(json.dumps({"sessions": 48, "tokens": tokens}))
     finally:
         for process in processes:

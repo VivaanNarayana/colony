@@ -92,29 +92,36 @@ def compare(results, local):
             )
             assert len(calls) == row["tool_calls"]
             research = [c for c in calls if c["server"] == "repository"]
-            assert len(research) <= 6
+            for denied in research[6:]:
+                text = json.dumps(denied.get("result")) + str(denied.get("error"))
+                assert "Research tool budget exhausted" in text
             asks = [c for c in calls if c["server"] == "colony" and c["tool"] == "ask"]
-            assert len(asks) == row["ask_calls"] == 1
-            assert calls[0] == asks[0] and asks == row["asks"]
-            question = asks[0]["arguments"]["question"]
+            assert len(asks) == row["ask_calls"] and asks == row["asks"]
             prompt = (directory / f"{name}.prompt.txt").read_text(encoding="utf-8")
-            assert prompt.endswith("Question: " + question)
+            question = prompt.rsplit("\nQuestion: ", 1)[1]
             prompts.setdefault(row["task_id"], {})[arm] = prompt
-            assert asks[0]["arguments"]["namespace"] == "bench"
+            compliant = len(research) <= 6 and len(asks) == 1 and calls[0] == asks[0]
+            compliant = compliant and all(
+                a["arguments"] == {"question": question, "namespace": "bench"} for a in asks
+            )
+            totals["protocol_violations"] += not compliant
             assert row["answer"] == "\n".join(
                 i["text"] for i in items if i["type"] == "agent_message"
             )
-            packet = json.loads(asks[0]["result"]["content"][0]["text"])
+            packets = [json.loads(a["result"]["content"][0]["text"]) for a in asks]
             review = reviews[name]
             assert type(review["correct"]) is bool and type(review["citation_valid"]) is bool
-            assert len(review["relevant_asks"]) == 1
-            relevant = review["relevant_asks"][0]
-            assert type(relevant) is bool and (not relevant or packet.get("hit"))
+            assert len(review["relevant_asks"]) == len(packets)
+            labels = review["relevant_asks"]
+            assert all(
+                type(label) is bool and (not label or packet.get("hit"))
+                for label, packet in zip(labels, packets, strict=True)
+            )
             totals["correct"] += review["correct"]
             totals["valid_citations"] += review["citation_valid"]
-            totals["raw_hits"] += bool(packet.get("hit"))
-            totals["relevant_hits"] += relevant
-            totals["research_free_correct"] += review["correct"] and relevant and not research
+            totals["raw_hits"] += sum(bool(p.get("hit")) for p in packets)
+            totals["relevant_hits"] += sum(labels)
+            totals["research_free_correct"] += review["correct"] and any(labels) and not research
             totals["tokens"] += row["tokens"]
             totals["cached_input_tokens"] += row["usage"]["cached_input_tokens"]
             totals["tool_calls"] += len(calls)
@@ -127,6 +134,16 @@ def compare(results, local):
         totals["seconds"] = round(totals["seconds"], 3)
         report["arms"][arm] = dict(totals)
     assert manifests["main"] == manifests["feature"]
+    if "research_adapter_sha256" in protocol:
+        adapter = subprocess.check_output(
+            ["git", "show", f"{protocol['feature_commit']}:scripts/benchmark_repo_mcp.py"],
+            cwd=Path(__file__).resolve().parents[1],
+        )
+        assert hashlib.sha256(adapter).hexdigest() == protocol["research_adapter_sha256"]
+        assert all(
+            m["research_adapter_sha256"] == protocol["research_adapter_sha256"]
+            for m in metadata.values()
+        )
     for field in ["commit", "model", "reasoning_effort", "cli", "task_order", "prompt_sha256"]:
         assert metadata["main"][field] == metadata["feature"][field]
     assert all(p["main"] == p["feature"] for p in prompts.values())
@@ -201,6 +218,7 @@ def compare(results, local):
         and verification["ruff_passed"],
         "local_lookup_improves": local["lookup_time_reduction"] > 0,
         "correctness_not_reduced": feature["correct"] >= main["correct"],
+        "feature_follows_tool_protocol": feature["protocol_violations"] == 0,
         "observed_live_tokens_improve": feature["tokens"] < main["tokens"],
         "observed_live_time_improves": feature["seconds"] < main["seconds"],
     }

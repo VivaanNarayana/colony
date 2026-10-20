@@ -1,3 +1,4 @@
+import asyncio
 import importlib.util
 import json
 import os
@@ -6,12 +7,38 @@ import sys
 from pathlib import Path
 
 import pytest
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 spec = importlib.util.spec_from_file_location(
     "benchmark", Path(__file__).parents[1] / "scripts/benchmark.py"
 )
 benchmark = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(benchmark)
+
+
+def test_research_adapter_enforces_one_shared_call_budget(tmp_path):
+    (tmp_path / "README.md").write_text("A private fixture fact.\n")
+    script = Path(__file__).parents[1] / "scripts/benchmark_repo_mcp.py"
+
+    async def check():
+        params = StdioServerParameters(
+            command=sys.executable, args=[str(script), str(tmp_path), "--max-calls", "1"]
+        )
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            await session.initialize()
+            first = await session.call_tool("read_file", {"path": "README.md"})
+            assert not first.isError and "private fixture fact" in first.content[0].text
+            for tool, arguments in [
+                ("search", {"text": "fact"}),
+                ("read_file", {"path": "README.md"}),
+            ]:
+                denied = await session.call_tool(tool, arguments)
+                assert denied.isError
+                assert "Research tool budget exhausted" in denied.content[0].text
+                assert "private fixture fact" not in denied.content[0].text
+
+    asyncio.run(asyncio.wait_for(check(), timeout=20))
 
 
 @pytest.mark.parametrize("selected", ["main", "feature"])
