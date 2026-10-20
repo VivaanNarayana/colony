@@ -182,6 +182,7 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             data = json.loads(result.content[0].text)
             assert data["hit"] and data["status"] == "unverified"
             assert "UNTRUSTED" in data["provenance"]
+            assert "verification" not in data
             import hashlib
 
             stored = await session.call_tool(
@@ -206,10 +207,16 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             assert receipt["status"] == "validated"
             assert receipt["recommendation"] == "reuse_if_relevant"
             assert receipt["sources"][0]["ref"] == "settings.py"
-            assert receipt["evidence"][0]["complete_file"] == evidence_files
-            assert "SHA-256 matched" in receipt["provenance"]
+            assert receipt["current_repository_reads"][0]["complete_file"] == evidence_files
+            assert receipt["verification"]["file_fingerprints_match"]
+            assert receipt["verification"]["source_reads_current"]
             assert "UNTRUSTED" in receipt["provenance"]
-            assert "TIMEOUT" in receipt["evidence"][0]["text"]
+            assert "TIMEOUT" in receipt["current_repository_reads"][0]["content"]
+            assert receipt["current_repository_reads"][0]["path"] == "settings.py"
+            assert (
+                receipt["current_repository_reads"][0]["sha256"]
+                == hashlib.sha256((repo / "settings.py").read_bytes()).hexdigest()
+            )
             assert "checks" not in receipt
 
     asyncio.run(asyncio.wait_for(exercise(), timeout=30))
