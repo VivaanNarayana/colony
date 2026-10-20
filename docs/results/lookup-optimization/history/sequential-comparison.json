@@ -1,0 +1,52 @@
+{
+  "arms": {
+    "main": {
+      "tasks": 24,
+      "correct": 24,
+      "tokens": 1106848,
+      "cached_input_tokens": 938880,
+      "uncached_input_plus_output": 167968,
+      "observed_seconds": 374.722,
+      "tool_calls": 45,
+      "ask_calls": 24,
+      "raw_hits": 19,
+      "relevant_hits": 18,
+      "research_free_correct": 18
+    },
+    "feature": {
+      "tasks": 24,
+      "correct": 24,
+      "tokens": 1128914,
+      "cached_input_tokens": 977792,
+      "uncached_input_plus_output": 151122,
+      "observed_seconds": 451.658,
+      "tool_calls": 47,
+      "ask_calls": 24,
+      "raw_hits": 18,
+      "relevant_hits": 18,
+      "research_free_correct": 18
+    }
+  },
+  "limitations": [
+    "Live arms ran sequentially, not alternated per query. Sampling, provider latency and cached-input variation confound causal time/token comparisons.",
+    "The primary assistant graded the existing core-fact rubrics; citation precision and exhaustive completeness are not scored. One feature answer has a malformed citation path, retained in reviews.",
+    "This repeatedly observed 24-question suite is a regression test, not held-out evidence of production savings."
+  ],
+  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
+  "feature_commit": "d38880a2d4315f68b93f1658a2eb85b4b3256c9d",
+  "same_prompts_order_and_corpus": true,
+  "observed_reductions": {
+    "tokens": -0.019935890022839686,
+    "observed_seconds": -0.20531487342616672,
+    "tool_calls": -0.04444444444444451,
+    "uncached_input_plus_output": 0.10029291293579734
+  },
+  "gate": {
+    "local_lookup_improves": true,
+    "correctness_not_reduced": true,
+    "observed_live_tokens_improve": false,
+    "observed_live_time_improves": false
+  },
+  "all_gates_passed": false,
+  "decision": "Keep first PR in draft and pause other features: controlled lookup gain is established, but an end-to-end win over main is not demonstrated."
+}

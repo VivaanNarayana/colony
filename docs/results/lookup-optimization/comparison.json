@@ -1,52 +1,161 @@
 {
+  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
+  "feature_commit": "5bbdfb9723f09e3c9b103d5a81984be88dd8e0f8",
   "arms": {
     "main": {
-      "tasks": 24,
-      "correct": 24,
-      "tokens": 1106848,
-      "cached_input_tokens": 938880,
-      "uncached_input_plus_output": 167968,
-      "observed_seconds": 374.722,
+      "correct": 23,
+      "valid_citations": 15,
+      "raw_hits": 18,
+      "relevant_hits": 17,
+      "research_free_correct": 17,
+      "tokens": 1142619,
+      "cached_input_tokens": 1018112,
       "tool_calls": 45,
+      "research_calls": 15,
       "ask_calls": 24,
-      "raw_hits": 19,
-      "relevant_hits": 18,
-      "research_free_correct": 18
+      "seconds": 279.548,
+      "tasks": 24,
+      "uncached_input_plus_output": 124507
     },
     "feature": {
-      "tasks": 24,
       "correct": 24,
-      "tokens": 1128914,
-      "cached_input_tokens": 977792,
-      "uncached_input_plus_output": 151122,
-      "observed_seconds": 451.658,
-      "tool_calls": 47,
-      "ask_calls": 24,
+      "valid_citations": 19,
       "raw_hits": 18,
       "relevant_hits": 18,
-      "research_free_correct": 18
+      "research_free_correct": 18,
+      "tokens": 1159316,
+      "cached_input_tokens": 1018496,
+      "tool_calls": 50,
+      "research_calls": 20,
+      "ask_calls": 24,
+      "seconds": 234.184,
+      "tasks": 24,
+      "uncached_input_plus_output": 140820
     }
   },
   "limitations": [
-    "Live arms ran sequentially, not alternated per query. Sampling, provider latency and cached-input variation confound causal time/token comparisons.",
-    "The primary assistant graded the existing core-fact rubrics; citation precision and exhaustive completeness are not scored. One feature answer has a malformed citation path, retained in reviews.",
-    "This repeatedly observed 24-question suite is a regression test, not held-out evidence of production savings."
+    "One alternating 24-question regression trial; no best-of selection or retries.",
+    "Primary-assistant grading of core facts and citations, not independent blind review.",
+    "Repeatedly observed self-repository tasks are not held-out production evidence.",
+    "Provider sampling and cache variation remain; bootstrap intervals are descriptive."
   ],
-  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
-  "feature_commit": "d38880a2d4315f68b93f1658a2eb85b4b3256c9d",
-  "same_prompts_order_and_corpus": true,
-  "observed_reductions": {
-    "tokens": -0.019935890022839686,
-    "observed_seconds": -0.20531487342616672,
-    "tool_calls": -0.04444444444444451,
-    "uncached_input_plus_output": 0.10029291293579734
+  "local_lookup_code_unchanged": true,
+  "verification": {
+    "commit": "4f321c0cbdd088eb19c59ada00b410aae4277cfb",
+    "command": "python -m pytest -q; python -m ruff check .; git diff --check",
+    "tests_passed": 83,
+    "tests_failed": 0,
+    "tests_skipped": 1,
+    "ruff_passed": true,
+    "skip_reason": "Windows host does not permit symlinks",
+    "platform": "Windows / Python 3.13.1",
+    "scope": "Local verification; no hosted CI configured"
   },
+  "observed_reductions": {
+    "tokens": -0.014612919967198268,
+    "seconds": 0.16227624593987433,
+    "tool_calls": -0.11111111111111116,
+    "uncached_input_plus_output": -0.13102074582152
+  },
+  "families": {
+    "mcp": {
+      "main": {
+        "tokens": 145027.0,
+        "seconds": 36.998
+      },
+      "feature": {
+        "tokens": 152180.0,
+        "seconds": 33.931
+      }
+    },
+    "outage": {
+      "main": {
+        "tokens": 151699.0,
+        "seconds": 40.059
+      },
+      "feature": {
+        "tokens": 165512.0,
+        "seconds": 31.682999999999996
+      }
+    },
+    "install": {
+      "main": {
+        "tokens": 98768.0,
+        "seconds": 25.738999999999997
+      },
+      "feature": {
+        "tokens": 99334.0,
+        "seconds": 21.578
+      }
+    },
+    "capture": {
+      "main": {
+        "tokens": 98331.0,
+        "seconds": 31.031000000000002
+      },
+      "feature": {
+        "tokens": 98292.0,
+        "seconds": 21.233
+      }
+    },
+    "serve": {
+      "main": {
+        "tokens": 205055.0,
+        "seconds": 49.295
+      },
+      "feature": {
+        "tokens": 209731.0,
+        "seconds": 42.308
+      }
+    },
+    "tests": {
+      "main": {
+        "tokens": 97874.0,
+        "seconds": 25.450000000000003
+      },
+      "feature": {
+        "tokens": 97820.0,
+        "seconds": 23.653
+      }
+    },
+    "scope": {
+      "main": {
+        "tokens": 194173.0,
+        "seconds": 34.897999999999996
+      },
+      "feature": {
+        "tokens": 178741.0,
+        "seconds": 31.012
+      }
+    },
+    "stale": {
+      "main": {
+        "tokens": 151692.0,
+        "seconds": 36.078
+      },
+      "feature": {
+        "tokens": 157706.0,
+        "seconds": 28.786
+      }
+    }
+  },
+  "descriptive_family_bootstrap_reduction_95pct": {
+    "tokens": [
+      -0.048848704542645116,
+      0.02697082113658955
+    ],
+    "seconds": [
+      0.11697226104679426,
+      0.21449014994199433
+    ]
+  },
+  "same_prompts_order_and_corpus": true,
   "gate": {
+    "tests_and_lint_pass": true,
     "local_lookup_improves": true,
     "correctness_not_reduced": true,
     "observed_live_tokens_improve": false,
-    "observed_live_time_improves": false
+    "observed_live_time_improves": true
   },
-  "all_gates_passed": false,
-  "decision": "Keep first PR in draft and pause other features: controlled lookup gain is established, but an end-to-end win over main is not demonstrated."
+  "all_gates_passed": false
 }

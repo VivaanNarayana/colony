@@ -21,13 +21,12 @@
       "reason": "Validation refusal repeated before the descriptive evidence precision fix; full native traces retained."
     }
   },
-  "trace_format": "native-events.jsonl.gz contains JSONL records with run, session, event. Reconstruct each session's .events.jsonl by writing its event objects in order. Local workspace prefixes alone are redacted; native numeric usage and outcomes are unchanged.",
-  "status": "Draft; do not advance to another feature. Local lookup improves, but an end-to-end improvement over main is not demonstrated.",
+  "trace_format": "native-events.jsonl.gz contains JSONL records with run, session, event. Reconstruct each session's .events.jsonl by writing its event objects in order. Local workspace prefixes alone are redacted; native numeric usage and outcomes are unchanged. The separate paired/native-events.jsonl.gz uses the same wrapper format. Earlier native sessions and unsuccessful comparisons remain unchanged.",
+  "status": "End-to-end gate remains open; retain draft and pause other features.",
   "plan": [
-    "Keep the first PR isolated. Compare main and this implementation with per-query arm alternation before claiming end-to-end token/time improvement.",
-    "Profile provider/MCP waits and extra research calls separately from the already-improved retrieval CPU work.",
-    "After the first gate clears, benchmark repeated cited-source embedding reuse on its own feature branch and PR. That work remains paused.",
-    "Use a held-out repository/workload pilot before making production savings claims."
+    "Review the current first feature before considering a merge; no other feature has been resumed.",
+    "After approval of the first feature, separately benchmark repeated cited-source vector reuse on its own branch and PR.",
+    "Evaluate held-out repositories/workloads before making production savings claims."
   ],
   "reproduction": {
     "lookup_argv": [
@@ -43,6 +42,18 @@
       "<fresh-results-dir>"
     ],
     "models": "Provision the pinned local models using README configuration; actual model/tokenizer hashes are in retrieval-models.json.",
-    "live": "The exact feature-only live runner is included in the downloadable audit archive. It uses the original runner with the same prompts, tasks and order, and only the Colony arm. Main used the repository's existing full paired runner. Live comparisons are sequential, not a randomized treatment trial."
-  }
+    "live": "python scripts/benchmark_lookup_live.py --baseline-ref 202745a92f6c6c59e4c990321be9c5112697594e --work <fresh-private-dir> --output <fresh-results-dir>. Both implementation and corpus refs are pinned; 24 alternating pairs; independent empty stores. Review every answer, then run scripts/analyze_lookup_live.py with --results and --local."
+  },
+  "paired_runs": {
+    "main": {
+      "native_sessions": 24,
+      "native_tokens": 1142619
+    },
+    "feature": {
+      "native_sessions": 24,
+      "native_tokens": 1159316
+    }
+  },
+  "primary_comparison": "paired/comparison.json",
+  "prior_comparison": "history/sequential-comparison.json (failed live token/time gates; fully retained)"
 }

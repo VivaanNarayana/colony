@@ -1,0 +1,34 @@
+{
+  "queued_push_responses": [
+    {
+      "task": "mcp-1",
+      "result": {
+        "id": "24b1485d70034aae9ad4af31e6a2956b",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "outage-1",
+      "result": {
+        "id": "e10c198ee313427295d3c09c21ea7278",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "serve-2",
+      "result": {
+        "id": "0d7a98b6c2784011b949aa40a14bb1e4",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "tool_errors": [],
+  "source_hash_errors": [],
+  "repository_call_limit": 6,
+  "reviewer": "Primary assistant; core facts reviewed against frozen source/rubrics; not blind or independent.",
+  "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
+  "timing_isolation": "No local test suite, model replay or local timing benchmark ran during the alternating live trial."
+}
