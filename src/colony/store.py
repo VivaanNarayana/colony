@@ -386,6 +386,8 @@ class Store:
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
         placeholders = ",".join("?" for _ in namespaces)
+        procedure = requires_procedure(question)
+        normalized_question = question.strip().casefold()
         with self.connect() as db:
             vector = query_vector if query_vector is not None else embed(question, query=True)
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
@@ -398,8 +400,28 @@ class Store:
                 WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?""",
                 [vector, vector, vector, *namespaces, CANDIDATES],
             ).fetchall()
-            rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
+            # These existing eligibility guards do not depend on reranker scores.
+            # Apply them before decrypting/reranking candidates that cannot be returned.
+            rows = [
+                r
+                for r in rows
+                if r["distance"] is not None
+                and 1 - r["distance"] >= 0.55
+                and (
+                    1 - r["question_distance"] >= (0.70 if procedure else 0.65)
+                    or r["question"].strip().casefold() == normalized_question
+                )
+            ]
             contents = [self.read_content(r["content_ref"]) for r in rows]
+            eligible = [
+                (row, content)
+                for row, content in zip(rows, contents, strict=True)
+                if not procedure
+                or procedural_text(content)
+                or row["question"].strip().casefold() == normalized_question
+            ]
+            rows = [row for row, _ in eligible]
+            contents = [content for _, content in eligible]
             scores = rank(question, [c[:4000] for c in contents])
             # MS MARCO logits are not calibrated confidence: useful paraphrases can be negative.
             # Fuse their ordering signal with dense similarity instead of treating zero as truth.
@@ -418,17 +440,7 @@ class Store:
                 for item in candidates
                 if (
                     item[2] >= threshold
-                    or item[0]["question"].strip().casefold() == question.strip().casefold()
-                )
-                and (
-                    not requires_procedure(question)
-                    or procedural_text(item[1])
-                    or item[0]["question"].strip().casefold() == question.strip().casefold()
-                )
-                and (
-                    1 - item[0]["question_distance"]
-                    >= (0.70 if requires_procedure(question) else 0.65)
-                    or item[0]["question"].strip().casefold() == question.strip().casefold()
+                    or item[0]["question"].strip().casefold() == normalized_question
                 )
             ]
             if not candidates:

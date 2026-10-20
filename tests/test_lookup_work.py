@@ -1,9 +1,12 @@
 """Check inference work counts as well as retrieval behavior."""
 
 import pytest
+import sqlite_vec
 
 import colony.store
+from colony.models import Trail
 from colony.store import Store
+from colony.validation import snapshot
 
 
 @pytest.mark.parametrize("namespaces, expected", [([], 0), (["team"], 1)])
@@ -55,3 +58,73 @@ def test_fallback_receives_same_request_vector(monkeypatch):
     monkeypatch.setattr(store, "find_evidence", evidence)
     assert store.ask("Backups", ["team"], 604800, 0.60)["status"] == "validated"
     assert seen == [vector, vector]
+
+
+@pytest.mark.parametrize("exact", [False, True])
+def test_question_guard_skips_decryption_and_reranking_but_preserves_exact_records(
+    team, monkeypatch, exact
+):
+    app, _, repo, _, key = team
+    store = app.state.store
+    store.push(
+        Trail(
+            id="1" * 32,
+            namespace="team",
+            question="Start service" if exact else "Audit rotation",
+            content="A diagnostic record.",
+            sources=[snapshot(repo, "build.py")],
+        ),
+        key.grant,
+    )
+    vector = sqlite_vec.serialize_float32([1.0] + [0.0] * 383)
+    unrelated = sqlite_vec.serialize_float32([0.0, 1.0] + [0.0] * 382)
+    with store.connect() as db:
+        db.execute("UPDATE trail_vectors SET embedding=?", (vector,))
+        db.execute("UPDATE trail_questions SET embedding=?", (unrelated,))
+    reads, reranked = [], []
+    original = store.read_content
+
+    def read(ref):
+        reads.append(ref)
+        return original(ref)
+
+    def rank(question, passages):
+        reranked.extend(passages)
+        return [5.0] * len(passages)
+
+    monkeypatch.setattr(store, "read_content", read)
+    monkeypatch.setattr(colony.store, "rank", rank)
+    result = store.find_answer("Start service", ["team"], 604800, 0.60, query_vector=vector)
+    assert result["hit"] == exact
+    assert len(reads) == int(exact)
+    assert len(reranked) == int(exact)
+
+
+def test_procedure_guard_skips_reranking_ineligible_overview(team, monkeypatch):
+    app, _, repo, _, key = team
+    store = app.state.store
+    store.push(
+        Trail(
+            id="2" * 32,
+            namespace="team",
+            question="Start local service",
+            content="The local service handles background jobs.",
+            sources=[snapshot(repo, "build.py")],
+        ),
+        key.grant,
+    )
+    vector = sqlite_vec.serialize_float32([1.0] + [0.0] * 383)
+    with store.connect() as db:
+        db.execute("UPDATE trail_vectors SET embedding=?", (vector,))
+        db.execute("UPDATE trail_questions SET embedding=?", (vector,))
+    reranked = []
+
+    def rank(question, passages):
+        reranked.extend(passages)
+        return [5.0] * len(passages)
+
+    monkeypatch.setattr(colony.store, "rank", rank)
+    assert not store.find_answer("Start service", ["team"], 604800, 0.60, query_vector=vector)[
+        "hit"
+    ]
+    assert not reranked
