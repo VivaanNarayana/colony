@@ -7,8 +7,13 @@ import pytest
 
 from colony.context import context_window, excerpts
 from colony.models import Trail
-from colony.retrieval import embed_passages, models
+from colony.retrieval import embed_passages, models, terms
 from colony.validation import snapshot
+
+
+@pytest.mark.parametrize("object_name", ["token", "seed", "credentials"])
+def test_lexical_normalization_keeps_substantive_get(object_name):
+    assert "get" in terms(f"How can I get {object_name}?")
 
 
 def test_source_embeddings_preserve_values_and_order_across_input_lengths():
@@ -54,6 +59,10 @@ def test_availability_paraphrases_keep_the_same_scoped_source_facts(team, subjec
         key.grant,
     )
     result = app.state.store.ask(question, ["team"], 604800, 0.60)
+    assert result["status"] == "validated"
+    assert any(fact in e["text"] for e in result["evidence"])
+    passive = f"Do requests get queued while the {subject} is {state}?"
+    result = app.state.store.ask(passive, ["team"], 604800, 0.60)
     assert result["status"] == "validated"
     assert any(fact in e["text"] for e in result["evidence"])
     assert not app.state.store.ask(question, ["private"], 604800, 0.60)["hit"]

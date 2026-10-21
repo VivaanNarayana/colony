@@ -172,6 +172,9 @@ def terms(text: str) -> set[str]:
     # Question framing is not evidence content. Keep its substantive subject and
     # condition, instead of weighting an absent generic verb more than both.
     text = re.sub(r"^\s*what\s+(?:happens|occurs)\s+(?:when|if|during)\s+", "", text, flags=re.I)
+    # In passive questions, get is an auxiliary rather than a requested fact.
+    # Preserve substantive uses such as "get credentials" and "get a token".
+    text = re.sub(r"\b(?:get|gets|got|getting)\s+([a-z]{3,}ed)\b", r"\1", text, flags=re.I)
     text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
     # Shared prefixes cover plural/inflected prose and common code identifiers.
     words = re.findall(r"[a-z][a-z0-9]+", text.lower())
@@ -187,6 +190,8 @@ def terms(text: str) -> set[str]:
         # same state. The subject and other requested facts must still match.
         if word in {"down", "outage", "offline", "unavailable", "unavailability", "downtime"}:
             word = "offline"
+        if word in {"queued", "queuing", "queueing"}:
+            word = "queue"
         result.add(word[:6])
     return result
 
