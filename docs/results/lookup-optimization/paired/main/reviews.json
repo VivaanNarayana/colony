@@ -11,13 +11,13 @@
   },
   "outage-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "install-2.colony": {
     "correct": true,
@@ -41,23 +41,23 @@
   },
   "outage-1.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
   },
   "outage-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "mcp-2.colony": {
     "correct": true,
@@ -71,23 +71,23 @@
   },
   "mcp-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
   },
   "serve-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "tests-2.colony": {
     "correct": true,
@@ -110,14 +110,14 @@
     "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
   },
   "stale-3.colony": {
-    "correct": true,
-    "citation_valid": true,
+    "correct": false,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
+    "note": "Incorrect refusal: rejected unrelated MCP evidence but did not research the available repository; omitted SHA-256 comparison. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "capture-2.colony": {
     "correct": true,
@@ -131,13 +131,13 @@
   },
   "install-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "tests-3.colony": {
     "correct": true,
@@ -161,13 +161,13 @@
   },
   "serve-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "stale-1.colony": {
     "correct": true,
@@ -223,9 +223,9 @@
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
-      true
+      false
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
     "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
   },

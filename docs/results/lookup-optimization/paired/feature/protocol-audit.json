@@ -3,7 +3,7 @@
     {
       "task": "mcp-1",
       "result": {
-        "id": "152200eb84c54947a9934a595e88a28c",
+        "id": "3403da86d27646b08da6c1541e56b8bd",
         "stored": false,
         "queued": true
       }
@@ -11,7 +11,7 @@
     {
       "task": "outage-1",
       "result": {
-        "id": "57344fd06fba44cc8df4b0a8b8034eb1",
+        "id": "3405d219e8784649af8bfbe017a76704",
         "stored": false,
         "queued": true
       }
@@ -19,22 +19,124 @@
     {
       "task": "serve-2",
       "result": {
-        "id": "7573be000945450d839db422040bf48f",
+        "id": "7a272ab6b135444fb6af47ea8904d1c5",
         "stored": false,
         "queued": true
       }
     },
     {
-      "task": "tests-2",
+      "task": "serve-3",
       "result": {
-        "id": "b8afbdc329d24f3d880959fc77fb7abe",
+        "id": "d7b1cd9e6e16463cb70200d753b23c7c",
         "stored": false,
         "queued": true
       }
     }
   ],
-  "tool_errors": [],
-  "source_hash_errors": [],
+  "tool_errors": [
+    {
+      "task": "scope-2",
+      "call": {
+        "id": "item_7",
+        "type": "mcp_tool_call",
+        "server": "colony",
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How are namespace permissions checked?",
+          "content": "Each signed, unexpired keyfile carries a Grant with namespace scopes containing independent push/pull booleans. The server verifies the bearer keyfile signature against the configured Ed25519 issuer key and expiry, then for trail writes requires a matching scope with push=true (403 otherwise); for asks it builds allowed namespaces from scopes with pull=true and, if a namespace is explicitly requested, requires it be in that list (403 otherwise). Scope and requested namespace syntax is constrained to 1\u201380 alphanumeric, underscore, dot, or hyphen characters.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/server.py",
+              "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+            },
+            {
+              "kind": "file",
+              "ref": "src/colony/security.py",
+              "content_hash": "97483e64c727999de9527f14c01bdfc51bfc9ee5e5a83184e8e2d6a41d79c8f"
+            },
+            {
+              "kind": "file",
+              "ref": "src/colony/models.py",
+              "content_hash": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a"
+            }
+          ]
+        },
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Error executing tool push: 1 validation error for pushArguments\nsources.1.content_hash\n  String should match pattern '^[a-f0-9]{64}$' [type=string_pattern_mismatch, input_value='97483e64c727999de9527f14...e5a83184e8e2d6a41d79c8f', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/string_pattern_mismatch"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "failed"
+      }
+    },
+    {
+      "task": "scope-2",
+      "call": {
+        "id": "item_8",
+        "type": "mcp_tool_call",
+        "server": "colony",
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How are namespace permissions checked?",
+          "content": "Each signed, unexpired keyfile carries a Grant with namespace scopes containing independent push/pull booleans. The server verifies the bearer keyfile signature against the configured Ed25519 issuer key and expiry, then for trail writes requires a matching scope with push=true (403 otherwise); for asks it builds allowed namespaces from scopes with pull=true and, if a namespace is explicitly requested, requires it be in that list (403 otherwise). Scope and requested namespace syntax is constrained to 1\u201380 alphanumeric, underscore, dot, or hyphen characters.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/server.py",
+              "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+            },
+            {
+              "kind": "file",
+              "ref": "src/colony/security.py",
+              "content_hash": "97483e64c727999de9527f14c01bdfc51bfc91ee5a83184e8e2d6a41d79c8f"
+            },
+            {
+              "kind": "file",
+              "ref": "src/colony/models.py",
+              "content_hash": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a"
+            }
+          ]
+        },
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Error executing tool push: 1 validation error for pushArguments\nsources.1.content_hash\n  String should match pattern '^[a-f0-9]{64}$' [type=string_pattern_mismatch, input_value='97483e64c727999de9527f14...e5a83184e8e2d6a41d79c8f', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/string_pattern_mismatch"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "failed"
+      }
+    }
+  ],
+  "source_hash_errors": [
+    {
+      "task": "scope-2",
+      "source": {
+        "kind": "file",
+        "ref": "src/colony/security.py",
+        "content_hash": "97483e64c727999de9527f14c01bdfc51bfc9ee5e5a83184e8e2d6a41d79c8f"
+      }
+    },
+    {
+      "task": "scope-2",
+      "source": {
+        "kind": "file",
+        "ref": "src/colony/security.py",
+        "content_hash": "97483e64c727999de9527f14c01bdfc51bfc91ee5a83184e8e2d6a41d79c8f"
+      }
+    }
+  ],
   "repository_call_limit": 6,
   "reviewer": "Primary assistant; core facts reviewed against frozen source/rubrics; not blind or independent.",
   "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",

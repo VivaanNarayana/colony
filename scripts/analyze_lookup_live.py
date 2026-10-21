@@ -130,7 +130,10 @@ def compare(results, local):
                     and call.get("status") == "completed"
                 ):
                     data = json.loads(call["result"]["content"][0]["text"])
-                    if "sha256" in data:
+                    if "source" in data:
+                        source = data["source"]
+                        read_sources[source["ref"]] = source["content_hash"]
+                    elif "sha256" in data:  # Retain audit support for earlier trials.
                         read_sources[data["path"]] = data["sha256"]
                 if call["server"] == "colony" and call["tool"] == "push":
                     sources = call["arguments"].get("sources", [])

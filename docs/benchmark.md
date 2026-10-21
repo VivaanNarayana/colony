@@ -111,3 +111,6 @@ six-call limit nor the violation accounting, original outer prompts or task rubr
 Reads also return an exact `source` object with the same file hash for reuse in
 `push.sources`. The audit requires pushed hashes to match actual preceding reads
 and the frozen corpus, and preserves exact question punctuation in lookup checks.
+The source object follows the content and uses the push field names directly;
+duplicate `path`/`sha256` aliases are omitted. No model-provided hash is repaired
+or normalized, and incorrect attempts still fail the audit even after a retry.

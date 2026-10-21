@@ -1,10 +1,9 @@
 # Lookup optimization: strict gate status
 
-Draft. The complete-file feedback trial failed attempted-call compliance (one
-feature duplicate ask) and gross tokens. All 48 sessions remain retained in
-`history/complete-file-regression/`; no gate is advisory.
-
-The shared full-file feedback is being reverted. The next measured revision will
-remove source metadata duplicated by current repository reads from the feature
-MCP response while preserving actual reads, hashes, validation and reuse guidance.
+Draft. The receipt deduplication trial failed source-provenance compliance on
+namespace permissions: two attempted source hashes differed from actual reads.
+All 48 sessions and their costs are retained in history/dedup-source-copy-failed.
+No failure is advisory. The next shared research adapter will return one canonical
+source object after content, removing duplicate hash fields and field translation.
+The model must still supply exact hashes; no normalization or repair is performed.
 Other features remain paused.

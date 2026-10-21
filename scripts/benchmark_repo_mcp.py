@@ -50,7 +50,7 @@ def take_call():
 
 @server.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 def read_file(path: str) -> dict:
-    """Read README.md, pyproject.toml, or src/colony/*.py; return content and actual SHA256."""
+    """Read README.md, pyproject.toml, or src/colony/*.py; return content and a copy-ready source."""
     budget = take_call()
     target = (ROOT / path).resolve()
     target.relative_to(ROOT)
@@ -64,11 +64,11 @@ def read_file(path: str) -> dict:
     data = target.read_bytes()
     digest = hashlib.sha256(data).hexdigest()
     return {
-        **({"research_budget": budget} if budget is not None else {}),
-        "source": {"kind": "file", "ref": path, "content_hash": digest},
-        "path": path,
-        "sha256": digest,
         "content": data.decode("utf-8"),
+        # Keep one canonical proof next to the response end, already using push's
+        # field names. Do not make the subject reconstruct or translate a digest.
+        "source": {"kind": "file", "ref": path, "content_hash": digest},
+        **({"research_budget": budget} if budget is not None else {}),
     }
 
 

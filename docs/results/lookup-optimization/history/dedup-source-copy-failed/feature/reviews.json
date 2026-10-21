@@ -1,0 +1,242 @@
+{
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras install command."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras install command."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras install command."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
+  }
+}

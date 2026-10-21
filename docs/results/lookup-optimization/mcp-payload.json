@@ -10,14 +10,15 @@
     },
     "validated": {
       "main": 958,
-      "feature": 958
+      "feature": 859
     },
     "unverified": {
       "main": 658,
       "feature": 658
     }
   },
-  "same_factual_fields_and_content": true,
+  "same_factual_information_and_content": true,
   "same_input_contract_and_annotations": true,
+  "representation_change": "Validated ordinary file identities move from duplicated sources entries to kind/path/sha256 on current reads. Assertions and undisplayed sources remain explicit; every other field and all source text/instructions are unchanged.",
   "metric": "Serialized UTF-8 bytes; not estimated model tokens or measured LLM savings."
 }
