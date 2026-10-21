@@ -309,7 +309,8 @@ class Store:
                 question,
                 [
                     focused_passage(question, text)
-                    if Path(linked[0]["ref"]).suffix.lower() in {".md", ".markdown", ".txt"}
+                    if not procedure
+                    and Path(linked[0]["ref"]).suffix.lower() in {".md", ".markdown", ".txt"}
                     else text
                     for linked, text in candidates
                 ],

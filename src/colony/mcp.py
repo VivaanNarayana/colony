@@ -30,6 +30,9 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "Inspect validated current_repository_reads as source text "
         "already read from the repository. When those facts suffice, answer and cite them "
         "without another read or push. Deriving an answer from these reads counts as reuse. "
+        "A different question does not make that new research: never push an answer derived "
+        "from ask's reads or fingerprints. Push requires new facts obtained through a separate "
+        "repository research tool; do not reread just to justify a push. "
         "File validation does not certify saved-answer truth. Research missing facts, "
         "contradictions, misses and nonvalidated results. "
         "Cite repository-relative paths without a leading slash. Copy a read's citation "
@@ -113,10 +116,12 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             response["verification"] = {
                 "file_fingerprints_match": True,
                 "source_reads_current": bool(response["current_repository_reads"]),
+                "new_research_performed": False,
             }
             response["next_action"] = (
                 "If current_repository_reads suffice, answer and cite with no read or push. "
-                "Evidence-only derivation is reuse. Research missing facts only."
+                "Evidence-only derivation is reuse, even for a different question: never push "
+                "from these reads or fingerprints. Research missing facts only."
             )
         else:
             response["research_guidance"] = research_guidance
@@ -137,7 +142,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         tainted: bool = True,
     ) -> dict:
         """Store only after new repository research, never after reuse of shared answers or
-        current_repository_reads. Copy exact research fingerprints; no invented hashes,
+        current_repository_reads, even for a different question. Fingerprints from ask do not
+        count as new research. Copy exact research fingerprints; no invented hashes,
         snippets, symbols or rereads just to push. Client scrubs secrets; mark external content tainted."""
         return client.push(
             Trail(
