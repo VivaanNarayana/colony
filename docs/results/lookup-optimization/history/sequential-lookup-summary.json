@@ -1,0 +1,53 @@
+{
+  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
+  "feature_commit": "d38880a2d4315f68b93f1658a2eb85b4b3256c9d",
+  "protocol": "24 regression queries, 3 repetitions, paired alternating order; 8 identical seeded trails; warmed local models; same CPU and checkout; no provider calls",
+  "identical_retrieval_pairs": 72,
+  "modes": {
+    "main": {
+      "lookups": 72,
+      "query_embeddings": 87,
+      "reranker_calls": 144,
+      "reranked_passages": 1767,
+      "seconds_total": 80.24120750010479,
+      "seconds_median": 0.9171675500110723,
+      "seconds_p95": 2.6169415000185836
+    },
+    "feature": {
+      "lookups": 72,
+      "query_embeddings": 72,
+      "reranker_calls": 138,
+      "reranked_passages": 981,
+      "seconds_total": 52.74199629976647,
+      "seconds_median": 0.33921960000589024,
+      "seconds_p95": 2.5059078999911435
+    }
+  },
+  "lookup_time_reduction": 0.34270684673211593,
+  "descriptive_task_cluster_bootstrap_95pct": [
+    0.20974832106687247,
+    0.5123302208538805
+  ],
+  "timing_isolation": "All live model trials and tests had finished before this local timing run; only the paired local benchmark used the retrieval models.",
+  "quality_scope": "Seeded warm retrieval fixture; 72 paired responses compared excluding created_at/checks. A separate main-trial replay has 23/24 exact full-response matches; the single intentional change replaces off-topic validation evidence with a miss. Live subject-model correctness is reported separately.",
+  "environment": {
+    "python": "3.13.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "fastembed": "0.7.4",
+      "onnxruntime": "1.24.4",
+      "numpy": "2.4.4",
+      "tokenizers": "0.22.2",
+      "sqlite-vec": "0.1.9",
+      "mcp": "1.30.0",
+      "fastapi": "0.136.1",
+      "pydantic": "2.12.5",
+      "huggingface-hub": "0.36.2"
+    }
+  },
+  "limitations": [
+    "One fixed repository regression suite with three repetitions, not held-out production workloads.",
+    "Bootstrap describes variation across these fixed task families; it is not a production guarantee.",
+    "P95 latency is essentially unchanged; benefits concentrate in saved-answer lookups."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_bytes": {
+    "main": 2290,
+    "feature": 1993
+  },
+  "initialization_instruction_bytes": {
+    "main": 172,
+    "feature": 593
+  },
+  "receipt_bytes": {
+    "miss": {
+      "main": 237,
+      "feature": 237
+    },
+    "validated": {
+      "main": 958,
+      "feature": 843
+    },
+    "unverified": {
+      "main": 658,
+      "feature": 658
+    }
+  },
+  "same_factual_information_and_content": true,
+  "same_input_contract_and_annotations": true,
+  "representation_change": "All receipt fields/source proofs and source bytes preserved. Static next_action shortened; complete reuse/research rules provided once at session initialization. Tool descriptions shortened without changing input constraints, defaults or annotations.",
+  "metric": "Actual serialized UTF-8 bytes, not model-token estimates or measured LLM savings."
+}

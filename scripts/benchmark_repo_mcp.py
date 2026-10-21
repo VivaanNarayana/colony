@@ -1,19 +1,57 @@
 """Read-only research tools shared by both benchmark arms."""
 
+import argparse
 import hashlib
-import sys
+import threading
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-ROOT = Path(sys.argv[1]).resolve()
-server = FastMCP("Repository")
+parser = argparse.ArgumentParser()
+parser.add_argument("root", type=Path)
+parser.add_argument("--max-calls", type=int)
+args = parser.parse_args()
+ROOT = args.root.resolve()
+server = FastMCP(
+    "Repository",
+    instructions=(
+        "Search and read_file share one research-call budget. Each successful response reports "
+        "research_budget.remaining. When it reaches zero, finish from the evidence already "
+        "received; do not call either research tool again. Use read_file's source object "
+        "verbatim in Colony push.sources; do not reconstruct its hash. Preserve the user's "
+        "question verbatim, including punctuation, in Colony calls."
+    ),
+)
+used_calls = 0
+budget_lock = threading.Lock()
+
+
+def take_call():
+    global used_calls
+    with budget_lock:
+        if args.max_calls is not None and used_calls >= args.max_calls:
+            raise ValueError("Research tool budget exhausted; answer from existing evidence")
+        used_calls += 1
+        return (
+            {
+                "limit": args.max_calls,
+                "remaining": args.max_calls - used_calls,
+                "next_action": (
+                    "Finish from existing evidence; no research calls remain."
+                    if used_calls == args.max_calls
+                    else "Research missing facts only."
+                ),
+            }
+            if args.max_calls is not None
+            else None
+        )
 
 
 @server.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
 def read_file(path: str) -> dict:
-    """Read README.md, pyproject.toml, or src/colony/*.py; return content and actual SHA256."""
+    """Read README.md, pyproject.toml, or src/colony/*.py; return content and a copy-ready source."""
+    budget = take_call()
     target = (ROOT / path).resolve()
     target.relative_to(ROOT)
     allowed = {
@@ -24,16 +62,20 @@ def read_file(path: str) -> dict:
     if target not in {p.resolve() for p in allowed}:
         raise ValueError("Outside research corpus")
     data = target.read_bytes()
+    digest = hashlib.sha256(data).hexdigest()
     return {
-        "path": path,
-        "sha256": hashlib.sha256(data).hexdigest(),
         "content": data.decode("utf-8"),
+        # Keep one canonical proof next to the response end, already using push's
+        # field names. Do not make the subject reconstruct or translate a digest.
+        "source": {"kind": "file", "ref": path, "content_hash": digest},
+        **({"research_budget": budget} if budget is not None else {}),
     }
 
 
 @server.tool(annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False))
-def search(text: str) -> list[dict]:
+def search(text: str) -> dict:
     """Literal case-insensitive search of README.md, pyproject.toml, and src/colony/*.py; max 50 lines."""
+    budget = take_call()
     results = []
     for path in [
         ROOT / "README.md",
@@ -44,8 +86,14 @@ def search(text: str) -> list[dict]:
             if text.lower() in line.lower():
                 results.append({"path": path.relative_to(ROOT).as_posix(), "line": n, "text": line})
                 if len(results) >= 50:
-                    return results
-    return results
+                    return {
+                        **({"research_budget": budget} if budget is not None else {}),
+                        "matches": results,
+                    }
+    return {
+        **({"research_budget": budget} if budget is not None else {}),
+        "matches": results,
+    }
 
 
 server.run(transport="stdio")

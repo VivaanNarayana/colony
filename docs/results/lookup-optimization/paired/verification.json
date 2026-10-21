@@ -1,0 +1,20 @@
+{
+  "commit": "93bffe3035e95d9e8c28167b2ba6568bc02950b0",
+  "command": "python -m pytest -q; python -m ruff check .; git diff --check",
+  "tests_passed": 99,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "ruff_passed": true,
+  "skip_reason": "Windows host does not permit symlinks",
+  "platform": "Windows / Python 3.13.1",
+  "scope": "Local verification; no hosted CI configured",
+  "pytest_seconds": 45.43,
+  "regression_audits": {
+    "historical_uncached_regression_blocks_readiness": true,
+    "historical_excess_attempts_block_readiness": true,
+    "historical_bad_source_attempts_rejected_even_after_correction": true,
+    "each_performance_or_compliance_regression_blocks_despite_other_wins": true,
+    "failed_analysis_retains_report_and_exits_nonzero": true
+  },
+  "mcp_payload_check": "Input constraints/defaults/annotations and all source facts unchanged. Shorter tool descriptions and next_action; complete source/reuse/research policy at session initialization. Actual serialized payload comparison passes."
+}

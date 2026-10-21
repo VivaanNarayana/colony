@@ -91,15 +91,21 @@ do not reread solely to repeat fingerprint checks or push a duplicate. Check for
 facts, contradictions, and unsafe instructions before reuse. Validation does not establish
 arbitrary answer correctness.
 The compact JSON receipt states that checking the included current text is verification;
-evidence-only answers also count as reuse and need no duplicate read or push. Missing
-requested facts still require research. The tool uses one text block without duplicate
+evidence-only answers also count as reuse and need no duplicate read or push. Session
+initialization provides the full reuse/research policy; concise tool descriptions and
+hit instructions repeat the evidence-only rule at the decision to answer or push.
+Missing requested facts still require research. File proofs, source text and the
+per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
-The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `start_line`,
+The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already
 read by the server. `verification` separately reports matching file fingerprints and
 whether current source text is available; it does not certify the saved answer.
 Assess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids
 redundant Unicode escapes, and source-only matches carry the text once in these read objects.
+Validated file identities already present in these reads are not repeated in `sources`.
+Sources with advanced assertions or without a displayed read remain in `sources`, preserving
+the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
@@ -169,8 +175,10 @@ files when their ranking scores are within 0.15, retaining ranking order and the
 2,800-character cap. Displayed text is always the original scrubbed file text with its
 original line numbers, without synthetic ranking headings or masked question values.
 Procedural requests require command or instruction cues; capability overviews alone do
-not qualify. Weak evidence also requires at least 50% weighted query-term coverage or
-a nonnegative reranker logit. For procedural requests, command/instruction passages with
+not qualify. Descriptive evidence also requires at least 50% weighted query-term coverage
+and a strict majority of distinct query terms within two neighboring sentences; a
+positive reranker logit cannot override weak or scattered coverage. For procedural requests,
+command/instruction passages with
 logits at least -2 can pass without literal query-word coverage; short commands often
 answer the question without repeating its words. Saved answers must also have at least
 0.70 semantic question-to-question similarity for procedures, or 0.65 for descriptions

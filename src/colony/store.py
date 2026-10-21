@@ -18,11 +18,13 @@ from colony.retrieval import (
     fused_score,
     index_version,
     keyword_coverage,
+    local_term_support,
     models,
     passage,
     procedural_text,
     rank,
     requires_procedure,
+    terms,
 )
 from colony.security import fingerprint, private_write
 from colony.validation import validate
@@ -214,20 +216,40 @@ class Store:
         *,
         include_evidence_files: bool = False,
     ):
+        if not namespaces:
+            return {"hit": False, "reason": "no_pull_scope"}
+        query_vector = embed(question, query=True)
         answer = self.find_answer(
-            question, namespaces, max_age, threshold, include_evidence_files=include_evidence_files
+            question,
+            namespaces,
+            max_age,
+            threshold,
+            include_evidence_files=include_evidence_files,
+            query_vector=query_vector,
         )
         if answer.get("status") == "validated" or not namespaces:
             return answer
         return (
             self.find_evidence(
-                question, namespaces, max_age, include_evidence_files=include_evidence_files
+                question,
+                namespaces,
+                max_age,
+                include_evidence_files=include_evidence_files,
+                query_vector=query_vector,
             )
             or answer
         )
 
-    def find_evidence(self, question, namespaces, max_age, *, include_evidence_files=False):
+    def find_evidence(
+        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None
+    ):
         """Reuse previously cited sources, never index or search untouched repository files."""
+        if not namespaces:
+            return None
+        if query_vector is None:
+            query_vector = embed(question, query=True)
+        procedure = requires_procedure(question)
+        query_terms = terms(question)
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
             rows = db.execute(
@@ -237,7 +259,7 @@ class Store:
                 JOIN trails t ON c.trail_id=t.id
                 WHERE t.namespace IN ({placeholders}) AND t.created_at>=?
                 ORDER BY distance, t.created_at DESC""",
-                [embed(question, query=True), *namespaces, time.time() - max_age],
+                [query_vector, *namespaces, time.time() - max_age],
             ).fetchall()
             cache, groups, candidates = {}, {}, []
             for row in rows:
@@ -268,6 +290,18 @@ class Store:
             # A lexical candidate can rescue evidence below the dense cutoff. Keep
             # the expensive cross-encoder bounded to at most 48 distinct passages.
             chosen = sorted(set(dense) | set(sparse))
+            # These eligibility guards do not use model scores. Apply them after
+            # candidate selection so IDF, cutoffs and tie order stay unchanged,
+            # but before spending inference on passages that cannot be returned.
+            chosen = [
+                i
+                for i in chosen
+                if (
+                    procedural_text(candidates[i][1])
+                    if procedure
+                    else lexical[i] >= 0.5 and local_term_support(query_terms, candidates[i][1])
+                )
+            ]
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
             scores = rank(question, [text for _, text in candidates])
@@ -279,11 +313,10 @@ class Store:
                     )
                     if score >= -5.0
                     and (
-                        coverage >= 0.5
-                        or score >= 0
-                        or (requires_procedure(question) and procedural_text(text) and score >= -2)
+                        (coverage >= 0.5 and (procedure or local_term_support(query_terms, text)))
+                        or (procedure and procedural_text(text) and score >= -2)
                     )
-                    and (not requires_procedure(question) or procedural_text(text))
+                    and (not procedure or procedural_text(text))
                 ],
                 key=lambda item: item[1],
                 reverse=True,
@@ -363,12 +396,15 @@ class Store:
         threshold: float,
         *,
         include_evidence_files: bool = False,
+        query_vector: bytes | None = None,
     ):
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
         placeholders = ",".join("?" for _ in namespaces)
+        procedure = requires_procedure(question)
+        normalized_question = question.strip().casefold()
         with self.connect() as db:
-            vector = embed(question, query=True)
+            vector = query_vector if query_vector is not None else embed(question, query=True)
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
             rows = db.execute(
                 f"""SELECT t.*, min(vec_distance_cosine(v.embedding, ?),
@@ -379,8 +415,28 @@ class Store:
                 WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?""",
                 [vector, vector, vector, *namespaces, CANDIDATES],
             ).fetchall()
-            rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
+            # These existing eligibility guards do not depend on reranker scores.
+            # Apply them before decrypting/reranking candidates that cannot be returned.
+            rows = [
+                r
+                for r in rows
+                if r["distance"] is not None
+                and 1 - r["distance"] >= 0.55
+                and (
+                    1 - r["question_distance"] >= (0.70 if procedure else 0.65)
+                    or r["question"].strip().casefold() == normalized_question
+                )
+            ]
             contents = [self.read_content(r["content_ref"]) for r in rows]
+            eligible = [
+                (row, content)
+                for row, content in zip(rows, contents, strict=True)
+                if not procedure
+                or procedural_text(content)
+                or row["question"].strip().casefold() == normalized_question
+            ]
+            rows = [row for row, _ in eligible]
+            contents = [content for _, content in eligible]
             scores = rank(question, [c[:4000] for c in contents])
             # MS MARCO logits are not calibrated confidence: useful paraphrases can be negative.
             # Fuse their ordering signal with dense similarity instead of treating zero as truth.
@@ -399,17 +455,7 @@ class Store:
                 for item in candidates
                 if (
                     item[2] >= threshold
-                    or item[0]["question"].strip().casefold() == question.strip().casefold()
-                )
-                and (
-                    not requires_procedure(question)
-                    or procedural_text(item[1])
-                    or item[0]["question"].strip().casefold() == question.strip().casefold()
-                )
-                and (
-                    1 - item[0]["question_distance"]
-                    >= (0.70 if requires_procedure(question) else 0.65)
-                    or item[0]["question"].strip().casefold() == question.strip().casefold()
+                    or item[0]["question"].strip().casefold() == normalized_question
                 )
             ]
             if not candidates:

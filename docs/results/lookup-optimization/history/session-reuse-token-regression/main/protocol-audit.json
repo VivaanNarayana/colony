@@ -1,0 +1,28 @@
+{
+  "repository_call_limit": 6,
+  "budget_feedback_verified": true,
+  "source_hash_errors": [],
+  "tool_errors": [],
+  "queued_push_responses": [
+    {
+      "task": "mcp-1",
+      "result": {
+        "id": "e55eb3c194464e4c886a423423594bba",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "outage-1",
+      "result": {
+        "id": "8e14412146e94be6843aae6455950968",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "reviewer": "Primary assistant; all 48 actual answers reviewed against frozen source and core-fact rubrics, not blind or independent.",
+  "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
+  "timing_isolation": "No tests, replay or local model benchmark ran during live timing.",
+  "max_answer_words": 64
+}

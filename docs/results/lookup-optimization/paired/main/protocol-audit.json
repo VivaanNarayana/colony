@@ -1,0 +1,36 @@
+{
+  "repository_call_limit": 6,
+  "budget_feedback_verified": true,
+  "source_hash_errors": [],
+  "tool_errors": [],
+  "queued_push_responses": [
+    {
+      "task": "mcp-1",
+      "result": {
+        "id": "bb307d731feb45c0b563b933d3adc149",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "serve-2",
+      "result": {
+        "id": "9b16374346214aefbc5c9a0e33a408c7",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "stale-2",
+      "result": {
+        "id": "b9ba7fa5ddfc4bb792dbe8cf7c4f0989",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "reviewer": "Primary assistant; all 48 actual answers reviewed against frozen source and core-fact rubrics, not blind or independent.",
+  "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
+  "timing_isolation": "No tests, replay or local model benchmark ran during live timing.",
+  "max_answer_words": 61
+}

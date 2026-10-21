@@ -1,0 +1,50 @@
+{
+  "repository_call_limit": 6,
+  "call_limit_violations": [
+    {
+      "session": "outage-1.baseline",
+      "repository_calls": 9
+    }
+  ],
+  "queued_push_responses": [
+    {
+      "session": "mcp-1.colony",
+      "result": {
+        "id": "e6e5aa62f4b044f4bdba804920bb07f3",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "session": "outage-1.colony",
+      "result": {
+        "id": "bdc4dc58d1594aa29dc98db3524180be",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "session": "serve-2.colony",
+      "result": {
+        "id": "cd99ae12cca34d58809fabe62a9f4527",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "session": "stale-2.colony",
+      "result": {
+        "id": "d66b6e5af7d24c69be4c4ad61701a393",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "successful_outside_corpus": [],
+  "notes": [
+    "All original completed sessions retained; no replacement trials.",
+    "Live elapsed times overlap an exploratory local benchmark and dependency installation; do not use this run for causal latency claims.",
+    "One sampled live run; no live main-versus-feature comparison. Direct implementation comparison is the separate local paired benchmark.",
+    "Primary assistant review against frozen source and core-fact rubrics, not independent blind human review. Citation precision and exhaustive completeness are not scored."
+  ]
+}

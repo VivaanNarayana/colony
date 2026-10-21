@@ -187,5 +187,14 @@ def keyword_coverage(question: str, passages: list[str]) -> list[float]:
     return [sum(weights[t] for t in query & doc) / total for doc in docs]
 
 
+def local_term_support(query: set[str], text: str) -> bool:
+    """Require most query terms within at most two neighboring sentences."""
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    return any(
+        len(query & terms(" ".join(sentences[i : i + 2]))) > len(query) / 2
+        for i in range(len(sentences))
+    )
+
+
 def evidence_score(cosine: float, logit: float, coverage: float) -> float:
     return 0.4 * cosine + 0.2 / (1 + math.exp(-max(-30, min(30, logit)))) + 0.4 * coverage

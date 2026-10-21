@@ -1,13 +1,100 @@
+import asyncio
+import hashlib
 import importlib.util
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 spec = importlib.util.spec_from_file_location(
     "benchmark", Path(__file__).parents[1] / "scripts/benchmark.py"
 )
 benchmark = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(benchmark)
+
+
+def test_research_adapter_enforces_one_shared_call_budget(tmp_path):
+    (tmp_path / "README.md").write_text("A private fixture fact.\n")
+    (tmp_path / "pyproject.toml").write_text("")
+    script = Path(__file__).parents[1] / "scripts/benchmark_repo_mcp.py"
+
+    async def check():
+        params = StdioServerParameters(
+            command=sys.executable, args=[str(script), str(tmp_path), "--max-calls", "3"]
+        )
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            initialized = await session.initialize()
+            assert "do not call either research tool again" in initialized.instructions
+            for remaining, tool, arguments in [
+                (2, "search", {"text": "no match"}),
+                (1, "read_file", {"path": "README.md"}),
+                (0, "search", {"text": "fact"}),
+            ]:
+                result = await session.call_tool(tool, arguments)
+                assert not result.isError
+                # The model-visible text carries the shared counter, even on empty searches.
+                data = json.loads(result.content[0].text)
+                assert data["research_budget"]["remaining"] == remaining
+                if tool == "read_file":
+                    digest = hashlib.sha256((tmp_path / "README.md").read_bytes()).hexdigest()
+                    assert data["source"] == {
+                        "kind": "file",
+                        "ref": "README.md",
+                        "content_hash": digest,
+                    }
+                    assert "sha256" not in data and "path" not in data
+                    assert result.content[0].text.count(digest) == 1
+                    assert data["content"] == (tmp_path / "README.md").read_bytes().decode("utf-8")
+                if remaining == 0:
+                    assert "no research calls remain" in data["research_budget"]["next_action"]
+            for tool, arguments in [
+                ("search", {"text": "fact"}),
+                ("read_file", {"path": "README.md"}),
+            ]:
+                denied = await session.call_tool(tool, arguments)
+                assert denied.isError
+                assert "Research tool budget exhausted" in denied.content[0].text
+                assert "private fixture fact" not in denied.content[0].text
+
+    asyncio.run(asyncio.wait_for(check(), timeout=20))
+
+
+@pytest.mark.parametrize("selected", ["main", "feature"])
+def test_live_launcher_pins_imports_despite_conflicting_pythonpath(tmp_path, monkeypatch, selected):
+    scripts = Path(__file__).parents[1] / "scripts"
+    monkeypatch.syspath_prepend(str(scripts))
+    import benchmark_lookup_live as paired
+
+    sources = {}
+    for name in ["main", "feature"]:
+        source = tmp_path / name / "src"
+        package = source / "colony"
+        package.mkdir(parents=True)
+        (package / "__init__.py").write_text(f"MARKER = {name!r}\n")
+        (package / "mcp.py").write_text("# MCP implementation marker\n")
+        (package / "cli.py").write_text(
+            "from colony import MARKER\ndef main():\n    print(MARKER)\n"
+        )
+        sources[name] = source
+    launcher = tmp_path / "runner/implementation.py"
+    paired.write_bootstrap(sources[selected], launcher, selected)
+    result = subprocess.run(
+        [sys.executable, str(launcher), "mcp"],
+        env={**os.environ, "PYTHONPATH": str(sources["feature"])},
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=15,
+    )
+    assert result.stdout.strip() == selected
+    proof = json.loads(launcher.with_name("mcp-implementation.json").read_text())
+    assert proof["revision"] == selected
+    assert Path(proof["module_paths"]["colony.mcp"]).is_relative_to(sources[selected])
 
 
 def test_task_set_and_paired_metrics():

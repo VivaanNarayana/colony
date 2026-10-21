@@ -1,0 +1,242 @@
+{
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct stdio entry or ask/push tool signatures."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras installation command."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output tail/exit recording or unconditional capture taint. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio entry or ask/push tool signatures."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct stdio entry or ask/push tool signatures."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation; no execution was performed. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct signed namespace push/pull grant permissions. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "stale-3.colony": {
+    "correct": false,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Incorrect refusal: rejected unrelated MCP evidence but did not research; omitted the SHA-256 comparison. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output tail/exit recording or unconditional capture taint."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras installation command."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation; no execution was performed."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras installation command."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed-fingerprint/stale evidence behavior."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct signed namespace push/pull grant permissions."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct signed namespace push/pull grant permissions."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation; no execution was performed."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct changed-fingerprint/stale evidence behavior."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output tail/exit recording or unconditional capture taint."
+  }
+}

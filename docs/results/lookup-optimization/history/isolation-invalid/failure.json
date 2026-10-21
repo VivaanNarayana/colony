@@ -1,0 +1,15 @@
+{
+  "accepted": false,
+  "reason": "Stopped after detecting that Codex MCP children filtered PYTHONPATH: main receipts contained feature-only next_action guidance. Both arms used feature MCP code over differently configured backends; this is not a valid full-implementation comparison. All completed and interrupted native sessions retained; no replacement tasks.",
+  "implementation_commit": "3b3b27f08946c7383d2cf449bb5c7389ccf90b5f",
+  "counts": {
+    "main": {
+      "completed_rows": 8,
+      "native_files": 9
+    },
+    "feature": {
+      "completed_rows": 8,
+      "native_files": 8
+    }
+  }
+}

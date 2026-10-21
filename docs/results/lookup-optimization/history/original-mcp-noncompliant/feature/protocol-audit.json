@@ -1,0 +1,87 @@
+{
+  "queued_push_responses": [
+    {
+      "task": "mcp-1",
+      "result": {
+        "id": "13b1729c7cb34f338d062e05a09f9705",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "outage-1",
+      "result": {
+        "id": "55cbab076f9549a5b83f6a083df93f4f",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "serve-2",
+      "result": {
+        "id": "247ec046279142108fc4068fbe837266",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "tool_errors": [
+    {
+      "task": "serve-2",
+      "call": {
+        "id": "item_7",
+        "type": "mcp_tool_call",
+        "server": "repository",
+        "tool": "search",
+        "arguments": {
+          "text": "uvicorn"
+        },
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Error executing tool search: Research tool budget exhausted; answer from existing evidence"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "failed"
+      }
+    },
+    {
+      "task": "serve-2",
+      "call": {
+        "id": "item_8",
+        "type": "mcp_tool_call",
+        "server": "repository",
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/cli.py"
+        },
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Error executing tool read_file: Research tool budget exhausted; answer from existing evidence"
+            }
+          ],
+          "structured_content": null
+        },
+        "error": null,
+        "status": "failed"
+      }
+    }
+  ],
+  "source_hash_errors": [],
+  "repository_call_limit": 6,
+  "reviewer": "Primary assistant; core facts reviewed against frozen source/rubrics; not blind or independent.",
+  "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
+  "timing_isolation": "No local test suite, model replay or local timing benchmark ran during the alternating live trial.",
+  "call_limit_violations": [
+    {
+      "task": "serve-2",
+      "attempted": 8
+    }
+  ]
+}

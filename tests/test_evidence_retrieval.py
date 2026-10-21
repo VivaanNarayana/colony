@@ -6,6 +6,46 @@ from colony.models import Trail
 from colony.validation import snapshot
 
 
+def test_positive_reranker_cannot_override_weak_descriptive_coverage(team, monkeypatch):
+    import colony.store
+
+    app, api, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Agent integration\n\n"
+        "Configuration validation receipts expose metadata to the agent bridge. "
+        "Receipts remain bounded and quoted for the reader. "
+        "Pattern scrubbing is not complete secret detection.\n"
+    )
+    trail = Trail(
+        id=uuid.uuid4().hex,
+        namespace="team",
+        question="Agent bridge configuration",
+        content="Connect the agent bridge.",
+        sources=[snapshot(repo, "guide.md")],
+    )
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    monkeypatch.setattr(colony.store, "rank", lambda q, passages: [8.0] * len(passages))
+    monkeypatch.setattr(colony.store, "keyword_coverage", lambda q, passages: [0.9] * len(passages))
+    # A high model score is still a ranking signal, not evidence that the text
+    # explains the requested mechanism. Shared file/validation terms are insufficient.
+    question = "How are configuration changes detected during validation?"
+    result = app.state.store.find_evidence(question, ["team"], 604800)
+    assert result is None
+    (repo / "guide.md").write_text(
+        "The system detects configuration changes during validation by recomputing "
+        "the SHA-256 checksum and comparing it with the saved digest.\n"
+    )
+    relevant = trail.model_copy(
+        update={
+            "id": uuid.uuid4().hex,
+            "sources": [snapshot(repo, "guide.md")],
+        }
+    )
+    api.post("/trails", json=relevant.model_dump(), headers=auth(key)).raise_for_status()
+    result = app.state.store.find_evidence(question, ["team"], 604800)
+    assert result["status"] == "validated" and "SHA-256 checksum" in result["content"]
+
+
 def test_service_overview_is_not_a_procedure_but_remains_descriptive_evidence(team):
     _, api, repo, _, key = team
     (repo / "guide.md").write_text(

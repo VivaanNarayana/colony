@@ -1,0 +1,166 @@
+{
+  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
+  "feature_commit": "6245d60f6052aa8dbacd54eb07b955b2443faa61",
+  "arms": {
+    "main": {
+      "protocol_violations": 0,
+      "correct": 23,
+      "valid_citations": 15,
+      "raw_hits": 18,
+      "relevant_hits": 17,
+      "research_free_correct": 17,
+      "tokens": 1141073,
+      "cached_input_tokens": 995968,
+      "tool_calls": 45,
+      "research_calls": 15,
+      "ask_calls": 24,
+      "seconds": 275.387,
+      "tasks": 24,
+      "uncached_input_plus_output": 145105
+    },
+    "feature": {
+      "protocol_violations": 1,
+      "correct": 24,
+      "valid_citations": 17,
+      "raw_hits": 19,
+      "relevant_hits": 19,
+      "research_free_correct": 18,
+      "tokens": 1146383,
+      "cached_input_tokens": 1002112,
+      "tool_calls": 51,
+      "research_calls": 20,
+      "ask_calls": 25,
+      "seconds": 233.875,
+      "tasks": 24,
+      "uncached_input_plus_output": 144271
+    }
+  },
+  "limitations": [
+    "One alternating 24-question regression trial; no best-of selection or retries.",
+    "Primary-assistant grading of core facts and citations, not independent blind review.",
+    "Repeatedly observed self-repository tasks are not held-out production evidence.",
+    "Provider sampling and cache variation remain; bootstrap intervals are descriptive."
+  ],
+  "local_lookup_code_unchanged": true,
+  "verification": {
+    "commit": "aa6f320d32360f59a397cce7f012b7ec86dd4f42",
+    "command": "python -m pytest -q; python -m ruff check .; git diff --check",
+    "tests_passed": 86,
+    "tests_failed": 0,
+    "tests_skipped": 1,
+    "ruff_passed": true,
+    "skip_reason": "Windows host does not permit symlinks",
+    "platform": "Windows / Python 3.13.1",
+    "scope": "Local verification; no hosted CI configured",
+    "pytest_seconds": 46.67
+  },
+  "observed_reductions": {
+    "tokens": -0.004653514718164331,
+    "seconds": 0.15074059414569319,
+    "tool_calls": -0.1333333333333333,
+    "uncached_input_plus_output": 0.005747562110196114
+  },
+  "families": {
+    "mcp": {
+      "main": {
+        "tokens": 145915.0,
+        "seconds": 41.178000000000004
+      },
+      "feature": {
+        "tokens": 144747.0,
+        "seconds": 28.994999999999997
+      }
+    },
+    "outage": {
+      "main": {
+        "tokens": 167992.0,
+        "seconds": 35.644
+      },
+      "feature": {
+        "tokens": 170271.0,
+        "seconds": 35.318
+      }
+    },
+    "install": {
+      "main": {
+        "tokens": 98871.0,
+        "seconds": 27.747999999999998
+      },
+      "feature": {
+        "tokens": 99071.0,
+        "seconds": 23.308
+      }
+    },
+    "capture": {
+      "main": {
+        "tokens": 98794.0,
+        "seconds": 27.04
+      },
+      "feature": {
+        "tokens": 110811.0,
+        "seconds": 27.11
+      }
+    },
+    "serve": {
+      "main": {
+        "tokens": 231060.0,
+        "seconds": 49.400999999999996
+      },
+      "feature": {
+        "tokens": 229997.0,
+        "seconds": 42.224000000000004
+      }
+    },
+    "tests": {
+      "main": {
+        "tokens": 98032.0,
+        "seconds": 26.374000000000002
+      },
+      "feature": {
+        "tokens": 97557.0,
+        "seconds": 21.779
+      }
+    },
+    "scope": {
+      "main": {
+        "tokens": 148630.0,
+        "seconds": 32.402
+      },
+      "feature": {
+        "tokens": 157120.0,
+        "seconds": 27.079
+      }
+    },
+    "stale": {
+      "main": {
+        "tokens": 151779.0,
+        "seconds": 35.6
+      },
+      "feature": {
+        "tokens": 136809.0,
+        "seconds": 28.062
+      }
+    }
+  },
+  "descriptive_family_bootstrap_reduction_95pct": {
+    "tokens": [
+      -0.04322789390621873,
+      0.03270334260010832
+    ],
+    "seconds": [
+      0.08475139289435141,
+      0.21242593187191683
+    ]
+  },
+  "same_prompts_order_and_corpus": true,
+  "gate": {
+    "loaded_implementations_verified": true,
+    "tests_and_lint_pass": true,
+    "local_lookup_improves": true,
+    "correctness_not_reduced": true,
+    "feature_follows_tool_protocol": false,
+    "observed_live_tokens_improve": false,
+    "observed_live_time_improves": true
+  },
+  "all_gates_passed": false
+}
