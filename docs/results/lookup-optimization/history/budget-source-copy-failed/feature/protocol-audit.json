@@ -1,0 +1,52 @@
+{
+  "queued_push_responses": [
+    {
+      "task": "mcp-1",
+      "result": {
+        "id": "696075559055472e80770f63d8fa4273",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "outage-1",
+      "result": {
+        "id": "d378454898cb4f9b906fd9bdd47b0a94",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "serve-2",
+      "result": {
+        "id": "5ac8d80a3f3a467f8cb1b7136a12d14e",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "scope-2",
+      "result": {
+        "id": "401b0758228841429da22c0a62ae8b8a",
+        "stored": false,
+        "queued": true
+      }
+    }
+  ],
+  "tool_errors": [],
+  "source_hash_errors": [
+    {
+      "task": "serve-3",
+      "source": {
+        "kind": "file",
+        "ref": "src/colony/cli.py",
+        "content_hash": "88034d49a242fa7bfa7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae"
+      }
+    }
+  ],
+  "repository_call_limit": 6,
+  "reviewer": "Primary assistant; core facts reviewed against frozen source/rubrics; not blind or independent.",
+  "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
+  "timing_isolation": "No local test suite, model replay or local timing benchmark ran during the alternating live trial.",
+  "budget_feedback_verified": true
+}

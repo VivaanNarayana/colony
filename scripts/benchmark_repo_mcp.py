@@ -18,7 +18,9 @@ server = FastMCP(
     instructions=(
         "Search and read_file share one research-call budget. Each successful response reports "
         "research_budget.remaining. When it reaches zero, finish from the evidence already "
-        "received; do not call either research tool again."
+        "received; do not call either research tool again. Use read_file's source object "
+        "verbatim in Colony push.sources; do not reconstruct its hash. Preserve the user's "
+        "question verbatim, including punctuation, in Colony calls."
     ),
 )
 used_calls = 0
@@ -60,10 +62,12 @@ def read_file(path: str) -> dict:
     if target not in {p.resolve() for p in allowed}:
         raise ValueError("Outside research corpus")
     data = target.read_bytes()
+    digest = hashlib.sha256(data).hexdigest()
     return {
         **({"research_budget": budget} if budget is not None else {}),
+        "source": {"kind": "file", "ref": path, "content_hash": digest},
         "path": path,
-        "sha256": hashlib.sha256(data).hexdigest(),
+        "sha256": digest,
         "content": data.decode("utf-8"),
     }
 

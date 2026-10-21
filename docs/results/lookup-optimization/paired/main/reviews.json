@@ -21,13 +21,13 @@
   },
   "install-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "capture-3.colony": {
     "correct": true,
@@ -51,19 +51,18 @@
   },
   "outage-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
   },
   "mcp-2.colony": {
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
-      true,
       true
     ],
     "reused": true,
@@ -92,23 +91,23 @@
   },
   "tests-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct pytest invocation."
   },
   "scope-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
+    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "stale-3.colony": {
     "correct": true,
@@ -124,7 +123,6 @@
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
-      true,
       true
     ],
     "reused": true,
@@ -133,26 +131,6 @@
   },
   "install-3.colony": {
     "correct": true,
-    "citation_valid": false,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
-  },
-  "tests-3.colony": {
-    "correct": true,
-    "citation_valid": true,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct pytest invocation."
-  },
-  "install-1.colony": {
-    "correct": true,
     "citation_valid": true,
     "relevant_asks": [
       true
@@ -160,6 +138,26 @@
     "reused": true,
     "wrong_reused": false,
     "note": "Correct editable development-extras install command."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "serve-3.colony": {
     "correct": true,
@@ -203,13 +201,13 @@
   },
   "serve-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "tests-1.colony": {
     "correct": true,
@@ -225,9 +223,9 @@
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
-      true
+      false
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
     "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
   },

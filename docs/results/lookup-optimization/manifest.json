@@ -22,9 +22,9 @@
     }
   },
   "trace_format": "Each native-events.jsonl.gz is an independent trace container of JSONL records {run,session,event}. Identify sessions by (trace path,run,session). Only workspace prefixes are redacted; native numerical usage/outcomes are unchanged. All prior failed and interrupted trials are retained.",
-  "status": "Draft: attempted-call compliance is blocking; previous advisory judgment rejected. Fix and rerun the complete paired benchmark before merge review.",
+  "status": "Blocking gates remain; retain draft and pause other features.",
   "plan": [
-    "Review the current first feature before considering a merge; no other feature has been resumed.",
+    "Finish the first feature merge review with all gates mandatory; no other feature has been resumed.",
     "After approval of the first feature, separately benchmark repeated cited-source vector reuse on its own branch and PR.",
     "Evaluate held-out repositories/workloads before making production savings claims."
   ],
@@ -47,11 +47,11 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1248150
+      "native_tokens": 1247163
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1209180
+      "native_tokens": 1138704
     }
   },
   "primary_comparison": "paired/comparison.json",
@@ -63,13 +63,17 @@
     "verified-budget-abort": "9 completed import-verified sessions; original fail-fast policy stopped on main's seventh research operation. Retained in full. Current methodology instead enforces identical data budgets, counts all attempts and finishes the trial; feature policy failures still fail its gate.",
     "capped-duplicate": "48 completed import-verified, equally capped sessions; feature 24/24 vs main 23/24 and 15.1% faster, but one repeated ask and gross tokens +0.47%; failed gates retained in full before reuse guidance moved ahead of source text.",
     "guidance-regression": "48 completed sessions; both 24/24 correct, but altered MCP guidance caused extra reads and four repeated asks. Gross tokens +6.29%; failed gates retained. All MCP wording/presentation changes were reverted before the current comparison.",
-    "original-mcp-noncompliant": "48 completed sessions; time/tokens improved and 24/24 correct in both arms, but feature attempted eight research calls on serve-2. Compliance gate failed. The historical advisory interpretation is superseded by strict blocking policy."
+    "original-mcp-noncompliant": "48 completed sessions; time/tokens improved and 24/24 correct in both arms, but feature attempted eight research calls on serve-2. Compliance gate failed. The historical advisory interpretation is superseded by strict blocking policy.",
+    "budget-source-copy-failed": "48 completed sessions; all research counts/ask counts complied, but main dropped question punctuation and feature supplied a transposed file hash. Execution/provenance audit failed; no readiness waiver. Exact source objects and verbatim-copy guidance added before the next trial."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision.",
   "all_predeclared_gates_passed": false,
-  "original_performance_gates_passed": true,
+  "original_performance_gates_passed": false,
   "merge_review_ready": false,
   "blocking_gates": [
+    "execution_audit",
     "feature_follows_tool_protocol"
-  ]
+  ],
+  "all_gates_passed": false,
+  "compliance_fix": "Identical shared research adapter reports remaining calls after every successful operation. Six-call cap and attempted-call violation accounting unchanged; duplicate asks also block readiness. The prior advisory interpretation is superseded."
 }

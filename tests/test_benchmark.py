@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import importlib.util
 import json
 import os
@@ -39,6 +40,14 @@ def test_research_adapter_enforces_one_shared_call_budget(tmp_path):
                 # The model-visible text carries the shared counter, even on empty searches.
                 data = json.loads(result.content[0].text)
                 assert data["research_budget"]["remaining"] == remaining
+                if tool == "read_file":
+                    digest = hashlib.sha256((tmp_path / "README.md").read_bytes()).hexdigest()
+                    assert data["source"] == {
+                        "kind": "file",
+                        "ref": "README.md",
+                        "content_hash": digest,
+                    }
+                    assert data["sha256"] == digest
                 if remaining == 0:
                     assert "no research calls remain" in data["research_budget"]["next_action"]
             for tool, arguments in [

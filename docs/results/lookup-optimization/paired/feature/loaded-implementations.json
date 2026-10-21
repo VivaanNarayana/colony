@@ -1,21 +1,21 @@
 [
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "server",
-    "pid": 46364,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 61564,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.retrieval": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\retrieval.py",
-      "colony.context": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\context.py",
-      "colony.store": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\store.py",
-      "colony.server": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\server.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.retrieval": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\retrieval.py",
+      "colony.context": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\context.py",
+      "colony.store": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\store.py",
+      "colony.server": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\server.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -34,19 +34,19 @@
     "task_id": null
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 65940,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 34596,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -65,19 +65,19 @@
     "task_id": "mcp-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 52464,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 41980,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -96,19 +96,19 @@
     "task_id": "outage-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 25132,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 18272,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -127,19 +127,19 @@
     "task_id": "install-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 10284,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 32160,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -158,19 +158,19 @@
     "task_id": "capture-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 39384,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 19400,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -189,19 +189,19 @@
     "task_id": "outage-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 33300,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 2168,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -220,19 +220,19 @@
     "task_id": "outage-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 43528,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 62720,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -251,19 +251,19 @@
     "task_id": "mcp-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 74404,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 37544,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -282,19 +282,19 @@
     "task_id": "mcp-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 53308,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 44992,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -313,19 +313,19 @@
     "task_id": "serve-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 64716,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 40824,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -344,19 +344,19 @@
     "task_id": "tests-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 46956,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 71528,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -375,19 +375,19 @@
     "task_id": "scope-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 33568,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 64344,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -406,19 +406,19 @@
     "task_id": "stale-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 33072,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 36556,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -437,19 +437,19 @@
     "task_id": "capture-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 19172,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 57368,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -468,19 +468,19 @@
     "task_id": "install-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 73120,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 4488,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -499,19 +499,19 @@
     "task_id": "tests-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 16412,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 33196,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -530,19 +530,19 @@
     "task_id": "install-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 53928,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 47404,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -561,19 +561,19 @@
     "task_id": "serve-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 39872,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 67052,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -592,19 +592,19 @@
     "task_id": "stale-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 5928,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 60712,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -623,19 +623,19 @@
     "task_id": "scope-3"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 31252,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 15236,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -654,19 +654,19 @@
     "task_id": "scope-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 68364,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 21144,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -685,19 +685,19 @@
     "task_id": "serve-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 56288,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 58820,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -716,19 +716,19 @@
     "task_id": "tests-1"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 36372,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 18036,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -747,19 +747,19 @@
     "task_id": "stale-2"
   },
   {
-    "revision": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+    "revision": "6708cffbccd357ae247cdc7bc09087dc719fef22",
     "role": "mcp",
-    "pid": 7380,
-    "source": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src",
+    "pid": 20700,
+    "source": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-original-mcp-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-budget-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",

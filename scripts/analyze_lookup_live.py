@@ -118,8 +118,29 @@ def compare(results, local):
             # gives no additional data; a different question/result would make
             # this a different research budget and must not pass the audit.
             assert asks and calls[0] == asks[0]
-            assert all(a["arguments"] == {"question": question, "namespace": "bench"} for a in asks)
+            assert all(
+                a["arguments"] == {"question": question, "namespace": "bench"} for a in asks
+            ), f"{arm}/{name}: lookup question/namespace differs from the exact requested values"
             assert all(p == packets[0] for p in packets)
+            read_sources = {}
+            for call in calls:
+                if (
+                    call["server"] == "repository"
+                    and call["tool"] == "read_file"
+                    and call.get("status") == "completed"
+                ):
+                    data = json.loads(call["result"]["content"][0]["text"])
+                    if "sha256" in data:
+                        read_sources[data["path"]] = data["sha256"]
+                if call["server"] == "colony" and call["tool"] == "push":
+                    sources = call["arguments"].get("sources", [])
+                    assert sources, f"{arm}/{name}: research push has no supporting file source"
+                    for source in sources:
+                        assert (
+                            source["content_hash"]
+                            == read_sources.get(source["ref"])
+                            == manifests[arm].get(source["ref"])
+                        ), f"{arm}/{name}: push fingerprint does not match an actual source read"
             review = reviews[name]
             assert type(review["correct"]) is bool and type(review["citation_valid"]) is bool
             assert len(review["relevant_asks"]) == len(packets)

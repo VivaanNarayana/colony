@@ -108,3 +108,6 @@ The shared research adapter reports its remaining call budget in every successfu
 response, including empty searches, and explicitly directs the subject to finish
 when none remain. This feedback is identical in both arms; it changes neither the
 six-call limit nor the violation accounting, original outer prompts or task rubrics.
+Reads also return an exact `source` object with the same file hash for reuse in
+`push.sources`. The audit requires pushed hashes to match actual preceding reads
+and the frozen corpus, and preserves exact question punctuation in lookup checks.
