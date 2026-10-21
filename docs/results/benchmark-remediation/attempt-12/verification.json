@@ -7,5 +7,6 @@
   "platform": "Windows / Python 3.13.1",
   "scope": "Full suite; existing Windows symlink skip",
   "command": "python -m pytest -q; ruff check .; git diff --check",
-  "additional_check": "Final registered-tool policy check passed separately (1 test, 0.59s) after whitespace normalization strengthened the single-keyword assertion."
+  "additional_check": "Final registered-tool policy check passed separately (1 test, 0.59s) after whitespace normalization strengthened the single-keyword assertion.",
+  "commit": "6567c954ffacfcbc14085e446ed5b5682cd83d35"
 }
