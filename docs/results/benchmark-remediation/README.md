@@ -1,6 +1,6 @@
 # Strict gate remediation against main
 
-**Trial 13 is in verification. Trial 12 is rejected by the unchanged evidence-integrity check; no live gate is cleared by that trial. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
+**Trial 13 passes 5/8 gates. Both token intervals and main tool compliance remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
@@ -10,7 +10,7 @@ Trial 13 fixes a confirmed excerpt-selection gap: a related descriptive question
 
 The first diagnostic version promoted query keywords and instead selected receipt metadata. That failure remains retained. The corrected version supplies the actual requested tools paragraph from the same current, already-cited file. Independent ledger fixtures cover operations, retention, size facts and keyword-rich metadata decoys; these use no repository answers or mocked retrieval scores.
 
-Full verification: **146 tests pass**, one existing Windows skip; Ruff and whitespace checks pass. The recorded-case reproduction is diagnostic, not independent live gate evidence. A new isolated local comparison and complete 48-session trial are still required. No benchmark script, prompt, rubric or gate has been changed.
+Full verification: **146 tests pass**, one existing Windows skip; Ruff and whitespace checks pass. The recorded-case reproduction is diagnostic, not independent live gate evidence. The isolated local gate passes with a 15.80% reduction (95% interval +7.52% to +23.88%); the complete 48-session live comparison is retained below. No benchmark script, prompt, rubric or gate has been changed.
 
 ## Retained completed trials
 
@@ -28,6 +28,7 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 10 | `f9f16e5` | 5/8; time interval passes, both token intervals and main tool compliance fail |
 | 11 | `f4e423e` | 5/8; compliance passes, all three live performance intervals fail |
 | 12 | `6567c95` | Evidence rejected: main pushed an ask-derived hash without a new file read |
+| 13 | `e14b0cb` | 5/8; all requested tools now supplied; time passes, token intervals and main repeated ask fail |
 
 Each revision has a committed plan before measurement, fresh independent stores over the same frozen main corpus, alternating first arms, and one full 48-session live trial. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
@@ -37,19 +38,19 @@ The strict analyzer exits 1 with `main/capture-2.colony: push fingerprint does n
 
 All 48 sessions, manual labels and raw diagnostics remain retained. Feature `mcp-2` is labelled an irrelevant return: its connection configuration and current reads did not include exposed-tool facts, and the correct final answer required new research. Manual correctness labels do not waive the integrity rejection. See `attempt-12/observations.json` for explicitly nonqualifying raw totals.
 
-### Latest valid comparison: trial 11
+### Latest valid comparison: trial 13
 
 | Measurement | Main | Candidate | Reduction interval (95%) |
 | --- | ---: | ---: | ---: |
-| Native input + output | 1,133,073 | 1,067,592 | -4.18% to +15.97% |
-| Uncached input + output | 142,353 | 137,160 | -13.48% to +17.30% |
-| Subject wall time | 238.317s | 224.570s | -6.23% to +16.10% |
+| Native input + output | 1,110,356 | 1,063,883 | -3.81% to +12.99% |
+| Uncached input + output | 134,100 | 123,851 | -6.40% to +19.07% |
+| Subject wall time | 234.058s | 216.204s | +3.33% to +10.80% |
 | Correct requested facts | 24/24 | 24/24 | implementing-assistant labels |
 | Valid citation targets | 15/24 | 24/24 | implementing-assistant labels |
-| Tool protocol violations | 0 | 0 | unchanged compliance audit |
-| Research calls | 18 | 12 | descriptive count |
+| Tool protocol violations | 1 | 0 | unchanged compliance audit |
+| Research calls | 17 | 13 | descriptive count |
 
-All costs declined, but all three performance intervals crossed zero and remain blocking. All 48 sessions are retained without retries or omissions, and public archive replay reproduces the complete comparison and exit 1 exactly. This candidate passed the full suite, Ruff and isolated local gate before the live trial. The reduced number of research calls is not a substitute for passing the cost/time intervals.
+All three costs declined. Time clears its unchanged interval requirement; both token intervals cross zero. Main repeated ask in capture-2, so the both-arms protocol gate also fails. No baseline exemption applies. All 48 sessions are retained without retries or omissions; public archive replay reproduces the complete comparison and exit 1 exactly. Feature mcp-2 now supplies the actual Tools paragraph and answers in one call with valid evidence. This improvement does not substitute for passing the remaining gates.
 
 ## Runtime changes retained
 
@@ -66,17 +67,17 @@ The positional-query masking experiment caused research misses and was reverted.
 
 ## Current work
 
-Trial 13 follows the confirmed omitted-fact excerpt in trial 12 with a bounded source-selection fix. It is a concrete revision, not an identical-code rerun. All eight remain mandatory. The full independent benchmark contract, scripts and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
+Trial 13 confirms the omitted-fact fix, while the remaining token intervals still fail. Further changes require a concrete cost cause and a fresh full comparison. All eight remain mandatory. The full independent benchmark contract, scripts and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
 
 ## Replay and limits
 
 Each complete attempt contains local rows, workload, source/import proofs, live rows, reviewer labels, verification, checksums and `live-native.zip` with every native event, answer, prompt, stderr, metadata and implementation proof. Private databases, credentials, caches and issuer keys are excluded. Only proof host prefixes become runtime-relative; measured values, revisions and source hashes are unchanged.
 
 ```powershell
-Expand-Archive docs/results/benchmark-remediation/attempt-12/live-native.zip <fresh-output-dir>
-python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-12/lookup-summary.json
+Expand-Archive docs/results/benchmark-remediation/attempt-13/live-native.zip <fresh-output-dir>
+python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-13/lookup-summary.json
 ```
 
-Expected exit for completed attempts 1–12: **1**. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected exit for completed attempts 1–13: **1**. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.
