@@ -38,7 +38,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False), structured_output=False
     )
     def ask(question: str, namespace: str | None = None) -> list[TextContent]:
-        """Look up shared answers and current cited-file excerpts; follow session reuse guidance."""
+        """Look up shared answers or current repository reads. Deriving an answer from
+        sufficient reads is reuse: answer and cite without a read or push. Research missing facts."""
         result = client.ask(question, namespace, include_evidence_files=evidence_files)
         if not result.get("hit"):
             result["research_guidance"] = research_guidance
@@ -97,8 +98,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 "source_reads_current": bool(response["current_repository_reads"]),
             }
             response["next_action"] = (
-                "Assess current_repository_reads; cite sufficient facts without rereading or "
-                "repushing. Research missing facts only."
+                "If current_repository_reads suffice, answer and cite with no read or push. "
+                "Evidence-only derivation is reuse. Research missing facts only."
             )
         else:
             response["research_guidance"] = research_guidance
@@ -118,9 +119,9 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         sources: list[FileEvidence] | None = None,
         tainted: bool = True,
     ) -> dict:
-        """Store a concise researched answer after a miss. Reuse exact file hashes;
-        no reread, repush, invented snippets or symbols. Client scrubs secrets;
-        mark external content tainted."""
+        """Store only after new repository research, never after reuse of shared answers or
+        current_repository_reads. Copy exact research fingerprints; no invented hashes,
+        snippets, symbols or rereads just to push. Client scrubs secrets; mark external content tainted."""
         return client.push(
             Trail(
                 id=uuid.uuid4().hex,

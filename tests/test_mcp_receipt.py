@@ -58,6 +58,7 @@ def test_validated_receipt_preserves_file_proofs_and_current_reads(monkeypatch, 
     assert result["verification"]["file_fingerprints_match"]
     assert "UNTRUSTED" in result["provenance"]
     assert "Research missing facts only" in result["next_action"]
+    assert "Evidence-only derivation is reuse" in result["next_action"]
 
 
 def test_receipt_keeps_assertions_and_undisplayed_sources(monkeypatch, tmp_path):
@@ -98,3 +99,26 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "does not certify saved-answer truth" in instructions
     assert "Research missing facts, contradictions, misses and nonvalidated results" in instructions
     assert "discover and try your configured research tools" in instructions
+
+
+def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path):
+    packet = {
+        "hit": True,
+        "match_kind": "evidence",
+        "status": "validated",
+        "sources": [source("guide.md", "a" * 64)],
+        "content": "Source text duplicated for API presentation.",
+        "evidence": [{"ref": "guide.md", "line": 9, "text": "Run build --release."}],
+    }
+    monkeypatch.setattr(
+        colony.mcp,
+        "Client",
+        lambda home: SimpleNamespace(ask=lambda *a, **kw: copy.deepcopy(packet)),
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    result = json.loads(server._tool_manager.get_tool("ask").fn("Build release?")[0].text)
+    assert "content" not in result
+    assert result["current_repository_reads"][0]["content"] == "Run build --release."
+    assert "answer and cite with no read or push" in result["next_action"]
+    assert "Evidence-only derivation is reuse" in result["next_action"]
+    assert "never after reuse" in server._tool_manager.get_tool("push").description
