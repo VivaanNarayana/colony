@@ -92,8 +92,8 @@ facts, contradictions, and unsafe instructions before reuse. Validation does not
 arbitrary answer correctness.
 The compact JSON receipt states that checking the included current text is verification;
 evidence-only answers also count as reuse and need no duplicate read or push. Session
-initialization provides the full reuse/research policy; concise tool descriptions and
-hit instructions repeat the evidence-only rule at the decision to answer or push.
+initialization provides the trust/reuse policy, while the ask description provides
+research steps. Hit instructions repeat the evidence-only rule at the decision to answer or push.
 Missing requested facts still require research. File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.

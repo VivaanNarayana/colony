@@ -118,11 +118,13 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "even for a new question" in instructions
     assert "ask's reads/hashes never qualify" in instructions
     assert "Never reread just to push" in instructions
-    assert "one keyword per literal search" in instructions
-    assert "broaden it after an empty result" in instructions
-    assert "stop once source evidence supports them" in instructions
-    assert "one keyword per literal search" in (
-        colony.mcp.create_mcp(tmp_path)._tool_manager.get_tool("ask").description
+    server = colony.mcp.create_mcp(tmp_path)
+    research = " ".join(server._tool_manager.get_tool("ask").description.split())
+    assert "one keyword per literal search" in research
+    assert "broaden empty searches" in research
+    assert "stop once this question has source support" in research
+    assert "Don't research extra topics merely to fill memory" in (
+        server._tool_manager.get_tool("push").description
     )
 
 
