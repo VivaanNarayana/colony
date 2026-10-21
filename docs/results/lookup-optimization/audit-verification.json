@@ -1,0 +1,65 @@
+{
+  "containers": [
+    {
+      "trace": "history/capped-duplicate/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2287456
+    },
+    {
+      "trace": "history/compact-protocol/native-events.jsonl.gz",
+      "sessions": 6,
+      "completed_with_native_usage": 6,
+      "without_final_usage": 0,
+      "known_native_tokens": 307986
+    },
+    {
+      "trace": "history/guidance-regression/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2454762
+    },
+    {
+      "trace": "history/isolation-invalid/native-events.jsonl.gz",
+      "sessions": 17,
+      "completed_with_native_usage": 16,
+      "without_final_usage": 1,
+      "known_native_tokens": 752816
+    },
+    {
+      "trace": "history/pruned-paired/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2301935
+    },
+    {
+      "trace": "history/verified-budget-abort/native-events.jsonl.gz",
+      "sessions": 9,
+      "completed_with_native_usage": 9,
+      "without_final_usage": 0,
+      "known_native_tokens": 490883
+    },
+    {
+      "trace": "native-events.jsonl.gz",
+      "sessions": 145,
+      "completed_with_native_usage": 145,
+      "without_final_usage": 0,
+      "known_native_tokens": 7090416
+    },
+    {
+      "trace": "paired/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2457330
+    }
+  ],
+  "total_sessions": 369,
+  "completed_with_native_usage": 368,
+  "without_final_usage": 1,
+  "local_username_not_published": true,
+  "notes": "Each (trace path, run, session) is distinct. All historical failures and one interrupted session are retained; no final usage is fabricated for that session."
+}

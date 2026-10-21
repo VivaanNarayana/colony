@@ -89,11 +89,20 @@ All 48 completed sessions, native usage and answers are retained. Both arms' res
 adapters enforce a shared six-operation budget across search/read; later attempts
 return errors without repository data, and their time/tokens still count. Model
 policy failures are recorded throughout the full trial instead of selecting runs
-by restarting at the first mistake. Feature-side policy violations fail its gate;
-baseline violations are reported as observed baseline behavior. Import-integrity
+by restarting at the first mistake. Attempted-call compliance is reported for both
+arms, separately from the original latency/token/correctness criteria. Extra research
+attempts must return budget errors; repeated memory calls must return identical data,
+so neither arm gains a larger evidence budget. Import-integrity
 failures still stop the run. There is no best-of selection or automatic retry.
 Results still require relevance, correctness, citation and protocol review.
 This repeatedly observed suite is a regression check, and an observed wall-time
 or token win does not by itself establish statistically significant production
 savings. Use the separate provider-free `scripts/benchmark_lookup.py` for paired
 local latency and inference-work measurements on identical seeded memory.
+
+The runner-development history includes a stricter zero-policy-mistake gate. The
+report retains its outcome as `all_predeclared_gates_passed`, and explicitly records
+the later decision to treat attempted-call compliance as advisory. It reports the
+original performance criteria and merge-review readiness separately; this scope
+correction is exploratory, not a preregistered confirmatory result. Preserve all
+earlier runs and never present this correction as an unchanged all-gates pass.

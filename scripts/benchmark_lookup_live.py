@@ -2,7 +2,8 @@
 
 Uses the original task set, subject prompts and native usage accounting. Both
 implementations start with empty independent stores over the same frozen corpus.
-No retries or best-of selection: an incomplete trial is retained and fails closed.
+No per-task retries or dropped outcomes. Retain model failures; execution-integrity
+failures stop the trial, which is retained along with earlier exploratory revisions.
 """
 
 import argparse
