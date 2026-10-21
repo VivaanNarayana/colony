@@ -59,6 +59,7 @@ def test_validated_receipt_delivers_each_ordinary_file_proof_once(monkeypatch, t
     assert result["verification"]["file_fingerprints_match"]
     assert "UNTRUSTED" in result["provenance"]
     assert "Research missing facts only" in result["next_action"]
+    assert next(iter(result)) == "next_action"
 
 
 def test_receipt_keeps_assertions_and_undisplayed_sources(monkeypatch, tmp_path):

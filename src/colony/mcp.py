@@ -117,6 +117,10 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 "these reads counts as reuse. Research missing facts only. A lookup does "
                 "not test other tools' availability."
             )
+            # Put the reuse decision before potentially long saved answers and
+            # source excerpts. Preserve every field, source byte and instruction;
+            # readers should assess the supplied facts before requesting a reread.
+            response = {"next_action": response.pop("next_action"), **response}
         else:
             response["research_guidance"] = research_guidance
         if not response.get("complete_files"):

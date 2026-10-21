@@ -1,3 +1,5 @@
+> Superseded readiness: the user requires uncached input plus output below main. The retained trial fails that blocking gate (+19.3%). PR is draft; merge review pending a passing rerun. All eight gates are mandatory.
+
 # Lookup optimization: completed review evidence
 
 All seven blocking gates pass, including attempted-call compliance. The first

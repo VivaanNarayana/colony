@@ -165,13 +165,17 @@
     "correctness_not_reduced": true,
     "feature_follows_tool_protocol": true,
     "observed_live_tokens_improve": true,
-    "observed_live_time_improves": true
+    "observed_live_time_improves": true,
+    "observed_uncached_input_plus_output_improve": false
   },
-  "all_gates_passed": true,
-  "all_predeclared_gates_passed": true,
+  "all_gates_passed": false,
+  "all_predeclared_gates_passed": false,
   "original_performance_gates_passed": true,
   "data_budget_verified": true,
   "mcp_surface_identical": false,
-  "merge_review_ready": true,
-  "blocking_gates": []
+  "merge_review_ready": false,
+  "blocking_gates": [
+    "observed_uncached_input_plus_output_improve"
+  ],
+  "uncached_gate_added_by_user": "2026-10-20: prior trial re-evaluated without changing any measurements; 219181 > 183724."
 }

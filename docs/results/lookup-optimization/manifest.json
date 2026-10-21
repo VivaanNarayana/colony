@@ -22,7 +22,7 @@
     }
   },
   "trace_format": "Each native-events.jsonl.gz is an independent trace container of JSONL records {run,session,event}. Identify sessions by (trace path,run,session). Only workspace prefixes are redacted; native numerical usage/outcomes are unchanged. All prior failed and interrupted trials are retained.",
-  "status": "All seven gates pass, including attempted-call compliance; merge review complete.",
+  "status": "Blocked: uncached input plus output increased 19.3%; PR draft; new gate mandatory.",
   "plan": [
     "Finish the first feature merge review with all gates mandatory; no other feature has been resumed.",
     "After approval of the first feature, separately benchmark repeated cited-source vector reuse on its own branch and PR.",
@@ -67,13 +67,16 @@
     "budget-source-copy-failed": "48 completed sessions; all research counts/ask counts complied, but main dropped question punctuation and feature supplied a transposed file hash. Execution/provenance audit failed; no readiness waiver. Exact source objects and verbatim-copy guidance added before the next trial.",
     "source-object-token-regression": "48 completed sessions; both arms passed question, hash and call-budget audits with 24/24 correct. Feature was 14.6% faster but gross tokens +1.6%, so readiness remained blocked. Complete-file feedback was added identically to both arms before the next trial.",
     "complete-file-regression": "48 sessions; 24/24 correct both. Feature repeated ask on stale-2 and gross tokens regressed; strict gates failed. Shared complete-file feedback reverted before a feature receipt deduplication change.",
-    "dedup-source-copy-failed": "48 sessions; main 23/24 correct, feature 24/24. Feature supplied two incorrect source hashes on scope-2; source audit failed despite later correction. All costs retained. Canonical research source metadata replaces duplicate hash aliases before the next trial."
+    "dedup-source-copy-failed": "48 sessions; main 23/24 correct, feature 24/24. Feature supplied two incorrect source hashes on scope-2; source audit failed despite later correction. All costs retained. Canonical research source metadata replaces duplicate hash aliases before the next trial.",
+    "canonical-uncached-regression": "48 completed sessions; seven former gates pass, but uncached input plus output increased 19.3%; fails the added eighth blocking gate. Every native event and original report retained."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision.",
-  "all_predeclared_gates_passed": true,
+  "all_predeclared_gates_passed": false,
   "original_performance_gates_passed": true,
-  "merge_review_ready": true,
-  "blocking_gates": [],
-  "all_gates_passed": true,
+  "merge_review_ready": false,
+  "blocking_gates": [
+    "observed_uncached_input_plus_output_improve"
+  ],
+  "all_gates_passed": false,
   "compliance_fix": "Identical shared research adapter reports remaining calls after every successful operation. Six-call cap and attempted-call violation accounting unchanged; duplicate asks also block readiness. The prior advisory interpretation is superseded."
 }

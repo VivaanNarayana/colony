@@ -1,3 +1,5 @@
+> Superseded readiness: the user requires uncached input plus output below main. The retained trial fails that blocking gate (+19.3%). PR is draft; merge review pending a passing rerun. All eight gates are mandatory.
+
 # Merge review
 
 Reviewed runtime: `c40fceb08be3c8de1f8f3a533507b88661fd8152` against `202745a92f6c6c59e4c990321be9c5112697594e`.

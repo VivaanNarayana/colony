@@ -223,10 +223,12 @@ def main():
             "research_adapter_sha256": adapter_hash,
             "order": "main then feature on even task indexes, reversed on odd indexes",
             "gates": [
+                "loaded implementations verified against pinned revisions",
                 "full suite passes",
                 "controlled local lookup latency lower",
                 "live core-fact correctness does not decrease",
                 "live gross input+output tokens lower",
+                "live uncached input+output tokens lower",
                 "live summed subject wall time lower",
                 "feature follows requested tool protocol",
             ],

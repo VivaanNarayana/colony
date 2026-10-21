@@ -15,6 +15,22 @@ def read_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def evaluate_gates(main, feature, local, verification, implementations_verified):
+    return {
+        "loaded_implementations_verified": implementations_verified,
+        "tests_and_lint_pass": verification["tests_passed"] > 0
+        and verification["tests_failed"] == 0
+        and verification["ruff_passed"],
+        "local_lookup_improves": local["lookup_time_reduction"] > 0,
+        "correctness_not_reduced": feature["correct"] >= main["correct"],
+        "feature_follows_tool_protocol": feature["protocol_violations"] == 0,
+        "observed_live_tokens_improve": feature["tokens"] < main["tokens"],
+        "observed_uncached_input_plus_output_improve": feature["uncached_input_plus_output"]
+        < main["uncached_input_plus_output"],
+        "observed_live_time_improves": feature["seconds"] < main["seconds"],
+    }
+
+
 def compare(results, local):
     protocol = read_json(results / "protocol.json")
     verification = read_json(results / "verification.json")
@@ -246,17 +262,7 @@ def compare(results, local):
         intervals[field] = [samples[250], samples[9749]]
     report["descriptive_family_bootstrap_reduction_95pct"] = intervals
     report["same_prompts_order_and_corpus"] = True
-    report["gate"] = {
-        "loaded_implementations_verified": implementations_verified,
-        "tests_and_lint_pass": verification["tests_passed"] > 0
-        and verification["tests_failed"] == 0
-        and verification["ruff_passed"],
-        "local_lookup_improves": local["lookup_time_reduction"] > 0,
-        "correctness_not_reduced": feature["correct"] >= main["correct"],
-        "feature_follows_tool_protocol": feature["protocol_violations"] == 0,
-        "observed_live_tokens_improve": feature["tokens"] < main["tokens"],
-        "observed_live_time_improves": feature["seconds"] < main["seconds"],
-    }
+    report["gate"] = evaluate_gates(main, feature, local, verification, implementations_verified)
     report["all_gates_passed"] = all(report["gate"].values())
     report["all_predeclared_gates_passed"] = report["all_gates_passed"]
     report["original_performance_gates_passed"] = all(
@@ -285,6 +291,8 @@ def main():
     report = compare(args.results, read_json(args.local))
     (args.results / "comparison.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
+    if not report["all_gates_passed"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
