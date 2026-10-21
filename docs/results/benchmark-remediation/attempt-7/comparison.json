@@ -1,0 +1,196 @@
+{
+  "schema_version": 2,
+  "evaluation_role": "public-development-only",
+  "baseline_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "feature_commit": "3574a8843a7d91880920f93be9a311a89a8a4b5b",
+  "arms": {
+    "main": {
+      "protocol_violations": 0,
+      "correct": 24,
+      "valid_citations": 19,
+      "raw_hits": 18,
+      "relevant_hits": 18,
+      "research_free_correct": 18,
+      "tokens": 1171718,
+      "cached_input_tokens": 992000,
+      "tool_calls": 49,
+      "research_calls": 19,
+      "ask_calls": 24,
+      "seconds": 370.774,
+      "tasks": 24,
+      "uncached_input_plus_output": 179718
+    },
+    "feature": {
+      "protocol_violations": 0,
+      "correct": 24,
+      "valid_citations": 23,
+      "raw_hits": 19,
+      "relevant_hits": 19,
+      "research_free_correct": 19,
+      "tokens": 1113277,
+      "cached_input_tokens": 939264,
+      "tool_calls": 45,
+      "research_calls": 16,
+      "ask_calls": 24,
+      "seconds": 347.721,
+      "tasks": 24,
+      "uncached_input_plus_output": 174013
+    }
+  },
+  "limitations": [
+    "Every session of this final alternating trial is retained without per-task retries or dropped outcomes. Earlier exploratory revisions are retained separately.",
+    "Primary-assistant grading of core facts and citations, not independent blind review.",
+    "Repeatedly observed self-repository tasks are not held-out production evidence.",
+    "Provider sampling and cache variation remain; bootstrap intervals are descriptive, not a correction for repeated selection or a production-readiness claim."
+  ],
+  "local_lookup_code_unchanged": true,
+  "verification": {
+    "tests_passed": 138,
+    "tests_failed": 0,
+    "tests_skipped": 1,
+    "ruff_passed": true,
+    "pytest_seconds": 57.24,
+    "platform": "Windows / Python 3.13.1",
+    "scope": "Full suite; existing Windows symlink skip",
+    "command": "python -m pytest -q; ruff check .; git diff --check",
+    "commit": "3574a8843a7d91880920f93be9a311a89a8a4b5b"
+  },
+  "observed_reductions": {
+    "tokens": 0.04987633543224568,
+    "seconds": 0.062175341313037036,
+    "tool_calls": 0.08163265306122447,
+    "uncached_input_plus_output": 0.031744176988392936
+  },
+  "families": {
+    "mcp": {
+      "main": {
+        "tokens": 146381.0,
+        "seconds": 44.566,
+        "uncached_input_plus_output": 28365.0
+      },
+      "feature": {
+        "tokens": 145373.0,
+        "seconds": 63.503,
+        "uncached_input_plus_output": 30557.0
+      }
+    },
+    "outage": {
+      "main": {
+        "tokens": 162763.0,
+        "seconds": 39.122,
+        "uncached_input_plus_output": 23627.0
+      },
+      "feature": {
+        "tokens": 98819.0,
+        "seconds": 52.803000000000004,
+        "uncached_input_plus_output": 21763.0
+      }
+    },
+    "install": {
+      "main": {
+        "tokens": 100051.0,
+        "seconds": 35.323,
+        "uncached_input_plus_output": 14675.0
+      },
+      "feature": {
+        "tokens": 99763.0,
+        "seconds": 38.702999999999996,
+        "uncached_input_plus_output": 13363.0
+      }
+    },
+    "capture": {
+      "main": {
+        "tokens": 99560.0,
+        "seconds": 28.933,
+        "uncached_input_plus_output": 30824.0
+      },
+      "feature": {
+        "tokens": 99052.0,
+        "seconds": 34.806,
+        "uncached_input_plus_output": 13676.0
+      }
+    },
+    "serve": {
+      "main": {
+        "tokens": 233233.0,
+        "seconds": 70.77,
+        "uncached_input_plus_output": 33425.0
+      },
+      "feature": {
+        "tokens": 228670.0,
+        "seconds": 56.61900000000001,
+        "uncached_input_plus_output": 33726.0
+      }
+    },
+    "tests": {
+      "main": {
+        "tokens": 99176.0,
+        "seconds": 34.481,
+        "uncached_input_plus_output": 16360.0
+      },
+      "feature": {
+        "tokens": 98894.0,
+        "seconds": 27.326,
+        "uncached_input_plus_output": 11726.0
+      }
+    },
+    "scope": {
+      "main": {
+        "tokens": 192474.0,
+        "seconds": 79.785,
+        "uncached_input_plus_output": 19034.0
+      },
+      "feature": {
+        "tokens": 206402.0,
+        "seconds": 41.017,
+        "uncached_input_plus_output": 31426.0
+      }
+    },
+    "stale": {
+      "main": {
+        "tokens": 138080.0,
+        "seconds": 37.794000000000004,
+        "uncached_input_plus_output": 13408.0
+      },
+      "feature": {
+        "tokens": 136304.0,
+        "seconds": 32.944,
+        "uncached_input_plus_output": 17776.0
+      }
+    }
+  },
+  "descriptive_family_bootstrap_reduction_95pct": {
+    "tokens": [
+      -0.02470355141970315,
+      0.16998540691722408
+    ],
+    "seconds": [
+      -0.20399563222863004,
+      0.27441565562322157
+    ],
+    "uncached_input_plus_output": [
+      -0.21805200867726615,
+      0.25924018092799184
+    ]
+  },
+  "same_prompts_order_and_corpus": true,
+  "gate": {
+    "loaded_implementations_verified": true,
+    "tests_and_lint_pass": true,
+    "local_lookup_improves": true,
+    "correctness_not_reduced": false,
+    "feature_follows_tool_protocol": true,
+    "observed_live_tokens_improve": false,
+    "observed_uncached_input_plus_output_improve": false,
+    "observed_live_time_improves": false
+  },
+  "all_gates_passed": false,
+  "data_budget_verified": true,
+  "mcp_surface_identical": false,
+  "blocking_gates": [
+    "correctness_not_reduced",
+    "observed_live_tokens_improve",
+    "observed_uncached_input_plus_output_improve",
+    "observed_live_time_improves"
+  ]
+}
