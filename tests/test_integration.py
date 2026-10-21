@@ -206,7 +206,8 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             receipt = json.loads(validated.content[0].text)
             assert receipt["status"] == "validated"
             assert receipt["recommendation"] == "reuse_if_relevant"
-            assert receipt["sources"][0]["ref"] == "settings.py"
+            assert "sources" not in receipt  # Identical file proof is carried by the current read.
+            assert receipt["current_repository_reads"][0]["kind"] == "file"
             assert receipt["current_repository_reads"][0]["complete_file"] == evidence_files
             assert receipt["verification"]["file_fingerprints_match"]
             assert receipt["verification"]["source_reads_current"]

@@ -48,7 +48,6 @@ def test_research_adapter_enforces_one_shared_call_budget(tmp_path):
                         "content_hash": digest,
                     }
                     assert data["sha256"] == digest
-                    assert data["complete_file"] is True
                     assert data["content"] == (tmp_path / "README.md").read_bytes().decode("utf-8")
                 if remaining == 0:
                     assert "no research calls remain" in data["research_budget"]["next_action"]

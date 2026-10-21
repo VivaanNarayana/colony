@@ -1,13 +1,13 @@
 {
   "mcp-1.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
   },
   "outage-3.colony": {
     "correct": true,
@@ -31,23 +31,23 @@
   },
   "capture-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
   },
   "outage-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "outage-2.colony": {
     "correct": true,
@@ -71,13 +71,13 @@
   },
   "mcp-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+    "note": "Correct stdio invocation/configuration or ask/push tool signatures. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "serve-2.colony": {
     "correct": true,
@@ -91,13 +91,13 @@
   },
   "tests-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct pytest invocation."
   },
   "scope-2.colony": {
     "correct": true,
@@ -111,15 +111,25 @@
   },
   "stale-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct hash/fingerprint mismatch and stale evidence behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
   },
   "capture-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+  },
+  "install-3.colony": {
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
@@ -127,17 +137,7 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint."
-  },
-  "install-3.colony": {
-    "correct": true,
-    "citation_valid": false,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct editable development-extras install command."
   },
   "tests-3.colony": {
     "correct": true,
@@ -161,13 +161,13 @@
   },
   "serve-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct server invocation or required data/repo/issuer flags."
   },
   "stale-1.colony": {
     "correct": true,
@@ -181,13 +181,13 @@
   },
   "scope-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
   },
   "scope-1.colony": {
     "correct": true,
@@ -195,7 +195,7 @@
     "relevant_asks": [
       true
     ],
-    "reused": false,
+    "reused": true,
     "wrong_reused": false,
     "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
   },
@@ -221,13 +221,13 @@
   },
   "stale-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct hash/fingerprint mismatch and stale evidence behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
   },
   "capture-1.colony": {
     "correct": true,

@@ -1,6 +1,6 @@
 {
   "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
-  "feature_commit": "a05d54b94640c115a01ead074fb98149e6c5ce2a",
+  "feature_commit": "6d298866e0450a64394ec2abd695434fff9e9833",
   "corpus_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
   "tasks": [
     "mcp-1",
@@ -29,7 +29,7 @@
     "capture-1"
   ],
   "sessions": 48,
-  "research_adapter_sha256": "8f10e4e495743ab85e74456828400a9aaedff2b919264a6741fc0837e9d555dc",
+  "research_adapter_sha256": "4f95fcd30b615ba7af599e3933e2aaafef192c9208e4eff8b2c2204ac2528fea",
   "order": "main then feature on even task indexes, reversed on odd indexes",
   "gates": [
     "full suite passes",

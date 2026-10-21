@@ -50,8 +50,8 @@
     "common": "8df3abdcb2e3eacf640747a9fe962a66d988582d2c3ac1f447d5722793e15b08",
     "colony": "52a86fa12a85e39287c0382595a311d2c27966541a081f9dcbc6d49d25ca2b41"
   },
-  "implementation_commit": "a05d54b94640c115a01ead074fb98149e6c5ce2a",
+  "implementation_commit": "6d298866e0450a64394ec2abd695434fff9e9833",
   "arm": "feature",
   "import_isolation": "Explicit frozen-source launcher; actual server/MCP module paths and hashes verified",
-  "research_adapter_sha256": "8f10e4e495743ab85e74456828400a9aaedff2b919264a6741fc0837e9d555dc"
+  "research_adapter_sha256": "4f95fcd30b615ba7af599e3933e2aaafef192c9208e4eff8b2c2204ac2528fea"
 }

@@ -1,0 +1,13 @@
+{
+  "commit": "6d298866e0450a64394ec2abd695434fff9e9833",
+  "command": "python -m pytest -q; python -m ruff check .; git diff --check",
+  "tests_passed": 86,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "ruff_passed": true,
+  "skip_reason": "Windows host does not permit symlinks",
+  "platform": "Windows / Python 3.13.1",
+  "scope": "Local verification; no hosted CI configured",
+  "pytest_seconds": 44.74,
+  "strict_gate_regression": "Reanalyzed retained prior 48-session trial: all performance gates pass, attempted-call compliance fails, merge_review_ready is false."
+}

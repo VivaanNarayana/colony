@@ -3,7 +3,7 @@
     {
       "task": "mcp-1",
       "result": {
-        "id": "2bed8eea05de4184ad7c10fa0f496ca5",
+        "id": "152200eb84c54947a9934a595e88a28c",
         "stored": false,
         "queued": true
       }
@@ -11,7 +11,7 @@
     {
       "task": "outage-1",
       "result": {
-        "id": "4f49bed11b1845db9ea4f2c46bac01b8",
+        "id": "57344fd06fba44cc8df4b0a8b8034eb1",
         "stored": false,
         "queued": true
       }
@@ -19,7 +19,15 @@
     {
       "task": "serve-2",
       "result": {
-        "id": "882e14eb645f4096a8cae774b5b24b7c",
+        "id": "7573be000945450d839db422040bf48f",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "tests-2",
+      "result": {
+        "id": "b8afbdc329d24f3d880959fc77fb7abe",
         "stored": false,
         "queued": true
       }

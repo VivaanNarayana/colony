@@ -94,12 +94,15 @@ The compact JSON receipt states that checking the included current text is verif
 evidence-only answers also count as reuse and need no duplicate read or push. Missing
 requested facts still require research. The tool uses one text block without duplicate
 structured output or pretty-print padding.
-The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `start_line`,
+The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already
 read by the server. `verification` separately reports matching file fingerprints and
 whether current source text is available; it does not certify the saved answer.
 Assess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids
 redundant Unicode escapes, and source-only matches carry the text once in these read objects.
+Validated file identities already present in these reads are not repeated in `sources`.
+Sources with advanced assertions or without a displayed read remain in `sources`, preserving
+the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.

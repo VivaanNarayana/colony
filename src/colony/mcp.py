@@ -79,12 +79,31 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 {
                     "path": e["ref"],
                     "sha256": hashes[e["ref"]],
+                    "kind": "file",
                     "start_line": e["line"],
                     "complete_file": e.get("complete_file", False),
                     "content": e["text"],
                 }
                 for e in result.get("evidence", [])
             ]
+            # Current reads already carry these file identities and fingerprints.
+            # Retain sources with assertions or no displayed read, so deduplication
+            # never hides extra validation requirements or undisplayed provenance.
+            represented = {
+                (read["path"], read["sha256"]) for read in response["current_repository_reads"]
+            }
+            remaining = [
+                source
+                for source in response.get("sources", [])
+                if source.get("kind", "file") != "file"
+                or source.get("symbol") is not None
+                or source.get("contains") is not None
+                or (source["ref"], source["content_hash"]) not in represented
+            ]
+            if remaining:
+                response["sources"] = remaining
+            else:
+                response.pop("sources", None)
             response.pop("evidence", None)
             if result.get("match_kind") == "evidence":
                 response.pop("content", None)  # The read objects carry the text once.
