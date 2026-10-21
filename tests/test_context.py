@@ -1,5 +1,7 @@
 import hashlib
 
+import pytest
+
 from colony.context import excerpts
 from colony.models import Source
 from colony.validation import snapshot
@@ -204,3 +206,87 @@ def test_remaining_budget_keeps_the_selected_paragraph_in_late_section(tmp_path)
     assert result[1]["line"] == 9
     assert "deploy the signed artifact" in result[1]["text"]
     assert sum(len(e["text"]) for e in result) <= 2800
+
+
+def test_descriptive_receipt_keeps_complete_fact_without_neighboring_topics(tmp_path):
+    text = (
+        "## Relay\n\nThe relay retains signed archives for 37 days.\n"
+        "Expired archives are removed during maintenance.\n\n"
+        "Administrative credentials are distributed through a separate service.\n"
+    )
+    (tmp_path / "relay.md").write_text(text)
+    source = snapshot(tmp_path, "relay.md")
+    result = excerpts(
+        tmp_path, [source], "What is the relay archive retention?", preferred=[("relay.md", 3)]
+    )
+    assert len(result) == 1
+    assert "37 days" in result[0]["text"] and "Expired archives" in result[0]["text"]
+    assert "Administrative credentials" not in result[0]["text"]
+    assert result[0]["line"] == 3
+    assert result[0]["text"] == "\n".join(text.splitlines()[2:4])
+    assert source.content_hash == hashlib.sha256((tmp_path / "relay.md").read_bytes()).hexdigest()
+    (tmp_path / "relay.md").write_text(text.replace("37 days", "9 days"))
+    assert excerpts(tmp_path, [source], "Retention?", preferred=[("relay.md", 3)]) == []
+
+
+@pytest.mark.parametrize(
+    "before, fact, after, required",
+    [
+        (
+            "",
+            "The relay retains archives for 37 days.",
+            "However, legal holds suspend deletion.",
+            "legal holds",
+        ),
+        (
+            "The following policy applies only to test relays:",
+            "The relay retains archives for 37 days.",
+            "",
+            "test relays",
+        ),
+        (
+            "Production relays use a separate policy.",
+            "They retain archives for 37 days.",
+            "",
+            "Production relays",
+        ),
+        (
+            "```sh\nrelayctl configure --retention 37d\n```",
+            "Archive retention requires the preceding configuration.",
+            "",
+            "relayctl configure",
+        ),
+        (
+            "````text\nExample literal (not active policy).",
+            "The relay retains archives for 37 days.",
+            "````",
+            "````",
+        ),
+    ],
+)
+def test_descriptive_receipts_preserve_dependent_context(tmp_path, before, fact, after, required):
+    text = "## Relay\n\n" + (before + "\n\n" if before else "") + fact + "\n\n" + after + "\n"
+    (tmp_path / "relay.md").write_text(text)
+    selected = text.splitlines().index(fact) + 1
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "relay.md")],
+        "What is the relay retention policy?",
+        preferred=[("relay.md", selected)],
+    )
+    assert fact in result[0]["text"] and required in result[0]["text"]
+
+
+def test_procedural_request_keeps_recipe_even_for_prose_selection(tmp_path):
+    text = (
+        "## Rotation\n\nRotate credentials before restarting the relay.\n\n"
+        "Use the administrator-issued credential for the first restart.\n"
+    )
+    (tmp_path / "relay.md").write_text(text)
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "relay.md")],
+        "How do I rotate relay credentials?",
+        preferred=[("relay.md", 3)],
+    )
+    assert "administrator-issued" in result[0]["text"]

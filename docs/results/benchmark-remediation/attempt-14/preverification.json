@@ -1,0 +1,11 @@
+{
+  "tests_passed": 151,
+  "tests_failed": 2,
+  "tests_skipped": 1,
+  "pytest_seconds": 58.91,
+  "ruff_passed": true,
+  "failures": [
+    "Existing scrubbing-context regression: redaction-only paragraph must retain original surrounding context. Fixed by excluding bracket-prefixed prose from compaction, preserving existing expectation.",
+    "New fingerprint fixture accidentally hashed LF string while Windows wrote CRLF. Fixed to hash actual file bytes, as production does."
+  ]
+}

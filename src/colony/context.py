@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from colony.models import Source
-from colony.retrieval import fused_score, keyword_coverage, rank
+from colony.retrieval import fused_score, keyword_coverage, rank, requires_procedure
 from colony.security import PATTERNS
 from colony.validation import repo_file
 
@@ -125,6 +125,58 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     return low + 1, "\n".join(lines[low:high])[:2400]
 
 
+def prose_window(ref: str, lines: list[str], line: int) -> tuple[int, str] | None:
+    """Return a complete standalone prose paragraph, otherwise keep normal context."""
+    if Path(ref).suffix.lower() not in {".md", ".markdown", ".txt"}:
+        return None
+    begin = line - 1
+    if not 0 <= begin < len(lines) or (begin and lines[begin - 1].strip()):
+        return None
+    end = begin
+    while end < len(lines) and lines[end].strip():
+        end += 1
+    paragraph = lines[begin:end]
+    if not paragraph or len(paragraph) > 16:
+        return None
+    # Never compact fenced/indented code, tables, lists, headings or recipes.
+    fence = None
+    for i, text in enumerate(lines[:end]):
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", text)
+        if marker:
+            token, rest = marker.groups()
+            if fence is None:
+                fence = token
+            elif token[0] == fence[0] and len(token) >= len(fence) and not rest.strip():
+                fence = None
+            if i >= begin:
+                return None
+        if i == begin and fence is not None:
+            return None
+    if any(re.match(r"^(?: {4}|\t|\s*[\[#>|*+-]|\s*\d+[.)]\s)", s) for s in paragraph):
+        return None
+    text = "\n".join(paragraph)
+    if not re.search(r"[.!?][\"')`]*$", text.rstrip()) or len(text) > 2400:
+        return None
+    # A pronoun/transition or an adjacent exception may depend on omitted text.
+    dependent = re.compile(
+        r"^(?:this|these|those|it|they|its|their|that|then|however|but|except|unless|"
+        r"otherwise|instead|also|alternatively|note|warning|only|if|when|for example)\b",
+        re.I,
+    )
+    neighbors = [text]
+    for step, position in [(-1, begin - 1), (1, end)]:
+        while 0 <= position < len(lines) and not lines[position].strip():
+            position += step
+        if 0 <= position < len(lines):
+            neighbor = lines[position].strip()
+            if neighbor.startswith(("```", "~~~")) or neighbor.endswith(":"):
+                return None
+            neighbors.append(neighbor)
+    if any(dependent.match(s.strip()) for s in neighbors):
+        return None
+    return line, text
+
+
 def excerpts(
     root: Path,
     sources: list[Source],
@@ -227,7 +279,8 @@ def excerpts(
             continue
         if len(selected) >= 2 or budget < 300:
             break
-        start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
+        compact = None if requires_procedure(question) else prose_window(ref, cache[ref], line)
+        start, text = compact or context_window(ref, cache[ref], line, core.count("\n") + 1)
         limit = min(2400, budget)
         offset = len("\n".join(cache[ref][start - 1 : line - 1])) + int(line > start)
         core_text = "\n".join(cache[ref][line - 1 : line + core.count("\n")])

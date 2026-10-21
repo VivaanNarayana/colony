@@ -1,10 +1,12 @@
 # Strict gate remediation against main
 
-**Trial 13 passes 5/8 gates. Both token intervals and main tool compliance remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
+**Trial 14 is in verification. Trial 13 passes 5/8 gates. Both token intervals and main tool compliance remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 14 compacts only complete standalone prose for nonprocedural requests. Conservative guards preserve surrounding context for dependencies, exceptions, redaction fragments, lists, headings and code. Procedure handling, all source proofs, thresholds and budgets are unchanged. Full suite: 153 pass, one existing skip; Ruff and whitespace checks pass. Real-source display diagnostics shrink capture 1063 to 866 characters and outage 483 to 410, with the setup recipe unchanged; these are not live cost measurements. A fresh isolated comparison and all 48 live sessions are required. Initial verification failures and their corrections are retained.
 
 Trial 13 fixes a confirmed excerpt-selection gap: a related descriptive question asked which tools were exposed, but the response grounded only an older connection summary and omitted the Tools paragraph. The agent correctly performed two extra repository reads; the hit was graded irrelevant. When the strongest old-claim paragraphs have strictly worse query coverage than another cited paragraph, source selection now drops the old-claim bonus while retaining the existing query/model weights. Exact-question and procedural claim selection are unchanged. Validation, source access, assertions, age/scope checks, candidate bounds and response limits are unchanged.
 
