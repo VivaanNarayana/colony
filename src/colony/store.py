@@ -2,7 +2,7 @@ import hashlib
 import json
 import sqlite3
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 import sqlite_vec
@@ -227,17 +227,21 @@ class Store:
             present = db.execute(
                 f"SELECT 1 FROM trails WHERE namespace IN ({placeholders}) LIMIT 1", namespaces
             ).fetchone()
-        if present is None:
-            return {"hit": False, "reason": "no_relevant_trail"}
-        query_vector = embed(question, query=True)
-        answer = self.find_answer(
-            question,
-            namespaces,
-            max_age,
-            threshold,
-            include_evidence_files=include_evidence_files,
-            query_vector=query_vector,
-        )
+            if present is None:
+                return {"hit": False, "reason": "no_relevant_trail"}
+            query_vector = embed(question, query=True)
+            # Reuse this connection instead of loading sqlite-vec and setting
+            # WAL again for the answer lookup. Commit its validation writes
+            # before opening the separate evidence-fallback transaction below.
+            answer = self.find_answer(
+                question,
+                namespaces,
+                max_age,
+                threshold,
+                include_evidence_files=include_evidence_files,
+                query_vector=query_vector,
+                _connection=db,
+            )
         if answer.get("status") == "validated" or not namespaces:
             return answer
         return (
@@ -417,13 +421,15 @@ class Store:
         *,
         include_evidence_files: bool = False,
         query_vector: bytes | None = None,
+        _connection: sqlite3.Connection | None = None,
     ):
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
         placeholders = ",".join("?" for _ in namespaces)
         procedure = requires_procedure(question)
         normalized_question = question.strip().casefold()
-        with self.connect() as db:
+        connection = nullcontext(_connection) if _connection is not None else self.connect()
+        with connection as db:
             vector = query_vector if query_vector is not None else embed(question, query=True)
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
             rows = db.execute(

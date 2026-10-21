@@ -6,7 +6,7 @@ The initial audit commit (`e2b865a`) left the production package unchanged.
 The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
 adds runtime and citation fixes on the same branch. Eight-gate clearance remains
 incomplete: trial 13 passes 5/8 gates; both token intervals and baseline repeated-ask compliance fail.
-Work continues at the user's request. Trial 14 stopped at its local speed gate; trial 15 avoids inference for scoped empty-store misses.
+Work continues at the user's request. Trials 14 and 15 stopped at local speed gates; trial 16 reuses the scoped preflight/answer connection.
 All earlier attempts and failures are retained. No gate has been weakened or made advisory.
 
 ## Findings

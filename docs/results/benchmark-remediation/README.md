@@ -1,10 +1,12 @@
 # Strict gate remediation against main
 
-**Trial 15 is in verification. Trial 14 stopped at its failed local interval gate; no live sessions ran. Trial 13 passes 5/8 gates. Both token intervals and main tool compliance remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
+**Trial 16 is in verification. Trials 14 and 15 stopped at failed local interval gates; no live sessions ran. Trial 13 passes 5/8 gates. Both token intervals and main tool compliance remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 16 shares the scoped preflight and answer database connection, avoiding a second sqlite-vec load/WAL setup for populated lookups. The answer transaction commits before evidence fallback; direct helper callers retain their own connection. No model output or absence is cached. All source/access checks and benchmark requirements remain unchanged. Full suite: 155 pass, one existing skip; Ruff/whitespace checks pass. A connection-only diagnostic measured 4.33 ms per setup over 100 connections; this is not gate evidence.
 
 Trial 15 adds a certain-miss fast path before query embedding when no trail exists in the permitted namespaces. The scoped existence query runs fresh on every ask; no absence result is cached. It does not filter by status or age, so stale/expired diagnostics and newly pushed trails remain visible. Existing query reuse, provenance and all gates remain unchanged. Full suite: 155 pass, one existing skip; Ruff and whitespace checks pass.
 
@@ -34,8 +36,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 12 | `6567c95` | Evidence rejected: main pushed an ask-derived hash without a new file read |
 | 13 | `e14b0cb` | 5/8; all requested tools now supplied; time passes, token intervals and main repeated ask fail |
 | 14 | `a02123a` | Stopped at local speed gate: 9.32% lower time, interval -1.40% to +19.19%; 117/117 facts in both arms, no live sessions |
+| 15 | `909b366` | Stopped at local speed gate: 8.33% lower time, interval -2.94% to +21.95%; 117/117 facts in both arms, no live sessions |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 completed the same 48-session frozen-corpus comparison with alternating first arms. Revision 14 did not advance past its failed local gate; its complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Latest trial: 12 (rejected)
 
@@ -72,7 +75,7 @@ The positional-query masking experiment caused research misses and was reverted.
 
 ## Current work
 
-Trial 13 confirms the omitted-fact fix, while the remaining token intervals still fail. Trial 14 retains a local-gate failure; trial 15 removes inference from scoped empty-store misses before a new comparison. All eight remain mandatory. The full independent benchmark contract, scripts and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
+Trial 13 confirms the omitted-fact fix, while the remaining token intervals still fail. Trials 14 and 15 retain local-gate failures. Trial 16 removes the extra connection introduced by the scoped empty-store preflight before a new comparison. All eight remain mandatory. The full independent benchmark contract, scripts and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
 
 ## Replay and limits
 
@@ -83,6 +86,6 @@ Expand-Archive docs/results/benchmark-remediation/attempt-13/live-native.zip <fr
 python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-13/lookup-summary.json
 ```
 
-Expected live replay exit for completed attempts 1–13: **1**. Attempt 14 contains local results only and has no live archive; its local speed gate failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected live replay exit for completed attempts 1–13: **1**. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.
