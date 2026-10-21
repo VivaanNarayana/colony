@@ -77,7 +77,7 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
 
 
 def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[int, str]:
-    """Retrieve narrowly; display the containing section or surrounding source lines."""
+    """Keep the selected passage and nearby context, without expanding whole sections."""
     center = min(line - 1 + min(8, span // 2), len(lines) - 1)
     low, high = 0, len(lines)
     if Path(ref).suffix.lower() in {".md", ".markdown"}:
@@ -89,6 +89,12 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
                 headings.append(i)
         low = max((i for i in headings if i <= center), default=0)
         high = min((i for i in headings if i > center), default=len(lines))
+    # Short sections and heading-only selections need their section context.
+    # For longer sections, retain the actual selected span with a small margin;
+    # unrelated setup examples should not be repeated on every memory lookup.
+    if line - 1 > low and high - low > span + 6:
+        low = max(low, line - 3)
+        high = min(high, line - 1 + span + 2)
     if len("\n".join(lines[low:high])) > 2400:
         low = max(low, line - 1 - 8)
         high = min(high, low + 32)

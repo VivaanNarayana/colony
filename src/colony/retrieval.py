@@ -169,11 +169,20 @@ def terms(text: str) -> set[str]:
     text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
     # Shared prefixes cover plural/inflected prose and common code identifiers.
     words = re.findall(r"[a-z][a-z0-9]+", text.lower())
-    return {
-        (w[:-1] if len(w) > 4 and w.endswith("s") and not w.endswith("ss") else w)[:6]
-        for w in words
-        if w not in STOP_WORDS
-    }
+    result = set()
+    for word in words:
+        if word in STOP_WORDS:
+            continue
+        word = (
+            word[:-1] if len(word) > 4 and word.endswith("s") and not word.endswith("ss") else word
+        )
+        # Keep availability paraphrases coherent without dropping query terms or
+        # lowering coverage: a server being "down" and an "outage" describe the
+        # same state. The subject and other requested facts must still match.
+        if word in {"down", "outage", "offline", "unavailable", "unavailability", "downtime"}:
+            word = "offline"
+        result.add(word[:6])
+    return result
 
 
 def keyword_coverage(question: str, passages: list[str]) -> list[float]:
