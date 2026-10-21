@@ -26,8 +26,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "[path](path) or [path:line](path#Lline), never /path."
     )
     research_policy = (
-        "Read a known defining path directly; otherwise use the search tool's syntax "
-        "(identifiers for literal search, not question phrases). "
+        "Read known defining paths directly. Use one keyword per literal search; "
+        "broaden it after an empty result. Read defining matches. "
         "Research only requested facts; stop once source evidence supports them."
     )
     reuse_guidance = (
@@ -48,8 +48,9 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False), structured_output=False
     )
     def ask(question: str, namespace: str | None = None) -> list[TextContent]:
-        """Look up shared answers or current source reads. Reuse sufficient facts without
-        another read or push; research missing facts."""
+        """Look up shared answers or current source reads once. Reuse sufficient facts
+        without reads or push. On misses, use one keyword per literal search, then read
+        defining matches; research only facts needed for the question."""
         result = client.ask(question, namespace, include_evidence_files=evidence_files)
         if not result.get("hit"):
             result["research_guidance"] = research_guidance

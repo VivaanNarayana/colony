@@ -118,8 +118,12 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "even for a new question" in instructions
     assert "ask's reads/hashes never qualify" in instructions
     assert "Never reread just to push" in instructions
-    assert "identifiers for literal search, not question phrases" in instructions
+    assert "one keyword per literal search" in instructions
+    assert "broaden it after an empty result" in instructions
     assert "stop once source evidence supports them" in instructions
+    assert "one keyword per literal search" in (
+        colony.mcp.create_mcp(tmp_path)._tool_manager.get_tool("ask").description
+    )
 
 
 def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path):
