@@ -97,7 +97,7 @@ research steps. Hit instructions repeat the evidence-only rule at the decision t
 Missing requested facts still require research. File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
-The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,
+The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already
 read by the server. `verification` separately reports matching file fingerprints and
 whether current source text is available; it does not certify the saved answer.

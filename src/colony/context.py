@@ -132,6 +132,7 @@ def excerpts(
     *,
     preferred: list[tuple[str, int]] | None = None,
     claims: str | None = None,
+    prefer_question: bool = False,
     whole_files: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
@@ -175,6 +176,25 @@ def excerpts(
             claim_coverage = keyword_coverage(
                 "\n".join(code_claims) if code_claims else claims[:4000], [c[2] for c in candidates]
             )
+            if prefer_question:
+                # A related question may request a different fact from the same
+                # cited file. Don't let an old summary exclude a paragraph with
+                # strictly better support for that question. Keep claim-based
+                # selection when it already supplies the best query coverage.
+                peak = max(claim_coverage, default=0)
+                supplied = max(
+                    (
+                        q
+                        for q, a in zip(query_coverage, claim_coverage, strict=True)
+                        if a >= peak - 1e-12
+                    ),
+                    default=0,
+                )
+                if max(query_coverage, default=0) > supplied + 1e-12:
+                    # Drop the unrelated cached-claim bonus, rather than giving
+                    # query keywords that bonus. Keep the existing query/model
+                    # weights so keyword-rich metadata cannot suppress facts.
+                    claim_coverage = [0.0] * len(claim_coverage)
             lexical = [
                 0.2 * q + 0.7 * a for q, a in zip(query_coverage, claim_coverage, strict=True)
             ]

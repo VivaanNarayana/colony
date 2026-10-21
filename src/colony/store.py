@@ -529,6 +529,8 @@ class Store:
                     sources,
                     question,
                     claims=content if procedure else focused_passage(question, content),
+                    prefer_question=not procedure
+                    and row["question"].strip().casefold() != normalized_question,
                     whole_files=include_evidence_files,
                 )
                 if status == "validated"

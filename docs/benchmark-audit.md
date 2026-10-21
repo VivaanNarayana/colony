@@ -5,8 +5,8 @@ This establishes weaknesses in the evidence, not intent to manipulate results.
 The initial audit commit (`e2b865a`) left the production package unchanged.
 The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
 adds runtime and citation fixes on the same branch. Eight-gate clearance remains
-incomplete: trial 11 clears five of eight gates, with all three live performance intervals failing.
-Work continues at the user's request; trial 12 is in verification.
+incomplete: trial 12 is rejected for baseline push provenance; no live performance gate is cleared.
+Work continues at the user's request; trial 13 fixes an omitted-fact excerpt and is in verification.
 All earlier attempts and failures are retained. No gate has been weakened or made advisory.
 
 ## Findings

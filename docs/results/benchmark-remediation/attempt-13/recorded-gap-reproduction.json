@@ -1,0 +1,22 @@
+{
+  "role": "Recorded-case reproduction, not independent live gate evidence",
+  "question": "Which tools does the MCP wrapper expose?",
+  "old_hit": true,
+  "new_hit": true,
+  "old_text_has_tools": false,
+  "new_text_has_tools": false,
+  "new_evidence": [
+    {
+      "ref": "README.md",
+      "line": 96,
+      "text": "hit instructions repeat the evidence-only rule at the decision to answer or push.\nMissing requested facts still require research. File proofs, source text and the\nper-result untrusted-data warning are retained. The tool uses one text block without duplicate\nstructured output or pretty-print padding.\nThe MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,\n`complete_file`, and `content`. These are the actual current cited-file excerpts already\nread by the server. `verification` separately reports matching file fingerprints and\nwhether current source text is available; it does not certify the saved answer.\nAssess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids\nredundant Unicode escapes, and source-only matches carry the text once in these read objects.\nValidated file identities already present in these reads are not repeated in `sources`.\nSources with advanced assertions or without a displayed read remain in `sources`, preserving\nthe complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.\nThe wrapper uses the same client scrubbing, credentials, outage handling, and queue as\nthe CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is\npinned because the v2 interface differs.\n",
+      "complete_file": false
+    }
+  ],
+  "new_sources": [
+    {
+      "ref": "README.md",
+      "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+    }
+  ]
+}

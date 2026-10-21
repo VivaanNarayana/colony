@@ -144,6 +144,67 @@ def test_claims_select_actual_procedure_instead_of_question_example(tmp_path):
     assert any("atlasctl bootstrap --profile development" in e["text"] for e in result)
 
 
+@pytest.mark.parametrize(
+    "question, paragraph, expected",
+    [
+        (
+            "Which operations does the ledger bridge support?",
+            "The ledger bridge supports operations `read_entry` and `append_entry`.",
+            "append_entry",
+        ),
+        (
+            "How long does the ledger bridge retain archives?",
+            "The ledger bridge retains signed archives for 37 days.",
+            "37 days",
+        ),
+        (
+            "What is the ledger bridge archive size limit?",
+            "The ledger bridge archive size limit is 19 MiB.",
+            "19 MiB",
+        ),
+    ],
+)
+def test_related_question_reads_its_fact_instead_of_only_an_old_summary(
+    tmp_path, question, paragraph, expected
+):
+    (tmp_path / "guide.md").write_text(
+        "# Ledger bridge\n\n## Connection\n\n"
+        "Configure `ledger-agent --workspace /srv/ledger stdio`.\n\n"
+        f"## Reference\n\n{paragraph}\n"
+    )
+    source = snapshot(tmp_path, "guide.md")
+    result = excerpts(
+        tmp_path,
+        [source],
+        question,
+        claims="Configure `ledger-agent --workspace /srv/ledger stdio`.",
+        prefer_question=True,
+    )
+    assert any(expected in e["text"] for e in result)
+    lines = (tmp_path / "guide.md").read_text().splitlines()
+    for e in result:
+        assert e["text"] == "\n".join(
+            lines[e["line"] - 1 : e["line"] - 1 + len(e["text"].split("\n"))]
+        )
+
+
+def test_related_question_does_not_let_keyword_rich_metadata_hide_the_answer(tmp_path):
+    (tmp_path / "guide.md").write_text(
+        "# Ledger bridge\n\n## Connection\n\n"
+        "Configure `ledger-agent --workspace /srv/ledger stdio`.\n\n"
+        "## Diagnostics\n\nLedger bridge operation support metadata is logged.\n\n"
+        "## Operations\n\nOperations: `read_entry` and `append_entry`.\n"
+    )
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "Which operations does the ledger bridge support?",
+        claims="Configure `ledger-agent --workspace /srv/ledger stdio`.",
+        prefer_question=True,
+    )
+    assert any("append_entry" in e["text"] for e in result)
+
+
 def test_recipe_retains_prerequisites_for_later_invocation():
     lines = [
         "## Bootstrap",
