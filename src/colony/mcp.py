@@ -22,7 +22,10 @@ class FileEvidence(Model):
 def create_mcp(home: Path, *, evidence_files: bool = False):
     client = Client(home)
     research_guidance = (
-        "Follow ask's research policy. Cite actual repository-relative targets: "
+        "Research only the requested facts. Read a known defining file, otherwise search one "
+        "literal keyword, not a phrase. After reading defining code, follow dependencies only "
+        "for a requested fact that remains unresolved. Stop when the question has source support; "
+        "answer concisely and push only actual new research. Cite repository-relative targets: "
         "[path](path) or [path:line](path#Lline), never /path."
     )
     reuse_guidance = (

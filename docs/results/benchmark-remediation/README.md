@@ -1,10 +1,12 @@
 # Strict gate remediation against main
 
-**Trial 16 passes 5/8 gates. All three live performance intervals remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
+**Trial 17 is in verification. Trial 16 passes 5/8 gates. All three live performance intervals remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 17 makes the miss/nonvalidated response self-contained at the decision to research: one literal keyword, requested facts only, follow dependencies only for unresolved requested facts, then stop at source support and answer concisely. This addresses trial 16’s actual empty phrase search and unnecessary dependency reads. No task-specific keywords, paths, answers, numerical budgets or benchmark criteria enter the runtime guidance. Backend, source validation, all reuse/provenance rules and tool operations are unchanged. A new isolated/full comparison is required.
 
 Trial 16 shares the scoped preflight and answer database connection, avoiding a second sqlite-vec load/WAL setup for populated lookups. The answer transaction commits before evidence fallback; direct helper callers retain their own connection. No model output or absence is cached. All source/access checks and benchmark requirements remain unchanged. Full suite: 155 pass, one existing skip; Ruff/whitespace checks pass. A connection-only diagnostic measured 4.33 ms per setup over 100 connections; this is not gate evidence.
 
