@@ -16,7 +16,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v7:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked"
+INDEX_VERSION = f"semantic-v8:{EMBED_MODEL}:section-aware-paragraphs-quoted-query-arguments-masked"
 CANDIDATES = 12
 
 
@@ -103,7 +103,10 @@ def rank(question: str, passages: list[str]) -> list[float]:
 def embed_passages(texts: list[str]) -> list[bytes]:
     model, _ = models()
     return (
-        [sqlite_vec.serialize_float32(v.tolist()) for v in model.passage_embed(texts)]
+        # These bounded source paragraphs vary greatly in length. The ONNX
+        # encoder pads a batch to its longest input; individual inference avoids
+        # repeating that padding work and preserves both vectors and input order.
+        [sqlite_vec.serialize_float32(v.tolist()) for v in model.passage_embed(texts, batch_size=1)]
         if texts
         else []
     )
@@ -166,6 +169,9 @@ STOP_WORDS = set(
 
 
 def terms(text: str) -> set[str]:
+    # Question framing is not evidence content. Keep its substantive subject and
+    # condition, instead of weighting an absent generic verb more than both.
+    text = re.sub(r"^\s*what\s+(?:happens|occurs)\s+(?:when|if|during)\s+", "", text, flags=re.I)
     text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
     # Shared prefixes cover plural/inflected prose and common code identifiers.
     words = re.findall(r"[a-z][a-z0-9]+", text.lower())

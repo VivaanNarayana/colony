@@ -3,6 +3,7 @@ import uuid
 from conftest import auth
 
 from colony.models import Trail
+from colony.retrieval import index_version
 from colony.store import Store
 from colony.validation import snapshot
 
@@ -82,7 +83,7 @@ def test_existing_vector_index_is_rebuilt_without_losing_trails(team):
     assert result["id"] == trail and result["content"] == "Set TIMEOUT = 30"
     with migrated.connect() as db:
         assert db.execute("SELECT count(*) FROM trail_vectors").fetchone()[0] == 1
-        assert db.execute("SELECT value FROM settings").fetchone()[0].startswith("semantic-v7:")
+        assert db.execute("SELECT value FROM settings").fetchone()[0] == index_version()
 
 
 def test_stronger_positive_rerank_wins_over_higher_dense_question_match(team, monkeypatch):

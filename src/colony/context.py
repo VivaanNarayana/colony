@@ -63,6 +63,7 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
                     r"\1<question>",
                     block,
                 )
+                block = re.sub(r'(\bask\s+)(["\'])([^\n]*?)\2', r"\1<question>", block)
                 title = headings.get(begin, "")
                 indexed = f"Section: {title}\n{block}" if title else block
                 candidates.append((source.ref, begin + 1, indexed[:2400]))
@@ -80,11 +81,16 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     """Keep the selected passage and nearby context, without expanding whole sections."""
     center = min(line - 1 + min(8, span // 2), len(lines) - 1)
     low, high = 0, len(lines)
+    fences = []
     if Path(ref).suffix.lower() in {".md", ".markdown"}:
-        headings, fenced = [], False
+        headings, fenced, opening = [], False, None
         for i, text in enumerate(lines):
             if text.lstrip().startswith(("```", "~~~")):
                 fenced = not fenced
+                if fenced:
+                    opening = i
+                else:
+                    fences.append((opening, i + 1))
             elif not fenced and re.match(r"^#{1,6} ", text):
                 headings.append(i)
         low = max((i for i in headings if i <= center), default=0)
@@ -95,6 +101,13 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     if line - 1 > low and high - low > span + 6:
         low = max(low, line - 3)
         high = min(high, line - 1 + span + 2)
+        for begin, end in fences:
+            # Do not return a closing fence and omit the commands it encloses.
+            # Also retain a code block directly described by the selected prose.
+            if (begin < high and end > low) or 0 <= line - 1 - end <= 2:
+                expanded_low, expanded_high = min(low, begin), max(high, end)
+                if len("\n".join(lines[expanded_low:expanded_high])) <= 2400:
+                    low, high = expanded_low, expanded_high
     if len("\n".join(lines[low:high])) > 2400:
         low = max(low, line - 1 - 8)
         high = min(high, low + 32)
