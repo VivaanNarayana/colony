@@ -24,7 +24,14 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "A memory lookup does not test other tools' availability. If its evidence is insufficient, "
         "discover and try your configured research tools before reporting them unavailable."
     )
-    server = FastMCP("Colony", instructions=research_guidance)
+    reuse_guidance = (
+        "Ask once per question. Inspect validated current_repository_reads as source text "
+        "already read from the repository. When those facts suffice, answer and cite them "
+        "without another read or push. Deriving an answer from these reads counts as reuse. "
+        "File validation does not certify saved-answer truth. Research missing facts, "
+        "contradictions, misses and nonvalidated results. "
+    )
+    server = FastMCP("Colony", instructions=reuse_guidance + research_guidance)
 
     @server.tool(
         annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False), structured_output=False
@@ -79,31 +86,12 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 {
                     "path": e["ref"],
                     "sha256": hashes[e["ref"]],
-                    "kind": "file",
                     "start_line": e["line"],
                     "complete_file": e.get("complete_file", False),
                     "content": e["text"],
                 }
                 for e in result.get("evidence", [])
             ]
-            # Current reads already carry these file identities and fingerprints.
-            # Retain sources with assertions or no displayed read, so deduplication
-            # never hides extra validation requirements or undisplayed provenance.
-            represented = {
-                (read["path"], read["sha256"]) for read in response["current_repository_reads"]
-            }
-            remaining = [
-                source
-                for source in response.get("sources", [])
-                if source.get("kind", "file") != "file"
-                or source.get("symbol") is not None
-                or source.get("contains") is not None
-                or (source["ref"], source["content_hash"]) not in represented
-            ]
-            if remaining:
-                response["sources"] = remaining
-            else:
-                response.pop("sources", None)
             response.pop("evidence", None)
             if result.get("match_kind") == "evidence":
                 response.pop("content", None)  # The read objects carry the text once.
@@ -117,10 +105,6 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 "these reads counts as reuse. Research missing facts only. A lookup does "
                 "not test other tools' availability."
             )
-            # Put the reuse decision before potentially long saved answers and
-            # source excerpts. Preserve every field, source byte and instruction;
-            # readers should assess the supplied facts before requesting a reread.
-            response = {"next_action": response.pop("next_action"), **response}
         else:
             response["research_guidance"] = research_guidance
         if not response.get("complete_files"):

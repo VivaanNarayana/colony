@@ -1,0 +1,25 @@
+{
+  "all_gates_passed": false,
+  "merge_review_ready": false,
+  "audit_passed": false,
+  "blocking_gates": [
+    "actual_push_fingerprint_provenance",
+    "feature_follows_tool_protocol",
+    "observed_live_tokens_improve",
+    "observed_live_time_improves",
+    "observed_uncached_input_plus_output_improve"
+  ],
+  "reason": "Feature tests-1 pushed an invalid fingerprint without a fresh research read; stale-2 repeated ask. Entire 48-session trial retained. Raw totals are diagnostic only, not a qualifying comparison.",
+  "arms": {
+    "main": {
+      "tokens": 1127018,
+      "seconds": 284.652,
+      "uncached_input_plus_output": 181354
+    },
+    "feature": {
+      "tokens": 1291285,
+      "seconds": 315.494,
+      "uncached_input_plus_output": 219669
+    }
+  }
+}
