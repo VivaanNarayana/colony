@@ -1,0 +1,242 @@
+{
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R01",
+    "note": "States the requested miss, encrypted local queue or explicit retry behavior."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R03",
+    "note": "Correct exact namespace push/pull checks in signed grants."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R04",
+    "note": "Includes the editable pip install command with dev extras. source target missing or outside frozen repository: /README.md"
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R07",
+    "note": "Correct current-file SHA-256 comparison and stale outcome."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R09",
+    "note": "Includes python -m pytest -q. source target missing or outside frozen repository: /README.md"
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R10",
+    "note": "States the requested miss, encrypted local queue or explicit retry behavior. source target missing or outside frozen repository: /README.md"
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R11",
+    "note": "Correct stdio configuration or requested ask/push tool signatures. source target missing or outside frozen repository: /README.md"
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R13",
+    "note": "Includes the editable pip install command with dev extras."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R15",
+    "note": "Includes python -m pytest -q."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R17",
+    "note": "Includes the requested serve command or its required repo/data/issuer flags. source target missing or outside frozen repository: /README.md"
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R27",
+    "note": "Includes the requested serve command or its required repo/data/issuer flags. source target missing or outside frozen repository: /src/colony/cli.py"
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R28",
+    "note": "States the requested miss, encrypted local queue or explicit retry behavior."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R31",
+    "note": "Correct output-only capture or mandatory taint, according to the question. source target missing or outside frozen repository: /README.md"
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R32",
+    "note": "Correct stdio configuration or requested ask/push tool signatures."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R33",
+    "note": "Correct exact namespace push/pull checks in signed grants."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R35",
+    "note": "Correct output-only capture or mandatory taint, according to the question. source target missing or outside frozen repository: /README.md"
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R37",
+    "note": "Includes the requested serve command or its required repo/data/issuer flags. source target missing or outside frozen repository: /C:/Users/b3vel/Documents/Codex/2026-10-20/https-github-com-vivaannarayana-colony-https/work/benchmark-remediation-live-3-runtime/main/repo/README.md"
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R39",
+    "note": "Correct stdio configuration or requested ask/push tool signatures."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R41",
+    "note": "Includes python -m pytest -q. source target missing or outside frozen repository: /README.md"
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R42",
+    "note": "Includes the editable pip install command with dev extras."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R43",
+    "note": "Correct output-only capture or mandatory taint, according to the question. source target missing or outside frozen repository: /README.md"
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R44",
+    "note": "Correct current-file SHA-256 comparison and stale outcome. source target missing or outside frozen repository: /src/colony/validation.py"
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R45",
+    "note": "Correct exact namespace push/pull checks in signed grants."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R47",
+    "note": "Correct current-file SHA-256 comparison and stale outcome."
+  }
+}
