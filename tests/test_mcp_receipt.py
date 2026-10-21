@@ -52,6 +52,7 @@ def test_validated_receipt_preserves_file_proofs_and_current_reads(monkeypatch, 
             "start_line": 8,
             "complete_file": False,
             "content": "Run `build --release`.",
+            "citation": "[guide.md:8](guide.md#L8)",
         }
     ]
     assert result["sources"][0]["content_hash"] == result["current_repository_reads"][0]["sha256"]
@@ -80,6 +81,22 @@ def test_receipt_keeps_assertions_and_undisplayed_sources(monkeypatch, tmp_path)
     identities = {(s["ref"], s["content_hash"]) for s in result["sources"]}
     identities.update((r["path"], r["sha256"]) for r in result["current_repository_reads"])
     assert identities == {(s["ref"], s["content_hash"]) for s in sources}
+
+
+def test_read_citation_is_relative_and_url_escapes_the_actual_source_path(monkeypatch, tmp_path):
+    result = receipt(
+        monkeypatch,
+        tmp_path,
+        [source("docs/build steps (release).md", "a" * 64)],
+        [{"ref": "docs/build steps (release).md", "line": 12, "text": "Run build."}],
+    )
+    read = result["current_repository_reads"][0]
+    assert read["path"] == "docs/build steps (release).md"
+    assert (
+        read["citation"]
+        == "[docs/build steps (release).md:12](docs/build%20steps%20%28release%29.md#L12)"
+    )
+    assert "without a leading slash" in colony.mcp.create_mcp(tmp_path).instructions
 
 
 @pytest.mark.parametrize("status", ["stale", "unverified"])

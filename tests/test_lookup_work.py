@@ -97,7 +97,8 @@ def test_question_guard_skips_decryption_and_reranking_but_preserves_exact_recor
     result = store.find_answer("Start service", ["team"], 604800, 0.60, query_vector=vector)
     assert result["hit"] == exact
     assert len(reads) == int(exact)
-    assert len(reranked) == int(exact)
+    # The ineligible row is rejected; a sole exact match needs no ranking decision.
+    assert not reranked
 
 
 def test_procedure_guard_skips_reranking_ineligible_overview(team, monkeypatch):

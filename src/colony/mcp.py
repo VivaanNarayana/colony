@@ -1,6 +1,7 @@
 import json
 import uuid
 from pathlib import Path
+from urllib.parse import quote
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import TextContent, ToolAnnotations
@@ -31,6 +32,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "without another read or push. Deriving an answer from these reads counts as reuse. "
         "File validation does not certify saved-answer truth. Research missing facts, "
         "contradictions, misses and nonvalidated results. "
+        "Cite repository-relative paths without a leading slash. Copy a read's citation "
+        "verbatim when available; do not turn its path into /path. "
     )
     server = FastMCP("Colony", instructions=reuse_guidance + research_guidance)
 
@@ -87,6 +90,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                     "start_line": e["line"],
                     "complete_file": e.get("complete_file", False),
                     "content": e["text"],
+                    "citation": f"[{e['ref']}:{e['line']}]({quote(e['ref'], safe='/')}#L{e['line']})",
                 }
                 for e in result.get("evidence", [])
             ]

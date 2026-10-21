@@ -437,7 +437,13 @@ class Store:
             ]
             rows = [row for row, _ in eligible]
             contents = [content for _, content in eligible]
-            scores = rank(question, [c[:4000] for c in contents])
+            # Exact questions already bypass the relevance threshold. A sole
+            # candidate cannot change ordering, so inference cannot change which
+            # trail is checked. Keep validation, age handling and excerpts below.
+            exact_singleton = (
+                len(rows) == 1 and rows[0]["question"].strip().casefold() == normalized_question
+            )
+            scores = [0.0] if exact_singleton else rank(question, [c[:4000] for c in contents])
             # MS MARCO logits are not calibrated confidence: useful paraphrases can be negative.
             # Fuse their ordering signal with dense similarity instead of treating zero as truth.
             relevance_scores = [
