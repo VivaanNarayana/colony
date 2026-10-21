@@ -1,6 +1,6 @@
 # Strict gate remediation against main
 
-**Trial 16 is in verification. Trials 14 and 15 stopped at failed local interval gates; no live sessions ran. Trial 13 passes 5/8 gates. Both token intervals and main tool compliance remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
+**Trial 16 passes 5/8 gates. All three live performance intervals remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
@@ -37,8 +37,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 13 | `e14b0cb` | 5/8; all requested tools now supplied; time passes, token intervals and main repeated ask fail |
 | 14 | `a02123a` | Stopped at local speed gate: 9.32% lower time, interval -1.40% to +19.19%; 117/117 facts in both arms, no live sessions |
 | 15 | `909b366` | Stopped at local speed gate: 8.33% lower time, interval -2.94% to +21.95%; 117/117 facts in both arms, no live sessions |
+| 16 | `898e4b7` | 5/8; local speed restored, quality/compliance pass; all three live performance intervals fail |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 and 16 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Latest trial: 12 (rejected)
 
@@ -46,19 +47,21 @@ The strict analyzer exits 1 with `main/capture-2.colony: push fingerprint does n
 
 All 48 sessions, manual labels and raw diagnostics remain retained. Feature `mcp-2` is labelled an irrelevant return: its connection configuration and current reads did not include exposed-tool facts, and the correct final answer required new research. Manual correctness labels do not waive the integrity rejection. See `attempt-12/observations.json` for explicitly nonqualifying raw totals.
 
-### Latest valid comparison: trial 13
+### Latest valid comparison: trial 16
 
 | Measurement | Main | Candidate | Reduction interval (95%) |
 | --- | ---: | ---: | ---: |
-| Native input + output | 1,110,356 | 1,063,883 | -3.81% to +12.99% |
-| Uncached input + output | 134,100 | 123,851 | -6.40% to +19.07% |
-| Subject wall time | 234.058s | 216.204s | +3.33% to +10.80% |
+| Native input + output | 1,153,033 | 1,102,250 | -11.83% to +21.56% |
+| Uncached input + output | 176,265 | 145,962 | -9.25% to +34.63% |
+| Subject wall time | 245.724s | 237.895s | -8.02% to +13.96% |
 | Correct requested facts | 24/24 | 24/24 | implementing-assistant labels |
 | Valid citation targets | 15/24 | 24/24 | implementing-assistant labels |
-| Tool protocol violations | 1 | 0 | unchanged compliance audit |
-| Research calls | 17 | 13 | descriptive count |
+| Tool protocol violations | 0 | 0 | unchanged compliance audit |
+| Research calls | 18 | 16 | descriptive count |
 
-All three costs declined. Time clears its unchanged interval requirement; both token intervals cross zero. Main repeated ask in capture-2, so the both-arms protocol gate also fails. No baseline exemption applies. All 48 sessions are retained without retries or omissions; public archive replay reproduces the complete comparison and exit 1 exactly. Feature mcp-2 now supplies the actual Tools paragraph and answers in one call with valid evidence. This improvement does not substitute for passing the remaining gates.
+All three observed costs declined, but their confidence intervals cross zero and remain blocking. Full suite: 155 pass, one existing Windows skip; Ruff clean. Local lookup time fell 20.39%, interval +11.43% to +31.50%, with 117/117 oracle passes per arm. The complete 48-session public archive reproduces the comparison and exit 1 exactly. R39's named anchor is manually verified against the exact MCP heading; no invalid root-absolute or missing-target citation was waived.
+
+The feature namespace miss made an empty multiword search followed by two more searches, then read security/models dependencies after the defining server implementation. Its scope family used 202,659 tokens versus main's 154,911. File-change research also read more than main. These are retained causes to address, not excuses to drop outcomes or loosen intervals.
 
 ## Runtime changes retained
 
@@ -75,17 +78,17 @@ The positional-query masking experiment caused research misses and was reverted.
 
 ## Current work
 
-Trial 13 confirms the omitted-fact fix, while the remaining token intervals still fail. Trials 14 and 15 retain local-gate failures. Trial 16 removes the extra connection introduced by the scoped empty-store preflight before a new comparison. All eight remain mandatory. The full independent benchmark contract, scripts and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
+Trial 13 confirms the omitted-fact fix, while the remaining token intervals still fail. Trials 14 and 15 retain local-gate failures; trial 16 restores the local speed gate but still exposes excess miss-side research. A subsequent revision must address that concrete cause before a new comparison. All eight remain mandatory. The full independent benchmark contract, scripts and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
 
 ## Replay and limits
 
 Each complete attempt contains local rows, workload, source/import proofs, live rows, reviewer labels, verification, checksums and `live-native.zip` with every native event, answer, prompt, stderr, metadata and implementation proof. Private databases, credentials, caches and issuer keys are excluded. Only proof host prefixes become runtime-relative; measured values, revisions and source hashes are unchanged.
 
 ```powershell
-Expand-Archive docs/results/benchmark-remediation/attempt-13/live-native.zip <fresh-output-dir>
-python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-13/lookup-summary.json
+Expand-Archive docs/results/benchmark-remediation/attempt-16/live-native.zip <fresh-output-dir>
+python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-16/lookup-summary.json
 ```
 
-Expected live replay exit for completed attempts 1–13: **1**. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected live replay exit for completed attempts 1–13 and 16: **1**. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.

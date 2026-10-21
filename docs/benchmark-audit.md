@@ -5,8 +5,8 @@ This establishes weaknesses in the evidence, not intent to manipulate results.
 The initial audit commit (`e2b865a`) left the production package unchanged.
 The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
 adds runtime and citation fixes on the same branch. Eight-gate clearance remains
-incomplete: trial 13 passes 5/8 gates; both token intervals and baseline repeated-ask compliance fail.
-Work continues at the user's request. Trials 14 and 15 stopped at local speed gates; trial 16 reuses the scoped preflight/answer connection.
+incomplete: trial 16 passes 5/8 gates; all three live performance intervals remain blocking.
+Work continues at the user's request. Trials 14 and 15 stopped at local speed gates; trial 16 restores local speed while exposing excess miss-side research.
 All earlier attempts and failures are retained. No gate has been weakened or made advisory.
 
 ## Findings
