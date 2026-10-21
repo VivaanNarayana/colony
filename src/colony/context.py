@@ -63,7 +63,6 @@ def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str
                     r"\1<question>",
                     block,
                 )
-                block = re.sub(r'(\bask\s+)(["\'])([^\n]*?)\2', r"\1<question>", block)
                 title = headings.get(begin, "")
                 indexed = f"Section: {title}\n{block}" if title else block
                 candidates.append((source.ref, begin + 1, indexed[:2400]))
@@ -95,6 +94,7 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
                 headings.append(i)
         low = max((i for i in headings if i <= center), default=0)
         high = min((i for i in headings if i > center), default=len(lines))
+    section_low, section_high = low, high
     # Short sections and heading-only selections need their section context.
     # For longer sections, retain the actual selected span with a small margin;
     # unrelated setup examples should not be repeated on every memory lookup.
@@ -108,6 +108,17 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
                 expanded_low, expanded_high = min(low, begin), max(high, end)
                 if len("\n".join(lines[expanded_low:expanded_high])) <= 2400:
                     low, high = expanded_low, expanded_high
+        # Adjacent fenced blocks separated by brief instructions form a recipe:
+        # an invocation example may require the setup block immediately before it.
+        # Never cross a section heading or the existing excerpt budget.
+        if any(begin < high and end > low for begin, end in fences):
+            for begin, end in reversed(fences):
+                if (
+                    section_low <= begin < end <= section_high
+                    and 0 <= low - end <= 4
+                    and len("\n".join(lines[begin:high])) <= 2400
+                ):
+                    low = begin
     if len("\n".join(lines[low:high])) > 2400:
         low = max(low, line - 1 - 8)
         high = min(high, low + 32)

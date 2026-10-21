@@ -16,7 +16,7 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v8:{EMBED_MODEL}:section-aware-paragraphs-quoted-query-arguments-masked"
+INDEX_VERSION = f"semantic-v9:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked"
 CANDIDATES = 12
 
 
@@ -209,6 +209,27 @@ def local_term_support(query: set[str], text: str) -> bool:
         len(query & terms(" ".join(sentences[i : i + 2]))) > len(query) / 2
         for i in range(len(sentences))
     )
+
+
+def focused_passage(question: str, text: str) -> str:
+    """Rank coherent prose instead of letting unrelated neighboring topics dominate.
+
+    Keep fenced code intact. This model input view is used only for text documents:
+    eligibility still uses the
+    original paragraph, and displayed evidence still comes from current file bytes.
+    """
+    if "```" in text or "~~~" in text:
+        return text
+    heading, separator, body = text.partition("\n")
+    if not heading.startswith("Section: "):
+        heading, separator, body = "", "", text
+    sentences = re.split(r"(?<=[.!?])\s+", body)
+    if len(sentences) <= 2:
+        return text
+    query = terms(question)
+    windows = [" ".join(sentences[i : i + 2]) for i in range(len(sentences) - 1)]
+    chosen = max(windows, key=lambda s: (len(query & terms(s)), -len(s)))
+    return heading + separator + chosen
 
 
 def evidence_score(cosine: float, logit: float, coverage: float) -> float:

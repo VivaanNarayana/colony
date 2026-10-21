@@ -5,7 +5,7 @@ import uuid
 import numpy as np
 import pytest
 
-from colony.context import context_window, excerpts, source_chunks
+from colony.context import context_window, excerpts
 from colony.models import Trail
 from colony.retrieval import embed_passages, models
 from colony.validation import snapshot
@@ -37,7 +37,12 @@ def test_source_embeddings_preserve_values_and_order_across_input_lengths():
 def test_availability_paraphrases_keep_the_same_scoped_source_facts(team, subject, state, question):
     app, _, repo, _, key = team
     fact = f"When the {subject} is {state}, requests are queued and retried after fifteen seconds."
-    (repo / "operations.md").write_text(f"# Operations\n\n## Availability\n\n{fact}\n")
+    (repo / "operations.md").write_text(
+        "# Operations\n\n## Availability\n\n"
+        "Logs use a structured format. Authentication errors fail immediately. "
+        f"{fact} The audit log is retained for seven days. "
+        "Metrics are sampled once per minute.\n"
+    )
     app.state.store.push(
         Trail(
             id=uuid.uuid4().hex,
@@ -74,7 +79,7 @@ def test_focused_context_keeps_original_lines_and_excludes_unselected_prose():
     assert "Retain signed archives for 37 days." in text
     assert "sweep --dry-run" in text
     assert "Unrelated note 0." not in text and "Other note 29." not in text
-    assert text == "\n".join(lines[start - 1 : start - 1 + len(text.splitlines())])
+    assert text == "\n".join(lines[start - 1 : start - 1 + len(text.split("\n"))])
 
 
 def test_focus_retains_code_block_described_by_selected_prose():
@@ -95,10 +100,10 @@ def test_focus_retains_code_block_described_by_selected_prose():
     assert "orbitctl lint" in text
     assert text.count("```") == 2
     assert "Documentation note 24." not in text
-    assert text == "\n".join(lines[start - 1 : start - 1 + len(text.splitlines())])
+    assert text == "\n".join(lines[start - 1 : start - 1 + len(text.split("\n"))])
 
 
-def test_positional_question_example_cannot_displace_actual_procedure(tmp_path):
+def test_claims_select_actual_procedure_instead_of_question_example(tmp_path):
     text = (
         "# Atlas\n\n## Query examples\n\n```sh\n"
         'atlas ask "How do I initialize the workspace?"\n```\n\n'
@@ -106,8 +111,6 @@ def test_positional_question_example_cannot_displace_actual_procedure(tmp_path):
     )
     (tmp_path / "guide.md").write_text(text)
     source = snapshot(tmp_path, "guide.md")
-    chunks = source_chunks(tmp_path, [source])
-    assert all('"How do I initialize the workspace?"' not in t for _, _, t in chunks)
     result = excerpts(
         tmp_path,
         [source],
@@ -115,3 +118,47 @@ def test_positional_question_example_cannot_displace_actual_procedure(tmp_path):
         claims="Run `atlasctl bootstrap --profile development`.",
     )
     assert any("atlasctl bootstrap --profile development" in e["text"] for e in result)
+
+
+def test_recipe_retains_prerequisites_for_later_invocation():
+    lines = [
+        "## Bootstrap",
+        "",
+        "```sh",
+        "orbitctl bootstrap --profile development",
+        "```",
+        "",
+        "Then query the configured service:",
+        "",
+        "```sh",
+        'orbitctl ask "How is the workspace configured?"',
+        "```",
+        "",
+        "## Unrelated",
+        *[f"Other note {i}." for i in range(25)],
+    ]
+    selected = lines.index("```sh", 5) + 1
+    start, text = context_window("guide.md", lines, selected, 3)
+    assert "orbitctl bootstrap --profile development" in text
+    assert "How is the workspace configured?" in text
+    assert "Unrelated" not in text
+    assert text == "\n".join(lines[start - 1 : start - 1 + len(text.split("\n"))])
+
+
+def test_prose_does_not_expand_into_an_unselected_recipe():
+    lines = [
+        "## Operations",
+        "",
+        "```sh",
+        "orbitctl bootstrap --profile development",
+        "```",
+        "",
+        "Additional documentation.",
+        "",
+        "Unavailable relays queue requests for fifteen seconds.",
+        *[f"Other note {i}." for i in range(25)],
+    ]
+    start, text = context_window("guide.md", lines, 9, 1)
+    assert "Unavailable relays queue requests for fifteen seconds." in text
+    assert "orbitctl bootstrap" not in text
+    assert text == "\n".join(lines[start - 1 : start - 1 + len(text.split("\n"))])

@@ -94,6 +94,19 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 }
                 for e in result.get("evidence", [])
             ]
+            displayed = {(r["path"], r["sha256"]) for r in response["current_repository_reads"]}
+            remaining = [
+                s
+                for s in result.get("sources", [])
+                if (s["ref"], s["content_hash"]) not in displayed
+                or s.get("kind", "file") != "file"
+                or s.get("symbol") is not None
+                or s.get("contains") is not None
+            ]
+            if remaining:
+                response["sources"] = remaining
+            else:
+                response.pop("sources", None)
             response.pop("evidence", None)
             if result.get("match_kind") == "evidence":
                 response.pop("content", None)  # The read objects carry the text once.

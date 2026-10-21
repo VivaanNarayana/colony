@@ -44,7 +44,7 @@ def test_validated_receipt_preserves_file_proofs_and_current_reads(monkeypatch, 
         [source("guide.md", digest)],
         [{"ref": "guide.md", "line": 8, "text": "Run `build --release`."}],
     )
-    assert result["sources"] == [source("guide.md", digest)]
+    assert not result.get("sources")
     assert result["current_repository_reads"] == [
         {
             "path": "guide.md",
@@ -55,7 +55,6 @@ def test_validated_receipt_preserves_file_proofs_and_current_reads(monkeypatch, 
             "citation": "[guide.md:8](guide.md#L8)",
         }
     ]
-    assert result["sources"][0]["content_hash"] == result["current_repository_reads"][0]["sha256"]
     assert result["verification"]["file_fingerprints_match"]
     assert "UNTRUSTED" in result["provenance"]
     assert "Research missing facts only" in result["next_action"]
@@ -77,7 +76,7 @@ def test_receipt_keeps_assertions_and_undisplayed_sources(monkeypatch, tmp_path)
             {"ref": "policy.py", "line": 1, "text": "def check(): return DENY"},
         ],
     )
-    assert result["sources"] == sources
+    assert result["sources"] == sources[1:]
     identities = {(s["ref"], s["content_hash"]) for s in result["sources"]}
     identities.update((r["path"], r["sha256"]) for r in result["current_repository_reads"])
     assert identities == {(s["ref"], s["content_hash"]) for s in sources}
