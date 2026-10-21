@@ -108,6 +108,9 @@ target instead of adding a leading slash or a server filesystem root.
 Validated file identities already present in these reads are not repeated in `sources`.
 Sources with advanced assertions or without a displayed read remain in `sources`, preserving
 the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.
+Validated MCP results omit opaque trail/producer audit IDs and a false age flag; the
+full client/API receipt keeps them. Namespace, taint, status, reuse recommendation,
+source proofs and provenance warnings remain in the MCP result.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.

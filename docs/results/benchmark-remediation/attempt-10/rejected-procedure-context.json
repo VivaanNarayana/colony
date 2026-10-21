@@ -1,0 +1,120 @@
+{
+  "lookups": [
+    {
+      "question": "Start the local memory server.",
+      "hit": true,
+      "seconds": 0.6432802000199445,
+      "content": "README.md:10 (excerpt)\nPython 3.11\u20133.13 with SQLite extension support is required. Run from this checkout:\n\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```\n\nIn another terminal with the environment activated:\n"
+    },
+    {
+      "question": "Set up the development dependencies.",
+      "hit": true,
+      "seconds": 0.47156320000067353,
+      "content": "README.md:12 (excerpt)\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```\n\nIn another terminal with the environment activated:\n\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question \"How do I run the tests?\" --source pyproject.toml -- python -m pytest -q\n```\n\nIssue a second keyfile with `--name agent-b --pull team` and join with a different\n`--home .colony/agent-b` to demonstrate Agent B reusing Agent A's trail. Public keys"
+    },
+    {
+      "question": "Which serve flags are required?",
+      "hit": false,
+      "seconds": 0.6328064000117593,
+      "content": null
+    },
+    {
+      "question": "How can I rotate database credentials?",
+      "hit": false,
+      "seconds": 0.48186870000790805,
+      "content": null
+    },
+    {
+      "question": "How do I remove an agent?",
+      "hit": false,
+      "seconds": 0.6645323999691755,
+      "content": null
+    }
+  ],
+  "rank_changes": [
+    {
+      "q": "Start the local memory server.",
+      "line": 12,
+      "full": -11.211770057678223,
+      "contextual": 2.1886415481567383
+    },
+    {
+      "q": "Start the local memory server.",
+      "line": 25,
+      "full": -11.418861389160156,
+      "contextual": 1.4608821868896484
+    },
+    {
+      "q": "Start the local memory server.",
+      "line": 229,
+      "full": -11.461591720581055,
+      "contextual": 1.4331549406051636
+    },
+    {
+      "q": "Set up the development dependencies.",
+      "line": 229,
+      "full": -11.45903205871582,
+      "contextual": -11.346790313720703
+    },
+    {
+      "q": "Set up the development dependencies.",
+      "line": 12,
+      "full": -11.398408889770508,
+      "contextual": -11.316030502319336
+    },
+    {
+      "q": "Which serve flags are required?",
+      "line": 229,
+      "full": -11.488584518432617,
+      "contextual": -11.211589813232422
+    },
+    {
+      "q": "Which serve flags are required?",
+      "line": 12,
+      "full": -11.410013198852539,
+      "contextual": -9.82615852355957
+    },
+    {
+      "q": "Which serve flags are required?",
+      "line": 25,
+      "full": -11.487597465515137,
+      "contextual": -11.268394470214844
+    },
+    {
+      "q": "How can I rotate database credentials?",
+      "line": 12,
+      "full": -11.405766487121582,
+      "contextual": -11.188220024108887
+    },
+    {
+      "q": "How can I rotate database credentials?",
+      "line": 229,
+      "full": -11.448125839233398,
+      "contextual": -11.260287284851074
+    },
+    {
+      "q": "How can I rotate database credentials?",
+      "line": 25,
+      "full": -11.416011810302734,
+      "contextual": -11.224316596984863
+    },
+    {
+      "q": "How do I remove an agent?",
+      "line": 12,
+      "full": -10.603193283081055,
+      "contextual": -8.01388931274414
+    },
+    {
+      "q": "How do I remove an agent?",
+      "line": 25,
+      "full": -9.195839881896973,
+      "contextual": -7.567962646484375
+    },
+    {
+      "q": "How do I remove an agent?",
+      "line": 229,
+      "full": -11.466371536254883,
+      "contextual": -8.962377548217773
+    }
+  ]
+}

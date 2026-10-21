@@ -57,8 +57,8 @@ def test_validated_receipt_preserves_file_proofs_and_current_reads(monkeypatch, 
     ]
     assert result["verification"]["file_fingerprints_match"]
     assert "UNTRUSTED" in result["provenance"]
-    assert "Research missing facts only" in result["next_action"]
-    assert "Evidence-only derivation is reuse" in result["next_action"]
+    assert "Research gaps" in result["next_action"]
+    assert "no read or push, even for a new question" in result["next_action"]
 
 
 def test_receipt_keeps_assertions_and_undisplayed_sources(monkeypatch, tmp_path):
@@ -118,6 +118,8 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "even for a new question" in instructions
     assert "ask's reads/hashes never qualify" in instructions
     assert "Never reread just to push" in instructions
+    assert "identifiers for literal search, not question phrases" in instructions
+    assert "stop once source evidence supports them" in instructions
 
 
 def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path):
@@ -138,6 +140,47 @@ def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_pa
     result = json.loads(server._tool_manager.get_tool("ask").fn("Build release?")[0].text)
     assert "content" not in result
     assert result["current_repository_reads"][0]["content"] == "Run build --release."
-    assert "answer and cite with no read or push" in result["next_action"]
-    assert "Evidence-only derivation is reuse" in result["next_action"]
+    assert "answer and cite; no read or push" in result["next_action"]
+    assert "even for a new question" in result["next_action"]
     assert "never after reuse" in server._tool_manager.get_tool("push").description
+
+
+@pytest.mark.parametrize("status", ["validated", "stale", "unverified"])
+def test_mcp_projection_preserves_decision_facts_without_mutating_full_receipt(
+    monkeypatch, tmp_path, status
+):
+    packet = {
+        "hit": True,
+        "match_kind": "answer",
+        "status": status,
+        "namespace": "operations",
+        "tainted": True,
+        "age_flag": False,
+        "id": "1" * 32,
+        "producer_id": "2" * 32,
+        "recommendation": "reuse_if_relevant" if status == "validated" else "research",
+        "content": "Archives expire after 37 days.",
+        "sources": [source("policy.md", "a" * 64)],
+        "evidence": [{"ref": "policy.md", "line": 5, "text": "Archives expire after 37 days."}]
+        if status == "validated"
+        else [],
+    }
+    original = copy.deepcopy(packet)
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(ask=lambda *a, **kw: packet)
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    result = json.loads(server._tool_manager.get_tool("ask").fn("Archive lifetime?")[0].text)
+    assert packet == original  # Client/API consumers keep the complete audit receipt.
+    assert {k: result[k] for k in ("status", "namespace", "tainted", "content")} == {
+        k: packet[k] for k in ("status", "namespace", "tainted", "content")
+    }
+    if status == "validated":
+        assert not ({"id", "producer_id", "age_flag"} & result.keys())
+        assert result["recommendation"] == "reuse_if_relevant"
+        assert result["current_repository_reads"][0]["sha256"] == "a" * 64
+        assert result["verification"]["new_research_performed"] is False
+        assert "never push ask's reads/hashes" in result["next_action"]
+    else:
+        assert result["id"] == packet["id"] and result["producer_id"] == packet["producer_id"]
+        assert result["recommendation"] == "research" and result["sources"] == packet["sources"]
