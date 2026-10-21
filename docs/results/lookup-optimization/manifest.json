@@ -47,11 +47,11 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1247163
+      "native_tokens": 1155825
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1138704
+      "native_tokens": 1173889
     }
   },
   "primary_comparison": "paired/comparison.json",
@@ -64,15 +64,15 @@
     "capped-duplicate": "48 completed import-verified, equally capped sessions; feature 24/24 vs main 23/24 and 15.1% faster, but one repeated ask and gross tokens +0.47%; failed gates retained in full before reuse guidance moved ahead of source text.",
     "guidance-regression": "48 completed sessions; both 24/24 correct, but altered MCP guidance caused extra reads and four repeated asks. Gross tokens +6.29%; failed gates retained. All MCP wording/presentation changes were reverted before the current comparison.",
     "original-mcp-noncompliant": "48 completed sessions; time/tokens improved and 24/24 correct in both arms, but feature attempted eight research calls on serve-2. Compliance gate failed. The historical advisory interpretation is superseded by strict blocking policy.",
-    "budget-source-copy-failed": "48 completed sessions; all research counts/ask counts complied, but main dropped question punctuation and feature supplied a transposed file hash. Execution/provenance audit failed; no readiness waiver. Exact source objects and verbatim-copy guidance added before the next trial."
+    "budget-source-copy-failed": "48 completed sessions; all research counts/ask counts complied, but main dropped question punctuation and feature supplied a transposed file hash. Execution/provenance audit failed; no readiness waiver. Exact source objects and verbatim-copy guidance added before the next trial.",
+    "source-object-token-regression": "48 completed sessions; both arms passed question, hash and call-budget audits with 24/24 correct. Feature was 14.6% faster but gross tokens +1.6%, so readiness remained blocked. Complete-file feedback was added identically to both arms before the next trial."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision.",
   "all_predeclared_gates_passed": false,
   "original_performance_gates_passed": false,
   "merge_review_ready": false,
   "blocking_gates": [
-    "execution_audit",
-    "feature_follows_tool_protocol"
+    "observed_live_tokens_improve"
   ],
   "all_gates_passed": false,
   "compliance_fix": "Identical shared research adapter reports remaining calls after every successful operation. Six-call cap and attempted-call violation accounting unchanged; duplicate asks also block readiness. The prior advisory interpretation is superseded."

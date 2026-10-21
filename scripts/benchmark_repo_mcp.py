@@ -20,7 +20,9 @@ server = FastMCP(
         "research_budget.remaining. When it reaches zero, finish from the evidence already "
         "received; do not call either research tool again. Use read_file's source object "
         "verbatim in Colony push.sources; do not reconstruct its hash. Preserve the user's "
-        "question verbatim, including punctuation, in Colony calls."
+        "question verbatim, including punctuation, in Colony calls. read_file returns the "
+        "complete current file. When its facts suffice, finish research and answer; inspect "
+        "another file only for facts missing from the evidence already received."
     ),
 )
 used_calls = 0
@@ -66,6 +68,7 @@ def read_file(path: str) -> dict:
     return {
         **({"research_budget": budget} if budget is not None else {}),
         "source": {"kind": "file", "ref": path, "content_hash": digest},
+        "complete_file": True,
         "path": path,
         "sha256": digest,
         "content": data.decode("utf-8"),

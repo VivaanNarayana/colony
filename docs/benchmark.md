@@ -111,3 +111,5 @@ six-call limit nor the violation accounting, original outer prompts or task rubr
 Reads also return an exact `source` object with the same file hash for reuse in
 `push.sources`. The audit requires pushed hashes to match actual preceding reads
 and the frozen corpus, and preserves exact question punctuation in lookup checks.
+Complete-file reads are explicitly marked and direct subjects to finish when the
+returned facts suffice. This feedback is also shared by both arms.

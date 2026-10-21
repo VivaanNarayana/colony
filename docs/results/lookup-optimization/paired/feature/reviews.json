@@ -21,23 +21,23 @@
   },
   "install-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct editable development-extras install command."
   },
   "capture-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint."
   },
   "outage-1.colony": {
     "correct": true,
@@ -51,13 +51,13 @@
   },
   "outage-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
   },
   "mcp-2.colony": {
     "correct": true,
@@ -81,13 +81,13 @@
   },
   "serve-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct server invocation or required data/repo/issuer flags."
   },
   "tests-2.colony": {
     "correct": true,
@@ -121,25 +121,15 @@
   },
   "capture-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint."
+    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "install-3.colony": {
-    "correct": true,
-    "citation_valid": true,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
-  },
-  "tests-3.colony": {
     "correct": true,
     "citation_valid": false,
     "relevant_asks": [
@@ -147,9 +137,9 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
-  "install-1.colony": {
+  "tests-3.colony": {
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
@@ -157,7 +147,17 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
+    "note": "Correct pytest invocation."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "serve-3.colony": {
     "correct": true,
@@ -201,13 +201,13 @@
   },
   "serve-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
   },
   "tests-1.colony": {
     "correct": true,
