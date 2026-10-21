@@ -7,7 +7,7 @@ import pytest
 
 from colony.context import context_window, excerpts
 from colony.models import Trail
-from colony.retrieval import embed_passages, models, terms
+from colony.retrieval import embed_passages, models, rank, terms
 from colony.validation import snapshot
 
 
@@ -29,6 +29,21 @@ def test_source_embeddings_preserve_values_and_order_across_input_lengths():
     assert len(actual) == len(texts)
     for vector, original in zip(actual, expected, strict=True):
         np.testing.assert_allclose(np.frombuffer(vector, dtype=np.float32), original, atol=1e-5)
+
+
+def test_reranking_preserves_logits_and_order_across_input_lengths():
+    query = "How long are signed archives retained?"
+    passages = [
+        "Signed archives are retained for thirty-seven days.",
+        "Unrelated configuration notes. " * 90,
+        "Retain signed archives for thirty-seven days, then remove them.",
+        "Signed archives are retained for thirty-seven days.",
+    ]
+    _, model = models()
+    expected = list(model.rerank(query, passages))
+    actual = rank(query, passages)
+    np.testing.assert_allclose(actual, expected, atol=1e-5, rtol=1e-5)
+    assert np.argsort(actual).tolist() == np.argsort(expected).tolist()
 
 
 @pytest.mark.parametrize(
