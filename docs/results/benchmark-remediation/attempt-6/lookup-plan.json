@@ -1,0 +1,15 @@
+{
+  "schema_version": 2,
+  "evaluation_role": "public-development-contracts",
+  "baseline_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "feature_commit": "fe8e2d72ccb446ae08745c4f44ec86d0255501f1",
+  "seed": 20261021,
+  "repetitions": 3,
+  "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+  "harness_sha256": {
+    "benchmark_lookup.py": "701357766f616a368d0055287cb484d3ef2b78288e5defa98261ceb5d0e568a7",
+    "benchmark_statistics.py": "2615bb8acfc1f0aca764b76e5af39b02bf9920b2c2c51d02ef4db75c287dbdb6",
+    "lookup_workload.py": "e7d7433d8ea219f0d07eca343f73e64b7d3739e9c46f1135460bb33d1f47feb3",
+    "lookup_benchmark_worker.py": "4576981e3d20a684badafda9442c206d4e47fa4323281d01319fc90da314d451"
+  }
+}
