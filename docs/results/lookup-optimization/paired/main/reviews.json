@@ -11,13 +11,13 @@
   },
   "outage-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct miss, encrypted local push queue or explicit retry behavior. Citation target has a malformed/missing repository root, or the refusal has no citation."
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
   },
   "install-2.colony": {
     "correct": true,
@@ -31,13 +31,13 @@
   },
   "capture-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output tail/exit recording or unconditional capture taint. Citation target has a malformed/missing repository root, or the refusal has no citation."
+    "note": "Correct output tail/exit recording or unconditional capture taint."
   },
   "outage-1.colony": {
     "correct": true,
@@ -51,13 +51,13 @@
   },
   "outage-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct miss, encrypted local push queue or explicit retry behavior. Citation target has a malformed/missing repository root, or the refusal has no citation."
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
   },
   "mcp-2.colony": {
     "correct": true,
@@ -81,13 +81,13 @@
   },
   "serve-2.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "tests-2.colony": {
     "correct": true,
@@ -101,23 +101,23 @@
   },
   "scope-2.colony": {
     "correct": true,
-    "citation_valid": false,
-    "relevant_asks": [
-      false
-    ],
-    "reused": false,
-    "wrong_reused": false,
-    "note": "Correct signed namespace push/pull grant permissions. Citation target has a malformed/missing repository root, or the refusal has no citation."
-  },
-  "stale-3.colony": {
-    "correct": true,
     "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct changed-fingerprint/stale evidence behavior."
+    "note": "Correct signed namespace push/pull grant permissions."
+  },
+  "stale-3.colony": {
+    "correct": false,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Incomplete answer: said it would check the source after unrelated MCP evidence, but made no research call and omitted the SHA-256 comparison. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "capture-2.colony": {
     "correct": true,
@@ -131,23 +131,23 @@
   },
   "install-3.colony": {
     "correct": true,
-    "citation_valid": true,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct editable development-extras installation command."
-  },
-  "tests-3.colony": {
-    "correct": true,
     "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation; no execution was performed. Citation target has a malformed/missing repository root, or the refusal has no citation."
+    "note": "Correct editable development-extras installation command. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation; no execution was performed."
   },
   "install-1.colony": {
     "correct": true,
@@ -211,21 +211,21 @@
   },
   "tests-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation; no execution was performed."
+    "note": "Correct pytest invocation; no execution was performed. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "stale-2.colony": {
     "correct": true,
     "citation_valid": true,
     "relevant_asks": [
-      true
+      false
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
     "note": "Correct changed-fingerprint/stale evidence behavior."
   },

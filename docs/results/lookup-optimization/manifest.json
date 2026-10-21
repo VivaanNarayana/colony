@@ -22,10 +22,10 @@
     }
   },
   "trace_format": "Each native-events.jsonl.gz is an independent trace container of JSONL records {run,session,event}. Identify sessions by (trace path,run,session). Only workspace prefixes are redacted; native numerical usage/outcomes are unchanged. All prior failed and interrupted trials are retained.",
-  "status": "Blocking gates remain; retain draft and pause other features.",
+  "status": "All eight gates pass, including attempted-call compliance; merge review complete.",
   "plan": [
     "Finish the first feature merge review with all gates mandatory; no other feature has been resumed.",
-    "After approval of the first feature, separately benchmark repeated cited-source vector reuse on its own branch and PR.",
+    "Keep every other feature paused until the user directs further work; no other branch or PR has been started or resumed.",
     "Evaluate held-out repositories/workloads before making production savings claims."
   ],
   "reproduction": {
@@ -47,11 +47,11 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1153866
+      "native_tokens": 1173949
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1184988
+      "native_tokens": 1154871
     }
   },
   "primary_comparison": "paired/comparison.json",
@@ -73,13 +73,11 @@
     "session-reuse-token-regression": "48 fully audited sessions: 24/24 both, zero protocol/provenance errors, time 11.9% lower, but gross tokens +2.7% and uncached input plus output +1.8%; both token gates block readiness."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision.",
-  "all_predeclared_gates_passed": false,
-  "original_performance_gates_passed": false,
-  "merge_review_ready": false,
-  "blocking_gates": [
-    "observed_live_tokens_improve",
-    "observed_uncached_input_plus_output_improve"
-  ],
-  "all_gates_passed": false,
-  "compliance_fix": "Identical shared research adapter reports remaining calls after every successful operation. Six-call cap and attempted-call violation accounting unchanged; duplicate asks also block readiness. The prior advisory interpretation is superseded."
+  "all_predeclared_gates_passed": true,
+  "original_performance_gates_passed": true,
+  "merge_review_ready": true,
+  "blocking_gates": [],
+  "all_gates_passed": true,
+  "compliance_fix": "The identical research adapter reports remaining calls and exact source objects. Every malformed source attempt still fails provenance, even if corrected; duplicate asks and excess research attempts remain blocking. Tool descriptions and hit responses explicitly classify evidence-only derivation as reuse, preventing a push when answering from supplied current reads. The prior advisory interpretation is superseded.",
+  "uncached_gate": "Eighth mandatory gate: native input plus output minus cached input must be strictly below main. Equality or regression fails the command; other improvements cannot offset it. All prior failing trials are retained."
 }

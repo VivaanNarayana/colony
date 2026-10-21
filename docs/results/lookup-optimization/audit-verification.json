@@ -8,11 +8,25 @@
       "known_native_tokens": 2385867
     },
     {
+      "trace": "history/canonical-uncached-regression/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2604889
+    },
+    {
       "trace": "history/capped-duplicate/native-events.jsonl.gz",
       "sessions": 48,
       "completed_with_native_usage": 48,
       "without_final_usage": 0,
       "known_native_tokens": 2287456
+    },
+    {
+      "trace": "history/compact-guidance-source-copy-failed/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2360657
     },
     {
       "trace": "history/compact-protocol/native-events.jsonl.gz",
@@ -64,6 +78,20 @@
       "known_native_tokens": 2301935
     },
     {
+      "trace": "history/reuse-order-regression/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2418303
+    },
+    {
+      "trace": "history/session-reuse-token-regression/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2338854
+    },
+    {
       "trace": "history/source-object-token-regression/native-events.jsonl.gz",
       "sessions": 48,
       "completed_with_native_usage": 48,
@@ -89,11 +117,11 @@
       "sessions": 48,
       "completed_with_native_usage": 48,
       "without_final_usage": 0,
-      "known_native_tokens": 2604889
+      "known_native_tokens": 2328820
     }
   ],
-  "total_sessions": 609,
-  "completed_with_native_usage": 608,
+  "total_sessions": 801,
+  "completed_with_native_usage": 800,
   "without_final_usage": 1,
   "local_username_not_published": true,
   "notes": "Each (trace path, run, session) is distinct. All historical failures and one interrupted session are retained; no final usage is fabricated for that session."

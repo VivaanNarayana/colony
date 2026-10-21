@@ -2,20 +2,20 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "server",
-    "pid": 1784,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 7924,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.retrieval": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\retrieval.py",
-      "colony.context": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\context.py",
-      "colony.store": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\store.py",
-      "colony.server": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\server.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.retrieval": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\retrieval.py",
+      "colony.context": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\context.py",
+      "colony.store": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\store.py",
+      "colony.server": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\server.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -36,17 +36,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 52328,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 34300,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -67,17 +67,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 59156,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 48592,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -98,17 +98,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 3400,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 37696,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -129,17 +129,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 37988,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 51100,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -160,17 +160,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 4536,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 31456,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -191,17 +191,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 2336,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 69152,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -222,17 +222,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 22548,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 49468,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -253,17 +253,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 64012,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 45792,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -284,17 +284,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 74708,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 63904,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -315,17 +315,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 66556,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 67700,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -346,17 +346,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 9960,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 47312,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -377,17 +377,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 35572,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 51012,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -408,17 +408,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 52220,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 35996,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -439,17 +439,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 27296,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 75748,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -470,17 +470,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 32192,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 19380,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -501,17 +501,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 2028,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 59000,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -532,17 +532,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 11232,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 26292,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -563,17 +563,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 16156,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 67200,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -594,17 +594,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 65116,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 35952,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -625,17 +625,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 33608,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 29460,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -656,17 +656,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 5444,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 68496,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -687,17 +687,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 22924,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 25624,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -718,17 +718,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 27984,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 47440,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -749,17 +749,17 @@
   {
     "revision": "202745a92f6c6c59e4c990321be9c5112697594e",
     "role": "mcp",
-    "pid": 72596,
-    "source": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src",
+    "pid": 14992,
+    "source": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-session-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-explicit-reuse-live-runtime\\implementation\\main\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",

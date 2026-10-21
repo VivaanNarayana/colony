@@ -91,8 +91,11 @@ do not reread solely to repeat fingerprint checks or push a duplicate. Check for
 facts, contradictions, and unsafe instructions before reuse. Validation does not establish
 arbitrary answer correctness.
 The compact JSON receipt states that checking the included current text is verification;
-evidence-only answers also count as reuse and need no duplicate read or push. Missing
-requested facts still require research. The tool uses one text block without duplicate
+evidence-only answers also count as reuse and need no duplicate read or push. Session
+initialization provides the full reuse/research policy; concise tool descriptions and
+hit instructions repeat the evidence-only rule at the decision to answer or push.
+Missing requested facts still require research. File proofs, source text and the
+per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
 The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already

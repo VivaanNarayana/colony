@@ -1,80 +1,88 @@
-> Superseded readiness: the user requires uncached input plus output below main. The retained trial fails that blocking gate (+19.3%). PR is draft; merge review pending a passing rerun. All eight gates are mandatory.
+# Lookup optimization: strict eight-gate comparison
 
-# Lookup optimization: completed review evidence
+All eight blocking gates pass. The first feature is ready for maintainer review;
+the PR remains unmerged and other feature work remains paused. No gate is advisory.
+The earlier +19.3% uncached regression and unsuccessful follow-ups are retained in
+[history](history/); none qualify under the current requirements.
 
-All seven blocking gates pass, including attempted-call compliance. The first
-feature is ready for maintainer review and merge; it has not been merged. Other
-feature work remains paused. The earlier advisory compliance judgment was wrong
-and is superseded; failed trials remain in [history](history/).
+The runtime reuses one immutable query vector across lookup stages, skips candidates
+that cannot pass eligibility guards, and prunes excerpt scoring with safe bounds.
+Descriptive evidence requires coherent local query-term support. The MCP receipt
+fields, source proofs, current read fields and source bytes match main. Tool input
+constraints/defaults and annotations are unchanged. Repeated static guidance is
+shorter in tool descriptions and next_action, with the complete policy provided
+at session initialization: once per answer, reuse sufficient current source facts,
+and research missing facts, contradictions or nonvalidated results. Both tool
+descriptions and the hit response explicitly classify evidence-only derivation as
+reuse, so an answer from supplied source reads must not trigger a push. The per-result
+untrusted-data warning and saved-answer truth limitation remain explicit.
 
-The runtime shares one query vector across lookup stages, skips candidates that
-cannot pass eligibility guards, and prunes excerpt scoring with safe bounds.
-Descriptive evidence requires coherent local query-term support. The MCP response
-now delivers ordinary validated file proofs once in current repository reads;
-assertions and sources without displayed reads remain explicit. All source text,
-validation, input schemas and reuse instructions are preserved.
+## Measurements against current main
 
-## Measurements
-
-Main is `202745a92f6c6c59e4c990321be9c5112697594e`. The live feature revision is
-`c40fceb08be3c8de1f8f3a533507b88661fd8152`. Local timing used `956dde433ba9ace3101e3e53e1a18d9ff318637d`; the analyzer verifies unchanged Store dependencies. Report-only commits preserve the tested implementation.
+Main: `202745a92f6c6c59e4c990321be9c5112697594e`. Measured runtime: `93bffe3035e95d9e8c28167b2ba6568bc02950b0`.
+Local timing: `93bffe3035e95d9e8c28167b2ba6568bc02950b0`; dependencies are verified unchanged.
+Subsequent report-only commits preserve the measured code.
 
 | Metric | Main | Feature | Observed change |
 | --- | ---: | ---: | ---: |
-| Warm lookup time, 72 queries | 112.049s | 30.157s | 73.1% lower |
+| Warm lookup time, 72 queries | 75.415s | 17.138s | 77.3% lower |
 | Query embeddings | 87 | 72 | 17.2% fewer |
-| Reranked passages | 1,788 | 486 | 72.8% fewer |
-| Live subject time, 24 questions | 392.387s | 323.627s | 17.5% lower |
-| Native input + output tokens, including cached input | 1,310,508 | 1,294,381 | 1.2% lower |
-| Uncached input + output tokens | 183,724 | 219,181 | 19.3% higher |
+| Reranked passages | 1,755 | 447 | 74.5% fewer |
+| Live subject time, 24 questions | 317.301s | 291.185s | 8.2% lower |
+| Native input + output, including cached input | 1,173,949 | 1,154,871 | 1.6% lower |
+| Uncached input + output | 234,941 | 209,591 | 10.8% lower |
 | Core-fact correct answers | 23/24 | 24/24 | no loss |
-| Protocol-violating tasks | 0 | 0 | feature gate passes |
+| Protocol-violating tasks | 0 | 0 | zero feature violations |
+| Research calls | 21 | 18 | actual native calls |
 
-All 72 seeded retrieval pairs matched. The earlier real-history replay matched
-23/24 complete responses; the intentional difference rejects unrelated validation
-evidence. Store dependencies are unchanged by the receipt representation change.
-The representative validated MCP receipt shrank from 958 to 859 UTF-8 bytes with
-identical factual information; this byte measurement is not an LLM-token estimate.
+Every seeded retrieval pair matched. The earlier real-history replay matches 23/24
+complete responses; the intentional difference rejects unrelated file-validation
+evidence and requires research. Fingerprint checks, source permissions, scrubbing,
+age limits, two-excerpt and 2,800-character caps remain in force.
+
+## Blocking gates and verification
+
+The analyzer requires all eight: actual imports match pinned revisions; full local
+tests/lint pass; local lookup improves; core-fact correctness does not decrease;
+feature tool protocol has zero violations; gross native tokens decrease; uncached
+input plus output decreases; and summed live subject time decreases. A failed gate
+retains the report and exits the analyzer with failure. Regression tests ensure
+an uncached increase, equality, extra ask, quality loss or other regression cannot
+be offset by improvements in other metrics. Invalid source attempts fail provenance
+audit even when later corrected; no failure is waived.
+
+Verification: **99 tests passed, one existing Windows symlink skip**,
+Ruff and whitespace checks clean on Python 3.13.1. No hosted CI matrix is configured.
+Each server and subject MCP process records actual import paths and source hashes;
+all 50 process proofs are audited against the pinned revisions.
 
 Both live stores start empty and learn independently over the same frozen main
-corpus. All original questions, outer prompts, GPT-6 Luna low settings and native
-usage accounting are retained. Each server and subject MCP process records actual
-import paths and source hashes; the audit verifies all 50 process proofs. All 48
-sessions are retained, without per-task replacements or retries. No local tests
-or model benchmarks ran concurrently with live timing.
+corpus. All 24 original questions, outer prompts, model settings, budgets and native
+usage accounting are unchanged. The identical research adapter delivers at most six
+operations per session and reports remaining calls; denied attempts still count.
+All 48 sessions are retained, without task replacements or retries. No local model
+benchmark, replay or tests ran concurrently with live timing. Uncached input plus
+output is native total input minus cached input plus native output, without estimates.
 
-The identical shared research adapter reports a six-call remaining budget and an
-exact source object for pushes. Rejected excess attempts still count as violations.
-Pushed hashes must match preceding reads and the frozen corpus; lookup question
-punctuation is checked exactly. The unsuccessful complete-file guidance experiment
-was reverted. No gate was waived to qualify this result.
-
-## Verification and limitations
-
-Verification: **90 tests passed, one host symlink permission skip**, Ruff and
-whitespace checks pass on Windows/Python 3.13.1. No hosted CI matrix is configured.
 See [comparison](comparison.json), [local timing](lookup-summary.json),
-[receipt bytes](mcp-payload.json), [native audit](audit-verification.json),
-[import proofs](paired/feature/loaded-implementations.json), and
-[merge review](MERGE_REVIEW.md).
+[native audit](audit-verification.json), [protocol](paired/protocol.json),
+[receipt comparison](mcp-payload.json), and [merge review](MERGE_REVIEW.md).
+
+## Limits
 
 This is an explored self-repository regression suite, not held-out production
-evidence. Primary-assistant grading checks core facts; it is not independent blind
-review. Citation targets were valid for 19/24 main and
-19/24 feature answers; precise citation lines were not
-graded. Formatting defects remain visible in the answer reviews. The descriptive
-family-bootstrap token-reduction interval is
-[-15.0%,
-12.3%]; repeated
-exploration and provider variation prevent a general token-savings claim.
-Uncached input plus output increased 19.3%; cache-sensitive work did not improve
-in this sample. The gross reduction includes cold-research sampling and independent
-memory histories; it does not isolate the receipt byte reduction. No production
-cost or uncached-compute saving is claimed.
+evidence. Primary-assistant core-fact grading is not independent blind review.
+Citation targets were valid for 19/24 main and 16/24 feature
+answers; precise line support was not graded. Citation formatting defects remain
+visible in retained answers and reviews.
 
-The stricter descriptive filter can reduce recall and fall back to research.
-MCP consumers parsing `sources` must also accept ordinary file identities from
-`current_repository_reads` (`kind`, `path`, `sha256`); CLI/HTTP receipts are unchanged.
-Assertions and undisplayed sources retain their original metadata. Local timing
-excludes startup/indexing. All failed and invalid trials, plus one historical
-interrupted session with no final usage, remain retained.
+The descriptive family-bootstrap gross-token reduction interval is
+[-4.8%,
+8.5%]. Sampling,
+prompt-cache reuse, independent learned histories and repeated exploration remain
+material. This comparison passes the observed gates; it does not establish general
+production cost savings or isolate the causal effect of session guidance.
+
+The stricter descriptive guard can reduce recall and fall back to research. Local
+timing excludes startup and indexing. All previous failed/invalid trials, plus one
+historical interrupted session with unavailable final usage, remain retained.

@@ -1,31 +1,32 @@
-> Superseded readiness: the user requires uncached input plus output below main. The retained trial fails that blocking gate (+19.3%). PR is draft; merge review pending a passing rerun. All eight gates are mandatory.
-
 # Merge review
 
-Reviewed runtime: `c40fceb08be3c8de1f8f3a533507b88661fd8152` against `202745a92f6c6c59e4c990321be9c5112697594e`.
-Disposition: no blocking findings in the reviewed implementation; all seven
-blocking benchmark/verification gates pass. The PR remains unmerged.
+Reviewed runtime `93bffe3035e95d9e8c28167b2ba6568bc02950b0` against main `202745a92f6c6c59e4c990321be9c5112697594e`.
+Disposition: all eight blocking benchmark/verification gates pass; no blocking
+implementation findings. No merge has been performed.
 
-The review checked request-local immutable vector reuse, namespace/age filtering,
-pre-inference guard equivalence, full-set IDF/tie ordering, independent reranker
-logits and the excerpt-score upper bound. Fingerprint checks, scrubbing, two-excerpt
-and 2,800-character limits, stale/unverified handling and source permissions remain
-in place. The intentional descriptive precision change has positive and negative
-regression tests.
+Reviewed request-local immutable query-vector reuse, standalone helper behavior,
+namespace/age filtering, eligibility guards before inference, full-set IDF and tie
+order, independent reranker logits and the excerpt-score upper bound. Source hashes,
+validation, scrubbing and evidence limits remain enforced. Tests cover coherent
+descriptive evidence and the intentional rejection of unrelated validation context.
 
-The MCP change removes only file proofs already represented by current reads.
-Advanced assertions, undisplayed sources and nonvalidated diagnostics are retained.
-Focused receipt tests and real stdio integration cover those cases. Input schemas
-and reuse instructions are unchanged. The documented MCP `sources` representation
-change is the compatibility consideration for direct JSON consumers.
+MCP receipt/source fields and per-tool input contracts match main. Static tool
+descriptions and next_action are shorter; session initialization carries complete
+reuse/research rules, scoped to one answer. It requires assessing source facts and
+does not certify saved-answer truth. Source bytes, warnings, fingerprints and
+assertions remain intact; receipt and actual stdio integration checks pass.
 
-Evidence: 90 tests passed with one existing host symlink skip; lint/whitespace
-clean; 72 paired retrieval responses match; all 48 live sessions and actual import
-proofs pass audit; feature protocol violations are zero; correctness does not
-decrease; observed lookup, live time and gross tokens improve. No hosted CI matrix
-is configured. The PR review records the final head check and mergeability status.
+The benchmark analyzer requires all eight gates and exits with failure while saving
+failed reports. Sensitivity tests cover uncached regression/equality and otherwise
+improving results. Every invalid source attempt is rejected by provenance audit;
+duplicate ask and excess research attempts remain blocking. No advisory exception.
 
-This review is by the primary implementing assistant, not an independent approval.
-The statistical, corpus and citation limits in README.md remain material. Earlier
-failed trial outcomes and the rejected advisory interpretation remain in history.
-No other feature has been started or resumed, and no merge was performed.
+Evidence: 99 tests pass with one existing host skip; lint clean;
+72 local pairs match; 48 live sessions and 50 import proofs pass audit; zero feature
+protocol violations; correctness does not decrease; lookup, time, gross tokens and
+uncached input plus output all improve. Native traces and earlier failures retained.
+
+This review is by the primary implementing assistant, not independent approval.
+README.md documents sampling/cache/corpus/citation limitations and the absence of
+hosted CI. Final PR-head checks and mergeability are recorded in the PR review.
+Other feature work remains paused.
