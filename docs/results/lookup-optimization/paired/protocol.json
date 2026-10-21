@@ -1,6 +1,6 @@
 {
   "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
-  "feature_commit": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
+  "feature_commit": "2d4b66d017258e4ee616488b3bc3787f9c1e664c",
   "corpus_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
   "tasks": [
     "mcp-1",
@@ -32,10 +32,12 @@
   "research_adapter_sha256": "bcef34d8ea57b19d0388cc10fe481cd29c05230e1fdfe3b345a16a349dcb8b58",
   "order": "main then feature on even task indexes, reversed on odd indexes",
   "gates": [
+    "loaded implementations verified against pinned revisions",
     "full suite passes",
     "controlled local lookup latency lower",
     "live core-fact correctness does not decrease",
     "live gross input+output tokens lower",
+    "live uncached input+output tokens lower",
     "live summed subject wall time lower",
     "feature follows requested tool protocol"
   ],

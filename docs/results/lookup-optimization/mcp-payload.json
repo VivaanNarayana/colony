@@ -10,7 +10,7 @@
     },
     "validated": {
       "main": 958,
-      "feature": 859
+      "feature": 958
     },
     "unverified": {
       "main": 658,
@@ -19,6 +19,6 @@
   },
   "same_factual_information_and_content": true,
   "same_input_contract_and_annotations": true,
-  "representation_change": "Validated ordinary file identities move from duplicated sources entries to kind/path/sha256 on current reads. Assertions and undisplayed sources remain explicit; every other field and all source text/instructions are unchanged.",
+  "representation_change": "Receipt representation restored exactly to main, including all source proofs and current read fields. Input schemas and annotations are identical. MCP initialization now states once-per-question and fact-scoped evidence reuse; original per-tool descriptions and response instructions remain unchanged.",
   "metric": "Serialized UTF-8 bytes; not estimated model tokens or measured LLM savings."
 }

@@ -22,7 +22,7 @@
     }
   },
   "trace_format": "Each native-events.jsonl.gz is an independent trace container of JSONL records {run,session,event}. Identify sessions by (trace path,run,session). Only workspace prefixes are redacted; native numerical usage/outcomes are unchanged. All prior failed and interrupted trials are retained.",
-  "status": "Blocked: uncached input plus output increased 19.3%; PR draft; new gate mandatory.",
+  "status": "Blocking gates remain; retain draft and pause other features.",
   "plan": [
     "Finish the first feature merge review with all gates mandatory; no other feature has been resumed.",
     "After approval of the first feature, separately benchmark repeated cited-source vector reuse on its own branch and PR.",
@@ -47,11 +47,11 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1310508
+      "native_tokens": 1153866
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1294381
+      "native_tokens": 1184988
     }
   },
   "primary_comparison": "paired/comparison.json",
@@ -69,13 +69,15 @@
     "complete-file-regression": "48 sessions; 24/24 correct both. Feature repeated ask on stale-2 and gross tokens regressed; strict gates failed. Shared complete-file feedback reverted before a feature receipt deduplication change.",
     "dedup-source-copy-failed": "48 sessions; main 23/24 correct, feature 24/24. Feature supplied two incorrect source hashes on scope-2; source audit failed despite later correction. All costs retained. Canonical research source metadata replaces duplicate hash aliases before the next trial.",
     "canonical-uncached-regression": "48 completed sessions; seven former gates pass, but uncached input plus output increased 19.3%; fails the added eighth blocking gate. Every native event and original report retained.",
-    "reuse-order-regression": "Feature tests-1 pushed an invalid fingerprint without a fresh research read; stale-2 repeated ask. Entire 48-session trial retained. Raw totals are diagnostic only, not a qualifying comparison."
+    "reuse-order-regression": "Feature tests-1 pushed an invalid fingerprint without a fresh research read; stale-2 repeated ask. Entire 48-session trial retained. Raw totals are diagnostic only, not a qualifying comparison.",
+    "session-reuse-token-regression": "48 fully audited sessions: 24/24 both, zero protocol/provenance errors, time 11.9% lower, but gross tokens +2.7% and uncached input plus output +1.8%; both token gates block readiness."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision.",
   "all_predeclared_gates_passed": false,
-  "original_performance_gates_passed": true,
+  "original_performance_gates_passed": false,
   "merge_review_ready": false,
   "blocking_gates": [
+    "observed_live_tokens_improve",
     "observed_uncached_input_plus_output_improve"
   ],
   "all_gates_passed": false,

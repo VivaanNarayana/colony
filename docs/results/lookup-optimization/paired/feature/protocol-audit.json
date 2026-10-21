@@ -7,7 +7,15 @@
     {
       "task": "mcp-1",
       "result": {
-        "id": "21a57691ddb54b7f95c0c92ff9b8bd4e",
+        "id": "6457b8d80106425a94230b0229129f61",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "outage-1",
+      "result": {
+        "id": "267cc141876b41f48808149929ac3053",
         "stored": false,
         "queued": true
       }
@@ -15,31 +23,7 @@
     {
       "task": "serve-2",
       "result": {
-        "id": "10b67b68d7e04d769a64a50cbd0de40c",
-        "stored": false,
-        "queued": true
-      }
-    },
-    {
-      "task": "tests-2",
-      "result": {
-        "id": "d3d834d25db34438a9b74927f5e1abe5",
-        "stored": false,
-        "queued": true
-      }
-    },
-    {
-      "task": "serve-3",
-      "result": {
-        "id": "5cefae736dc141c1923a32a782b242ea",
-        "stored": false,
-        "queued": true
-      }
-    },
-    {
-      "task": "capture-1",
-      "result": {
-        "id": "bc40dd917b324ca8bbf1419ae95d9dde",
+        "id": "fba51e36b90648bb8e9a8819a0bbf013",
         "stored": false,
         "queued": true
       }
@@ -48,5 +32,5 @@
   "reviewer": "Primary assistant; all 48 actual answers reviewed against frozen source and core-fact rubrics, not blind or independent.",
   "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
   "timing_isolation": "No tests, replay or local model benchmark ran during live timing.",
-  "max_answer_words": 49
+  "max_answer_words": 50
 }

@@ -1,0 +1,53 @@
+{
+  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
+  "feature_commit": "2d4b66d017258e4ee616488b3bc3787f9c1e664c",
+  "protocol": "24 regression queries, 3 repetitions, paired alternating order; 8 identical seeded trails; warmed local models; same CPU and checkout; no provider calls",
+  "identical_retrieval_pairs": 72,
+  "modes": {
+    "main": {
+      "lookups": 72,
+      "query_embeddings": 87,
+      "reranker_calls": 144,
+      "reranked_passages": 1767,
+      "seconds_total": 78.99678629991831,
+      "seconds_median": 0.9174996499787085,
+      "seconds_p95": 2.574388300010469
+    },
+    "feature": {
+      "lookups": 72,
+      "query_embeddings": 72,
+      "reranker_calls": 132,
+      "reranked_passages": 447,
+      "seconds_total": 18.331723200157285,
+      "seconds_median": 0.1252630999952089,
+      "seconds_p95": 0.8008600000175647
+    }
+  },
+  "lookup_time_reduction": 0.7679434308813617,
+  "descriptive_task_cluster_bootstrap_95pct": [
+    0.6276760539153228,
+    0.8655427823179049
+  ],
+  "timing_isolation": "All live model trials and tests had finished before this local timing run; only the paired local benchmark used the retrieval models.",
+  "quality_scope": "Seeded warm retrieval fixture; 72 paired responses compared excluding created_at/checks. A separate main-trial replay has 23/24 exact full-response matches; the single intentional change replaces off-topic validation evidence with a miss. Live subject-model correctness is reported separately.",
+  "environment": {
+    "python": "3.13.1",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "fastembed": "0.7.4",
+      "onnxruntime": "1.24.4",
+      "numpy": "2.4.4",
+      "tokenizers": "0.22.2",
+      "sqlite-vec": "0.1.9",
+      "mcp": "1.30.0",
+      "fastapi": "0.136.1",
+      "pydantic": "2.12.5",
+      "huggingface-hub": "0.36.2"
+    }
+  },
+  "limitations": [
+    "One fixed repository regression suite with three repetitions, not held-out production workloads.",
+    "Bootstrap describes variation across these fixed task IDs; it is not a production guarantee.",
+    "Measured latency includes warm retrieval only; startup and push/indexing costs are excluded."
+  ]
+}
