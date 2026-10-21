@@ -1,0 +1,23 @@
+{
+  "qualification": "Rejected live evidence: raw descriptive totals only. Not a gate clearance, causal savings estimate, or production claim. A protocol-invalid push changes later memory state.",
+  "arms": {
+    "main": {
+      "sessions": 24,
+      "tokens": 1186837,
+      "uncached_input_plus_output": 180629,
+      "seconds": 264.558,
+      "correct": 24,
+      "valid_citations": 18,
+      "relevant_hits": 18
+    },
+    "feature": {
+      "sessions": 24,
+      "tokens": 1197054,
+      "uncached_input_plus_output": 195582,
+      "seconds": 251.206,
+      "correct": 24,
+      "valid_citations": 24,
+      "relevant_hits": 18
+    }
+  }
+}
