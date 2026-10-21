@@ -6,5 +6,6 @@
   "pytest_seconds": 53.38,
   "platform": "Windows / Python 3.13.1",
   "scope": "Full suite; existing Windows symlink skip",
-  "command": "python -m pytest -q; ruff check .; git diff --check"
+  "command": "python -m pytest -q; ruff check .; git diff --check",
+  "commit": "08e8ec4750316d2e032dec45baea29a4a4c80e39"
 }
