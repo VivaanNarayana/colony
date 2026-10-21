@@ -1,9 +1,13 @@
 {
+  "repository_call_limit": 6,
+  "budget_feedback_verified": true,
+  "source_hash_errors": [],
+  "tool_errors": [],
   "queued_push_responses": [
     {
       "task": "mcp-1",
       "result": {
-        "id": "6447850231ba4697a287082c428e95ff",
+        "id": "96d091a0a8fd4c23a0b11f8801693d07",
         "stored": false,
         "queued": true
       }
@@ -11,7 +15,7 @@
     {
       "task": "outage-1",
       "result": {
-        "id": "ce60f1da25cc40f581abc31016af5e26",
+        "id": "7c743b13106947c8abec9b640e57eb5b",
         "stored": false,
         "queued": true
       }
@@ -19,7 +23,7 @@
     {
       "task": "serve-2",
       "result": {
-        "id": "1143b6468cb24aeea483469ffd0ec453",
+        "id": "e93d58c5c18c461caee8b9f396860093",
         "stored": false,
         "queued": true
       }
@@ -27,7 +31,15 @@
     {
       "task": "serve-3",
       "result": {
-        "id": "53416b1b00d847b68d0458bdbb4b1611",
+        "id": "26225acc887942db810ae06fcc9dbc0a",
+        "stored": false,
+        "queued": true
+      }
+    },
+    {
+      "task": "serve-1",
+      "result": {
+        "id": "ba61b1a77037488d84667bed84c4c310",
         "stored": false,
         "queued": true
       }
@@ -35,17 +47,14 @@
     {
       "task": "stale-2",
       "result": {
-        "id": "ebd6e6fcfd16412f8c037c320d77235b",
+        "id": "ba40d53769c14274a846fa76609e7430",
         "stored": false,
         "queued": true
       }
     }
   ],
-  "tool_errors": [],
-  "source_hash_errors": [],
-  "repository_call_limit": 6,
-  "reviewer": "Primary assistant; core facts reviewed against frozen source/rubrics; not blind or independent.",
+  "reviewer": "Primary assistant; all 48 actual answers reviewed against frozen source and core-fact rubrics, not blind or independent.",
   "citation_criterion": "Target identifies an existing repository file; malformed absolute roots are flagged. Precise line support is not scored.",
-  "timing_isolation": "No local test suite, model replay or local timing benchmark ran during the alternating live trial.",
-  "budget_feedback_verified": true
+  "timing_isolation": "No tests, replay or local model benchmark ran during live timing.",
+  "max_answer_words": 72
 }

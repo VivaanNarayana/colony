@@ -7,17 +7,17 @@
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+    "note": "Correct stdio entry or ask/push tool signatures."
   },
   "outage-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
   },
   "install-2.colony": {
     "correct": true,
@@ -27,17 +27,17 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
+    "note": "Correct editable development-extras installation command."
   },
   "capture-3.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint."
+    "note": "Correct output tail/exit recording or unconditional capture taint. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "outage-1.colony": {
     "correct": true,
@@ -47,17 +47,17 @@
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior."
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
   },
   "outage-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
-      true
+      false
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
-    "note": "Correct outage miss, encrypted push queue or explicit retry behavior. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct miss, encrypted local push queue or explicit retry behavior."
   },
   "mcp-2.colony": {
     "correct": true,
@@ -67,7 +67,7 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+    "note": "Correct stdio entry or ask/push tool signatures."
   },
   "mcp-3.colony": {
     "correct": true,
@@ -77,9 +77,29 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct stdio invocation/configuration or ask/push tool signatures."
+    "note": "Correct stdio entry or ask/push tool signatures."
   },
   "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "reused": false,
+    "wrong_reused": false,
+    "note": "Correct server invocation or required data/repo/issuer flags."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "reused": true,
+    "wrong_reused": false,
+    "note": "Correct pytest invocation; no execution was performed. Citation target has a malformed/missing repository root, or the refusal has no citation."
+  },
+  "scope-2.colony": {
     "correct": true,
     "citation_valid": false,
     "relevant_asks": [
@@ -87,27 +107,7 @@
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
-  },
-  "tests-2.colony": {
-    "correct": true,
-    "citation_valid": true,
-    "relevant_asks": [
-      true
-    ],
-    "reused": true,
-    "wrong_reused": false,
-    "note": "Correct pytest invocation."
-  },
-  "scope-2.colony": {
-    "correct": true,
-    "citation_valid": true,
-    "relevant_asks": [
-      false
-    ],
-    "reused": false,
-    "wrong_reused": false,
-    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
+    "note": "Correct signed namespace push/pull grant permissions. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "stale-3.colony": {
     "correct": false,
@@ -117,37 +117,37 @@
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Incorrect refusal: rejected unrelated MCP evidence but did not research the available repository; omitted SHA-256 comparison. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Incorrect refusal: rejected unrelated MCP evidence but did not research; omitted the SHA-256 comparison. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "capture-2.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct output tail/exit recording or unconditional capture taint."
   },
   "install-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct editable development-extras installation command."
   },
   "tests-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       true
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct pytest invocation; no execution was performed."
   },
   "install-1.colony": {
     "correct": true,
@@ -157,17 +157,17 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct editable development-extras install command."
+    "note": "Correct editable development-extras installation command."
   },
   "serve-3.colony": {
     "correct": true,
-    "citation_valid": false,
+    "citation_valid": true,
     "relevant_asks": [
       false
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has an incorrect/missing absolute repository prefix, or no citation for the refusal."
+    "note": "Correct server invocation or required data/repo/issuer flags."
   },
   "stale-1.colony": {
     "correct": true,
@@ -175,9 +175,9 @@
     "relevant_asks": [
       true
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
-    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
+    "note": "Correct changed-fingerprint/stale evidence behavior."
   },
   "scope-3.colony": {
     "correct": true,
@@ -187,7 +187,7 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
+    "note": "Correct signed namespace push/pull grant permissions."
   },
   "scope-1.colony": {
     "correct": true,
@@ -197,17 +197,17 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct exact-namespace push/pull grant enforcement and 403 behavior."
+    "note": "Correct signed namespace push/pull grant permissions."
   },
   "serve-1.colony": {
     "correct": true,
-    "citation_valid": true,
+    "citation_valid": false,
     "relevant_asks": [
-      true
+      false
     ],
-    "reused": true,
+    "reused": false,
     "wrong_reused": false,
-    "note": "Correct server invocation or required data/repo/issuer flags."
+    "note": "Correct server invocation or required data/repo/issuer flags. Citation target has a malformed/missing repository root, or the refusal has no citation."
   },
   "tests-1.colony": {
     "correct": true,
@@ -217,7 +217,7 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct pytest invocation."
+    "note": "Correct pytest invocation; no execution was performed."
   },
   "stale-2.colony": {
     "correct": true,
@@ -227,7 +227,7 @@
     ],
     "reused": false,
     "wrong_reused": false,
-    "note": "Correct hash/fingerprint mismatch and stale evidence behavior."
+    "note": "Correct changed-fingerprint/stale evidence behavior."
   },
   "capture-1.colony": {
     "correct": true,
@@ -237,6 +237,6 @@
     ],
     "reused": true,
     "wrong_reused": false,
-    "note": "Correct output-only tail/exit capture or unconditional capture taint."
+    "note": "Correct output tail/exit recording or unconditional capture taint."
   }
 }

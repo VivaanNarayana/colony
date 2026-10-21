@@ -1,21 +1,21 @@
 [
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "server",
-    "pid": 74032,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 47072,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.retrieval": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\retrieval.py",
-      "colony.context": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\context.py",
-      "colony.store": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\store.py",
-      "colony.server": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\server.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.retrieval": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\retrieval.py",
+      "colony.context": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\context.py",
+      "colony.store": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\store.py",
+      "colony.server": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\server.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -34,19 +34,19 @@
     "task_id": null
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 50616,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 39904,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -65,19 +65,19 @@
     "task_id": "mcp-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 64240,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 27576,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -96,19 +96,19 @@
     "task_id": "outage-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 17592,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 39716,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -127,19 +127,19 @@
     "task_id": "install-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 16904,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 32740,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -158,19 +158,19 @@
     "task_id": "capture-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 39512,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 31004,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -189,19 +189,19 @@
     "task_id": "outage-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 23564,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 67672,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -220,19 +220,19 @@
     "task_id": "outage-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 72864,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 47812,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -251,19 +251,19 @@
     "task_id": "mcp-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 44976,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 3936,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -282,19 +282,19 @@
     "task_id": "mcp-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 40344,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 31700,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -313,19 +313,19 @@
     "task_id": "serve-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 3560,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 20356,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -344,19 +344,19 @@
     "task_id": "tests-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 3168,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 69748,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -375,19 +375,19 @@
     "task_id": "scope-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 50656,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 53028,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -406,19 +406,19 @@
     "task_id": "stale-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 27940,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 34144,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -437,19 +437,19 @@
     "task_id": "capture-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 33972,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 956,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -468,19 +468,19 @@
     "task_id": "install-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 52068,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 43356,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -499,19 +499,19 @@
     "task_id": "tests-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 7536,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 40264,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -530,19 +530,19 @@
     "task_id": "install-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 55496,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 23668,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -561,19 +561,19 @@
     "task_id": "serve-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 7560,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 46204,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -592,19 +592,19 @@
     "task_id": "stale-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 26200,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 1100,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -623,19 +623,19 @@
     "task_id": "scope-3"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 64636,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 39428,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -654,19 +654,19 @@
     "task_id": "scope-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 7468,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 63932,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -685,19 +685,19 @@
     "task_id": "serve-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 54188,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 15336,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -716,19 +716,19 @@
     "task_id": "tests-1"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 62928,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 57388,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
@@ -747,19 +747,19 @@
     "task_id": "stale-2"
   },
   {
-    "revision": "956dde433ba9ace3101e3e53e1a18d9ff318637d",
+    "revision": "c40fceb08be3c8de1f8f3a533507b88661fd8152",
     "role": "mcp",
-    "pid": 6800,
-    "source": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src",
+    "pid": 6324,
+    "source": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src",
     "module_paths": {
-      "colony": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
-      "colony.models": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\models.py",
-      "colony.security": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\security.py",
-      "colony.capture": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
-      "colony.client": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\client.py",
-      "colony.validation": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
-      "colony.cli": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
-      "colony.mcp": "<workspace>\\work\\feature1-dedup-receipt-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
+      "colony": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\__init__.py",
+      "colony.models": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\models.py",
+      "colony.security": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\security.py",
+      "colony.capture": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\capture.py",
+      "colony.client": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\client.py",
+      "colony.validation": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\validation.py",
+      "colony.cli": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\cli.py",
+      "colony.mcp": "<workspace>\\work\\feature1-canonical-source-live-runtime\\implementation\\feature\\src\\colony\\mcp.py"
     },
     "source_sha256": {
       "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",

@@ -1,6 +1,13 @@
 {
   "containers": [
     {
+      "trace": "history/budget-source-copy-failed/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2385867
+    },
+    {
       "trace": "history/capped-duplicate/native-events.jsonl.gz",
       "sessions": 48,
       "completed_with_native_usage": 48,
@@ -13,6 +20,20 @@
       "completed_with_native_usage": 6,
       "without_final_usage": 0,
       "known_native_tokens": 307986
+    },
+    {
+      "trace": "history/complete-file-regression/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2378830
+    },
+    {
+      "trace": "history/dedup-source-copy-failed/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2408216
     },
     {
       "trace": "history/guidance-regression/native-events.jsonl.gz",
@@ -29,11 +50,25 @@
       "known_native_tokens": 752816
     },
     {
+      "trace": "history/original-mcp-noncompliant/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2457330
+    },
+    {
       "trace": "history/pruned-paired/native-events.jsonl.gz",
       "sessions": 48,
       "completed_with_native_usage": 48,
       "without_final_usage": 0,
       "known_native_tokens": 2301935
+    },
+    {
+      "trace": "history/source-object-token-regression/native-events.jsonl.gz",
+      "sessions": 48,
+      "completed_with_native_usage": 48,
+      "without_final_usage": 0,
+      "known_native_tokens": 2329714
     },
     {
       "trace": "history/verified-budget-abort/native-events.jsonl.gz",
@@ -54,11 +89,11 @@
       "sessions": 48,
       "completed_with_native_usage": 48,
       "without_final_usage": 0,
-      "known_native_tokens": 2457330
+      "known_native_tokens": 2604889
     }
   ],
-  "total_sessions": 369,
-  "completed_with_native_usage": 368,
+  "total_sessions": 609,
+  "completed_with_native_usage": 608,
   "without_final_usage": 1,
   "local_username_not_published": true,
   "notes": "Each (trace path, run, session) is distinct. All historical failures and one interrupted session are retained; no final usage is fabricated for that session."

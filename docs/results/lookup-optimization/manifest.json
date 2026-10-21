@@ -22,7 +22,7 @@
     }
   },
   "trace_format": "Each native-events.jsonl.gz is an independent trace container of JSONL records {run,session,event}. Identify sessions by (trace path,run,session). Only workspace prefixes are redacted; native numerical usage/outcomes are unchanged. All prior failed and interrupted trials are retained.",
-  "status": "Blocking gates remain; retain draft and pause other features.",
+  "status": "All seven gates pass, including attempted-call compliance; merge review complete.",
   "plan": [
     "Finish the first feature merge review with all gates mandatory; no other feature has been resumed.",
     "After approval of the first feature, separately benchmark repeated cited-source vector reuse on its own branch and PR.",
@@ -47,11 +47,11 @@
   "paired_runs": {
     "main": {
       "native_sessions": 24,
-      "native_tokens": 1205227
+      "native_tokens": 1310508
     },
     "feature": {
       "native_sessions": 24,
-      "native_tokens": 1202989
+      "native_tokens": 1294381
     }
   },
   "primary_comparison": "paired/comparison.json",
@@ -70,13 +70,10 @@
     "dedup-source-copy-failed": "48 sessions; main 23/24 correct, feature 24/24. Feature supplied two incorrect source hashes on scope-2; source audit failed despite later correction. All costs retained. Canonical research source metadata replaces duplicate hash aliases before the next trial."
   },
   "runtime_import_proof": "paired/{main,feature}/loaded-implementations.json records one server and 24 MCP import proofs per arm; actual module paths/source SHA256 are checked against each pinned git revision.",
-  "all_predeclared_gates_passed": false,
-  "original_performance_gates_passed": false,
-  "merge_review_ready": false,
-  "blocking_gates": [
-    "execution_audit",
-    "feature_follows_tool_protocol"
-  ],
-  "all_gates_passed": false,
+  "all_predeclared_gates_passed": true,
+  "original_performance_gates_passed": true,
+  "merge_review_ready": true,
+  "blocking_gates": [],
+  "all_gates_passed": true,
   "compliance_fix": "Identical shared research adapter reports remaining calls after every successful operation. Six-call cap and attempted-call violation accounting unchanged; duplicate asks also block readiness. The prior advisory interpretation is superseded."
 }
