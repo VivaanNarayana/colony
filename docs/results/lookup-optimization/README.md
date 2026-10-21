@@ -1,5 +1,10 @@
 # Lookup optimization: strict eight-gate comparison
 
+> Audit notice: the [benchmark independence audit](../../benchmark-audit.md)
+> supersedes the readiness conclusion below. Reassessment under the new blocking
+> criteria fails five of eight gates. Original measurements and historical review
+> text are retained; their earlier pass does not establish independent improvement.
+
 All eight blocking gates pass. The first feature is ready for maintainer review;
 the PR remains unmerged and other feature work remains paused. No gate is advisory.
 The earlier +19.3% uncached regression and unsuccessful follow-ups are retained in

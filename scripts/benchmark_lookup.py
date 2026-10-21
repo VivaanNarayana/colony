@@ -1,185 +1,249 @@
-"""Paired local CPU lookup benchmark; no provider calls or synthetic token estimates."""
+"""Isolated paired warm-lookup development benchmark with independent answer checks.
+
+No provider calls. Exit 1 for a quality failure, inconclusive result, or A/A control.
+Every observation is retained; setup, model warmup and pushes are outside timing.
+"""
 
 import argparse
-import importlib.util
+import hashlib
+import io
 import json
-import statistics
+import os
+import queue
+import random
 import subprocess
-import time
-import types
+import sys
+import threading
+import zipfile
+from collections import defaultdict
 from pathlib import Path
 
-import colony.context as context
-import colony.store as optimized
-from colony.models import Grant, Scope, Trail
-from colony.store import Store
-from colony.validation import snapshot
+from benchmark_statistics import reduction_interval, supported_improvement
+from lookup_workload import assess, workload
 
-ROOT = Path(__file__).resolve().parent
-parser = argparse.ArgumentParser()
-parser.add_argument("--name", default="lookup")
-parser.add_argument("--repo", type=Path, default=ROOT.parent)
-parser.add_argument("--runtime", type=Path, required=True)
-parser.add_argument("--output", type=Path, required=True)
-parser.add_argument("--baseline-ref", default="origin/main")
-parser.add_argument("--repetitions", type=int, default=5)
-args = parser.parse_args()
-REPO = args.repo.resolve()
-OUTPUT = args.output.resolve()
-OUTPUT.mkdir(parents=True, exist_ok=True)
-baseline = types.ModuleType("baseline_store")
-source = subprocess.check_output(
-    ["git", "show", f"{args.baseline_ref}:src/colony/store.py"], cwd=REPO, text=True
-)
-exec(compile(source, "main:src/colony/store.py", "exec"), baseline.__dict__)
-baseline_context = types.ModuleType("baseline_context")
-exec(
-    compile(
-        subprocess.check_output(
-            ["git", "show", f"{args.baseline_ref}:src/colony/context.py"], cwd=REPO, text=True
-        ),
-        "main:src/colony/context.py",
-        "exec",
-    ),
-    baseline_context.__dict__,
-)
-baseline.excerpts = baseline_context.excerpts
-baseline.source_chunks = baseline_context.source_chunks
-spec = importlib.util.spec_from_file_location("benchmark", REPO / "scripts/benchmark.py")
-benchmark = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(benchmark)
-tasks = benchmark.tasks()
-runtime = args.runtime.resolve()
-if runtime.exists():
-    raise RuntimeError("Use a fresh runtime directory")
-grant = Grant(
-    member_id="profile",
-    name="Profile",
-    server="http://127.0.0.1:7331",
-    expires_at=int(time.time()) + 3600,
-    scopes=[Scope(namespace="bench", push=True, pull=True)],
-)
-stores = {
-    "main": baseline.Store(runtime / "main", REPO),
-    "feature": Store(runtime / "feature", REPO),
-}
-# Seed one factual answer per family, citing only the real frozen checkout.
-# This measures warm retrieval and is separate from the empty-memory live trial.
-for i, (_family, ref, answer, questions) in enumerate(benchmark.FAMILIES):
-    trail = Trail(
-        id=f"{i + 1:032x}",
-        namespace="bench",
-        question=questions[0],
-        content=answer,
-        sources=[snapshot(REPO, ref)],
-    )
-    for store in stores.values():
-        store.push(trail, grant)
-for store in stores.values():
-    with store.connect() as db:
-        db.execute("UPDATE trails SET created_at=?", (int(time.time()),))
-
-counts = {"main": 0, "feature": 0}
-rank_counts = {mode: {"calls": 0, "passages": 0} for mode in stores}
-active_mode = None
-for context_module, context_mode in [(baseline_context, "main"), (context, "feature")]:
-    original_context_rank = context_module.rank
-
-    def counted_context_rank(
-        question, passages, _name=context_mode, _original=original_context_rank
-    ):
-        if active_mode is not None and passages:
-            rank_counts[_name]["calls"] += 1
-            rank_counts[_name]["passages"] += len(passages)
-        return _original(question, passages)
-
-    context_module.rank = counted_context_rank
-for name, module in [("main", baseline), ("feature", optimized)]:
-    original = module.embed
-
-    def counted(text, *, query=False, _name=name, _original=original):
-        if query:
-            counts[_name] += 1
-        return _original(text, query=query)
-
-    module.embed = counted
-    original_rank = module.rank
-
-    def counted_rank(question, passages, _name=name, _original=original_rank):
-        if passages:
-            rank_counts[_name]["calls"] += 1
-            rank_counts[_name]["passages"] += len(passages)
-        return _original(question, passages)
-
-    module.rank = counted_rank
+ROOT = Path(__file__).resolve().parents[1]
+HARNESS = [
+    "benchmark_lookup.py",
+    "benchmark_statistics.py",
+    "lookup_workload.py",
+    "lookup_benchmark_worker.py",
+]
 
 
-def semantic(result):
-    return {k: v for k, v in result.items() if k not in {"created_at", "checks"}}
+def git(repo, *args):
+    return subprocess.check_output(["git", *args], cwd=repo)
 
 
-# Warm both models and SQLite once per implementation before timed repetitions.
-for store in stores.values():
-    store.ask(tasks[0]["question"], ["bench"], 604800, 0.60)
-counts = {"main": 0, "feature": 0}
-rank_counts = {mode: {"calls": 0, "passages": 0} for mode in stores}
-rows = []
-for repeat in range(args.repetitions):
-    for i, task in enumerate(tasks):
-        modes = ["main", "feature"] if (repeat + i) % 2 == 0 else ["feature", "main"]
-        pair = {}
-        for mode in modes:
-            active_mode = mode
-            previous = counts[mode]
-            previous_rank = dict(rank_counts[mode])
-            start = time.perf_counter()
-            result = stores[mode].ask(task["question"], ["bench"], 604800, 0.60)
-            elapsed = time.perf_counter() - start
-            pair[mode] = semantic(result)
-            rows.append(
-                {
-                    "repeat": repeat,
-                    "task_id": task["task_id"],
-                    "mode": mode,
-                    "seconds": elapsed,
-                    "query_embeddings": counts[mode] - previous,
-                    "reranker_calls": rank_counts[mode]["calls"] - previous_rank["calls"],
-                    "reranked_passages": rank_counts[mode]["passages"] - previous_rank["passages"],
-                    "hit": result["hit"],
-                    "kind": result.get("match_kind"),
-                }
-            )
-        if pair["main"] != pair["feature"]:
-            (OUTPUT / f"{args.name}-mismatch.json").write_text(
-                json.dumps(pair, indent=2), encoding="utf-8"
-            )
-            raise AssertionError(f"Retrieval changed for {task['task_id']}")
-    print(f"Completed repetition {repeat + 1}/{args.repetitions}", flush=True)
-summary = {
-    "baseline_commit": subprocess.check_output(
-        ["git", "rev-parse", args.baseline_ref], cwd=REPO, text=True
-    ).strip(),
-    "feature_commit": subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
-    ).strip(),
-    "protocol": f"24 regression queries, {args.repetitions} repetitions, paired alternating order; 8 identical seeded trails; warmed local models; same CPU and checkout; no provider calls",
-    "identical_retrieval_pairs": len(rows) // 2,
-    "modes": {},
-}
-for mode in stores:
-    selected = [r for r in rows if r["mode"] == mode]
-    summary["modes"][mode] = {
-        "lookups": len(selected),
-        "query_embeddings": counts[mode],
-        "reranker_calls": rank_counts[mode]["calls"],
-        "reranked_passages": rank_counts[mode]["passages"],
-        "seconds_total": sum(r["seconds"] for r in selected),
-        "seconds_median": statistics.median(r["seconds"] for r in selected),
-        "seconds_p95": sorted(r["seconds"] for r in selected)[int(0.95 * len(selected)) - 1],
+def export_source(repo, revision, destination):
+    archive = git(repo, "archive", "--format=zip", revision, "src")
+    with zipfile.ZipFile(io.BytesIO(archive)) as z:
+        z.extractall(destination)
+    source = destination / "src"
+    manifest = {
+        p.relative_to(source).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in source.rglob("*.py")
     }
-summary["lookup_time_reduction"] = (
-    1 - summary["modes"]["feature"]["seconds_total"] / summary["modes"]["main"]["seconds_total"]
-)
-(OUTPUT / f"{args.name}-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-(OUTPUT / f"{args.name}-measurements.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
-print(json.dumps(summary, indent=2), flush=True)
+    return source, manifest
+
+
+def harness_hashes():
+    return {
+        name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest() for name in HARNESS
+    }
+
+
+class Worker:
+    def __init__(self, source, manifest, root, spec):
+        self.log = root.with_suffix(".stderr.txt").open("w", encoding="utf-8")
+        self.process = subprocess.Popen(
+            [
+                sys.executable,
+                "-I",
+                "-u",
+                str(ROOT / "scripts/lookup_benchmark_worker.py"),
+                "--source",
+                str(source),
+                "--root",
+                str(root),
+                "--spec",
+                str(spec),
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=self.log,
+            text=True,
+            encoding="utf-8",
+            env={k: v for k, v in os.environ.items() if k != "PYTHONPATH"},
+        )
+        self.messages = queue.Queue()
+
+        def collect():
+            for line in self.process.stdout:
+                self.messages.put(line)
+            self.messages.put(None)
+
+        threading.Thread(target=collect, daemon=True).start()
+        try:
+            self.proof = self.read()["proof"]
+            if self.proof["source_sha256"] != manifest or not all(
+                Path(p).is_relative_to(source.resolve())
+                for p in self.proof["module_paths"].values()
+            ):
+                raise ValueError("Worker did not load the complete selected revision")
+            if self.read() != {"ready": True}:
+                raise ValueError("Worker did not finish initialization")
+        except BaseException:
+            self.close()
+            raise
+
+    def read(self):
+        try:
+            line = self.messages.get(timeout=240)
+        except queue.Empty as exc:
+            raise RuntimeError("Benchmark worker timed out; see retained stderr") from exc
+        if line is None:
+            raise RuntimeError("Benchmark worker exited; see retained stderr")
+        return json.loads(line)
+
+    def ask(self, task_id):
+        self.process.stdin.write(json.dumps({"task_id": task_id}) + "\n")
+        self.process.stdin.flush()
+        return self.read()
+
+    def close(self):
+        if self.process.poll() is None:
+            self.process.terminate()
+            self.process.wait(timeout=15)
+        self.process.stdout.close()
+        self.process.stdin.close()
+        self.log.close()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--name", default="lookup")
+    parser.add_argument("--repo", type=Path, default=ROOT)
+    parser.add_argument("--runtime", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--baseline-ref", default="origin/main")
+    parser.add_argument("--feature-ref", default="HEAD")
+    parser.add_argument("--repetitions", type=int, default=3)
+    parser.add_argument("--seed", type=int, default=20261021)
+    parser.add_argument("--variants", type=int, default=3)
+    args = parser.parse_args()
+    if (
+        args.repetitions < 2
+        or args.variants < 1
+        or not args.name
+        or Path(args.name).name != args.name
+    ):
+        parser.error("Use at least two repetitions, one variant and a plain run name")
+    repo, runtime, output = args.repo.resolve(), args.runtime.resolve(), args.output.resolve()
+    if runtime.exists() or any(output.glob(args.name + "-*")):
+        raise ValueError("Use fresh runtime and output names; retain previous attempts")
+    if git(repo, "status", "--porcelain", "--untracked-files=no", "--", "src").strip():
+        raise ValueError("Commit application changes before benchmarking")
+    runtime.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=True)
+    spec = workload(args.seed, args.variants)
+    spec_bytes = json.dumps(spec, sort_keys=True).encode("utf-8")
+    spec_path = runtime / "workload.json"
+    spec_path.write_bytes(spec_bytes)
+    plan = {
+        "schema_version": 2,
+        "evaluation_role": "public-development-contracts",
+        "baseline_commit": git(repo, "rev-parse", args.baseline_ref).decode().strip(),
+        "feature_commit": git(repo, "rev-parse", args.feature_ref).decode().strip(),
+        "seed": args.seed,
+        "repetitions": args.repetitions,
+        "workload_sha256": hashlib.sha256(spec_bytes).hexdigest(),
+        "harness_sha256": harness_hashes(),
+    }
+    (output / f"{args.name}-plan.json").write_text(json.dumps(plan, indent=2), encoding="utf-8")
+    (output / f"{args.name}-workload.json").write_bytes(spec_bytes)
+    workers, manifests, rows = {}, {}, []
+    try:
+        for arm, key in [("main", "baseline_commit"), ("feature", "feature_commit")]:
+            source, manifests[arm] = export_source(repo, plan[key], runtime / (arm + "-source"))
+            workers[arm] = Worker(source, manifests[arm], runtime / arm, spec_path)
+        rng = random.Random(args.seed)
+        with (output / f"{args.name}-measurements.jsonl").open("w", encoding="utf-8") as log:
+            for repeat in range(args.repetitions):
+                cases = rng.sample(spec["cases"], len(spec["cases"]))
+                for index, case in enumerate(cases):
+                    arms = ["main", "feature"] if (repeat + index) % 2 == 0 else ["feature", "main"]
+                    for arm in arms:
+                        observation = workers[arm].ask(case["task_id"])
+                        errors = assess(
+                            case, observation["result"], runtime / arm / case["task_id"] / "repo"
+                        )
+                        row = {
+                            "repeat": repeat,
+                            "task_id": case["task_id"],
+                            "family": case["family"],
+                            "mode": arm,
+                            "oracle_errors": errors,
+                            **observation,
+                        }
+                        rows.append(row)
+                        log.write(json.dumps(row) + "\n")
+                        log.flush()
+                print(f"Completed repetition {repeat + 1}/{args.repetitions}", flush=True)
+        if harness_hashes() != plan["harness_sha256"]:
+            raise ValueError("Harness changed during the run")
+        clusters = defaultdict(lambda: {arm: {"seconds": 0.0} for arm in workers})
+        modes = {}
+        for row in rows:
+            clusters[row["family"]][row["mode"]]["seconds"] += row["seconds"]
+        interval = reduction_interval(clusters.values(), "seconds", seed=args.seed)
+        for arm in workers:
+            selected = [r for r in rows if r["mode"] == arm]
+            modes[arm] = {
+                "lookups": len(selected),
+                "oracle_passes": sum(not r["oracle_errors"] for r in selected),
+                **{
+                    k: sum(r[k] for r in selected)
+                    for k in ["seconds", "query_embeddings", "reranker_calls", "reranked_passages"]
+                },
+            }
+        quality = all(not r["oracle_errors"] for r in rows)
+        same = manifests["main"] == manifests["feature"]
+        improved = (
+            not same
+            and quality
+            and supported_improvement(
+                modes["main"]["seconds"], modes["feature"]["seconds"], interval
+            )
+        )
+        summary = {
+            **plan,
+            "modes": modes,
+            "same_implementation": same,
+            "implementation_isolated": True,
+            "loaded_implementations": {arm: w.proof for arm, w in workers.items()},
+            "quality_passed": quality,
+            "lookup_improves": improved,
+            "lookup_time_reduction": 1 - modes["feature"]["seconds"] / modes["main"]["seconds"],
+            "latency_reduction_95pct": interval,
+            "limitations": [
+                "Public development fixtures, not held-out production evidence.",
+                "Warm asks only; setup, push, cold start and concurrency are not timed.",
+                "Family bootstrap is descriptive; repeated runs are not independent confirmation.",
+            ],
+        }
+        (output / f"{args.name}-summary.json").write_text(
+            json.dumps(summary, indent=2), encoding="utf-8"
+        )
+        print(
+            json.dumps(
+                {k: v for k, v in summary.items() if k != "loaded_implementations"}, indent=2
+            )
+        )
+        return 0 if improved else 1
+    finally:
+        for worker in workers.values():
+            worker.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

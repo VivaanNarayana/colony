@@ -21,7 +21,15 @@ def test_one_regression_blocks_even_when_other_metrics_improve(monkeypatch, metr
     monkeypatch.syspath_prepend(str(Path(__file__).parents[1] / "scripts"))
     from analyze_lookup_live import evaluate_gates
 
-    main = {"tokens": 100, "uncached_input_plus_output": 100, "seconds": 100, "correct": 24}
+    main = {
+        "tokens": 100,
+        "uncached_input_plus_output": 100,
+        "seconds": 100,
+        "correct": 24,
+        "tasks": 24,
+        "valid_citations": 24,
+        "protocol_violations": 0,
+    }
     feature = {
         **main,
         "tokens": 90,
@@ -33,9 +41,16 @@ def test_one_regression_blocks_even_when_other_metrics_improve(monkeypatch, metr
     gates = evaluate_gates(
         main,
         feature,
-        {"lookup_time_reduction": 0.7},
+        {
+            "schema_version": 2,
+            "implementation_isolated": True,
+            "quality_passed": True,
+            "lookup_improves": True,
+            "same_implementation": False,
+        },
         {"tests_passed": 90, "tests_failed": 0, "ruff_passed": True},
         True,
+        {key: [0.01, 0.2] for key in ["tokens", "seconds", "uncached_input_plus_output"]},
     )
     assert len(gates) == 8
     assert [name for name, passed in gates.items() if not passed] == [gate]
