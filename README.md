@@ -103,6 +103,8 @@ read by the server. `verification` separately reports matching file fingerprints
 whether current source text is available; it does not certify the saved answer.
 Assess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids
 redundant Unicode escapes, and source-only matches carry the text once in these read objects.
+Current reads also include a copy-ready, repository-relative `citation`; preserve its
+target instead of adding a leading slash or a server filesystem root.
 Validated file identities already present in these reads are not repeated in `sources`.
 Sources with advanced assertions or without a displayed read remain in `sources`, preserving
 the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.

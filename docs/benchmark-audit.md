@@ -2,7 +2,9 @@
 
 The benchmarks had implementation-dependent and incomplete acceptance criteria.
 This establishes weaknesses in the evidence, not intent to manipulate results.
-The production package is unchanged by this benchmark-only branch.
+The initial audit commit (`e2b865a`) left the production package unchanged.
+The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
+adds runtime and citation fixes on the same branch; six gates pass and two remain blocking.
 
 ## Findings
 
@@ -63,7 +65,8 @@ The legacy hybrid local run cannot satisfy the independent local gate. Citation
 quality and all three performance intervals fail. This does not prove the runtime
 optimization is harmful; it means these measurements do not support the earlier
 readiness conclusion. PR #2 was already merged before this audit; this branch
-changes benchmark machinery and documentation only.
+initially changed benchmark machinery and documentation only. Follow-up runtime
+fixes and their retained failed gates are reported separately in the remediation report.
 
 See the retained [reassessment](results/benchmark-audit/pr2-reassessment.json).
 

@@ -1,0 +1,20 @@
+{
+  "cold_import_seconds": {
+    "colony.cli": [
+      0.7840591999702156,
+      0.7690491999965161,
+      0.7916815999778919
+    ],
+    "colony.mcp": [
+      1.254765799967572,
+      1.2713320999755524,
+      1.3445719000301324
+    ],
+    "mcp.server.lowlevel": [
+      1.1788056999794208,
+      1.1842354999971576,
+      1.1910062999813817
+    ]
+  },
+  "scope": "Post-trial diagnosis, not a blocking-gate measurement; no inference ran during the live trial"
+}
