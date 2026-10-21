@@ -219,6 +219,16 @@ class Store:
     ):
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
+        # No answer or cited-source candidate can exist without a trail in an
+        # allowed namespace. Avoid neural inference for this certain miss. Do
+        # not filter by age/status here: those trails still carry diagnostics.
+        placeholders = ",".join("?" for _ in namespaces)
+        with self.connect() as db:
+            present = db.execute(
+                f"SELECT 1 FROM trails WHERE namespace IN ({placeholders}) LIMIT 1", namespaces
+            ).fetchone()
+        if present is None:
+            return {"hit": False, "reason": "no_relevant_trail"}
         query_vector = embed(question, query=True)
         answer = self.find_answer(
             question,

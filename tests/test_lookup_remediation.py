@@ -11,6 +11,50 @@ from colony.retrieval import embed_passages, models, rank, terms
 from colony.validation import snapshot
 
 
+def test_empty_permitted_namespaces_do_not_run_inference_and_new_trails_are_visible(
+    team, monkeypatch
+):
+    import colony.store
+
+    app, _, repo, _, key = team
+    store = app.state.store
+    original = colony.store.embed
+
+    def unexpected_inference(*args, **kwargs):
+        raise AssertionError("No permitted candidates exist")
+
+    with monkeypatch.context() as absent:
+        absent.setattr(colony.store, "embed", unexpected_inference)
+        assert store.ask("Build timeout", ["team"], 3600, 0.60) == {
+            "hit": False,
+            "reason": "no_relevant_trail",
+        }
+    store.push(
+        Trail(
+            id=uuid.uuid4().hex,
+            namespace="team",
+            question="Build timeout",
+            content="TIMEOUT = 30",
+            sources=[snapshot(repo, "build.py")],
+        ),
+        key.grant,
+    )
+    with monkeypatch.context() as denied:
+        denied.setattr(colony.store, "embed", unexpected_inference)
+        assert store.ask("Build timeout", ["private"], 3600, 0.60) == {
+            "hit": False,
+            "reason": "no_relevant_trail",
+        }
+    assert colony.store.embed is original
+    result = store.ask("Build timeout", ["unused", "team"], 3600, 0.60)
+    assert result["status"] == "validated" and "TIMEOUT = 30" in result["content"]
+    # Expiry must retain the existing diagnostic answer, not become an empty miss.
+    with store.connect() as db:
+        db.execute("UPDATE trails SET created_at=0")
+    result = store.ask("Build timeout", ["team"], 3600, 0.60)
+    assert result["hit"] and result["status"] == "unverified" and result["age_flag"]
+
+
 @pytest.mark.parametrize("object_name", ["token", "seed", "credentials"])
 def test_lexical_normalization_keeps_substantive_get(object_name):
     assert "get" in terms(f"How can I get {object_name}?")

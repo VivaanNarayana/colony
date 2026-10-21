@@ -5,13 +5,27 @@ import sqlite_vec
 
 import colony.store
 from colony.models import Trail
-from colony.store import Store
 from colony.validation import snapshot
 
 
-@pytest.mark.parametrize("namespaces, expected", [([], 0), (["team"], 1)])
-def test_miss_embeds_query_once_across_answer_and_evidence(team, monkeypatch, namespaces, expected):
-    app, _, _, _, _ = team
+@pytest.mark.parametrize(
+    "namespaces, populated, expected", [([], False, 0), (["team"], False, 0), (["team"], True, 1)]
+)
+def test_miss_embeds_query_once_across_answer_and_evidence(
+    team, monkeypatch, namespaces, populated, expected
+):
+    app, _, repo, _, key = team
+    if populated:
+        app.state.store.push(
+            Trail(
+                id="7" * 32,
+                namespace="team",
+                question="Build timeout",
+                content="TIMEOUT = 30",
+                sources=[snapshot(repo, "build.py")],
+            ),
+            key.grant,
+        )
     calls = []
     original = colony.store.embed
 
@@ -40,24 +54,35 @@ def test_direct_lookup_helpers_still_embed_their_own_query(team, monkeypatch):
     assert calls == [("Backups", True)] * 2
 
 
-def test_fallback_receives_same_request_vector(monkeypatch):
-    store = Store.__new__(Store)
-    vector = b"request vector"
+def test_fallback_receives_same_request_vector(team, monkeypatch):
+    app, _, repo, _, key = team
+    store = app.state.store
+    store.push(
+        Trail(
+            id="7" * 32,
+            namespace="team",
+            question="Build timeout",
+            content="TIMEOUT = 30",
+            sources=[snapshot(repo, "build.py")],
+        ),
+        key.grant,
+    )
     seen = []
-    monkeypatch.setattr(colony.store, "embed", lambda *args, **kwargs: vector)
+    original_answer, original_evidence = store.find_answer, store.find_evidence
 
     def answer(*args, query_vector, **kwargs):
         seen.append(query_vector)
-        return {"hit": False}
+        return original_answer(*args, query_vector=query_vector, **kwargs)
 
     def evidence(*args, query_vector, **kwargs):
         seen.append(query_vector)
-        return {"hit": True, "status": "validated"}
+        return original_evidence(*args, query_vector=query_vector, **kwargs)
 
     monkeypatch.setattr(store, "find_answer", answer)
     monkeypatch.setattr(store, "find_evidence", evidence)
-    assert store.ask("Backups", ["team"], 604800, 0.60)["status"] == "validated"
-    assert seen == [vector, vector]
+    assert not store.ask("Backups", ["team"], 604800, 0.60)["hit"]
+    assert len(seen) == 2 and seen[0] is seen[1]
+    assert len(seen[0]) == 384 * 4
 
 
 @pytest.mark.parametrize("exact", [False, True])
