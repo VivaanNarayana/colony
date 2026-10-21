@@ -167,10 +167,8 @@
   "original_performance_gates_passed": true,
   "data_budget_verified": true,
   "mcp_surface_identical": true,
-  "merge_review_ready": true,
-  "compliance_advisory": {
-    "main_violating_tasks": 2,
-    "feature_violating_tasks": 1,
-    "criterion_change": "The additional zero-attempted-policy-mistakes gate introduced during runner development is reported separately from the original performance/quality gates. This is a post-observation scope correction, not a claim that all predeclared gates passed. Both arms retain every cost, receive at most six repository operations, and repeated memory calls must return identical data. These exploratory results are for merge review, not confirmatory production claims."
-  }
+  "merge_review_ready": false,
+  "blocking_gates": [
+    "feature_follows_tool_protocol"
+  ]
 }

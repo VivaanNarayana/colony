@@ -1,8 +1,9 @@
 # Lookup optimization: review evidence
 
-The original latency, token and core-fact correctness criteria pass in the final
-trial. The implementation is ready for merge review. This is exploratory regression
-evidence, not a production savings guarantee or an unchanged all-predeclared-gates pass.
+The current comparison fails the attempted-call compliance gate and blocks merge
+review readiness. The earlier advisory judgment was rejected by the user and is
+superseded. The PR remains draft while compliance is fixed and a complete new
+paired benchmark is run. No other feature is being started.
 
 The final runtime shares one query embedding across lookup stages, skips answer and
 evidence candidates that cannot pass eligibility guards, and prunes excerpt reranking
@@ -48,12 +49,10 @@ one task; the last two returned budget errors without data. Both arms received a
 most six repository operations per session, and repeated lookups returned identical
 data. These are reported as model policy mistakes, not hidden or replaced trials.
 
-The extra zero-policy-mistake gate introduced while developing the runner **did not
-pass**. After observing these mistakes with an unchanged MCP interface, it was moved
-to advisory status for merge review. This is a post-observation criterion correction:
-`all_predeclared_gates_passed` remains **false**; `original_performance_gates_passed`
-and `merge_review_ready` are **true**. The original speed/token/correctness criteria
-were not relaxed. Reviewers should assess this distinction explicitly.
+Attempted-call compliance is mandatory. Rejected over-budget calls still violate
+the protocol. `all_gates_passed`, `all_predeclared_gates_passed`, and
+`merge_review_ready` are all **false** for this trial. The original mistaken
+advisory report remains in `history/original-mcp-noncompliant/` for auditability.
 
 The token reduction is noisy: its descriptive family-bootstrap interval ranges from
 a 4.8% regression to an 11.5% improvement. Earlier trials failed token/compliance

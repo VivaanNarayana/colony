@@ -89,8 +89,8 @@ All 48 completed sessions, native usage and answers are retained. Both arms' res
 adapters enforce a shared six-operation budget across search/read; later attempts
 return errors without repository data, and their time/tokens still count. Model
 policy failures are recorded throughout the full trial instead of selecting runs
-by restarting at the first mistake. Attempted-call compliance is reported for both
-arms, separately from the original latency/token/correctness criteria. Extra research
+by restarting at the first mistake. Attempted-call compliance is a blocking gate
+alongside latency, tokens and correctness. Extra research
 attempts must return budget errors; repeated memory calls must return identical data,
 so neither arm gains a larger evidence budget. Import-integrity
 failures still stop the run. There is no best-of selection or automatic retry.
@@ -100,9 +100,11 @@ or token win does not by itself establish statistically significant production
 savings. Use the separate provider-free `scripts/benchmark_lookup.py` for paired
 local latency and inference-work measurements on identical seeded memory.
 
-The runner-development history includes a stricter zero-policy-mistake gate. The
-report retains its outcome as `all_predeclared_gates_passed`, and explicitly records
-the later decision to treat attempted-call compliance as advisory. It reports the
-original performance criteria and merge-review readiness separately; this scope
-correction is exploratory, not a preregistered confirmatory result. Preserve all
-earlier runs and never present this correction as an unchanged all-gates pass.
+Every feature-side protocol violation blocks merge-review readiness, including
+rejected over-budget attempts and duplicate asks. `merge_review_ready` requires
+every gate to pass. An earlier advisory interpretation was rejected by the user;
+historical artifacts retain that mistake, and it is superseded by this policy.
+The shared research adapter reports its remaining call budget in every successful
+response, including empty searches, and explicitly directs the subject to finish
+when none remain. This feedback is identical in both arms; it changes neither the
+six-call limit nor the violation accounting, original outer prompts or task rubrics.

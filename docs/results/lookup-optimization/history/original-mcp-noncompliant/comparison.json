@@ -1,0 +1,176 @@
+{
+  "baseline_commit": "202745a92f6c6c59e4c990321be9c5112697594e",
+  "feature_commit": "d9bfc100cf8324e7e9424a56e49ddeb0099f825e",
+  "arms": {
+    "main": {
+      "protocol_violations": 2,
+      "correct": 24,
+      "valid_citations": 20,
+      "raw_hits": 21,
+      "relevant_hits": 20,
+      "research_free_correct": 18,
+      "tokens": 1248150,
+      "cached_input_tokens": 1074304,
+      "tool_calls": 54,
+      "research_calls": 22,
+      "ask_calls": 26,
+      "seconds": 285.115,
+      "tasks": 24,
+      "uncached_input_plus_output": 173846
+    },
+    "feature": {
+      "protocol_violations": 1,
+      "correct": 24,
+      "valid_citations": 18,
+      "raw_hits": 18,
+      "relevant_hits": 18,
+      "research_free_correct": 18,
+      "tokens": 1209180,
+      "cached_input_tokens": 1070976,
+      "tool_calls": 53,
+      "research_calls": 23,
+      "ask_calls": 24,
+      "seconds": 245.219,
+      "tasks": 24,
+      "uncached_input_plus_output": 138204
+    }
+  },
+  "limitations": [
+    "Every session of this final alternating trial is retained without per-task retries or dropped outcomes. Earlier exploratory revisions are retained separately.",
+    "Primary-assistant grading of core facts and citations, not independent blind review.",
+    "Repeatedly observed self-repository tasks are not held-out production evidence.",
+    "Provider sampling and cache variation remain; bootstrap intervals are descriptive."
+  ],
+  "local_lookup_code_unchanged": true,
+  "verification": {
+    "commit": "d755f811c7a264839b91d82c698ec121ba3018bd",
+    "command": "python -m pytest -q; python -m ruff check .; git diff --check",
+    "tests_passed": 86,
+    "tests_failed": 0,
+    "tests_skipped": 1,
+    "ruff_passed": true,
+    "skip_reason": "Windows host does not permit symlinks",
+    "platform": "Windows / Python 3.13.1",
+    "scope": "Local verification; no hosted CI configured",
+    "pytest_seconds": 44.5
+  },
+  "observed_reductions": {
+    "tokens": 0.0312222088691263,
+    "seconds": 0.1399295021307192,
+    "tool_calls": 0.01851851851851849,
+    "uncached_input_plus_output": 0.20502053541640297
+  },
+  "families": {
+    "mcp": {
+      "main": {
+        "tokens": 179632.0,
+        "seconds": 41.779
+      },
+      "feature": {
+        "tokens": 145408.0,
+        "seconds": 31.203
+      }
+    },
+    "outage": {
+      "main": {
+        "tokens": 183680.0,
+        "seconds": 37.966
+      },
+      "feature": {
+        "tokens": 171163.0,
+        "seconds": 33.479
+      }
+    },
+    "install": {
+      "main": {
+        "tokens": 98792.0,
+        "seconds": 24.825
+      },
+      "feature": {
+        "tokens": 98776.0,
+        "seconds": 22.611
+      }
+    },
+    "capture": {
+      "main": {
+        "tokens": 110652.0,
+        "seconds": 30.504
+      },
+      "feature": {
+        "tokens": 98276.0,
+        "seconds": 21.488
+      }
+    },
+    "serve": {
+      "main": {
+        "tokens": 242220.0,
+        "seconds": 46.809999999999995
+      },
+      "feature": {
+        "tokens": 272395.0,
+        "seconds": 46.674
+      }
+    },
+    "tests": {
+      "main": {
+        "tokens": 98523.0,
+        "seconds": 26.846
+      },
+      "feature": {
+        "tokens": 97916.0,
+        "seconds": 22.857999999999997
+      }
+    },
+    "scope": {
+      "main": {
+        "tokens": 177330.0,
+        "seconds": 45.505
+      },
+      "feature": {
+        "tokens": 188120.0,
+        "seconds": 38.896
+      }
+    },
+    "stale": {
+      "main": {
+        "tokens": 157321.0,
+        "seconds": 30.88
+      },
+      "feature": {
+        "tokens": 137126.0,
+        "seconds": 28.01
+      }
+    }
+  },
+  "descriptive_family_bootstrap_reduction_95pct": {
+    "tokens": [
+      -0.04771592137048586,
+      0.11473706963841823
+    ],
+    "seconds": [
+      0.07618137129623492,
+      0.20460226574228946
+    ]
+  },
+  "same_prompts_order_and_corpus": true,
+  "gate": {
+    "loaded_implementations_verified": true,
+    "tests_and_lint_pass": true,
+    "local_lookup_improves": true,
+    "correctness_not_reduced": true,
+    "feature_follows_tool_protocol": false,
+    "observed_live_tokens_improve": true,
+    "observed_live_time_improves": true
+  },
+  "all_gates_passed": false,
+  "all_predeclared_gates_passed": false,
+  "original_performance_gates_passed": true,
+  "data_budget_verified": true,
+  "mcp_surface_identical": true,
+  "merge_review_ready": true,
+  "compliance_advisory": {
+    "main_violating_tasks": 2,
+    "feature_violating_tasks": 1,
+    "criterion_change": "The additional zero-attempted-policy-mistakes gate introduced during runner development is reported separately from the original performance/quality gates. This is a post-observation scope correction, not a claim that all predeclared gates passed. Both arms retain every cost, receive at most six repository operations, and repeated memory calls must return identical data. These exploratory results are for merge review, not confirmatory production claims."
+  }
+}

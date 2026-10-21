@@ -248,17 +248,8 @@ def compare(results, local):
     report["mcp_surface_identical"] = (
         len(tool_surface) == 2 and tool_surface["main"] == tool_surface["feature"]
     )
-    report["merge_review_ready"] = (
-        report["original_performance_gates_passed"]
-        and implementations_verified
-        and report["gate"]["tests_and_lint_pass"]
-        and (report["mcp_surface_identical"] or report["gate"]["feature_follows_tool_protocol"])
-    )
-    report["compliance_advisory"] = {
-        "main_violating_tasks": main["protocol_violations"],
-        "feature_violating_tasks": feature["protocol_violations"],
-        "criterion_change": "The additional zero-attempted-policy-mistakes gate introduced during runner development is reported separately from the original performance/quality gates. This is a post-observation scope correction, not a claim that all predeclared gates passed. Both arms retain every cost, receive at most six repository operations, and repeated memory calls must return identical data. These exploratory results are for merge review, not confirmatory production claims.",
-    }
+    report["merge_review_ready"] = report["all_gates_passed"]
+    report["blocking_gates"] = [name for name, passed in report["gate"].items() if not passed]
     return report
 
 
