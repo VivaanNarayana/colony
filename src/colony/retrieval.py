@@ -16,7 +16,9 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v9:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked"
+# Passage inputs match v7 again after reverting the experimental positional-query
+# mask. Reuse valid v7 vectors; experimental v8/v9 stores still rebuild on mismatch.
+INDEX_VERSION = f"semantic-v7:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked"
 CANDIDATES = 12
 
 

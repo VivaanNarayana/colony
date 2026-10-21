@@ -1,0 +1,6 @@
+{
+  "source_chunks_ast_identical_to_main": true,
+  "embedding_model_and_revision_unchanged": true,
+  "vector_value_order_verification": "Full real-model suite and retained passage-batch profiles; batch-size changes preserve values",
+  "version_reuse": "v7 inputs restored after experimental mask rollback; v8/v9 version mismatch still forces rebuilding"
+}
