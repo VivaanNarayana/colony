@@ -1,3 +1,23 @@
+PAUSED AFTER COMPLETED RUNTIME RETENTION REVIEW, 2026-10-22.
+Reviewed source a64b2efc39dffaae7b5ed55596998748164a8c52. Documentation-only update;
+no runtime, benchmark, test or historical evidence change. No new tests, profiles,
+local/native benchmark or analyzer replay run. Keep all benchmark fixes unchanged.
+Keep measured local optimizations: source index, descriptor reuse, batch-one models,
+4-thread bound, fresh empty-store bypass, shared connection and compact receipts.
+4/4 threads reduce short-query median only7.5% vs2/2 and nearlydouble processCPU;
+this is a documented latency tradeoff, not a CPU-saving or concurrency claim.
+Keep quality/correctness/policy/keyword features with their narrower evidence limits.
+Keyword hint was followed in all5 trial40 misses; research_paths still REMOVED.
+Old prose-compaction diagnostic predates stricter audit guard; do not credit its
+character reductions to current guarded behavior without new evidence.
+No further active rollback justified from the retained evidence. Rejected candidates
+remain absent; full reasons and artifact links in runtime-retention-review.md.
+All8required statuses pending; no old greens carried over, no weakened gates.
+PR3 samebranch draft/unmerged, no auto-merge. All failures preserved unchanged.
+No further work/run scheduled. Resume only on a new user request. No plan file.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS COMPLETED REVIEW RECORD.
+
 PAUSED AFTER USER-REQUESTED research_paths REMOVAL, 2026-10-22.
 Do not resume or run tests/benchmarks without a new user request. No further run is
 scheduled. Same branch feat/benchmark-independent-evaluation; PR3 draft/unmerged.
