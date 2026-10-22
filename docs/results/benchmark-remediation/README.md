@@ -1,12 +1,14 @@
 # Strict gate remediation against main
 
-**Paused after trial32 at the user's request. Trial32 passes6/8; gross-token and uncached-token confidence gates still fail.** All eight checks remain strict and required. Every failure is retained, and PR3 remains draft/unmerged. No next trial is scheduled.
+**Resumed at the user's request. Latest full trial32 passes6/8; gross-token and uncached-token confidence gates still fail.** All eight checks remain strict and required. Every failure is retained, and PR3 remains draft/unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
 
-Trial32 (`ece8855b2f1426ccdaa2f2cbdff8685057f32597`) completes all48 sessions against freshly fetched current main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **6/8**. **Paused at the user's request after this check; no next trial is scheduled.** Gross-token and uncached-token confidence gates remain blocking failures. Facts24/24 both, citations main15/24 and feature24/24; protocol violations zero. Local117/117each,26.380060% lower time, CI+17.656231% to +36.410306%. Full270pass1skip81.65s; Ruff/diff clean. Every answer, current packet, new research read and push receipt was reviewed. Complete48native sessions,234local rows, import/source proofs, full test report and exact public replay exit1 are retained.
+Candidates33 and34 were rejected and reverted before any full benchmark. Candidate33's optional JSON Schema title projection saved SDK bytes but showed no input savings in equal-action native controls; its baseline partial-answer failure is retained. Candidate34's shorter descriptions preserved all8 facts/protocol outcomes but increased aggregate input from191587 to207149, failing its predeclared requirement. Their full8-session archives, both source trees, tests, reviews and rejection records remain in [attempt33](attempt-33/rejection.json) and [attempt34](attempt-34/rejection.json). Neither failure is a new green gate or permission to rerun source32. The work plan is in chat only, as requested.
+
+Trial32 (`ece8855b2f1426ccdaa2f2cbdff8685057f32597`) completes all48 sessions against freshly fetched current main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **6/8**. Work has resumed; this remains the latest full comparison. Gross-token and uncached-token confidence gates remain blocking failures. Facts24/24 both, citations main15/24 and feature24/24; protocol violations zero. Local117/117each,26.380060% lower time, CI+17.656231% to +36.410306%. Full270pass1skip81.65s; Ruff/diff clean. Every answer, current packet, new research read and push receipt was reviewed. Complete48native sessions,234local rows, import/source proofs, full test report and exact public replay exit1 are retained.
 
 | Measurement | Main | Feature | Reduction | 95% reduction interval | Gate |
 | --- | ---: | ---: | ---: | --- | --- |

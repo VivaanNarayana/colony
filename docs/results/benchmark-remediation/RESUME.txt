@@ -1,3 +1,28 @@
+CANDIDATE34 REJECTED and reverted before any full benchmark. Smaller repeated
+tool descriptions preserve all8 independent facts/protocol outcomes but aggregate
+native input rises191587->207149 despite equal calls. Full8sessions/bothsource trees,
+regression tests, wire checks, rejection and released wake log retained attempt-34.
+No retry. Candidate33 remains rejected; current runtime again exactly source32.
+No standalone work-plan file; plan in chat. User has resumed work until all8pass.
+
+RESUMED BY USER 2026-10-22: continue two token gates until all eight pass.
+Work plan was given in chat before implementation. User requested no plan file;
+the uncommitted standalone work-plan Markdown was removed. Historical benchmark
+plans remain retained as evidence; frozen runner metadata remains unchanged.
+Current publication ebcdebd..., measured source32 ece8855..., latest result6/8.
+Currentmain fetched6fa6826... unchanged;8strictrequired,no bypass,PRdraft/unmerged.
+Candidate33 schema-title projection REJECTED and reverted before any full trial:
+66focusedtests pass, exact SDK tools bytes2015->1761, but fixed8-session native
+comparison did not establish input savings. Equal-action pairs32908->32914 and
+32864->32864. Baseline partial hit omitted required research; failure retained.
+Full diagnostic sources/traces/proofs/rejection retained in attempt-33. No retry.
+Candidate34 now investigates duplicate tool-description policy: shared trust rules
+remain in initialization, detailed research rules arrive on misses or validated
+gaps. Three regression cases added;59receipt tests pass. Independent native proof
+and full checks remain required before any fresh frozen benchmark trial.
+All prior failures retained; same branch; no weakened gates or identical-code retries.
+The paused record below describes the prior checkpoint, superseded by this resume.
+
 PAUSED AT USER REQUEST AFTER TRIAL32 CHECK. Do not resume without a new user request.
 No further trial/optimization is scheduled. PR3 stays draft/unmerged; never merge.
 Latest measured source ece8855b2f1426ccdaa2f2cbdff8685057f32597; same branch
