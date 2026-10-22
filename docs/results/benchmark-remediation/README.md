@@ -6,6 +6,8 @@ Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate i
 
 ## Current revision
 
+Candidate31 was rejected before any full benchmark. One fixed before/after pair on four independent caller/helper fixtures retained all8sessions and both source trees. Facts/protocol passed, but the predeclared caller-read criterion failed, and one saved read was offset by an extra search. The guard helper read was defensible; no qualification was removed to force less research. The candidate policy is reverted, with its exact plan/traces archived under attempt31. Latest qualifying-source comparison remains the failed trial30 below.
+
 Trial30 (`687d2a79bef92255dea8d6d37f06567cd9708bf9`) completes all48 sessions and passes **5/8**. All three live performance confidence gates fail despite lower totals. Facts24/24 both, citations main18/24 and feature24/24; protocol violations zero. Local117/117each,25.284843% lower time, CI+16.090774% to +35.903765%. Full269pass1skip73.57s, Ruff/diff clean. All48 answers/current packets/actual research traces reviewed; exact public replay exit1. Native archive,234raw local rows, full test report and every failed cost retained.
 
 | Measurement | Main | Feature | 95% reduction interval | Gate |

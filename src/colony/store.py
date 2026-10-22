@@ -45,6 +45,7 @@ CREATE INDEX IF NOT EXISTS trails_namespace ON trails(namespace);
 CREATE TABLE IF NOT EXISTS trail_sources (
  trail_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL, content_hash TEXT NOT NULL,
  symbol TEXT, contains TEXT);
+CREATE INDEX IF NOT EXISTS trail_sources_trail ON trail_sources(trail_id);
 CREATE TABLE IF NOT EXISTS validations (
  id INTEGER PRIMARY KEY, trail_id TEXT NOT NULL, validator TEXT NOT NULL,
  result TEXT NOT NULL, checked_at REAL NOT NULL);
@@ -109,7 +110,8 @@ class Store:
         return [
             Source(**dict(s))
             for s in db.execute(
-                "SELECT kind,ref,content_hash,symbol,contains FROM trail_sources WHERE trail_id=?",
+                "SELECT kind,ref,content_hash,symbol,contains FROM trail_sources "
+                "WHERE trail_id=? ORDER BY rowid",
                 (trail_id,),
             )
         ]

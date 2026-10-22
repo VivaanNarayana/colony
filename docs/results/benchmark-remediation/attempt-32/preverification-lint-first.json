@@ -1,0 +1,636 @@
+[
+  {
+    "cell": null,
+    "code": "E401",
+    "end_location": {
+      "column": 35,
+      "row": 2
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import hashlib\nimport json\nimport subprocess\nimport sys",
+          "end_location": {
+            "column": 35,
+            "row": 2
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Split imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 2
+    },
+    "message": "Multiple imports on one line",
+    "name": "multiple-imports-on-one-line",
+    "noqa_row": 2,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 25,
+      "row": 4
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import hashlib\nimport json\nimport subprocess\nimport sys\nfrom importlib import import_module\nfrom pathlib import Path\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 5
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 2
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 2,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 18,
+      "row": 8
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 8
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 8,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 31,
+      "row": 33
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 30,
+      "row": 33
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 33,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 79,
+      "row": 33
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 78,
+      "row": 33
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 33,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 25,
+      "row": 44
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 44
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 44,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 42,
+      "row": 44
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 41,
+      "row": 44
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 44,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 42,
+      "row": 47
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 41,
+      "row": 47
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 47,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 17,
+      "row": 50
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 50
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 50,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 41,
+      "row": 50
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 50
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 50,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E741",
+    "end_location": {
+      "column": 25,
+      "row": 52
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 52
+    },
+    "message": "Ambiguous variable name: `l`",
+    "name": "ambiguous-variable-name",
+    "noqa_row": 52,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/ambiguous-variable-name"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 73,
+      "row": 53
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 72,
+      "row": 53
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 53,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 146,
+      "row": 53
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 145,
+      "row": 53
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 53,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 227,
+      "row": 53
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 226,
+      "row": 53
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 53,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 74,
+      "row": 55
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 73,
+      "row": 55
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 55,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 78,
+      "row": 56
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 77,
+      "row": 56
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 56,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 63,
+      "row": 57
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 62,
+      "row": 57
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 57,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 55,
+      "row": 58
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 54,
+      "row": 58
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 58,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 55,
+      "row": 60
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 54,
+      "row": 60
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 60,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 62,
+      "row": 62
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 61,
+      "row": 62
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 62,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 30,
+      "row": 65
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-31\\caller-helper-regressions.py",
+    "fix": null,
+    "location": {
+      "column": 29,
+      "row": 65
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 65,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E401",
+    "end_location": {
+      "column": 61,
+      "row": 2
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import hashlib\nimport json\nimport sqlite3\nimport statistics\nimport subprocess\nimport time\nimport types",
+          "end_location": {
+            "column": 61,
+            "row": 2
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Split imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 2
+    },
+    "message": "Multiple imports on one line",
+    "name": "multiple-imports-on-one-line",
+    "noqa_row": 2,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 31,
+      "row": 4
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import hashlib\nimport json\nimport sqlite3\nimport statistics\nimport subprocess\nimport time\nimport types\nfrom pathlib import Path\n\nfrom colony.store import Store\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 5
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 2
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "name": "unsorted-imports",
+    "noqa_row": 2,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 9,
+      "row": 7
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 8,
+      "row": 7
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 7,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 34,
+      "row": 11
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 11
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 11,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 19,
+      "row": 14
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 14
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 14,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 25,
+      "row": 20
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 20
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 20,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 34,
+      "row": 22
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 22
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 22,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 68,
+      "row": 22
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 67,
+      "row": 22
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "name": "multiple-statements-on-one-line-semicolon",
+    "noqa_row": 22,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 25,
+      "row": 29
+    },
+    "filename": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\docs\\results\\benchmark-remediation\\attempt-32\\source-proof-diagnostic.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 29
+    },
+    "message": "Multiple statements on one line (colon)",
+    "name": "multiple-statements-on-one-line-colon",
+    "noqa_row": 29,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  }
+]

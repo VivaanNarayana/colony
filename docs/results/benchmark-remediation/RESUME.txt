@@ -1,3 +1,22 @@
+TRIAL32 PREPARATION COMPLETE: index trail_sources(trail_id), explicit rowid proof
+order; automatic idempotent migration on existing stores. No source cache or proof
+validation/model/scoring change. Fixed independent1536/24576/98304row matrix all
+outputs identical; lookup median60.35/871.7/6093.2us ->13.15/17.9/33.75us.
+Not native-token evidence. Legacy-store regression preserves source order/URL/
+duplicate refs/advanced assertions across reopen.270pass1skip81.65s/lintdiffclean.
+Original diagnostic helper lint failures retained, readable format fixed; executed
+versions archived. MCP is source30; rejected31policy reverted. Plan attempt32.
+Commit/fetchmain, fresh local32 then all48live32 only if local qualifies; no30retry.
+All8strictrequired, same branch, draft/unmerged. Latestfull30failsall3liveCIs.
+
+CANDIDATE31 REJECTED after fixed8-session independent before/after diagnostic.
+No full local/live gate trial run. All facts/protocol pass, but caller guard still
+reads helper (predeclared criterion fail), and saved topic read is offset by extra
+shard search. Do not force omission of defensible required checks. All traces,
+both source trees and plan retained attempt31; policy REVERTED to source30.
+Current source remains687d2a7, latestfulltrial30failsall3live CIs. Next investigate
+actual database query work rather than resampling equivalent prompt policies.
+
 LATEST trial30 COMPLETE5/8. All3live confidence gates FAIL. Source687d2a79bef92255dea8d6d37f06567cd9708bf9.
 Local117each25.284843%lower CI+16.090774..35.903765.269pass1skip/lintdiffclean.
 Facts24both,cites18main24feature,protocol0. Gross1132148/1059668 CI-.000756..+.166696;
