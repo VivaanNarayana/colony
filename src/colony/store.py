@@ -429,6 +429,7 @@ class Store:
         placeholders = ",".join("?" for _ in namespaces)
         procedure = requires_procedure(question)
         normalized_question = question.strip().casefold()
+        query_terms = terms(question)
         connection = nullcontext(_connection) if _connection is not None else self.connect()
         with connection as db:
             vector = query_vector if query_vector is not None else embed(question, query=True)
@@ -461,6 +462,17 @@ class Store:
                 if not procedure
                 or procedural_text(content)
                 or row["question"].strip().casefold() == normalized_question
+            ]
+            # Dense similarity can match an entity while the saved answer covers
+            # a different fact. Apply the source-evidence support guard to related
+            # descriptive answers too, before spending inference on them. Exact
+            # questions and procedural paraphrases retain their existing rules.
+            eligible = [
+                (row, content)
+                for row, content in eligible
+                if procedure
+                or row["question"].strip().casefold() == normalized_question
+                or local_term_support(query_terms, content)
             ]
             rows = [row for row, _ in eligible]
             contents = [content for _, content in eligible]

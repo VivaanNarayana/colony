@@ -1,5 +1,7 @@
 import uuid
 
+import pytest
+import sqlite_vec
 from conftest import auth
 
 from colony.models import Trail
@@ -43,6 +45,63 @@ def test_semantic_paraphrase_and_wrong_topic_rejection(team):
     assert hit["sources"][0]["ref"] == "build.py"
     assert not ask(api, key, "How can I rotate a database password?")["hit"]
     assert not ask(api, key, "How do I prune the container image cache?")["hit"]
+
+
+@pytest.mark.parametrize(
+    "question,content,expected",
+    [
+        (
+            "What is the backup encryption algorithm?",
+            "Database backups are retained for thirty-seven days.",
+            False,
+        ),
+        (
+            "What is the worker retry delay?",
+            "Worker audit logs rotate every week.",
+            False,
+        ),
+        (
+            "Which regions replicate ledger records?",
+            "Ledger records are signed with RSA.",
+            False,
+        ),
+        (
+            "What is the backup encryption algorithm?",
+            "Backup metadata is listed. A section boundary. Encryption is discussed elsewhere. "
+            "Another section boundary. Algorithm catalogue.",
+            False,
+        ),
+        (
+            "What is the backup retention period?",
+            "The backup retention period is thirty-seven days.",
+            True,
+        ),
+    ],
+)
+def test_saved_descriptions_need_local_fact_support_even_with_strong_scores(
+    team, monkeypatch, question, content, expected
+):
+    import colony.store
+
+    app, api, repo, _, key = team
+    store = app.state.store
+    push(api, key, repo, "Operations reference", content)
+    vector = sqlite_vec.serialize_float32([1.0] + [0.0] * 383)
+    with store.connect() as db:
+        db.execute("UPDATE trail_vectors SET embedding=?", (vector,))
+        db.execute("UPDATE trail_questions SET embedding=?", (vector,))
+    ranked = []
+
+    def strong_rank(query, passages):
+        ranked.extend(passages)
+        return [20.0] * len(passages)
+
+    monkeypatch.setattr(colony.store, "rank", strong_rank)
+    result = store.find_answer(question, ["team"], 604800, 0.60, query_vector=vector)
+    assert result["hit"] == expected
+    assert bool(ranked) == expected
+    if expected:
+        assert result["content"] == content and result["status"] == "validated"
 
 
 def test_stale_high_ranked_candidate_cannot_hide_valid_alternative(team, monkeypatch):

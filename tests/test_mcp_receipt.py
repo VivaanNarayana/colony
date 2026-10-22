@@ -175,6 +175,50 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "Never reread just to push" in instructions
 
 
+@pytest.mark.parametrize("status", [None, "stale", "unverified", "validated"])
+def test_research_save_obligation_is_visible_on_every_lookup_path(monkeypatch, tmp_path, status):
+    packet = (
+        {"hit": False, "reason": "no_relevant_trail"}
+        if status is None
+        else {
+            "hit": True,
+            "match_kind": "answer",
+            "status": status,
+            "content": "Existing source facts.",
+            "sources": [source("guide.md", "a" * 64)],
+            "evidence": [{"ref": "guide.md", "line": 1, "text": "Existing source facts."}]
+            if status == "validated"
+            else [],
+        }
+    )
+    original = copy.deepcopy(packet)
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(ask=lambda *a, **kw: packet)
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    result = json.loads(server._tool_manager.get_tool("ask").fn("New facts?", "lab")[0].text)
+    guidance = result["next_action" if status == "validated" else "research_guidance"]
+    for text in (server.instructions, guidance):
+        assert "If new external research is needed" in text
+        assert "search matches alone do not supply a file fingerprint" in text
+        assert "Before answering, call push with the original question and namespace" in text
+        assert "stored=true" in text and "queued=true" in text
+        assert "otherwise report the save failure" in text
+        assert "Push is separate from research tool calls" in text
+        assert "Never invent fingerprints or save using only ask's reads/hashes" in text
+    if status == "validated":
+        assert "no read or push, even for a new question" in guidance
+        assert result["verification"]["new_research_performed"] is False
+    else:
+        assert "verification" not in result
+    assert packet == original
+    assert "push before answering" in server._tool_manager.get_tool("ask").description
+    push_description = server._tool_manager.get_tool("push").description
+    assert "save before answering" in push_description
+    assert "never after reuse" in push_description
+    assert "confirm stored=true or queued=true" in push_description
+
+
 def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path):
     packet = {
         "hit": True,
