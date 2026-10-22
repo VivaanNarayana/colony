@@ -365,11 +365,20 @@ class Store:
                         if score >= relevance - 0.15
                         and (alternatives[0]["ref"], alternatives[0]["content_hash"]) in permitted
                     ][:8]
+                    # With one attached file the per-file descriptors above are
+                    # exactly the ordinary bounded source_chunks result. Multiple
+                    # files retain their combined source-order/candidate bounds.
+                    prepared = None
+                    if len(sources) == 1 and sources[0].kind == "file":
+                        key = (sources[0].ref, sources[0].content_hash)
+                        if key in cache:
+                            prepared = [(key[0], line, text) for line, text in cache[key].items()]
                     evidence = excerpts(
                         self.repo,
                         sources,
                         question,
                         preferred=preferred,
+                        candidate_chunks=prepared,
                         whole_files=include_evidence_files,
                     )
                     if evidence:

@@ -60,6 +60,8 @@ def trial(tmp_path, monkeypatch):
             directory / "metadata.json",
             {
                 "implementation_commit": revision,
+                "per_task_timeout_seconds": 240,
+                "token_stop_between_tasks": 8_000_000,
                 **{
                     key: "same"
                     for key in [
@@ -359,3 +361,55 @@ def test_error_envelope_cannot_turn_a_save_receipt_into_success(trial, arm):
     assert not compare(trial, read_json(trial / "local.json"))["gate"][
         "feature_follows_tool_protocol"
     ]
+
+
+@pytest.mark.parametrize("arm", ["main", "feature"])
+@pytest.mark.parametrize("seconds", [240, 240.001])
+def test_recorded_elapsed_limit_is_independent_of_subprocess_timeout(trial, arm, seconds):
+    from analyze_lookup_live import compare, read_json
+
+    path = trial / arm / "raw-measurements.jsonl"
+    rows = [json.loads(s) for s in path.read_text().splitlines()]
+    rows[0]["seconds"] = seconds
+    write_jsonl(path, rows)
+    if seconds > 240:
+        with pytest.raises(ValueError, match="recorded session exceeds 240-second limit"):
+            compare(trial, read_json(trial / "local.json"))
+    else:
+        assert compare(trial, read_json(trial / "local.json"))["data_budget_verified"]
+
+
+@pytest.mark.parametrize("arm", ["main", "feature"])
+@pytest.mark.parametrize(
+    "field,value", [("per_task_timeout_seconds", 241), ("token_stop_between_tasks", 8_000_001)]
+)
+def test_frozen_native_budget_metadata_cannot_be_increased(trial, arm, field, value):
+    from analyze_lookup_live import compare, read_json
+
+    path = trial / arm / "metadata.json"
+    data = read_json(path)
+    data[field] = value
+    write_json(path, data)
+    with pytest.raises(ValueError, match="frozen native budget metadata differs"):
+        compare(trial, read_json(trial / "local.json"))
+
+
+@pytest.mark.parametrize("excess", [0, 1])
+def test_aggregate_native_token_limit_is_recomputed_from_all_rows(trial, excess):
+    from analyze_lookup_live import compare, read_json
+
+    directory = trial / "feature"
+    path = directory / "raw-measurements.jsonl"
+    rows = [json.loads(s) for s in path.read_text().splitlines()]
+    rows[0]["usage"]["input_tokens"] = 8_000_000 - 47 * 110 - 10 + excess
+    rows[0]["tokens"] = rows[0]["usage"]["input_tokens"] + 10
+    write_jsonl(path, rows)
+    events_path = directory / "independent-0.colony.events.jsonl"
+    events = [json.loads(s) for s in events_path.read_text().splitlines()]
+    events[-1]["usage"] = rows[0]["usage"]
+    write_jsonl(events_path, events)
+    if excess:
+        with pytest.raises(ValueError, match="Aggregate native token budget exceeded"):
+            compare(trial, read_json(trial / "local.json"))
+    else:
+        assert compare(trial, read_json(trial / "local.json"))["data_budget_verified"]

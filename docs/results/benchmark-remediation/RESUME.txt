@@ -1,3 +1,21 @@
+TRIAL 28 PREPARATION COMPLETE: runtime forwards same-request paragraph descriptors
+for a single attached file instead of rebuilding them. Display still rereads and
+fingerprints current source bytes; full validation/scope/age/secrets/qualifications,
+model scores/inputs/cutoffs/index unchanged. Multiple sources retain combined source
+order and 96-candidate bound. No persistent source cache or sibling feature code.
+Stage diagnostic medians47%-54% lower on9KB-919KB files, identical results; not
+whole-ask/native-token gate evidence. 90 focused tests; full267pass1skip109.88s,
+Ruff/diff clean. Real budgets240s/session and8M aggregate now independently checked
+from recorded rows/frozen metadata; both-arm negative and exact-boundary controls.
+Historical22 pass,26 seven-gate failure and27 hash rejection replay identically.
+Plan attempt28; operational-helpers.zip holds run_awake.py and diagnostic source.
+Run each measurement child through ../run_awake.py --log <fresh-json> -- <command>
+so idle sleep is prevented only until childexit; clocks/budgets unchanged, no
+persistent power settings changed. Raw27 oversleep still retained, no retry.
+Next: commit this new runtime, fresh fetch main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d,
+local28 first and independently audit raw rows, then all48 live28 if local passes.
+Strict8 required checks, same branch, draft/unmerged. No weakened or waived gates.
+
 LATEST trial27 aec86327bd1666be051b90d30af659ecd05b8778 completed48sessions,
 NONQUALIFYING: main scope2 hash mismatch then second push; unchanged verifier
 rejects, exact public replay1. Feature capture3 ALSO379.058s above240s afterconfirmed

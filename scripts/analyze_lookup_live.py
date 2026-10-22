@@ -114,6 +114,13 @@ def compare(results, local, *, local_directory=None):
     for arm in ["main", "feature"]:
         directory = results / arm
         metadata[arm] = read_json(directory / "metadata.json")
+        require(
+            type(metadata[arm].get("per_task_timeout_seconds")) is int
+            and metadata[arm]["per_task_timeout_seconds"] == 240
+            and type(metadata[arm].get("token_stop_between_tasks")) is int
+            and metadata[arm]["token_stop_between_tasks"] == 8_000_000,
+            f"{arm}: frozen native budget metadata differs",
+        )
         proof_path = directory / "loaded-implementations.json"
         if not proof_path.exists():
             implementations_verified = False
@@ -183,6 +190,10 @@ def compare(results, local, *, local_directory=None):
                 and math.isfinite(row["seconds"])
                 and row["seconds"] > 0,
                 "Invalid session duration",
+            )
+            require(
+                row["seconds"] <= metadata[arm]["per_task_timeout_seconds"],
+                f"{arm}/{name}: recorded session exceeds 240-second limit",
             )
             items = [e["item"] for e in events if e.get("type") == "item.completed"]
             calls = [
@@ -315,6 +326,10 @@ def compare(results, local, *, local_directory=None):
         totals["uncached_input_plus_output"] = totals["tokens"] - totals["cached_input_tokens"]
         totals["seconds"] = round(totals["seconds"], 3)
         report["arms"][arm] = dict(totals)
+    require(
+        sum(arm["tokens"] for arm in report["arms"].values()) <= 8_000_000,
+        "Aggregate native token budget exceeded",
+    )
     require(manifests["main"] == manifests["feature"])
     require(
         all(pair["main"]["family"] == pair["feature"]["family"] for pair in paired.values()),

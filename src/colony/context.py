@@ -186,6 +186,7 @@ def excerpts(
     question: str,
     *,
     preferred: list[tuple[str, int]] | None = None,
+    candidate_chunks: list[tuple[str, int, str]] | None = None,
     claims: str | None = None,
     prefer_question: bool = False,
     whole_files: bool = False,
@@ -204,7 +205,19 @@ def excerpts(
             # file through another tool. Large/many files retain focused excerpts.
             if sum(len(f["text"]) for f in files) <= 24000:
                 return files
-    candidates = source_chunks(root, sources)
+    # A single-file evidence lookup can forward its already computed paragraph
+    # descriptors. The final display below still rereads and fingerprints source
+    # bytes. Other callers, including all multi-source lookups, build normally.
+    candidates = (
+        candidate_chunks
+        if preferred is not None
+        and candidate_chunks is not None
+        and len(sources) == 1
+        and sources[0].kind == "file"
+        and len(candidate_chunks) <= 96
+        and all(chunk[0] == sources[0].ref for chunk in candidate_chunks)
+        else source_chunks(root, sources)
+    )
     if preferred is not None:
         # A second reranking must not replace the globally selected passage
         # with unrelated text from the same file.

@@ -200,3 +200,38 @@ def test_evidence_guards_skip_impossible_passages_before_reranking(
     assert bool(reranked) == expected
     if expected:
         assert text in result["content"]
+
+
+def test_single_file_evidence_forwards_descriptors_and_still_rereads_display(team, monkeypatch):
+    import colony.context
+
+    app, _, repo, _, key = team
+    (repo / "guide.md").write_text(
+        "# Retention\n\nArchive retention is thirty-seven days.\n", encoding="utf-8"
+    )
+    store = app.state.store
+    store.push(
+        Trail(
+            id="d" * 32,
+            namespace="team",
+            question="Audit configuration",
+            content="Inspect audit configuration.",
+            sources=[snapshot(repo, "guide.md")],
+        ),
+        key.grant,
+    )
+    reads = []
+    original = colony.context.source_lines
+
+    def read(root, source):
+        reads.append(source.ref)
+        return original(root, source)
+
+    def no_second_enumeration(*args):
+        raise AssertionError("Excerpt selection rebuilt already selected descriptors")
+
+    monkeypatch.setattr(colony.context, "source_lines", read)
+    monkeypatch.setattr(colony.context, "source_chunks", no_second_enumeration)
+    result = store.find_evidence("What is archive retention?", ["team"], 604800)
+    assert result["status"] == "validated" and "thirty-seven days" in result["content"]
+    assert len(reads) >= 2  # Candidate discovery and a fresh hash-checked display read.

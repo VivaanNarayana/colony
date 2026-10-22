@@ -316,3 +316,77 @@ def test_descriptive_compaction_preserves_adjacent_scope_qualifications(
     )
     assert any(fact in e["text"] and qualification in e["text"] for e in result)
     assert sum(len(e["text"]) for e in result) <= 2800
+
+
+@pytest.mark.parametrize(
+    "body,question",
+    [
+        (
+            "# Retention\n\nGeneral archives expire after 37 days.\n\n"
+            "Production archives require 90 days.\n\napi_key=private_archive_credential\n",
+            "How long are archives retained?",
+        ),
+        (
+            "# Setup\n\nCreate the issuer first.\n\n```sh\norb init --private issuer.key\n```\n\n"
+            "Then start the service.\n\n```sh\norb serve --issuer issuer.pub\n```\n",
+            "Start the local service.",
+        ),
+        ("# Limits\n\n| Mode | Limit |\n|---|---|\n| Production | 37 |\n", "What is the limit?"),
+    ],
+)
+def test_forwarded_paragraph_descriptors_preserve_complete_current_evidence(
+    tmp_path, body, question
+):
+    from colony.context import source_chunks
+
+    (tmp_path / "guide.md").write_text(body, encoding="utf-8")
+    sources = [snapshot(tmp_path, "guide.md")]
+    chunks = source_chunks(tmp_path, sources)
+    preferred = [(ref, line) for ref, line, _ in chunks]
+    expected = excerpts(tmp_path, sources, question, preferred=preferred)
+    actual = excerpts(tmp_path, sources, question, preferred=preferred, candidate_chunks=chunks)
+    assert actual == expected and actual
+    assert "private_archive_credential" not in str(actual)
+    if "Production archives" in body:
+        assert "37 days" in str(actual) and "90 days" in str(actual)
+
+
+def test_forwarded_descriptors_still_require_fresh_fingerprint_before_display(tmp_path):
+    from colony.context import source_chunks
+
+    path = tmp_path / "guide.md"
+    path.write_text("# Retention\n\nArchives expire after 37 days.\n", encoding="utf-8")
+    sources = [snapshot(tmp_path, "guide.md")]
+    chunks = source_chunks(tmp_path, sources)
+    preferred = [(ref, line) for ref, line, _ in chunks]
+    path.write_text("# Retention\n\nArchives now require 90 days.\n", encoding="utf-8")
+    assert excerpts(tmp_path, sources, "Archive retention?", preferred=preferred) == []
+    assert (
+        excerpts(
+            tmp_path, sources, "Archive retention?", preferred=preferred, candidate_chunks=chunks
+        )
+        == []
+    )
+
+
+def test_multi_source_descriptor_handoff_cannot_expand_combined_candidate_budget(tmp_path):
+    from colony.context import source_chunks
+
+    (tmp_path / "guide.md").write_text(
+        "\n\n".join(f"Unrelated paragraph {i}." for i in range(110)), encoding="utf-8"
+    )
+    (tmp_path / "extra.md").write_text("Archives expire after 37 days.\n", encoding="utf-8")
+    sources = [snapshot(tmp_path, "guide.md"), snapshot(tmp_path, "extra.md")]
+    late_chunks = source_chunks(tmp_path, sources[1:])
+    preferred = [("extra.md", 1)]
+    assert excerpts(tmp_path, sources, "Archive retention?", preferred=preferred) == []
+    assert (
+        excerpts(
+            tmp_path,
+            sources,
+            "Archive retention?",
+            preferred=preferred,
+            candidate_chunks=late_chunks,
+        )
+        == []
+    )
