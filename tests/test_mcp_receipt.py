@@ -1,11 +1,28 @@
 import copy
 import json
 import re
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
 
 import colony.mcp
+
+
+def test_long_punctuated_imperatives_finish_without_exponential_backtracking():
+    # The old pattern hangs on a 28-letter word followed by a comma. Use a
+    # bounded subprocess so a regression fails rather than hanging the suite.
+    code = """from colony.mcp import research_keyword
+for tail in [',', '/', ':', '.extra']:
+    for prefix in ['Run ', 'Start ', 'Please launch ']:
+        research_keyword(prefix + 'a' * 1900 + tail)
+print('complete')
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, timeout=10, check=True
+    )
+    assert completed.stdout.strip() == "complete"
 
 
 @pytest.mark.parametrize(

@@ -157,7 +157,10 @@ def prose_window(ref: str, lines: list[str], line: int) -> tuple[int, str] | Non
     text = "\n".join(paragraph)
     if not re.search(r"[.!?][\"')`]*$", text.rstrip()) or len(text) > 2400:
         return None
-    # A pronoun/transition or an adjacent exception may depend on omitted text.
+    # Only structural boundaries establish that no adjacent prose is omitted.
+    # A qualification need not start with a transition: "Production archives
+    # require 90 days" can qualify the preceding general retention paragraph.
+    # Retain normal section context whenever another paragraph is adjacent.
     dependent = re.compile(
         r"^(?:this|these|those|it|they|its|their|that|then|however|but|except|unless|"
         r"otherwise|instead|also|alternatively|note|warning|only|if|when|for example)\b",
@@ -169,7 +172,7 @@ def prose_window(ref: str, lines: list[str], line: int) -> tuple[int, str] | Non
             position += step
         if 0 <= position < len(lines):
             neighbor = lines[position].strip()
-            if neighbor.startswith(("```", "~~~")) or neighbor.endswith(":"):
+            if not re.match(r"^#{1,6} ", neighbor):
                 return None
             neighbors.append(neighbor)
     if any(dependent.match(s.strip()) for s in neighbors):

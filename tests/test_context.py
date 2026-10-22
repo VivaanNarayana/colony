@@ -212,7 +212,7 @@ def test_descriptive_receipt_keeps_complete_fact_without_neighboring_topics(tmp_
     text = (
         "## Relay\n\nThe relay retains signed archives for 37 days.\n"
         "Expired archives are removed during maintenance.\n\n"
-        "Administrative credentials are distributed through a separate service.\n"
+        "## Credentials\n\nAdministrative credentials are distributed through a separate service.\n"
     )
     (tmp_path / "relay.md").write_text(text)
     source = snapshot(tmp_path, "relay.md")
@@ -290,3 +290,29 @@ def test_procedural_request_keeps_recipe_even_for_prose_selection(tmp_path):
         preferred=[("relay.md", 3)],
     )
     assert "administrator-issued" in result[0]["text"]
+
+
+@pytest.mark.parametrize(
+    "qualification",
+    [
+        "Production archives require retention for 90 days.",
+        "Regional archives require retention for 61 days.",
+        "Signed archives remain available until their audit completes.",
+    ],
+)
+@pytest.mark.parametrize("before", [False, True])
+def test_descriptive_compaction_preserves_adjacent_scope_qualifications(
+    tmp_path, qualification, before
+):
+    fact = "Archives are retained for 37 days."
+    paragraphs = [qualification, fact] if before else [fact, qualification]
+    text = "## Retention\n\n" + "\n\n".join(paragraphs) + "\n\nMaintenance windows occur weekly.\n"
+    (tmp_path / "policy.md").write_text(text)
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "policy.md")],
+        "What is the archive retention policy?",
+        claims=fact,
+    )
+    assert any(fact in e["text"] and qualification in e["text"] for e in result)
+    assert sum(len(e["text"]) for e in result) <= 2800

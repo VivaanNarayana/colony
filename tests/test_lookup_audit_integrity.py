@@ -270,3 +270,49 @@ def test_identical_source_cannot_be_relabeled_as_optimization(trial):
     )
     with pytest.raises(ValueError, match="Local A/A identity flag inconsistent"):
         compare(trial, local)
+
+
+@pytest.mark.parametrize("arm", ["main", "feature"])
+@pytest.mark.parametrize("status,relevant", [(None, False), ("stale", False), ("validated", False)])
+def test_researched_miss_or_unusable_hit_requires_push(trial, arm, status, relevant):
+    from analyze_lookup_live import compare, read_json
+
+    directory = trial / arm
+    path = directory / "independent-0.colony.events.jsonl"
+    events = [json.loads(s) for s in path.read_text().splitlines()]
+    if status:
+        events[0]["item"]["result"]["content"][0]["text"] = json.dumps(
+            {"hit": True, "status": status}
+        )
+    events = [e for e in events if e.get("item", {}).get("tool") != "push"]
+    write_jsonl(path, events)
+    rows_path = directory / "raw-measurements.jsonl"
+    rows = [json.loads(s) for s in rows_path.read_text().splitlines()]
+    rows[0]["tool_calls"] = 2
+    rows[0]["asks"] = [events[0]["item"]]
+    write_jsonl(rows_path, rows)
+    report = compare(trial, read_json(trial / "local.json"))
+    assert report["arms"][arm]["protocol_violations"] == 1
+    assert not report["gate"]["feature_follows_tool_protocol"]
+
+
+def test_relevant_validated_reuse_needs_no_push_or_research(trial):
+    from analyze_lookup_live import compare, read_json
+
+    directory = trial / "feature"
+    path = directory / "independent-0.colony.events.jsonl"
+    events = [json.loads(s) for s in path.read_text().splitlines()]
+    events[0]["item"]["result"]["content"][0]["text"] = json.dumps(
+        {"hit": True, "status": "validated"}
+    )
+    events = [events[0], *events[-2:]]
+    write_jsonl(path, events)
+    rows_path = directory / "raw-measurements.jsonl"
+    rows = [json.loads(s) for s in rows_path.read_text().splitlines()]
+    rows[0]["tool_calls"] = 1
+    rows[0]["asks"] = [events[0]["item"]]
+    write_jsonl(rows_path, rows)
+    reviews = read_json(directory / "reviews.json")
+    reviews["independent-0.colony"]["relevant_asks"] = [True]
+    write_json(directory / "reviews.json", reviews)
+    assert compare(trial, read_json(trial / "local.json"))["gate"]["feature_follows_tool_protocol"]

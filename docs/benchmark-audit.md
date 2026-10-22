@@ -21,6 +21,18 @@ source revision was retried for sampling, and no new branch/feature was started.
 Repeated public development tasks and implementing-assistant labels are not
 held-out production evidence or independent approval.
 
+## Post-completion audit fixes in progress
+
+A follow-up audit found exponential regex backtracking, omission of adjacent source
+qualifications, missing required-push enforcement, and reliance on local summary
+measurements. Trial 23 fixes all four and adds regression tests: 207 pass, one
+existing skip. Its new source must clear a fresh local/live comparison. The existing
+numerical gates remain unchanged; the analyzer now applies stronger evidence and
+protocol checks. The original trial-22 rows and report remain untouched and also
+reproduce exactly with the hardened verifier. Main's active ruleset now requires
+all eight benchmark statuses with strict up-to-date enforcement, preserving prior
+rules and bypass settings. PR #3 remains draft and unmerged.
+
 ## Findings
 
 1. **The local baseline was a hybrid.** The previous `benchmark_lookup.py` executed

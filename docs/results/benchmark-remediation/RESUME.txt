@@ -1,46 +1,19 @@
-COLONY PR #3 — COMPLETED, 2026-10-21 America/Los_Angeles
+COLONY PR #3 — POST-AUDIT REMEDIATION IN PROGRESS
 
-All eight blocking gates pass in trial 22. Stop remediation. Keep PR #3 draft and
-unmerged; no new feature or branch has started. User-requested work is complete.
-Historical pause handoff remains available at checkpoint f7665c5 in Git.
+User authorized fixing all four audit findings, making eight GitHub checks required,
+and evaluating new source on the existing feat/benchmark-independent-evaluation
+branch. Keep draft/unmerged; no new feature/branch or agents. All failed evidence retained.
 
-Repository: C:\Users\b3vel\Documents\Codex\2026-10-20\https-github-com-vivaannarayana-colony-https\work\colony
-Branch: feat/benchmark-independent-evaluation
-PR: https://github.com/VivaanNarayana/colony/pull/3
-Measured source: b6691a859d3c82b6658ceb7624214745d7758bbc
-Measured/current main: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d
-Evidence-only completion commit follows; src/scripts/tests must be identical.
-Authoritative report: docs/results/benchmark-remediation/README.md
-Audit: docs/benchmark-audit.md
-Portable complete evidence: docs/results/benchmark-remediation/attempt-22/
+Trial 23 plan and audit corrections: docs/results/benchmark-remediation/attempt-23/
+Current main: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d
+Full verification: 207 pass, one existing skip; Ruff/whitespace clean.
+All eight checks required in active ruleset 25440133, strict up-to-date true,
+prior rules/conditions/bypass list unchanged. Before/request/after snapshots retained.
+New analyzer requires researched-miss pushes in both arms and recomputes raw local
+workload/oracle/counts/timings/intervals; no numerical gates weakened. Original
+trial 22 replays identically through the hardened verifier; historical pass remains
+retained, but new source must run fresh local and live comparisons.
 
-Native input+output: 1,189,867 main; 1,072,264 feature; -9.883710%; reduction
-95% paired-family interval [+1.219991%, +19.790718%]. PASS.
-Uncached input+output: 186,987 main; 161,032 feature; -13.880644%; interval
-[+5.614520%, +20.838154%]. PASS.
-Live seconds: 270.637 main; 239.554 feature; -11.485126%; interval
-[+4.427843%, +17.692149%]. PASS.
-Both arms 24/24 requested facts; feature 24/24 citations, main 16/24;
-zero protocol violations. 24 asks each; research calls 20 versus 13;
-tool calls 50 versus 42. All 48 answers, source packets and research traces reviewed.
-Full suite: 184 pass, one existing Windows symlink skip; Ruff/whitespace clean.
-Local: 117/117 per arm; 23.619312% lower lookup time; interval
-[+14.161378%, +34.239363%]. Local/live/tests use the same source revision.
-Public archive replay reproduces identical comparison JSON and exit 0.
-No benchmark process remains running after the completed trial.
-
-Trial 21 (c33ef37) passed gross tokens but failed uncached and time intervals;
-complete failed evidence and exact public replay exit 1 remain in attempt-21.
-Attempt 20 remains unchanged diagnostic-only evidence. All prior failures retained.
-No benchmark/workload/prompt/rubric/cutoff/weight/model/budget/gate was weakened.
-No identical-code retry, task retry, dropped outcome, merge or sibling feature work.
-The broad file hint and extra scope-1 read are real costs included in trial 22.
-Repeated public development tasks and implementing-assistant grading do not prove
-held-out production savings or independent blind approval.
-
-Replay using repository .venv Python:
-Expand-Archive docs/results/benchmark-remediation/attempt-22/live-native.zip <fresh-dir>
-.venv\Scripts\python.exe scripts/analyze_lookup_live.py --results <fresh-dir> --local docs/results/benchmark-remediation/attempt-22/lookup-summary.json
-Expected exit 0; all eight gate values true. Source commits must exist in Git.
-Public export excludes private stores/credentials/caches, changing only import-proof
-host prefixes. Verify sha256 manifests against committed Git bytes, not CRLF worktree bytes.
+Follow the recorded plan, retain all failures, never retry identical source for luck.
+Report completion only after all eight gates, exact public replay, evidence publication
+and required-status verification pass against current main.

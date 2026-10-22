@@ -320,7 +320,9 @@ def test_field_ordering_keeps_exact_other_field_and_procedural_behavior(
 def test_named_field_cannot_rescue_a_declaration_outside_the_claim_window(tmp_path):
     (tmp_path / "guide.md").write_text(
         "# Ledger bridge\n\nThe ledger bridge exposes operations via the verified signed adapter.\n\n"
-        "Operations: historical values are unavailable.\n"
+        # A separate section tests score exclusion independently of the rule
+        # requiring adjacent qualification paragraphs to remain visible.
+        "## History\n\nOperations: historical values are unavailable.\n"
     )
     result = excerpts(
         tmp_path,

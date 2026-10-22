@@ -10,6 +10,7 @@ import zipfile
 from collections import defaultdict
 from pathlib import Path
 
+from audit_lookup_local import audit_local
 from benchmark_statistics import reduction_interval, supported_improvement
 
 
@@ -54,7 +55,7 @@ def evaluate_gates(main, feature, local, verification, implementations_verified,
     }
 
 
-def compare(results, local):
+def compare(results, local, *, local_directory=None):
     protocol = read_json(results / "protocol.json")
     verification = read_json(results / "verification.json")
     require(
@@ -196,7 +197,6 @@ def compare(results, local):
                 a["arguments"] == {"question": question, "namespace": "bench"} for a in asks
             )
             compliant = compliant and len(row["answer"].split()) <= 130
-            totals["protocol_violations"] += not compliant
             require(
                 row["answer"]
                 == "\n".join((i["text"] for i in items if i["type"] == "agent_message"))
@@ -263,6 +263,21 @@ def compare(results, local):
                     )
                 )
             )
+            # A miss or unusable hit must be researched and saved. Reuse of a
+            # relevant validated answer needs no push, including an additional
+            # read to clarify it. Validate presence, not only fingerprints of
+            # pushes that happen to exist, and apply the rule to BOTH arms.
+            reused = any(
+                label and packet.get("status") == "validated"
+                for label, packet in zip(labels, packets, strict=True)
+            )
+            pushes = [c for c in calls if c["server"] == "colony" and c["tool"] == "push"]
+            compliant = compliant and (bool(research) if not reused else True)
+            compliant = compliant and len(pushes) == (0 if reused else 1)
+            compliant = compliant and all(
+                p.get("status") == "completed" and not p.get("error") for p in pushes
+            )
+            totals["protocol_violations"] += not compliant
             totals["correct"] += review["correct"]
             totals["valid_citations"] += review["citation_valid"]
             totals["raw_hits"] += sum(bool(p.get("hit")) for p in packets)
@@ -365,6 +380,7 @@ def compare(results, local):
             ),
             "Local improvement totals inconsistent",
         )
+        audit_local(local, local_directory)
     # Verify the entire package, including transitive dependencies. Legacy hybrid
     # local runs remain readable but cannot satisfy the independent local gate.
     subprocess.run(
@@ -437,7 +453,7 @@ def main():
     parser.add_argument("--local", type=Path, required=True)
     args = parser.parse_args()
     try:
-        report = compare(args.results, read_json(args.local))
+        report = compare(args.results, read_json(args.local), local_directory=args.local.parent)
     except (
         ValueError,
         KeyError,

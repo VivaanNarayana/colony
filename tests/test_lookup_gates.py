@@ -68,7 +68,7 @@ def test_failed_analysis_retains_report_and_fails_command(monkeypatch, tmp_path)
         "all_gates_passed": False,
         "blocking_gates": ["observed_uncached_input_plus_output_improve"],
     }
-    monkeypatch.setattr(analyzer, "compare", lambda *args: report)
+    monkeypatch.setattr(analyzer, "compare", lambda *args, **kwargs: report)
     monkeypatch.setattr(sys, "argv", ["analyze", "--results", str(tmp_path), "--local", str(local)])
     with pytest.raises(SystemExit) as error:
         analyzer.main()

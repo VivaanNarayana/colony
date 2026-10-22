@@ -1,10 +1,13 @@
 # Strict gate remediation against main
 
-**Completed: trial 22 passes all eight blocking gates against current main. PR #3 remains draft and unmerged.** All failed evidence is retained, including trial 21; attempt 20 remains diagnostic-only. No new feature or branch has started. [Current completion state](RESUME.txt).
+**Post-audit remediation in progress on the same branch.** All four findings have fixes and regression tests; trial 23 will evaluate the new source under stronger verifier checks. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 23 fixes exponential backtracking in keyword hints, preserves adjacent prose qualifications, requires researched-miss pushes in both arms, and recomputes the local gate from the canonical workload and raw rows. The analyzer/local verifier changes strengthen acceptance; all existing numerical gates, workload, prompts, rubrics, model snapshots, score weights, cutoffs and budgets remain unchanged. Regression suite/full verification: 207 pass, one existing Windows skip; Ruff/whitespace clean. The initial 206-pass/one-failure verification and fixture correction are retained. Main's ruleset snapshots are retained in attempt-23. Trial 22 still replays to identical JSON/exit 0 through the hardened verifier, but its measured source is historical and does not validate the new source.
+
 
 Trial 22 (`b6691a859d3c82b6658ceb7624214745d7758bbc`) clears all eight unchanged blocking gates against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. It adds conservative question-only command/subject/object hints to the eligible descriptive-field ordering from trial 21. Independent inspect/reconcile/bucket/archive/worker/daemon fixtures reproduce the longest-word defect, with ambiguous and scrubbed negative cases. No repository path, subject, answer, benchmark criteria, model, score weight, cutoff, budget, or source/access validation is changed.
 

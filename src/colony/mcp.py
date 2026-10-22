@@ -96,22 +96,24 @@ def research_keyword(question: str) -> str | None:
         re.I,
     )
     subject = re.match(r"^how\s+(?:is|are)\s+([A-Za-z][\w-]*)\b", safe.strip(), re.I)
-    imperative = re.match(
-        r"^(?:please\s+)?(?:start|launch|run)\s+((?:[A-Za-z][\w-]*\s*)+?)[.!?]?$",
-        safe.strip(),
-        re.I,
-    )
+    # Parse tokens separately: nested repetitions over a word and optional
+    # whitespace backtrack exponentially on punctuation such as a trailing comma.
+    imperative = re.match(r"^(?:please\s+)?(?:start|launch|run)\s+", safe.strip(), re.I)
+    object_phrase = safe.strip()[imperative.end() :] if imperative else ""
+    if object_phrase.endswith((".", "!", "?")):
+        object_phrase = object_phrase[:-1]
+    object_words = object_phrase.split()
     if command or subject:
         named = (command or subject)[1]
         if named.casefold() not in framing:
             return named
-    if imperative:
-        objects = [w for w in imperative[1].split() if w.casefold() not in framing]
+    if object_words and all(re.fullmatch(r"[A-Za-z][\w-]*", w) for w in object_words):
+        objects = [w for w in object_words if w.casefold() not in framing]
         # Only a bare object phrase has a reliable final noun; a trailing
         # prepositional phrase could name an unrelated destination or mode.
         if objects and not re.search(
             r"\b(?:with|for|from|in|on|at|using|through|after|before|to)\b",
-            imperative[1],
+            object_phrase,
             re.I,
         ):
             return objects[-1]
