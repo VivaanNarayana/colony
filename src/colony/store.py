@@ -463,19 +463,18 @@ class Store:
                 or procedural_text(content)
                 or row["question"].strip().casefold() == normalized_question
             ]
-            # Dense similarity can match an entity while the saved answer covers
-            # a different fact. Apply the source-evidence support guard to related
-            # descriptive answers too, before spending inference on them. Exact
-            # questions and procedural paraphrases retain their existing rules.
-            eligible = [
-                (row, content)
-                for row, content in eligible
-                if procedure
-                or row["question"].strip().casefold() == normalized_question
-                or local_term_support(query_terms, content)
-            ]
             rows = [row for row, _ in eligible]
             contents = [content for _, content in eligible]
+            # Literal overlap is sufficient support, not a veto on synonyms.
+            # For related descriptions without it, compare the actual answer
+            # with the saved question alone: a topic match is not an answer.
+            needs_semantic_support = [
+                i
+                for i, (row, content) in enumerate(eligible)
+                if not procedure
+                and row["question"].strip().casefold() != normalized_question
+                and not local_term_support(query_terms, content)
+            ]
             # Exact questions already bypass the relevance threshold. A sole
             # candidate cannot change ordering, so inference cannot change which
             # trail is checked. Keep validation, age handling and excerpts below.
@@ -483,13 +482,31 @@ class Store:
                 len(rows) == 1 and rows[0]["question"].strip().casefold() == normalized_question
             )
             scores = [0.0] if exact_singleton else rank(question, [c[:4000] for c in contents])
+            topic_scores = (
+                dict(
+                    zip(
+                        needs_semantic_support,
+                        rank(question, [rows[i]["question"] for i in needs_semantic_support]),
+                        strict=True,
+                    )
+                )
+                if needs_semantic_support
+                else {}
+            )
             # MS MARCO logits are not calibrated confidence: useful paraphrases can be negative.
             # Fuse their ordering signal with dense similarity instead of treating zero as truth.
             relevance_scores = [
                 fused_score(1 - r["distance"], s) for r, s in zip(rows, scores, strict=True)
             ]
+            # Without literal support, require a positive answer signal that
+            # beats the question-only control. Tied/saturated topic scores do
+            # not establish support. These remain ranking heuristics, not truth.
             candidates = sorted(
-                zip(rows, contents, relevance_scores, scores, strict=True),
+                (
+                    item
+                    for i, item in enumerate(zip(rows, contents, relevance_scores, scores, strict=True))
+                    if i not in topic_scores or item[3] > max(0.0, topic_scores[i])
+                ),
                 # Raw logits retain the difference between strong positive matches;
                 # sigmoid saturation must not let a weaker answer win on dense score.
                 key=lambda item: (item[3], item[2]),

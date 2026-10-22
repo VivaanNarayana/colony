@@ -78,7 +78,7 @@ def test_semantic_paraphrase_and_wrong_topic_rejection(team):
         ),
     ],
 )
-def test_saved_descriptions_need_local_fact_support_even_with_strong_scores(
+def test_saved_descriptions_need_fact_support_even_with_strong_topic_scores(
     team, monkeypatch, question, content, expected
 ):
     import colony.store
@@ -99,7 +99,9 @@ def test_saved_descriptions_need_local_fact_support_even_with_strong_scores(
     monkeypatch.setattr(colony.store, "rank", strong_rank)
     result = store.find_answer(question, ["team"], 604800, 0.60, query_vector=vector)
     assert result["hit"] == expected
-    assert bool(ranked) == expected
+    # A literal match needs only its answer score. A semantic fallback also
+    # scores the saved question; uniformly high topic scores prove no answer.
+    assert ranked == ([content] if expected else [content, "Operations reference"])
     if expected:
         assert result["content"] == content and result["status"] == "validated"
 
