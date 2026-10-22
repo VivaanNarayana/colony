@@ -1,0 +1,102 @@
+{
+  "archive": "test-phase-artifacts.zip",
+  "bytes": "Original published UTF-8/LF phase contents, including whitespace in pytest failure bodies; not edited to satisfy publication diff checks.",
+  "entries": {
+    "diagnostic-tests.xml": {
+      "sha256": "11e2c50957be82f2d83f6544ce84900ec1640faf473340933b870671b17847ff",
+      "bytes": 10219
+    },
+    "diagnostic.stdout.txt": {
+      "sha256": "c7f560018d322414e79e9971c9694095943c8c8d33e7bcb787ab01fc87f7aa22",
+      "bytes": 8766
+    },
+    "diagnostic2-tests.xml": {
+      "sha256": "1fc62b0cf977291d2c399cd5cb90b99a95bcd950b29c915bb8da35d1bc11d212",
+      "bytes": 6341
+    },
+    "diagnostic2.stdout.txt": {
+      "sha256": "bd1869ec0035c56cce5cd342adcbfeef4aa9f52d1c5c059816a94e096aa9262e",
+      "bytes": 12329
+    },
+    "focused-tests.xml": {
+      "sha256": "c70b4abae6d9d4aeb46c1faf78f7e67a0ac4e96a081e4d00fa1fab90796f1041",
+      "bytes": 31476
+    },
+    "focused.stdout.txt": {
+      "sha256": "8416de418cfeab03190805259a317c88fd78e86238c3f73da9374c05be66dcb3",
+      "bytes": 12868
+    },
+    "focused2-tests.xml": {
+      "sha256": "39c63010e6603db46d056415bc566d66e6d57198e3753756a65b1dff42bac6af",
+      "bytes": 25410
+    },
+    "focused2.stdout.txt": {
+      "sha256": "d4f71adfed5e8e691f98e1a0ff1bb313ea9c219fa19bc0f3a67626ef42b9ac11",
+      "bytes": 7506
+    },
+    "focused3-tests.xml": {
+      "sha256": "6dd06bfb6930e8974dc1d5118e180ce95276ab8106300b4bfb46525839bc8c96",
+      "bytes": 23963
+    },
+    "focused3.stdout.txt": {
+      "sha256": "aa36ff243c2eed826485c16d42bfba7799a674cd75242c81feac993e8172954d",
+      "bytes": 6203
+    },
+    "focused4-tests.xml": {
+      "sha256": "17e097b988f86779075db90040d175bdfd284f6f5c89ff3d9132dfd798637424",
+      "bytes": 24095
+    },
+    "focused4.stdout.txt": {
+      "sha256": "7d1286d4d98610ae49144e3438918ebea6b35f5051a1e65da68905eb27cbaa81",
+      "bytes": 12395
+    },
+    "focused5-tests.xml": {
+      "sha256": "6473e208973e9a2d0c42256ab671a7ad53ad89e751afb1fe54c0edd87e86786e",
+      "bytes": 27333
+    },
+    "focused5.stdout.txt": {
+      "sha256": "924f17ee22ce3227e3fc1c3f1f5f8b0c953cfea4c871cc5d18313c2409c9c9ac",
+      "bytes": 9525
+    },
+    "focused6-tests.xml": {
+      "sha256": "80150d03a5da47a4d4f07671f8f7ab8ba3e397044296ea089f667189f6981fbe",
+      "bytes": 24544
+    },
+    "focused6.stdout.txt": {
+      "sha256": "63fecee204ebc3addb59fe9980f106bd8282e9d3433f11ee64ee83fe65131a46",
+      "bytes": 6419
+    },
+    "focused7-tests.xml": {
+      "sha256": "6e18436e0f5b744fd62937f669eaa9b57f4dfe71089ef546e958fd0b37d40af2",
+      "bytes": 18518
+    },
+    "focused7.stdout.txt": {
+      "sha256": "189a142904cc87cc40ff363288ae1269022f8ed97459fe9f59c8b5059ff65e05",
+      "bytes": 991
+    },
+    "full-tests.xml": {
+      "sha256": "9a07e489f4d004799cb3a16b182464ee3efa2b90b15198cb99f7e70f7573eb3e",
+      "bytes": 44431
+    },
+    "pytest.stdout.txt": {
+      "sha256": "1d78e13fdc1d429cbd304d389f7e79db7ab1908197e0c795a578bb267790e567",
+      "bytes": 1169
+    },
+    "red-long-tests.xml": {
+      "sha256": "fb5a5139a73f6bbcc9e4a6b0fb39257f978d68b4f06209c32d13488729d2641f",
+      "bytes": 13331
+    },
+    "red-long.stdout.txt": {
+      "sha256": "b75fc935ebbe79a40a5a137c89e8340036d3c6a0eae68005063426d18d8ebf4c",
+      "bytes": 12516
+    },
+    "red-tests.xml": {
+      "sha256": "ce808b945a92505b56f7f7054ea5854ba20c6c77458cb15d1928ed36caa158d5",
+      "bytes": 4157
+    },
+    "red.stdout.txt": {
+      "sha256": "87c07289590a71cf1d13178b179dc655e51c8b5486956b104d45e1e92ea75949",
+      "bytes": 3339
+    }
+  }
+}

@@ -1,5 +1,11 @@
 # Benchmark independence audit
 
+**Latest: tests-only correctness/protocol checkpoint 46; paused.** Source `c181654` passes **285 tests with one existing Windows skip**; Ruff/whitespace pass, and eight new regressions are included. Descriptive evidence retains bounded section definitions/qualifications; MCP publishes exact fingerprint length/copy instructions and an explicit missing-fact versus sufficient-reuse decision. Original relevance guards/candidate pools and every benchmark contract remain unchanged. A broader semantic admission attempt was rejected for a false hit, and all development failures remain retained. No benchmark, profile or analyzer replay ran; live adherence and performance are unverified. Only tests/lint is green; seven benchmark checks remain pending and blocking. All eight strict required checks remain active, without bypass. PR #3 stays draft/unmerged; no further run is scheduled.
+
+[Complete checkpoint 46 evidence](results/benchmark-remediation/attempt-46/README.md).
+
+## Historical evidence below
+
 **Latest: trial 45 passes local quality but the official live analyzer rejects evidence integrity; paused.** Both arms pass 117/117 local checks, including the paraphrase regression, and all 234 rows reconstruct exactly. All 48 live sessions complete, but feature `scope-3` submits a malformed README fingerprint, then a second push. The original failed attempt is retained and rejects the comparison; no hash repair, exclusion or restart occurs. Feature `mcp-2` leaves the tools question unanswered after an irrelevant excerpt, and main `tests-1` pushes after a relevant validated hit. Core facts are 24/24 main versus 23/24 feature. There is no valid eight-gate score or live performance verdict. Verified test/local successes and known quality/protocol failures are published; the four uncomputed contexts remain pending and blocking. All eight strict required checks are unchanged. [Complete trial 45 evidence](results/benchmark-remediation/attempt-45/README.md) reproduces the exact rejection offline. PR #3 stays draft/unmerged; no further work or run is scheduled.
 
 ## Historical tests-only checkpoint 44

@@ -1,5 +1,11 @@
 # Removal of optional runtime changes, October 22, 2026
 
+**Latest: tests-only correctness/protocol checkpoint 46; paused.** Source `c181654` passes **285 tests with one existing Windows skip**; Ruff/whitespace pass, and eight new regressions are included. Descriptive evidence retains bounded section definitions/qualifications; MCP publishes exact fingerprint length/copy instructions and an explicit missing-fact versus sufficient-reuse decision. Original relevance guards/candidate pools and every benchmark contract remain unchanged. A broader semantic admission attempt was rejected for a false hit, and all development failures remain retained. No benchmark, profile or analyzer replay ran; live adherence and performance are unverified. Only tests/lint is green; seven benchmark checks remain pending and blocking. All eight strict required checks remain active, without bypass. PR #3 stays draft/unmerged; no further run is scheduled.
+
+[Complete checkpoint 46 evidence](attempt-46/README.md).
+
+## Historical evidence below
+
 **Latest measured validation:** [Trial 45](attempt-45/README.md) passes all 117 local checks in both arms, including the paraphrase repair. Its 48-session live evidence is rejected for a malformed feature push fingerprint; quality/protocol failures are also retained. No full eight-gate or live performance result is asserted. No fix/restart followed; PR #3 remains draft/unmerged and paused.
 
 **Latest repair, tests only:** [Checkpoint 44](attempt-44/README.md) permits descriptive semantic paraphrases through a positive answer-versus-question control comparison. The full suite passes 277 tests with one existing skip, and all pre-fix/current historical failures remain retained. This adds bounded ranking work with no benchmark/performance claim; seven required checks remain pending and blocking. Optional navigation/search heuristics remain absent.

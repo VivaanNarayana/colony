@@ -1,5 +1,11 @@
 # Strict gate remediation against main
 
+**Latest: tests-only correctness/protocol checkpoint 46; paused.** Source `c181654` passes **285 tests with one existing Windows skip**; Ruff/whitespace pass, and eight new regressions are included. Descriptive evidence retains bounded section definitions/qualifications; MCP publishes exact fingerprint length/copy instructions and an explicit missing-fact versus sufficient-reuse decision. Original relevance guards/candidate pools and every benchmark contract remain unchanged. A broader semantic admission attempt was rejected for a false hit, and all development failures remain retained. No benchmark, profile or analyzer replay ran; live adherence and performance are unverified. Only tests/lint is green; seven benchmark checks remain pending and blocking. All eight strict required checks remain active, without bypass. PR #3 stays draft/unmerged; no further run is scheduled.
+
+[Complete checkpoint 46 evidence](attempt-46/README.md).
+
+## Historical evidence below
+
 **Paused after single trial 45: local passes, live evidence rejected.** Both local arms pass 117/117, including all previously failing paraphrases. All 48 live sessions complete, but the unchanged analyzer rejects a malformed feature `scope-3` push fingerprint, retaining the failed attempt even after the model's second push. Feature `mcp-2` also leaves the requested tools unanswered; main performs an unnecessary save after a relevant hit. No complete eight-gate verdict exists. Test/local checks are green, known quality/protocol failures are red, and four uncomputed contexts stay pending and blocking. All eight strict checks remain required; PR #3 stays draft and unmerged. No benchmark/session restart or corrective rerun.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
