@@ -1,3 +1,24 @@
+PAUSED AFTER USER'S CORRECTNESS FIXES AND TESTS-ONLY CHECKPOINT42, 2026-10-22.
+Source f7066168c8023113291f8aac464286711ff69bf6 on same branch PR3.
+General guard: related descriptive saved answers need existing local_term_support;
+exact-question/procedural rules, numerical scores and source fallback unchanged.
+MCP explicitly requires actual file fingerprint, push before final and stored/queued
+receipt after needed new external research. Sufficient reuse still needs no push;
+ask reads/hashes never qualify. No search/path hints or optional heuristics restored.
+Full suite ONCE:268passed,0failed,1existingWindows symlinkskip; pytest71.13s,
+JUnit71.111s. Ruff/diff pass. Original3failures now pass unchanged;9newregressions.
+No local/native benchmark, profile, analyzer replay or retry. Guidance tests cannot
+prove live model adherence; stricter matching/guidance performance remains unmeasured.
+Only tests/lint is validated;7required checks pending/blocking for changed source.
+Do not carry historical green statuses or assert a current eight-gate pass count.
+Trial41 remains last completed benchmark,3/8; all prior failures/attempt manifests
+retained byte-for-byte. All8original gates strict/required,active25440133,no bypass.
+Complete tests,source/model/harness hashes and gate snapshot retainedattempt42.
+PR3draft/unmerged/noauto-merge. Pause after publication; no further work/run scheduled.
+No plan file. Resume only on a new user request.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS TESTS-ONLY PAUSE RECORD.
+
 PAUSED AFTER USER'S SINGLE TEST/BENCHMARK TRIAL41, 2026-10-22.
 No fixes, retries or further run scheduled. Resume only on a new user request.
 Measured source568712878f810ae77be9930400b091dc7f810c3c; main freshly fetched and

@@ -1,5 +1,9 @@
 # Benchmark independence audit
 
+**Latest revision: tests-only correctness checkpoint 42, paused.** Source `f7066168c8023113291f8aac464286711ff69bf6` passes 268 tests with one existing Windows skip; Ruff/whitespace pass. The three previously failing assertions are unchanged. Related descriptive saved answers now require the existing local fact-support guard, and MCP guidance explicitly requires a file-backed save/receipt after needed external research. Nine new regression cases pass. All prior failures remain retained. No benchmark, profile or analyzer replay was run, so live protocol compliance and performance remain unverified; seven required checks are pending and blocking. All eight strict required gates and the benchmark fixes are unchanged. PR #3 remains draft and unmerged. [Checkpoint 42 evidence](results/benchmark-remediation/attempt-42/README.md).
+
+## Last completed benchmark: historical trial 41
+
 The benchmark acceptance weaknesses and follow-up protections remain addressed. **The user's single authorized trial 41 is complete and paused: 3/8 gates pass.** The test, tool-protocol and all three live performance gates fail. Source `5687128` is compared with freshly fetched current main `6fa6826`; all eight gates remain strict and required, and PR #3 stays draft and unmerged.
 
 The full suite reports 256 passed, 3 failed and one existing Windows symlink skip; Ruff/whitespace pass. Three adapted runtime cases fail unrelated-topic hit rejection. Local oracle checks pass 117/117 per arm, with all 234 raw rows audited and 27.62% lower time, interval +18.20% to +37.84%. All 48 native sessions completed once. Facts are 24/24 per arm and citations 18/24 main versus 24/24 feature. Two feature sessions omit required saves. Gross tokens increase 8.32%; uncached tokens and time have lower point totals but negative interval lower bounds. Every failure remains blocking and retained.

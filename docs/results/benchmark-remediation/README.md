@@ -1,10 +1,18 @@
 # Strict gate remediation against main
 
-**Paused after the user's single authorized trial 41: 3/8 gates pass.** The test gate, tool-protocol gate and all three live performance gates fail. All results and failures are retained, every gate remains blocking/required, and PR #3 remains draft and unmerged. No fixes, retries or further run are scheduled.
+**Paused after tests-only correctness checkpoint 42: 268 passed, one existing Windows skip; Ruff passes.** The three previously failing assertions pass unchanged. Nine new regressions cover local fact support for descriptive saved answers and explicit research/save guidance. No benchmark was run. Only the tests/lint check is validated for this changed source; the other seven required checks remain pending and blocking. PR #3 remains draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
-## Current revision: completed trial 41
+## Current revision: correctness checkpoint 42, no benchmark
+
+Source `f7066168c8023113291f8aac464286711ff69bf6` applies the existing local term-support guard to related descriptive saved answers, preventing an unrelated requested fact from passing on subject similarity alone. Exact-question reuse and procedural paraphrases retain their existing rules. MCP guidance explicitly requires a file-backed save and successful stored/queued receipt after needed external research, while preserving no-save reuse and actual-new-research-only proofs. Neither change is tailored to the benchmark task names or paths.
+
+The full suite ran once: **268 passed, zero failed, one existing Windows symlink skip**, 71.13s in the pytest summary and 71.111s in JUnit. Ruff/whitespace pass. The three original failures and all previous evidence remain retained unchanged. The nine new cases cover four unsupported/scattered-fact negatives, a supported answer and four lookup response paths. Guidance tests do not establish live model adherence. Stricter matching may increase misses and extra guidance adds text; performance is unmeasured. No local/native benchmark, profile or analyzer replay was run.
+
+All eight gates remain required and strict, with no bypass. Only tests/lint is green for the changed runtime; seven benchmark-dependent checks are pending and blocking. Trial 41 below remains the last completed comparison, not current-source validation. [Complete checkpoint 42 evidence](attempt-42/README.md). Pause without another run or further work.
+
+## Last completed benchmark: historical trial 41
 
 Trial 41 measures `568712878f810ae77be9930400b091dc7f810c3c` after the optional runtime removals against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`, still current when publishing. Exactly one test invocation, one local comparison and one fixed 48-session live comparison were run. No implementation, test or harness change occurred between stages, and no stage or task was retried.
 

@@ -1,0 +1,18 @@
+{
+  "code-hashes.json": "c428d3a835c4908f854bea7373a420dc2d44d00b46a2944288dcbec082425f4c",
+  "diff-check.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "full-tests.xml": "c9b795490040d728fa9146bc03954fd976ad35224b59a0e3d1e86548adfa98bf",
+  "harness-hashes.json": "73f200fc2dc9ec870c312f76e0eacd47ba97b01df2187bfa79f8ceb7b49c2620",
+  "model-hashes.json": "cd72f0b3309a40592d913becc57fc5ee8f99e817de044cffc9e1fc8c5149587c",
+  "outcome.json": "217668249561cb32a5356f99e29253ffc62dd15231ceeb8caee9a897ee2631b8",
+  "publication-diff-check.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "pytest.stdout.txt": "735c5957086e653a78c8c972309cd50fb6961f130475761a7a073c574b5eb1c7",
+  "README.md": "10cbf6b50427df78acede9a7c64659cb57dc7cb390592827dff96d48480c9be0",
+  "regression-results.json": "47e1314afde09b14b614dc31173670979aac07b9f09ca53165dd26a0d996ef11",
+  "required-gates.json": "692b00a41e4fa0f3b10161a4d1b7a765e0137f3fd3ca67d4fd624d7c30efb8ef",
+  "ruff.txt": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+  "static-exit.json": "9abe8b18002d67ec35a32cd2624c5dd8bb4e9ad695aca9ac18aebbf328c1137e",
+  "test-exit.json": "c6010d2bebd9b368d9bbd07c8a87932eafd37256833d18a1b49ae04db33932c8",
+  "tests-awake.json": "c1f205ac348d63534483df53c4bccba9400ff1f1ab44905acca18221ebf569a4",
+  "verification.json": "6742fec9785870975005ede1c2522d1bfa301d8f718c25084d66497c84fd9c9e"
+}
