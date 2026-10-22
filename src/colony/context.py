@@ -269,7 +269,33 @@ def excerpts(
     selected, occupied, cache, budget = [], [], {}, 2800
     best = max(scores, default=0)
     by_ref = {s.ref: s for s in sources}
-    for index in sorted(range(len(scores)), key=scores.__getitem__, reverse=True):
+    order = sorted(range(len(scores)), key=scores.__getitem__, reverse=True)
+    if prefer_question and claims is not None and not requires_procedure(question):
+        # A named descriptive field is more direct evidence than prose about
+        # that field's metadata. Only reorder passages already inside the same
+        # score window; never rescue an excluded candidate or change a score.
+        requested = re.match(
+            r"^(?:which|what)\s+([\w-]+(?:\s+[\w-]+){0,2}?)\s+(?:does|do|is|are)\b",
+            question.strip(),
+            re.I,
+        )
+        if requested:
+            label = r"\s+".join(re.escape(w) for w in requested[1].split())
+            declaration = re.compile(rf"^(?:\*\*)?{label}(?:\*\*)?:\s+\S", re.I)
+
+            def declares(index):
+                core = candidates[index][2]
+                if core.startswith("Section: "):
+                    core = core.partition("\n")[2]
+                return (
+                    scores[index] >= best - 0.15
+                    and "```" not in core
+                    and "~~~" not in core
+                    and bool(declaration.match(core))
+                )
+
+            order.sort(key=declares, reverse=True)
+    for index in order:
         ref, line, core = candidates[index]
         if scores[index] < best - (0.15 if claims is not None else 2):
             continue

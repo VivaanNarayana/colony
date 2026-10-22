@@ -249,6 +249,90 @@ def test_related_question_does_not_let_keyword_rich_metadata_hide_the_answer(tmp
     assert any("append_entry" in e["text"] for e in result)
 
 
+@pytest.mark.parametrize(
+    "field,values",
+    [
+        ("Operations", "`read_entry` and `append_entry`"),
+        ("Modes", "`strict` and `relaxed`"),
+        ("Codecs", "`zstd` and `lz4`"),
+    ],
+)
+def test_related_named_field_precedes_metadata_with_real_ranking(tmp_path, field, values):
+    text = (
+        "# Ledger bridge\n\n## Connection\n\n"
+        "Configure `ledger-agent --workspace /srv/ledger stdio`.\n\n"
+        f"## Diagnostics\n\nLedger bridge {field.lower()} exposure metadata is logged.\n\n"
+        f"## Reference\n\n{field}: {values}.\n"
+    )
+    (tmp_path / "guide.md").write_text(text)
+    source = snapshot(tmp_path, "guide.md")
+    question = f"Which {field.lower()} does the ledger bridge expose?"
+    result = excerpts(
+        tmp_path,
+        [source],
+        question,
+        claims="Configure `ledger-agent --workspace /srv/ledger stdio`.",
+        prefer_question=True,
+    )
+    assert result[0]["text"] == f"{field}: {values}."
+    assert any("metadata" in e["text"] for e in result)
+    assert len(result) <= 2 and sum(len(e["text"]) for e in result) <= 2800
+    for e in result:
+        assert e["text"] == "\n".join(
+            text.splitlines()[e["line"] - 1 : e["line"] - 1 + len(e["text"].splitlines())]
+        )
+    # Declaration ordering cannot bypass current-byte validation.
+    (tmp_path / "guide.md").write_text(text.replace(values, "unavailable"))
+    assert (
+        excerpts(tmp_path, [source], question, claims="old connection", prefer_question=True) == []
+    )
+
+
+@pytest.mark.parametrize(
+    "prefer_question,question",
+    [
+        (False, "Which operations does the ledger bridge expose?"),
+        (True, "Which commands does the ledger bridge expose?"),
+        (True, "How do I configure the ledger bridge?"),
+    ],
+)
+def test_field_ordering_keeps_exact_other_field_and_procedural_behavior(
+    tmp_path, prefer_question, question
+):
+    (tmp_path / "guide.md").write_text(
+        "# Ledger bridge\n\n## Diagnostics\n\nLedger bridge operations exposure metadata is logged.\n\n"
+        "## Reference\n\nOperations: `read_entry` and `append_entry`.\n"
+    )
+    source = snapshot(tmp_path, "guide.md")
+    expected = excerpts(tmp_path, [source], question, claims="unrelated connection")
+    assert (
+        excerpts(
+            tmp_path,
+            [source],
+            question,
+            claims="unrelated connection",
+            prefer_question=prefer_question,
+        )
+        == expected
+    )
+
+
+def test_named_field_cannot_rescue_a_declaration_outside_the_claim_window(tmp_path):
+    (tmp_path / "guide.md").write_text(
+        "# Ledger bridge\n\nThe ledger bridge exposes operations via the verified signed adapter.\n\n"
+        "Operations: historical values are unavailable.\n"
+    )
+    result = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "Which operations does the ledger bridge expose?",
+        claims="The ledger bridge exposes operations via the verified signed adapter.",
+        prefer_question=True,
+    )
+    assert "verified signed adapter" in result[0]["text"]
+    assert all("historical values" not in e["text"] for e in result)
+
+
 def test_recipe_retains_prerequisites_for_later_invocation():
     lines = [
         "## Bootstrap",
