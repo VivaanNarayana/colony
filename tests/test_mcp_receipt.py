@@ -71,6 +71,40 @@ def test_literal_hint_targets_explicit_identifiers_without_changing_their_spelli
     assert hint not in "How to connect and apply verification compatibility rules."
 
 
+@pytest.mark.parametrize(
+    "question,subject,definition",
+    [
+        ("Which inspect options are mandatory?", "inspect", "inspect --strict"),
+        ("What reconcile parameters are supported?", "reconcile", "reconcile(batch_size=20)"),
+        ("How are bucket permissions checked?", "bucket", "def bucket_access(grant): ..."),
+        ("How is archive retention enforced?", "archive", "archive.expire_after(days=37)"),
+        ("Start the local reconciliation worker.", "worker", "worker --jobs 3"),
+        ("Please launch the shared registry daemon.", "daemon", "daemon --port 9012"),
+    ],
+)
+def test_literal_hint_uses_named_subject_instead_of_generic_prose(question, subject, definition):
+    # The old longest-word hint fails these literal defining-source searches.
+    # No repository names, benchmark answers, or model scores enter this fixture.
+    hint = colony.mcp.research_keyword(question)
+    assert hint == subject and hint in definition
+    assert hint in question
+    assert hint not in "mandatory supported permissions retention reconciliation registry"
+
+
+@pytest.mark.parametrize(
+    "question,expected",
+    [
+        ("Describe archive retention.", "retention"),
+        ("How is the archive rotated?", "archive"),
+        ("Start the worker with tracing.", "tracing"),
+        ("Run a check in isolation.", "isolation"),
+        ("How are password=privatevalue rotated?", "rotated"),
+    ],
+)
+def test_subject_hint_falls_back_for_ambiguous_or_scrubbed_phrases(question, expected):
+    assert colony.mcp.research_keyword(question) == expected
+
+
 def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):
     packet = {
         "hit": True,

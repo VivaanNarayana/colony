@@ -4,13 +4,15 @@ The benchmarks had implementation-dependent and incomplete acceptance criteria.
 This establishes weaknesses in the evidence, not intent to manipulate results.
 The initial audit commit (`e2b865a`) left the production package unchanged.
 The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
-adds runtime and citation fixes on the same branch. Eight-gate clearance remains
-incomplete: completed trial 19 passes 6/8 gates; both token intervals remain blocking.
-Work is paused at the user's request after retaining and replaying all 48 sessions.
-Trial 19 corrects the literal-keyword hint to prefer explicit technical identifiers;
-166 tests pass with one existing skip. Time passes; token lower confidence bounds
-remain negative. Read [the continuation handoff](results/benchmark-remediation/RESUME.txt).
-All earlier attempts and failures are retained. No gate has been weakened or made advisory.
+adds runtime and citation fixes on the same branch. Completed trial 21 passes
+6/8 gates: gross tokens now pass; uncached-token and live-time intervals remain
+blocking. The explicit user resume supersedes the historical trial-19 pause.
+Trial 21 orders eligible requested-field declarations before descriptive metadata;
+173 tests pass with one existing skip. All 48 source packets and answers were
+reviewed, both arms have zero protocol violations, and the public replay exactly
+reproduces exit 1. Trial 22 will address concrete literal-hint subject selection
+failures under the same frozen benchmark contract. All earlier failed evidence
+remains retained. No gate has been weakened or made advisory.
 
 ## Findings
 

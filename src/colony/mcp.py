@@ -87,6 +87,34 @@ def research_keyword(question: str) -> str | None:
         # Preserve literal identifiers, including final S in HTTPS or status.
         # A generic verb such as 'connect' is a poorer query than a named API.
         return max(identifiers, key=len)
+    # Prefer a named command or grammatical subject to generic words like
+    # "required" or "permissions". These patterns use the question alone;
+    # they neither inspect repository data nor assert an answer or source path.
+    command = re.match(
+        r"^(?:which|what)\s+([A-Za-z][\w-]*)\s+(?:flags|options|arguments|parameters)\b",
+        safe.strip(),
+        re.I,
+    )
+    subject = re.match(r"^how\s+(?:is|are)\s+([A-Za-z][\w-]*)\b", safe.strip(), re.I)
+    imperative = re.match(
+        r"^(?:please\s+)?(?:start|launch|run)\s+((?:[A-Za-z][\w-]*\s*)+?)[.!?]?$",
+        safe.strip(),
+        re.I,
+    )
+    if command or subject:
+        named = (command or subject)[1]
+        if named.casefold() not in framing:
+            return named
+    if imperative:
+        objects = [w for w in imperative[1].split() if w.casefold() not in framing]
+        # Only a bare object phrase has a reliable final noun; a trailing
+        # prepositional phrase could name an unrelated destination or mode.
+        if objects and not re.search(
+            r"\b(?:with|for|from|in|on|at|using|through|after|before|to)\b",
+            imperative[1],
+            re.I,
+        ):
+            return objects[-1]
     words = [
         w.lower()
         for w in re.findall(r"\b[A-Za-z][A-Za-z0-9_]{1,31}\b", safe)

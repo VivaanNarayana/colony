@@ -1,10 +1,13 @@
 # Strict gate remediation against main
 
-**Paused at the user's request after completed trial 19: 6/8 gates pass; both token intervals remain blocking. PR #3 remains draft and must not merge.** No next feature or feature branch has started. Read [RESUME.txt](RESUME.txt) for the continuation handoff; no benchmark process remains running.
+**Resumed on the existing branch. Completed trial 21 passes 6/8: gross tokens now pass, uncached-token and live-time intervals fail. All gates remain blocking; PR #3 remains draft and must not merge.** Attempt 20 remains diagnostic-only; no new feature or branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 21 (`c33ef3785949ec5310bdfeaa91fb9195d6449460`) prioritizes an explicit named descriptive field only inside the existing eligible excerpt window. Independent real-model Operations/Modes/Codecs fixtures and negative tests preserve exact/procedural behavior, score eligibility, line identities, bounds and stale-byte checks. Full suite: 173 pass, one existing skip. Local: 117/117 per arm, 21.12% lower time, interval +11.19% to +32.57%. All 48 sessions/source packets reviewed; zero protocol violations. Gross tokens 1,200,035 vs 1,039,279, interval +2.050700% to +27.652270% (pass); uncached tokens 204,963 vs 174,895, interval -9.007132% to +36.317572% (fail); time 275.888s vs 247.556s, interval -2.157653% to +23.628740% (fail). Main/feature facts: 24/24 each; citations 14/24 vs 24/24. Exact public replay exits 1. Complete failed evidence is retained under attempt-21.
+
 
 Trial 19 (`bb9ac24194577bcfec1bcb206d46c03c89f793a5`) corrects keyword selection to prefer explicit backticked identifiers, acronyms and camel-case names over generic prose. Their spelling is preserved, including final S in HTTPS/status; longest prose is only a fallback. The retained trial 18 `connect` suggestion caused an extra broad/failed search. Independent RPC/TLS/HTTPS/status fixtures reproduce the defect and verify literal lookup of the named subject without retrieval-score mocks. All scrubbing, miss status, source/access checks and benchmark requirements remain unchanged.
 
@@ -49,6 +52,8 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 17 | `b5b2afe` | 6/8; time interval and compliance pass; both token intervals fail |
 | 18 | `4e1f784` | 6/8; time/quality/compliance pass; both token intervals fail; hint regression and unnecessary research retained |
 | 19 | `bb9ac24` | 6/8; time/quality/compliance pass; both token intervals remain blocking; paused after full audit/public replay |
+| 20 | diagnostic-only | No implementation or benchmark; original diagnostics preserved |
+| 21 | `c33ef37` | 6/8; gross tokens pass; uncached-token and live-time intervals fail; full audit/public replay retained |
 
 Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 and 16–19 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
@@ -58,7 +63,7 @@ The strict analyzer exits 1 with `main/capture-2.colony: push fingerprint does n
 
 All 48 sessions, manual labels and raw diagnostics remain retained. Feature `mcp-2` is labelled an irrelevant return: its connection configuration and current reads did not include exposed-tool facts, and the correct final answer required new research. Manual correctness labels do not waive the integrity rejection. See `attempt-12/observations.json` for explicitly nonqualifying raw totals.
 
-### Latest valid comparison: trial 19
+### Prior valid comparison: trial 19
 
 | Measurement | Main | Candidate | Reduction interval (95%) |
 | --- | ---: | ---: | ---: |
@@ -90,7 +95,7 @@ Trial 18's `connect` suggestion caused a second MCP search. Its tools lookup sup
 
 The positional-query masking experiment caused research misses and was reverted. Procedure focusing also selected unrelated provisioning prose; full procedure paragraphs are restored. Those failed outcomes are retained rather than hidden by the later fixes. The separate source-cache prototype is untouched.
 
-## Paused checkpoint
+## Historical paused checkpoint (superseded by explicit resume)
 
 Trial 19 is complete, audited and publicly replayed, with 6/8 gates passing. No source change follows its measured revision. All eight remain mandatory, and the full benchmark contract, scripts, prompts, workloads and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
 

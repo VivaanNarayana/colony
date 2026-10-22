@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "Combined stdout/stderr tail plus exit code, no inputs/environment/tool capture, always-tainted rationale checked in README/CLI. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "Editable dev-extra install checked in README Quick start and pyproject. No added unasked venv criterion. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "Miss/queue/encryption/explicit retry checked in README/Client. Saved outage answer remains relevant despite ask-focused excerpt. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "Server command and three required flags checked in README/CLI parser. Target/line valid under unchanged rubric, including explicit repository filenames. Miss; actual new reads checked before push."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "python -m pytest -q checked in README Verification section. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "Current SHA256 versus content_hash and stale reasons checked in validation. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "Editable dev-extra install checked in README Quick start and pyproject. No added unasked venv criterion. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "Combined stdout/stderr tail plus exit code, no inputs/environment/tool capture, always-tainted rationale checked in README/CLI. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "Combined stdout/stderr tail plus exit code, no inputs/environment/tool capture, always-tainted rationale checked in README/CLI. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "Miss/queue/encryption/explicit retry checked in README/Client. Saved outage answer remains relevant despite ask-focused excerpt. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "Stdio absolute-home configuration and both tool signatures checked in README. Related tools first read includes signatures. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "python -m pytest -q checked in README Verification section. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "Server command and three required flags checked in README/CLI parser. Target/line valid under unchanged rubric, including explicit repository filenames. Miss; actual new reads checked before push."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "Server command and three required flags checked in README/CLI parser. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "Miss/queue/encryption/explicit retry checked in README/Client. Saved outage answer remains relevant despite ask-focused excerpt. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "Current SHA256 versus content_hash and stale reasons checked in validation. Target/line valid under unchanged rubric, including explicit repository filenames. Miss; actual new reads checked before push."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "Stdio absolute-home configuration and both tool signatures checked in README. Related tools first read includes signatures. Target/line valid under unchanged rubric, including explicit repository filenames. Miss; actual new reads checked before push."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "Stdio absolute-home configuration and both tool signatures checked in README. Related tools first read includes signatures. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "python -m pytest -q checked in README Verification section. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "Namespace push/pull/403 checked in server; signature/expiry in security and namespace format in models. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "Namespace push/pull/403 checked in server; signature/expiry in security and namespace format in models. Target/line valid under unchanged rubric, including explicit repository filenames. Miss; actual new reads checked before push."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "Current SHA256 versus content_hash and stale reasons checked in validation. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "Editable dev-extra install checked in README Quick start and pyproject. No added unasked venv criterion. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "Namespace push/pull/403 checked in server; signature/expiry in security and namespace format in models. Target/line valid under unchanged rubric, including explicit repository filenames. Returned facts relevant; no wrong reuse."
+  }
+}

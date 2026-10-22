@@ -1,0 +1,12 @@
+{
+  "status": "complete; 6/8; retained failed trial",
+  "source": "c33ef3785949ec5310bdfeaa91fb9195d6449460",
+  "all_sessions_reviewed": 48,
+  "source_packets_reviewed": 48,
+  "gross_interval_passes": true,
+  "blocking_gates": [
+    "observed_uncached_input_plus_output_improve",
+    "observed_live_time_improves"
+  ],
+  "label_preparation_error": "First label writer omitted the tests-family note; corrected before final labels and analysis. No source, measurement or review label was changed to obtain a pass."
+}
