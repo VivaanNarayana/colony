@@ -1,0 +1,9 @@
+{
+  "tests_passed": 269,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 73.57,
+  "ruff_passed": true,
+  "diff_check_passed": true,
+  "scope": "Full suite with compact single-block push output and direct-answer policy; qualifications/required steps independent native fixtures reviewed separately, including retained invalid citation range"
+}

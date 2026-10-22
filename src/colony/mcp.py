@@ -163,7 +163,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "try configured research tools before declaring unavailable. "
         "Push requires new external research; ask's reads/hashes never qualify. "
         "Never reread just to push. Copy citation verbatim; use repository-relative paths "
-        "without a leading slash."
+        "without a leading slash. Answer requested facts directly, without narrating lookups "
+        "or storage. Keep required steps, conditions, exceptions and source citations."
     )
     # Keep shared trust/reuse policy here and the operational research steps in
     # ask's model-visible description, without repeating them in initialization.
@@ -289,14 +290,16 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             )
         ]
 
-    @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))
+    @server.tool(
+        annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False), structured_output=False
+    )
     def push(
         namespace: str,
         question: str,
         content: str,
         sources: list[FileEvidence] | None = None,
         tainted: bool = True,
-    ) -> dict:
+    ) -> list[TextContent]:
         """Save a concise answer to this question after new external research, never after reuse
         from ask, even for a new question. Store only requested facts supported by those reads;
         omit unasked background and dependencies. Don't research extra topics merely to fill memory.
@@ -323,8 +326,14 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 or (result.get("stored") is False and result.get("queued") is True)
             )
         ):
-            return {key: value for key, value in result.items() if key != "id"}
-        return result
+            result = {key: value for key, value in result.items() if key != "id"}
+        # Emit exactly one compact JSON block, as ask does. The SDK default
+        # pretty-prints mappings and can repeat them as structured output.
+        return [
+            TextContent(
+                type="text", text=json.dumps(result, separators=(",", ":"), ensure_ascii=False)
+            )
+        ]
 
     return server
 

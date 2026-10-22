@@ -422,9 +422,42 @@ def test_push_compaction_preserves_save_state_and_client_audit_receipt(
             [colony.mcp.FileEvidence(ref="policy.md", content_hash="b" * 64)],
         )
     )
+    assert len(result) == 1 and result[0].type == "text"
+    assert result[0].text == json.dumps(
+        ({k: v for k, v in packet.items() if k != "id"} if compacted else packet),
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    result = json.loads(result[0].text)
     assert packet == original
     assert saved[0].namespace == "lab" and saved[0].tainted is True
     assert saved[0].sources[0].content_hash == "b" * 64
     assert result == ({k: v for k, v in packet.items() if k != "id"} if compacted else packet)
     if compacted:
         assert len(json.dumps(result)) < len(json.dumps(packet))
+
+
+def test_push_uses_one_lossless_json_block_on_wire(monkeypatch, tmp_path):
+    import asyncio
+
+    packet = {"id": "a" * 32, "stored": False, "queued": True,
+              "warning": 'Archives: \"signed\"; 区域', "details": {"retry": [None, False, 17]}}
+    monkeypatch.setattr(colony.mcp, "Client", lambda home: SimpleNamespace(push=lambda trail: packet))
+    server = colony.mcp.create_mcp(tmp_path)
+    wire = asyncio.run(server.call_tool(
+        "push", {"namespace": "lab", "question": "Retention?", "content": "37 days."}
+    ))
+    assert isinstance(wire, list) and len(wire) == 1
+    assert wire[0].type == "text"
+    expected = {k: v for k, v in packet.items() if k != "id"}
+    assert json.loads(wire[0].text) == expected
+    assert wire[0].text == json.dumps(expected, separators=(",", ":"), ensure_ascii=False)
+    assert "区域" in wire[0].text
+    assert packet["id"] == "a" * 32
+
+
+def test_direct_answers_preserve_qualifications_and_citations(monkeypatch, tmp_path):
+    monkeypatch.setattr(colony.mcp, "Client", lambda home: None)
+    policy = colony.mcp.create_mcp(tmp_path).instructions
+    assert "without narrating lookups or storage" in policy
+    assert "Keep required steps, conditions, exceptions and source citations" in policy

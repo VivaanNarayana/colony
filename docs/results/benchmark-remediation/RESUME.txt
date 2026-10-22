@@ -1,3 +1,12 @@
+TRIAL30 PREPARATION COMPLETE: compact one-block UTF8 push receipts and general
+direct-answer policy retaining steps/conditions/exceptions/citations. Deterministic
+wire receipts42->33,39->30,257->197bytes, decoded fields identical; no claim of
+old structured-copy duplication (SDK test found none). Four new native fixtures
+facts/qualifications/protocol pass; retry-steps invalid #L1-L3 citation retained,
+not claimed as citation success or benchmark pass.269pass1skip73.57s lintdiffclean.
+Plan attempt30; commit, currentmain6fa6826..., fresh local30, all48live30 only if
+local qualifies. No29 retry, gates unchanged, draft/unmerged.
+
 LATEST trial29 COMPLETE 7/8; uncached FAIL. Source ee764bbc44a0a395b2ab32393efe74c8ef592a79.
 Main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d unchanged. Local117each/25.101443%
 lower CI+12.589824..39.268945%. Facts24both,cites15main24feature,protocol0.
