@@ -1,10 +1,12 @@
 # Strict gate remediation against main
 
-**Post-audit remediation in progress on the same branch.** All four findings have fixes and regression tests; completed trials 23 and 24 each pass 5/8. Trial 24 has complete retained evidence and an exact hardened public replay; all three live confidence intervals still fail. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
+**Trial 25 preparation in progress on the same branch.** All four findings have fixes and regression tests; completed trials 23 and 24 each pass 5/8. Trial 24 has complete retained evidence and an exact hardened public replay; all three live confidence intervals still fail. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 25 plans an explicit per-read missing-fact check and requested-facts-only capture policy, addressing retained dependency overresearch. Four independent one-shot native behavioral fixtures passed, including two cases where dependencies are necessary; traces, plan and runner are retained. These do not establish performance improvement. Sorted-length inference batching was slower and rejected. Trial 24 below remains the latest completed benchmark; all eight gates remain blocking.
 
 Trial 24 (`6031c44`) completed all 48 sessions against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **5/8**. Full suite: **214 pass**, one existing Windows skip; Ruff and whitespace checks pass. Both arms have 24/24 correct facts and zero protocol violations; citations are main 18/24, feature 24/24. Local lookup has 117/117 oracle passes per arm, 21.528818% lower time, interval +11.337512% to +33.064323%; all 234 raw rows pass independent reconstruction.
 

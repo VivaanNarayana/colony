@@ -148,9 +148,11 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
     client = Client(home)
     research_guidance = (
         "Research only the requested facts. Read a known defining file, otherwise search one "
-        "literal keyword, not a phrase. After reading defining code, follow dependencies only "
-        "for a requested fact that remains unresolved. Stop when the question has source support; "
-        "answer concisely and push only actual new research. Cite repository-relative targets: "
+        "literal keyword, not a phrase. After each read, check the question's requested facts. "
+        "Before another read, identify internally a requested fact the current text does not "
+        "support. Follow dependencies for that gap only; if none remains, stop. Answer and "
+        "save only the requested facts, without background from unasked dependencies. "
+        "Push only actual new research. Cite repository-relative targets: "
         "[path](path) or [path:line](path#Lline), never /path."
     )
     reuse_guidance = (
@@ -285,7 +287,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         tainted: bool = True,
     ) -> dict:
         """Save a concise answer to this question after new external research, never after reuse
-        from ask, even for a new question. Don't research extra topics merely to fill memory.
+        from ask, even for a new question. Store only requested facts supported by those reads;
+        omit unasked background and dependencies. Don't research extra topics merely to fill memory.
         Copy actual research fingerprints, not ask's hashes. No invented hashes, snippets,
         symbols or rereads just to push. Client scrubs secrets; taint external content."""
         return client.push(

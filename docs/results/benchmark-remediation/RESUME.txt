@@ -21,7 +21,15 @@ attempt-24. All source packets, answers and new research reads reviewed. No cost
 excluded. See README.md and outcome.json for details; source operation hint worked
 but scope-2 overresearch and outage-3 higher native usage remain actual costs.
 
-No runtime edits after source24. Two follow-up ideas rejected without a new trial:
+Trial 25 preparation now changes general MCP research/capture policy: before each
+additional read, identify a requested fact still unsupported; stop if none remains,
+and save only requested supported facts. Four independent one-shot behavioral
+fixtures pass, including required-dependency cases. See attempt-25 plan and ZIP.
+Sorted-length batch4 inference was slower and rejected without implementation.
+One initial full-suite failure was an unchanged assertion requiring the word
+merely in the original no-extra-research clause; restored original clause.
+Trial25 must use final verified committed source and fresh local/live directories.
+The notes below describe the source24 checkpoint before this preparation. Two follow-up ideas rejected without a new trial:
 1. Final property-noun hints regress the independent bucket_access example.
 2. Actual recipe introduction still fails existing model cutoff. Older synthetic
    document-introduction boosts also raised unrelated commands; remain rejected.
