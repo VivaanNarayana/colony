@@ -1,10 +1,18 @@
 # Strict gate remediation against main
 
-**Paused after the single authorized trial 43: local quality failed.** Main passes 117/117 observations; the feature passes 108/117. The new descriptive-answer term guard rejects three valid paraphrase cases in all three scheduled repetitions. All failures are retained. The existing stopping rule prevents starting the live stage, so live protocol/performance remain untested. Tests/lint is green from identical-code checkpoint 42; local lookup fails and six other required checks remain pending and blocking. PR #3 stays draft and unmerged. No retries or further run.
+**Paused after tests-only paraphrase checkpoint 44: 277 passed, one existing Windows skip; Ruff passes.** A semantic fallback now requires a nonliteral descriptive answer to receive a positive ranking score and outrank its question-only topic control. Nine new regressions and the original three unrelated-topic assertions pass. The pre-fix test failures and all prior benchmark failures remain retained. No benchmark ran. Only tests/lint is validated on this changed source; seven required checks remain pending and blocking. PR #3 stays draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
-## Current revision: trial 43, local failure; no live sessions
+## Current revision: checkpoint 44, semantic support and tests only
+
+Source `5b7ee4838618610f836e1de15b2edbc6d905b5a5` replaces the unconditional literal-term veto on related descriptive saved answers with a bounded semantic fallback. A nonliteral answer must score positively and strictly outrank its saved question alone; ties or topic-only strength do not qualify. Existing relevance, exact/procedural paths, scope, freshness, file proofs and source-evidence fallback remain. No benchmark-specific dictionary, path or question exception was added. The extra ranking work has no measured performance result.
+
+The initial real-model regressions retain three failures and one pass before the repair. Afterward the focused suite passes 34 tests, and the full suite runs once: **277 passed, one existing Windows skip**, pytest 87.73s/JUnit 87.714s. Ruff/whitespace pass. Four real-model paraphrase/attribute/scope/freshness cases and five score-boundary cases pass, alongside the original three unrelated-topic negatives. Existing high-score hit/miss expectations are unchanged; their work assertions reflect the added control ranking. [Complete checkpoint 44 evidence](attempt-44/README.md).
+
+No local/native benchmark, profile or analyzer replay ran. Tests/lint is green; the other seven strict required checks are pending and blocking. Trial 43 below remains failed historical benchmark evidence, and trial 41 remains the last full live comparison. Pause after publication, without another run or further work.
+
+## Last local benchmark: historical trial 43, quality failure
 
 Feature `8fb06eed9524919bf86511d950cc03c10cd4ae0f` was compared once with freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. Both implementations were frozen and independently loaded; the harness/workload/models/oracle/gates are unchanged. All 234 raw observations audit exactly. Main time is 2.849069200048689s and feature time 2.0737383997184224s, a 27.213477% reduction with interval +17.693594% to +37.804338%; **quality failure disqualifies this timing**.
 

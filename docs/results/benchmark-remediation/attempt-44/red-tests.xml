@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="4" time="2.064" timestamp="2026-10-22T15:43:46.575163-07:00" hostname="DESKTOP-ILT9QO2"><testcase classname="tests.test_semantic_answer_support" name="test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes[What is the archive retention interval?-Archive retention interval is 57 days.-How long do archived records stay available?-Which encryption algorithm protects the archives?]" time="0.953"><failure message="AssertionError: {'answer_and_question_scores': [5.6468505859375, -5.236965179443359], 'literal_support': False}&#10;assert False">team = (&lt;fastapi.applications.FastAPI object at 0x00000261FFB9F230&gt;, &lt;starlette.testclient.TestClient object at 0x00000261FFB...ture='outputs'), signature='f4yoYT3ng4om7qgCF+R1pgr4CuFV0JW3kPptKGs+6+RgSd8V7tYCEdvwSbMcLGZgUhmPa0SU2kXJQ5yXCoJtCQ=='))
+saved_question = 'What is the archive retention interval?'
+content = 'Archive retention interval is 57 days.'
+question = 'How long do archived records stay available?'
+unrelated = 'Which encryption algorithm protects the archives?'
+
+    @pytest.mark.parametrize(
+        "saved_question,content,question,unrelated",
+        [
+            (
+                "What is the archive retention interval?",
+                "Archive retention interval is 57 days.",
+                "How long do archived records stay available?",
+                "Which encryption algorithm protects the archives?",
+            ),
+            (
+                "What is the lifetime of a login session?",
+                "A login session expires after thirty minutes.",
+                "When does a login session end?",
+                "Does a login session permit deleting other users?",
+            ),
+            (
+                "What is the request timeout?",
+                "Requests are cancelled after twenty seconds.",
+                "How long does a request wait before cancellation?",
+                "How many requests can run concurrently?",
+            ),
+            (
+                "What is the maximum attachment size?",
+                "Attachments are limited to sixteen megabytes.",
+                "How large may an uploaded attachment be?",
+                "Which attachment formats can execute scripts?",
+            ),
+        ],
+    )
+    def test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes(
+        team, saved_question, content, question, unrelated
+    ):
+        app, _, repo, _, key = team
+        store = app.state.store
+        path = repo / "policy.md"
+        path.write_text(content + "\n", encoding="utf-8")
+        store.push(
+            Trail(
+                id=uuid.uuid4().hex,
+                namespace="team",
+                question=saved_question,
+                content=content,
+                sources=[snapshot(repo, "policy.md")],
+            ),
+            key.grant,
+        )
+        # Retain semantic diagnostics on failure without recording performance.
+        diagnostic = {
+            "literal_support": local_term_support(terms(question), content),
+            "answer_and_question_scores": rank(question, [content, saved_question]),
+        }
+        result = store.ask(question, ["team"], 604800, 0.60)
+&gt;       assert result["hit"], diagnostic
+E       AssertionError: {'answer_and_question_scores': [5.6468505859375, -5.236965179443359], 'literal_support': False}
+E       assert False
+
+tests\test_semantic_answer_support.py:64: AssertionError</failure></testcase><testcase classname="tests.test_semantic_answer_support" name="test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes[What is the lifetime of a login session?-A login session expires after thirty minutes.-When does a login session end?-Does a login session permit deleting other users?]" time="0.246" /><testcase classname="tests.test_semantic_answer_support" name="test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes[What is the request timeout?-Requests are cancelled after twenty seconds.-How long does a request wait before cancellation?-How many requests can run concurrently?]" time="0.199"><failure message="AssertionError: {'answer_and_question_scores': [7.360450744628906, -6.699161052703857], 'literal_support': False}&#10;assert False">team = (&lt;fastapi.applications.FastAPI object at 0x000002618C7E5BD0&gt;, &lt;starlette.testclient.TestClient object at 0x00000261FFC...ture='outputs'), signature='9VCVwl868YhFKEiZuLw2dQtnjqVyZ2JqbVytfx+fUHeCAuTKHaH3vNsQzJZTdv4+XOuQjh9BHsTZHwi1uqLRDg=='))
+saved_question = 'What is the request timeout?'
+content = 'Requests are cancelled after twenty seconds.'
+question = 'How long does a request wait before cancellation?'
+unrelated = 'How many requests can run concurrently?'
+
+    @pytest.mark.parametrize(
+        "saved_question,content,question,unrelated",
+        [
+            (
+                "What is the archive retention interval?",
+                "Archive retention interval is 57 days.",
+                "How long do archived records stay available?",
+                "Which encryption algorithm protects the archives?",
+            ),
+            (
+                "What is the lifetime of a login session?",
+                "A login session expires after thirty minutes.",
+                "When does a login session end?",
+                "Does a login session permit deleting other users?",
+            ),
+            (
+                "What is the request timeout?",
+                "Requests are cancelled after twenty seconds.",
+                "How long does a request wait before cancellation?",
+                "How many requests can run concurrently?",
+            ),
+            (
+                "What is the maximum attachment size?",
+                "Attachments are limited to sixteen megabytes.",
+                "How large may an uploaded attachment be?",
+                "Which attachment formats can execute scripts?",
+            ),
+        ],
+    )
+    def test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes(
+        team, saved_question, content, question, unrelated
+    ):
+        app, _, repo, _, key = team
+        store = app.state.store
+        path = repo / "policy.md"
+        path.write_text(content + "\n", encoding="utf-8")
+        store.push(
+            Trail(
+                id=uuid.uuid4().hex,
+                namespace="team",
+                question=saved_question,
+                content=content,
+                sources=[snapshot(repo, "policy.md")],
+            ),
+            key.grant,
+        )
+        # Retain semantic diagnostics on failure without recording performance.
+        diagnostic = {
+            "literal_support": local_term_support(terms(question), content),
+            "answer_and_question_scores": rank(question, [content, saved_question]),
+        }
+        result = store.ask(question, ["team"], 604800, 0.60)
+&gt;       assert result["hit"], diagnostic
+E       AssertionError: {'answer_and_question_scores': [7.360450744628906, -6.699161052703857], 'literal_support': False}
+E       assert False
+
+tests\test_semantic_answer_support.py:64: AssertionError</failure></testcase><testcase classname="tests.test_semantic_answer_support" name="test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes[What is the maximum attachment size?-Attachments are limited to sixteen megabytes.-How large may an uploaded attachment be?-Which attachment formats can execute scripts?]" time="0.193"><failure message="AssertionError: {'answer_and_question_scores': [1.3973233699798584, -2.6361541748046875], 'literal_support': False}&#10;assert False">team = (&lt;fastapi.applications.FastAPI object at 0x00000261FFC87390&gt;, &lt;starlette.testclient.TestClient object at 0x00000261FFC...ture='outputs'), signature='pvrMulg5WVKN7gUvgiWq9PfmHmRTWHAl7PhJnMj8TidoLkHEVpf4tFjIdSCqLLjrlAvCPnWC1Gjn15itNOO9BQ=='))
+saved_question = 'What is the maximum attachment size?'
+content = 'Attachments are limited to sixteen megabytes.'
+question = 'How large may an uploaded attachment be?'
+unrelated = 'Which attachment formats can execute scripts?'
+
+    @pytest.mark.parametrize(
+        "saved_question,content,question,unrelated",
+        [
+            (
+                "What is the archive retention interval?",
+                "Archive retention interval is 57 days.",
+                "How long do archived records stay available?",
+                "Which encryption algorithm protects the archives?",
+            ),
+            (
+                "What is the lifetime of a login session?",
+                "A login session expires after thirty minutes.",
+                "When does a login session end?",
+                "Does a login session permit deleting other users?",
+            ),
+            (
+                "What is the request timeout?",
+                "Requests are cancelled after twenty seconds.",
+                "How long does a request wait before cancellation?",
+                "How many requests can run concurrently?",
+            ),
+            (
+                "What is the maximum attachment size?",
+                "Attachments are limited to sixteen megabytes.",
+                "How large may an uploaded attachment be?",
+                "Which attachment formats can execute scripts?",
+            ),
+        ],
+    )
+    def test_descriptive_paraphrases_reuse_facts_without_accepting_different_attributes(
+        team, saved_question, content, question, unrelated
+    ):
+        app, _, repo, _, key = team
+        store = app.state.store
+        path = repo / "policy.md"
+        path.write_text(content + "\n", encoding="utf-8")
+        store.push(
+            Trail(
+                id=uuid.uuid4().hex,
+                namespace="team",
+                question=saved_question,
+                content=content,
+                sources=[snapshot(repo, "policy.md")],
+            ),
+            key.grant,
+        )
+        # Retain semantic diagnostics on failure without recording performance.
+        diagnostic = {
+            "literal_support": local_term_support(terms(question), content),
+            "answer_and_question_scores": rank(question, [content, saved_question]),
+        }
+        result = store.ask(question, ["team"], 604800, 0.60)
+&gt;       assert result["hit"], diagnostic
+E       AssertionError: {'answer_and_question_scores': [1.3973233699798584, -2.6361541748046875], 'literal_support': False}
+E       assert False
+
+tests\test_semantic_answer_support.py:64: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,87 @@
+{
+  "id": 25440133,
+  "name": "main",
+  "target": "branch",
+  "source_type": "Repository",
+  "source": "VivaanNarayana/colony",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "required_reviewers": [],
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "require_extra_approval_for_unattributed_changes": true,
+        "allowed_merge_methods": [
+          "merge",
+          "squash",
+          "rebase"
+        ]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "benchmarks/loaded_implementations_verified"
+          },
+          {
+            "context": "benchmarks/tests_and_lint_pass"
+          },
+          {
+            "context": "benchmarks/local_lookup_improves"
+          },
+          {
+            "context": "benchmarks/correctness_not_reduced"
+          },
+          {
+            "context": "benchmarks/feature_follows_tool_protocol"
+          },
+          {
+            "context": "benchmarks/observed_live_tokens_improve"
+          },
+          {
+            "context": "benchmarks/observed_uncached_input_plus_output_improve"
+          },
+          {
+            "context": "benchmarks/observed_live_time_improves"
+          }
+        ]
+      }
+    }
+  ],
+  "node_id": "RRS_lACqUmVwb3NpdG9yec5VAuVfzgGEL4U",
+  "created_at": "2026-10-19T16:02:33.599-07:00",
+  "updated_at": "2026-10-21T18:39:56.137-07:00",
+  "bypass_actors": [],
+  "current_user_can_bypass": "never",
+  "_links": {
+    "self": {
+      "href": "https://api.github.com/repos/VivaanNarayana/colony/rulesets/25440133"
+    },
+    "html": {
+      "href": "https://github.com/VivaanNarayana/colony/rules/25440133"
+    }
+  }
+}

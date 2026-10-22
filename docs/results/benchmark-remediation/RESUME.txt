@@ -1,3 +1,29 @@
+PAUSED AFTER USER'S TESTS-ONLY PARAPHRASE FIX CHECKPOINT44, 2026-10-22.
+Testedsource5b7ee4838618610f836e1de15b2edbc6d905b5a5,samebranchPR3draft/unmerged.
+Relateddescriptiveanswerswithoutliteraltermsupport nowrequirepositiveactual
+answerlogit strictlyabove savedquestion-onlytopiccontrol. Ties/nonpositive/topic
+dominatedscoresreject. Exact/procedural/literalsupportedpaths remain; normal
+fusedrelevance/scope/freshness/sourceassertions/currenthashes/fallback unchanged.
+No dictionary/path/question-specificexceptions; no model/index/schemachange.
+Extraatmost12questioncontrolrerankinputs: performanceunmeasured,notclaimed.
+RedtestsONCEbeforefix:1pass3fail(retention/timeout/attachmentparaphrases);retained.
+FocusedafterfixONCE:34pass. FullsuiteONCE:277pass,0fail,1existingWindowsskip;
+pytest87.73s/JUnit87.714s. Ruff/diffpass. Allthreephaseoutputs/JUnit/exit/wake retained.
+Nine newcases:4realmodelparaphrase+differentattribute+scope+freshness cases,
+5semantic scoreboundary cases. Original3wrongtopicassertionsunchanged/pass.
+Existing5highscorecaseskeepallhit/missexpectations;workassertionsnowrequire
+answer+questioncontrolrankinginsteadofearlylexicalskip. Benchmarkcountersunchanged.
+No local/nativebenchmark,profile,analyzerreplay. Allpriorattempts/manifestsbyteunchanged.
+Trial43lastlocalFAIL(main117/117,feature108/117);trial41lastfull3/8onownsource.
+Tests/lintvalidatedgreen;7originalrequiredchecks pending/blockingfornewruntime.
+No currentbenchmarkpass or8gatecount. No weakenedbenchmark/oracle/rubric/budget/gate.
+Active25440133all8strictrequired,nobypass. Code/test/model/harness hashes retained44.
+Research/saveguidanceunchangedfrom42;liveadherenceunverified.
+UpdatePR3andpause,noauto-merge,no furtherwork/run scheduled,no planfile.
+Resumeonlynewuserrequest.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS TESTS-ONLY FIX RECORD.
+
 PAUSED AFTER USER'S SINGLE BENCHMARK TRIAL43, 2026-10-22.
 Source8fb06eed9524919bf86511d950cc03c10cd4ae0f vs freshlyfetchedcurrentmain
 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d. SamebranchPR3draft/unmerged/noauto-merge.

@@ -1,6 +1,8 @@
 # Removal of optional runtime changes, October 22, 2026
 
-**Current validation:** [Trial 43](attempt-43/README.md) subsequently fails local quality: the checkpoint 42 descriptive-answer term guard rejects valid archive-retention paraphrases, feature 108/117 versus main 117/117. The faster timing cannot qualify. Live sessions were not started under the stopping rule; no fix or retry occurred. This does not establish the live effect of the save guidance.
+**Latest repair, tests only:** [Checkpoint 44](attempt-44/README.md) permits descriptive semantic paraphrases through a positive answer-versus-question control comparison. The full suite passes 277 tests with one existing skip, and all pre-fix/current historical failures remain retained. This adds bounded ranking work with no benchmark/performance claim; seven required checks remain pending and blocking. Optional navigation/search heuristics remain absent.
+
+**Historical benchmark validation:** [Trial 43](attempt-43/README.md) subsequently fails local quality: the checkpoint 42 descriptive-answer term guard rejects valid archive-retention paraphrases, feature 108/117 versus main 117/117. The faster timing cannot qualify. Live sessions were not started under the stopping rule; no fix or retry occurred. This does not establish the live effect of the save guidance.
 
 **Later correctness repair:** [Checkpoint 42](attempt-42/README.md) adds local fact-support eligibility for descriptive saved answers and an explicit required research/save sequence. These are user-requested correctness repairs with passing tests, not demonstrated performance gains. Optional search/path hints and the other removed heuristics remain absent; no further benchmark was run.
 
