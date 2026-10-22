@@ -1,3 +1,30 @@
+PAUSED AFTER USER-REQUESTED OPTIONAL RUNTIME REMOVALS, 2026-10-22.
+Starting revision004f4381b0ca0a570eb42b0dffda483eed269c5f. Same branch PR3draft,
+unmerged,noauto-merge. Do not resume/run without a new user request.
+Removed six optional groups: research_keyword/parser/payload; extra research/save/
+narration policy; focused descriptive sentence ranking; availability/queue/auxiliary
+lexical normalization; related-question/requested-field excerpt prioritization;
+standalone paragraph compaction. research_paths remains absent.
+Keep measured local/work/byte optimizations: source index/order, descriptor reuse,
+batch1/four-thread models, fresh empty-store bypass/shared connection, singleton
+selection, compact receipts and v7 compatibility. Keep core correctness/provenance/
+source trust/schema/privacy/scope/freshness, relative citations and procedure context.
+All benchmark scripts/evaluator tests/oracles/prompts/rubrics/budgets/thresholds/
+8strictgates unchanged. No weakening/exemption/exclusion. All failed evidence and
+attempt manifests untouched. No old green results apply to the current head.
+Unsafe keyword parser is removed entirely; same bounded long-input regression now
+exercises public MCP miss. Paragraph shortcut gone; six adjacent-qualification cases,
+dependent/procedural context guards,21proof-admission cases remain. Feature-specific
+keyword/retrieval tests updated/removed; security/scope guards retained.
+No tests,profiles,local/native benchmarks or analyzer replays run. Static syntax,
+protected-definition/reference/diff/whitespace review only. Currenthead unmeasured,
+all8required statuses pending. Historical40=5/8/source554f239; not currentresults.
+No performance improvement claimed from removal; quality/selection may change.
+Full rationale optional-runtime-removal.md; prior retention-review is historical.
+No further work/run scheduled; all-eight objective unfinished. No plan file.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS REMOVAL RECORD.
+
 PAUSED AFTER COMPLETED RUNTIME RETENTION REVIEW, 2026-10-22.
 Reviewed source a64b2efc39dffaae7b5ed55596998748164a8c52. Documentation-only update;
 no runtime, benchmark, test or historical evidence change. No new tests, profiles,

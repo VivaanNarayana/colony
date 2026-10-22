@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from colony.models import Source
-from colony.retrieval import fused_score, keyword_coverage, rank, requires_procedure
+from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
 from colony.validation import repo_file
 
@@ -125,61 +125,6 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     return low + 1, "\n".join(lines[low:high])[:2400]
 
 
-def prose_window(ref: str, lines: list[str], line: int) -> tuple[int, str] | None:
-    """Return a complete standalone prose paragraph, otherwise keep normal context."""
-    if Path(ref).suffix.lower() not in {".md", ".markdown", ".txt"}:
-        return None
-    begin = line - 1
-    if not 0 <= begin < len(lines) or (begin and lines[begin - 1].strip()):
-        return None
-    end = begin
-    while end < len(lines) and lines[end].strip():
-        end += 1
-    paragraph = lines[begin:end]
-    if not paragraph or len(paragraph) > 16:
-        return None
-    # Never compact fenced/indented code, tables, lists, headings or recipes.
-    fence = None
-    for i, text in enumerate(lines[:end]):
-        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", text)
-        if marker:
-            token, rest = marker.groups()
-            if fence is None:
-                fence = token
-            elif token[0] == fence[0] and len(token) >= len(fence) and not rest.strip():
-                fence = None
-            if i >= begin:
-                return None
-        if i == begin and fence is not None:
-            return None
-    if any(re.match(r"^(?: {4}|\t|\s*[\[#>|*+-]|\s*\d+[.)]\s)", s) for s in paragraph):
-        return None
-    text = "\n".join(paragraph)
-    if not re.search(r"[.!?][\"')`]*$", text.rstrip()) or len(text) > 2400:
-        return None
-    # Only structural boundaries establish that no adjacent prose is omitted.
-    # A qualification need not start with a transition: "Production archives
-    # require 90 days" can qualify the preceding general retention paragraph.
-    # Retain normal section context whenever another paragraph is adjacent.
-    dependent = re.compile(
-        r"^(?:this|these|those|it|they|its|their|that|then|however|but|except|unless|"
-        r"otherwise|instead|also|alternatively|note|warning|only|if|when|for example)\b",
-        re.I,
-    )
-    neighbors = [text]
-    for step, position in [(-1, begin - 1), (1, end)]:
-        while 0 <= position < len(lines) and not lines[position].strip():
-            position += step
-        if 0 <= position < len(lines):
-            neighbor = lines[position].strip()
-            if not re.match(r"^#{1,6} ", neighbor):
-                return None
-            neighbors.append(neighbor)
-    if any(dependent.match(s.strip()) for s in neighbors):
-        return None
-    return line, text
-
-
 def excerpts(
     root: Path,
     sources: list[Source],
@@ -188,7 +133,6 @@ def excerpts(
     preferred: list[tuple[str, int]] | None = None,
     candidate_chunks: list[tuple[str, int, str]] | None = None,
     claims: str | None = None,
-    prefer_question: bool = False,
     whole_files: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
@@ -244,25 +188,6 @@ def excerpts(
             claim_coverage = keyword_coverage(
                 "\n".join(code_claims) if code_claims else claims[:4000], [c[2] for c in candidates]
             )
-            if prefer_question:
-                # A related question may request a different fact from the same
-                # cited file. Don't let an old summary exclude a paragraph with
-                # strictly better support for that question. Keep claim-based
-                # selection when it already supplies the best query coverage.
-                peak = max(claim_coverage, default=0)
-                supplied = max(
-                    (
-                        q
-                        for q, a in zip(query_coverage, claim_coverage, strict=True)
-                        if a >= peak - 1e-12
-                    ),
-                    default=0,
-                )
-                if max(query_coverage, default=0) > supplied + 1e-12:
-                    # Drop the unrelated cached-claim bonus, rather than giving
-                    # query keywords that bonus. Keep the existing query/model
-                    # weights so keyword-rich metadata cannot suppress facts.
-                    claim_coverage = [0.0] * len(claim_coverage)
             lexical = [
                 0.2 * q + 0.7 * a for q, a in zip(query_coverage, claim_coverage, strict=True)
             ]
@@ -286,31 +211,6 @@ def excerpts(
     best = max(scores, default=0)
     by_ref = {s.ref: s for s in sources}
     order = sorted(range(len(scores)), key=scores.__getitem__, reverse=True)
-    if prefer_question and claims is not None and not requires_procedure(question):
-        # A named descriptive field is more direct evidence than prose about
-        # that field's metadata. Only reorder passages already inside the same
-        # score window; never rescue an excluded candidate or change a score.
-        requested = re.match(
-            r"^(?:which|what)\s+([\w-]+(?:\s+[\w-]+){0,2}?)\s+(?:does|do|is|are)\b",
-            question.strip(),
-            re.I,
-        )
-        if requested:
-            label = r"\s+".join(re.escape(w) for w in requested[1].split())
-            declaration = re.compile(rf"^(?:\*\*)?{label}(?:\*\*)?:\s+\S", re.I)
-
-            def declares(index):
-                core = candidates[index][2]
-                if core.startswith("Section: "):
-                    core = core.partition("\n")[2]
-                return (
-                    scores[index] >= best - 0.15
-                    and "```" not in core
-                    and "~~~" not in core
-                    and bool(declaration.match(core))
-                )
-
-            order.sort(key=declares, reverse=True)
     for index in order:
         ref, line, core = candidates[index]
         if scores[index] < best - (0.15 if claims is not None else 2):
@@ -321,8 +221,7 @@ def excerpts(
             continue
         if len(selected) >= 2 or budget < 300:
             break
-        compact = None if requires_procedure(question) else prose_window(ref, cache[ref], line)
-        start, text = compact or context_window(ref, cache[ref], line, core.count("\n") + 1)
+        start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
         limit = min(2400, budget)
         offset = len("\n".join(cache[ref][start - 1 : line - 1])) + int(line > start)
         core_text = "\n".join(cache[ref][line - 1 : line + core.count("\n")])

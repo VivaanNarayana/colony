@@ -1,5 +1,7 @@
 # Runtime retention review, October 22, 2026
 
+**Historical assessment, superseded by the user's requested removals.** The six optional quality-based retentions below have since been removed; see the [completed removal record](optional-runtime-removal.md). The original evidence and reasoning below are retained as history, not the current keep/remove decision.
+
 Reviewed source: `a64b2efc39dffaae7b5ed55596998748164a8c52`, after removal of `research_paths`. This is a completed review of existing code and retained measurements. No tests, profiles, local/native benchmarks or analyzer replays were run for this review.
 
 **Decision: keep the remaining active runtime changes for the specific reasons below. No further runtime removal is justified by the available evidence. Keep the rejected experiments out.** This is a retention judgment, not validation that each feature improves total agent cost. The combined runtime has not cleared all eight gates, and the current head remains unmeasured. Work is paused, PR #3 stays draft and unmerged, and all eight checks remain strict and required with current-head statuses pending.

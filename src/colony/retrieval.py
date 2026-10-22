@@ -180,31 +180,14 @@ STOP_WORDS = set(
 
 
 def terms(text: str) -> set[str]:
-    # Question framing is not evidence content. Keep its substantive subject and
-    # condition, instead of weighting an absent generic verb more than both.
-    text = re.sub(r"^\s*what\s+(?:happens|occurs)\s+(?:when|if|during)\s+", "", text, flags=re.I)
-    # In passive questions, get is an auxiliary rather than a requested fact.
-    # Preserve substantive uses such as "get credentials" and "get a token".
-    text = re.sub(r"\b(?:get|gets|got|getting)\s+([a-z]{3,}ed)\b", r"\1", text, flags=re.I)
     text = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
     # Shared prefixes cover plural/inflected prose and common code identifiers.
     words = re.findall(r"[a-z][a-z0-9]+", text.lower())
-    result = set()
-    for word in words:
-        if word in STOP_WORDS:
-            continue
-        word = (
-            word[:-1] if len(word) > 4 and word.endswith("s") and not word.endswith("ss") else word
-        )
-        # Keep availability paraphrases coherent without dropping query terms or
-        # lowering coverage: a server being "down" and an "outage" describe the
-        # same state. The subject and other requested facts must still match.
-        if word in {"down", "outage", "offline", "unavailable", "unavailability", "downtime"}:
-            word = "offline"
-        if word in {"queued", "queuing", "queueing"}:
-            word = "queue"
-        result.add(word[:6])
-    return result
+    return {
+        (w[:-1] if len(w) > 4 and w.endswith("s") and not w.endswith("ss") else w)[:6]
+        for w in words
+        if w not in STOP_WORDS
+    }
 
 
 def keyword_coverage(question: str, passages: list[str]) -> list[float]:
@@ -225,27 +208,6 @@ def local_term_support(query: set[str], text: str) -> bool:
         len(query & terms(" ".join(sentences[i : i + 2]))) > len(query) / 2
         for i in range(len(sentences))
     )
-
-
-def focused_passage(question: str, text: str) -> str:
-    """Rank coherent prose instead of letting unrelated neighboring topics dominate.
-
-    Keep fenced code intact. This model input view is used only for text documents:
-    eligibility still uses the
-    original paragraph, and displayed evidence still comes from current file bytes.
-    """
-    if "```" in text or "~~~" in text:
-        return text
-    heading, separator, body = text.partition("\n")
-    if not heading.startswith("Section: "):
-        heading, separator, body = "", "", text
-    sentences = re.split(r"(?<=[.!?])\s+", body)
-    if len(sentences) <= 2:
-        return text
-    query = terms(question)
-    windows = [" ".join(sentences[i : i + 2]) for i in range(len(sentences) - 1)]
-    chosen = max(windows, key=lambda s: (len(query & terms(s)), -len(s)))
-    return heading + separator + chosen
 
 
 def evidence_score(cosine: float, logit: float, coverage: float) -> float:

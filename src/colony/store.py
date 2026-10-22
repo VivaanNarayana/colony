@@ -15,7 +15,6 @@ from colony.retrieval import (
     embed,
     embed_passages,
     evidence_score,
-    focused_passage,
     fused_score,
     index_version,
     keyword_coverage,
@@ -321,16 +320,7 @@ class Store:
             ]
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
-            scores = rank(
-                question,
-                [
-                    focused_passage(question, text)
-                    if not procedure
-                    and Path(linked[0]["ref"]).suffix.lower() in {".md", ".markdown", ".txt"}
-                    else text
-                    for linked, text in candidates
-                ],
-            )
+            scores = rank(question, [text for _, text in candidates])
             ordered = sorted(
                 [
                     (linked, evidence_score(1 - linked[0]["distance"], score, coverage))
@@ -555,9 +545,7 @@ class Store:
                     self.repo,
                     sources,
                     question,
-                    claims=content if procedure else focused_passage(question, content),
-                    prefer_question=not procedure
-                    and row["question"].strip().casefold() != normalized_question,
+                    claims=content,
                     whole_files=include_evidence_files,
                 )
                 if status == "validated"

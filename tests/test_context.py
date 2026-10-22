@@ -208,7 +208,7 @@ def test_remaining_budget_keeps_the_selected_paragraph_in_late_section(tmp_path)
     assert sum(len(e["text"]) for e in result) <= 2800
 
 
-def test_descriptive_receipt_keeps_complete_fact_without_neighboring_topics(tmp_path):
+def test_descriptive_receipt_keeps_complete_fact_with_normal_section_context(tmp_path):
     text = (
         "## Relay\n\nThe relay retains signed archives for 37 days.\n"
         "Expired archives are removed during maintenance.\n\n"
@@ -222,8 +222,8 @@ def test_descriptive_receipt_keeps_complete_fact_without_neighboring_topics(tmp_
     assert len(result) == 1
     assert "37 days" in result[0]["text"] and "Expired archives" in result[0]["text"]
     assert "Administrative credentials" not in result[0]["text"]
-    assert result[0]["line"] == 3
-    assert result[0]["text"] == "\n".join(text.splitlines()[2:4])
+    assert result[0]["line"] == 1
+    assert result[0]["text"] == "\n".join(text.splitlines()[:5])
     assert source.content_hash == hashlib.sha256((tmp_path / "relay.md").read_bytes()).hexdigest()
     (tmp_path / "relay.md").write_text(text.replace("37 days", "9 days"))
     assert excerpts(tmp_path, [source], "Retention?", preferred=[("relay.md", 3)]) == []

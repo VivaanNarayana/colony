@@ -56,7 +56,7 @@ def test_empty_permitted_namespaces_do_not_run_inference_and_new_trails_are_visi
 
 
 @pytest.mark.parametrize("object_name", ["token", "seed", "credentials"])
-def test_lexical_normalization_keeps_substantive_get(object_name):
+def test_lexical_terms_keep_substantive_get(object_name):
     assert "get" in terms(f"How can I get {object_name}?")
 
 
@@ -98,8 +98,9 @@ def test_reranking_preserves_logits_and_order_across_input_lengths():
         ("broker", "down", "What happens when the broker is unavailable?"),
     ],
 )
-def test_availability_paraphrases_keep_the_same_scoped_source_facts(team, subject, state, question):
+def test_source_answer_keeps_scope_and_unrelated_topic_guards(team, subject, state, question):
     app, _, repo, _, key = team
+    direct_question = f"What is the {subject} retry policy?"
     fact = f"When the {subject} is {state}, requests are queued and retried after fifteen seconds."
     (repo / "operations.md").write_text(
         "# Operations\n\n## Availability\n\n"
@@ -111,17 +112,13 @@ def test_availability_paraphrases_keep_the_same_scoped_source_facts(team, subjec
         Trail(
             id=uuid.uuid4().hex,
             namespace="team",
-            question="Audit retention policy",
-            content="Keep audit logs for seven days.",
+            question=direct_question,
+            content=fact,
             sources=[snapshot(repo, "operations.md")],
         ),
         key.grant,
     )
-    result = app.state.store.ask(question, ["team"], 604800, 0.60)
-    assert result["status"] == "validated"
-    assert any(fact in e["text"] for e in result["evidence"])
-    passive = f"Do requests get queued while the {subject} is {state}?"
-    result = app.state.store.ask(passive, ["team"], 604800, 0.60)
+    result = app.state.store.ask(direct_question, ["team"], 604800, 0.60)
     assert result["status"] == "validated"
     assert any(fact in e["text"] for e in result["evidence"])
     assert not app.state.store.ask(question, ["private"], 604800, 0.60)["hit"]
@@ -188,136 +185,7 @@ def test_claims_select_actual_procedure_instead_of_question_example(tmp_path):
     assert any("atlasctl bootstrap --profile development" in e["text"] for e in result)
 
 
-@pytest.mark.parametrize(
-    "question, paragraph, expected",
-    [
-        (
-            "Which operations does the ledger bridge support?",
-            "The ledger bridge supports operations `read_entry` and `append_entry`.",
-            "append_entry",
-        ),
-        (
-            "How long does the ledger bridge retain archives?",
-            "The ledger bridge retains signed archives for 37 days.",
-            "37 days",
-        ),
-        (
-            "What is the ledger bridge archive size limit?",
-            "The ledger bridge archive size limit is 19 MiB.",
-            "19 MiB",
-        ),
-    ],
-)
-def test_related_question_reads_its_fact_instead_of_only_an_old_summary(
-    tmp_path, question, paragraph, expected
-):
-    (tmp_path / "guide.md").write_text(
-        "# Ledger bridge\n\n## Connection\n\n"
-        "Configure `ledger-agent --workspace /srv/ledger stdio`.\n\n"
-        f"## Reference\n\n{paragraph}\n"
-    )
-    source = snapshot(tmp_path, "guide.md")
-    result = excerpts(
-        tmp_path,
-        [source],
-        question,
-        claims="Configure `ledger-agent --workspace /srv/ledger stdio`.",
-        prefer_question=True,
-    )
-    assert any(expected in e["text"] for e in result)
-    lines = (tmp_path / "guide.md").read_text().splitlines()
-    for e in result:
-        assert e["text"] == "\n".join(
-            lines[e["line"] - 1 : e["line"] - 1 + len(e["text"].split("\n"))]
-        )
-
-
-def test_related_question_does_not_let_keyword_rich_metadata_hide_the_answer(tmp_path):
-    (tmp_path / "guide.md").write_text(
-        "# Ledger bridge\n\n## Connection\n\n"
-        "Configure `ledger-agent --workspace /srv/ledger stdio`.\n\n"
-        "## Diagnostics\n\nLedger bridge operation support metadata is logged.\n\n"
-        "## Operations\n\nOperations: `read_entry` and `append_entry`.\n"
-    )
-    result = excerpts(
-        tmp_path,
-        [snapshot(tmp_path, "guide.md")],
-        "Which operations does the ledger bridge support?",
-        claims="Configure `ledger-agent --workspace /srv/ledger stdio`.",
-        prefer_question=True,
-    )
-    assert any("append_entry" in e["text"] for e in result)
-
-
-@pytest.mark.parametrize(
-    "field,values",
-    [
-        ("Operations", "`read_entry` and `append_entry`"),
-        ("Modes", "`strict` and `relaxed`"),
-        ("Codecs", "`zstd` and `lz4`"),
-    ],
-)
-def test_related_named_field_precedes_metadata_with_real_ranking(tmp_path, field, values):
-    text = (
-        "# Ledger bridge\n\n## Connection\n\n"
-        "Configure `ledger-agent --workspace /srv/ledger stdio`.\n\n"
-        f"## Diagnostics\n\nLedger bridge {field.lower()} exposure metadata is logged.\n\n"
-        f"## Reference\n\n{field}: {values}.\n"
-    )
-    (tmp_path / "guide.md").write_text(text)
-    source = snapshot(tmp_path, "guide.md")
-    question = f"Which {field.lower()} does the ledger bridge expose?"
-    result = excerpts(
-        tmp_path,
-        [source],
-        question,
-        claims="Configure `ledger-agent --workspace /srv/ledger stdio`.",
-        prefer_question=True,
-    )
-    assert result[0]["text"] == f"{field}: {values}."
-    assert any("metadata" in e["text"] for e in result)
-    assert len(result) <= 2 and sum(len(e["text"]) for e in result) <= 2800
-    for e in result:
-        assert e["text"] == "\n".join(
-            text.splitlines()[e["line"] - 1 : e["line"] - 1 + len(e["text"].splitlines())]
-        )
-    # Declaration ordering cannot bypass current-byte validation.
-    (tmp_path / "guide.md").write_text(text.replace(values, "unavailable"))
-    assert (
-        excerpts(tmp_path, [source], question, claims="old connection", prefer_question=True) == []
-    )
-
-
-@pytest.mark.parametrize(
-    "prefer_question,question",
-    [
-        (False, "Which operations does the ledger bridge expose?"),
-        (True, "Which commands does the ledger bridge expose?"),
-        (True, "How do I configure the ledger bridge?"),
-    ],
-)
-def test_field_ordering_keeps_exact_other_field_and_procedural_behavior(
-    tmp_path, prefer_question, question
-):
-    (tmp_path / "guide.md").write_text(
-        "# Ledger bridge\n\n## Diagnostics\n\nLedger bridge operations exposure metadata is logged.\n\n"
-        "## Reference\n\nOperations: `read_entry` and `append_entry`.\n"
-    )
-    source = snapshot(tmp_path, "guide.md")
-    expected = excerpts(tmp_path, [source], question, claims="unrelated connection")
-    assert (
-        excerpts(
-            tmp_path,
-            [source],
-            question,
-            claims="unrelated connection",
-            prefer_question=prefer_question,
-        )
-        == expected
-    )
-
-
-def test_named_field_cannot_rescue_a_declaration_outside_the_claim_window(tmp_path):
+def test_claim_window_excludes_an_unrelated_declaration(tmp_path):
     (tmp_path / "guide.md").write_text(
         "# Ledger bridge\n\nThe ledger bridge exposes operations via the verified signed adapter.\n\n"
         # A separate section tests score exclusion independently of the rule
@@ -329,7 +197,6 @@ def test_named_field_cannot_rescue_a_declaration_outside_the_claim_window(tmp_pa
         [snapshot(tmp_path, "guide.md")],
         "Which operations does the ledger bridge expose?",
         claims="The ledger bridge exposes operations via the verified signed adapter.",
-        prefer_question=True,
     )
     assert "verified signed adapter" in result[0]["text"]
     assert all("historical values" not in e["text"] for e in result)

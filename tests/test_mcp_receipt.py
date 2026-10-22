@@ -1,6 +1,5 @@
 import copy
 import json
-import re
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -13,10 +12,17 @@ import colony.mcp
 def test_long_punctuated_imperatives_finish_without_exponential_backtracking():
     # The old pattern hangs on a 28-letter word followed by a comma. Use a
     # bounded subprocess so a regression fails rather than hanging the suite.
-    code = """from colony.mcp import research_keyword
+    code = """import json
+from pathlib import Path
+from types import SimpleNamespace
+import colony.mcp
+colony.mcp.Client = lambda home: SimpleNamespace(
+    ask=lambda *a, **kw: {'hit': False, 'reason': 'no_relevant_trail'})
+ask = colony.mcp.create_mcp(Path('.'))._tool_manager.get_tool('ask').fn
 for tail in [',', '/', ':', '.extra']:
     for prefix in ['Run ', 'Start ', 'Please launch ']:
-        research_keyword(prefix + 'a' * 1900 + tail)
+        result = json.loads(ask(prefix + 'a' * 1900 + tail)[0].text)
+        assert result['hit'] is False and 'research_keyword' not in result
 print('complete')
 """
     completed = subprocess.run(
@@ -31,11 +37,13 @@ print('complete')
         "How are ledger archives rotated?",
         "Which migration flags are required?",
         "Describe AssetRegistry.",
+        "How and why should we?",
+        "sk-proj-" + "sensitive" * 3,
+        "postgresql://user:privatepassword@example.invalid/data",
+        "password=privatevalue",
     ],
 )
-def test_miss_suggests_a_literal_question_keyword_without_claiming_an_answer(
-    monkeypatch, tmp_path, question
-):
+def test_miss_has_no_optional_search_hints_or_question_echo(monkeypatch, tmp_path, question):
     monkeypatch.setattr(
         colony.mcp,
         "Client",
@@ -43,115 +51,15 @@ def test_miss_suggests_a_literal_question_keyword_without_claiming_an_answer(
             ask=lambda *a, **kw: {"hit": False, "reason": "no_relevant_trail"}
         ),
     )
-    server = colony.mcp.create_mcp(tmp_path)
-    result = json.loads(server._tool_manager.get_tool("ask").fn(question)[0].text)
-    keyword = result["research_keyword"]
-    assert re.fullmatch(r"[A-Za-z][A-Za-z0-9_]+", keyword)
-    assert keyword.casefold() in question.casefold()
+    result = json.loads(
+        colony.mcp.create_mcp(tmp_path)._tool_manager.get_tool("ask").fn(question)[0].text
+    )
     assert result["hit"] is False and result["reason"] == "no_relevant_trail"
-    assert not {"content", "current_repository_reads", "sources", "status"} & result.keys()
-
-
-@pytest.mark.parametrize(
-    "secret",
-    [
-        "sk-proj-" + "sensitive" * 3,
-        "postgresql://user:privatepassword@example.invalid/data",
-        "password=privatevalue",
-    ],
-)
-def test_keyword_suggestion_does_not_resurface_scrubbed_secrets(secret):
-    assert colony.mcp.research_keyword(secret) is None
-
-
-def test_framing_alone_does_not_invent_a_search_subject():
-    assert colony.mcp.research_keyword("How and why should we?") is None
-
-
-@pytest.mark.parametrize(
-    "question, identifier",
-    [
-        ("How do I connect an agent through RPC?", "RPC"),
-        ("Which verification rules apply to TLS?", "TLS"),
-        ("Explain HTTPS protocol compatibility.", "HTTPS"),
-        ("Describe the `status` identifier.", "status"),
-    ],
-)
-def test_literal_hint_targets_explicit_identifiers_without_changing_their_spelling(
-    question, identifier
-):
-    # Case-sensitive literal search is deliberately independent of the helper:
-    # the named subject occurs in its defining reference, not in topic framing.
-    reference = f"Reference: {identifier}\nThe requested configuration is documented here."
-    hint = colony.mcp.research_keyword(question)
-    assert hint == identifier and hint in reference
-    assert hint not in "How to connect and apply verification compatibility rules."
-
-
-@pytest.mark.parametrize(
-    "question,subject,definition",
-    [
-        ("Which inspect options are mandatory?", "inspect", "inspect --strict"),
-        ("What reconcile parameters are supported?", "reconcile", "reconcile(batch_size=20)"),
-        ("How are bucket permissions checked?", "bucket", "def bucket_access(grant): ..."),
-        ("How is archive retention enforced?", "archive", "archive.expire_after(days=37)"),
-        ("Start the local reconciliation worker.", "worker", "worker --jobs 3"),
-        ("Please launch the shared registry daemon.", "daemon", "daemon --port 9012"),
-    ],
-)
-def test_literal_hint_uses_named_subject_instead_of_generic_prose(question, subject, definition):
-    # The old longest-word hint fails these literal defining-source searches.
-    # No repository names, benchmark answers, or model scores enter this fixture.
-    hint = colony.mcp.research_keyword(question)
-    assert hint == subject and hint in definition
-    assert hint in question
-    assert hint not in "mandatory supported permissions retention reconciliation registry"
-
-
-@pytest.mark.parametrize(
-    "question,expected",
-    [
-        ("Describe archive retention.", "retention"),
-        ("How is the archive rotated?", "archive"),
-        ("Start the worker with tracing.", "tracing"),
-        ("Run a check in isolation.", "isolation"),
-        ("How are password=privatevalue rotated?", "rotated"),
-    ],
-)
-def test_subject_hint_falls_back_for_ambiguous_or_scrubbed_phrases(question, expected):
-    assert colony.mcp.research_keyword(question) == expected
-
-
-@pytest.mark.parametrize(
-    "question,context,definition",
-    [
-        (
-            "How are record formats normalized during ingestion?",
-            "ingestion",
-            "def ingestion(batch): ...",
-        ),
-        ("How is message ordering preserved during replay?", "replay", "def replay(log): ..."),
-        ("How are writes retried during failover?", "failover", "def failover(peer): ..."),
-    ],
-)
-def test_explicit_operation_context_is_a_more_specific_literal_subject(
-    question, context, definition
-):
-    hint = colony.mcp.research_keyword(question)
-    assert hint == context and hint in definition and hint in question
-
-
-@pytest.mark.parametrize(
-    "question,expected",
-    [
-        ("How are records handled during an outage?", "records"),
-        ("How are records handled during warm restart?", "records"),
-        ("How are RPC requests handled during replay?", "RPC"),
-        ("How are records handled during password=privatevalue?", "records"),
-    ],
-)
-def test_operation_hint_does_not_guess_ambiguous_or_scrubbed_context(question, expected):
-    assert colony.mcp.research_keyword(question) == expected
+    assert not {
+        "research_keyword", "research_paths", "content", "current_repository_reads", "sources", "status"
+    } & result.keys()
+    assert question not in json.dumps(result)
+    assert "repository-relative targets" in result["research_guidance"]
 
 
 def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):
@@ -265,14 +173,6 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "even for a new question" in instructions
     assert "ask's reads/hashes never qualify" in instructions
     assert "Never reread just to push" in instructions
-    server = colony.mcp.create_mcp(tmp_path)
-    research = " ".join(server._tool_manager.get_tool("ask").description.split())
-    assert "one keyword per literal search" in research
-    assert "broaden empty searches" in research
-    assert "stop once this question has source support" in research
-    assert "Don't research extra topics merely to fill memory" in (
-        server._tool_manager.get_tool("push").description
-    )
 
 
 def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path):
@@ -456,8 +356,7 @@ def test_push_uses_one_lossless_json_block_on_wire(monkeypatch, tmp_path):
     assert packet["id"] == "a" * 32
 
 
-def test_direct_answers_preserve_qualifications_and_citations(monkeypatch, tmp_path):
+def test_reuse_policy_preserves_qualifications_and_citations(monkeypatch, tmp_path):
     monkeypatch.setattr(colony.mcp, "Client", lambda home: None)
     policy = colony.mcp.create_mcp(tmp_path).instructions
-    assert "without narrating lookups or storage" in policy
     assert "Keep required steps, conditions, exceptions and source citations" in policy

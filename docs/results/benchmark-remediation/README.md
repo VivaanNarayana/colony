@@ -1,14 +1,16 @@
 # Strict gate remediation against main
 
-**Paused at the user's request after the runtime retention review.** The optional `research_paths` miss hint remains removed. The current revision has not been rerun. Trial 40's historical 5/8 result applies only to source `554f239`, which included the now-removed hint. All eight checks remain strict and required; current-head checks are pending, with no historical passes carried forward. All failures are retained, and PR #3 remains draft and unmerged. No further test or benchmark run is scheduled.
+**Paused at the user's request after removing the six optional runtime changes without demonstrated performance benefits.** `research_paths` remains removed too. Benchmark fixes and all failed evidence are preserved. The current revision has not been tested or benchmarked; all eight current-head checks are pending and remain strict and required. Historical trial 40's 5/8 result applies only to source `554f239`. PR #3 remains draft and unmerged, with no further run scheduled.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
 
-The completed [runtime retention review](runtime-retention-review.md) keeps the source index, same-request descriptor reuse, batch-one inference, bounded four-thread inference, fresh empty-store fast path, shared connection and lossless/redundant-field receipt compaction for their measured local or work/byte benefits. It keeps source-quality, citation/provenance, qualification and research-policy guards for their documented behavior, with no isolated end-to-end speedup claim. The retained literal keyword hint was used in all five trial 40 misses; the removed path hint saved no searches. Rejected experiments remain absent. No further active change has enough evidence of a performance regression to justify rollback from this review. Runtime code, benchmark scripts, tests and every retained attempt remain unchanged from `a64b2ef`; this is a documentation-only review, with no new run or gate credit.
+The user requested removal of the optional changes retained on quality or plausible-work-avoidance grounds. The [completed removal record](optional-runtime-removal.md) documents removal of the `research_keyword` helper/payload, extra research/save and narration policy, focused descriptive sentence ranking, availability/queue/auxiliary lexical normalization, related-question/requested-field prioritization and standalone-paragraph compaction. Original full paragraph/claim ranking, baseline lexical term handling and normal bounded section context remain. The previous [retention review](runtime-retention-review.md) is historical and superseded for those items.
 
-The user requested removal of `research_paths` while keeping the benchmark corrections and then pausing without another run. Store misses no longer collect or return navigation paths, and MCP no longer adds path-specific guidance. The product README no longer advertises the hint. The 11 cases testing the removed feature are removed with it; the 21 strict proof-admission/copy-fidelity regressions remain unchanged. All benchmark scripts, independent evaluator tests, acceptance gates, workload and rubric remain unchanged. The runtime source is restored exactly to the pre-hint revision `b215655` (the same runtime measured in trial 32), without a retry or new performance claim. Only static source/diff checks were made for this removal; no tests, profiles, local benchmarks or native sessions were run.
+Measured local/work/byte optimizations remain, along with canonical citations, source/proof provenance, mandatory research-save rules, command fences, prerequisite/qualification preservation and scope/age/hash/privacy checks. Benchmark scripts, evaluator tests, canonical workload, prompts, quality rubric, score thresholds, budgets and all eight numerical gates are unchanged. The vulnerable keyword parser and optional paragraph shortcut are gone; their long-input and adjacent-qualification regression protections remain. The 21 proof-admission regressions are unchanged. Feature-specific tests are updated or removed with the removed behavior; no evaluator expectation is relaxed.
+
+Only static syntax/reference/diff/whitespace checks were performed. No tests, profiles, local/native benchmarks or analyzer replays were run. Current correctness/performance is unverified, and no historical green is carried to this revision. All failed attempts and manifests remain unchanged. Pause without another run.
 
 ## Last completed run: historical trial 40
 
@@ -222,16 +224,18 @@ Trial 18's `connect` suggestion caused a second MCP search. Its tools lookup sup
 
 ## Runtime changes retained
 
-- Skip neural ranking only where a sole eligible candidate cannot change selection; preserve validation, scope and age checks.
-- Return canonical relative citations and bounded original source text, retaining complete command fences and adjacent recipe prerequisites.
-- Avoid ONNX padding waste with individual source embedding and cross-encoder inference; real-model checks preserve vector values, logits and order. The 14-passage diagnostic fell from 1.12s to 0.44s; this is not live gate evidence.
-- Focus nonprocedural text-document ranking on coherent neighboring sentences; retain full procedure inputs and existing coverage, coherence and model cutoffs.
-- Normalize availability and queued-request paraphrases while preserving substantive query subjects and credential/token uses of “get.”
-- Omit duplicate plain file identities already present in current reads; preserve assertions, undisplayed identities, warnings and hashes.
-- Explicitly classify evidence-only derivation as memory reuse even for a new question; prohibit pushing or rereading solely to push it.
-- Compact duplicated MCP session policy. Reuse valid v7 indexes: passage inputs match main exactly after the experimental positional-query mask was reverted; experimental v8/v9 stores still rebuild by version mismatch.
+The current implementation retains the locally supported work reductions and core correctness behavior below. The six optional additions in the [removal record](optional-runtime-removal.md) are absent. Historical notes elsewhere describe earlier sources, not current gate passes.
 
-The positional-query masking experiment caused research misses and was reverted. Procedure focusing also selected unrelated provisioning prose; full procedure paragraphs are restored. Those failed outcomes are retained rather than hidden by the later fixes. The separate source-cache prototype is untouched.
+- Source-proof lookup index with stable proof order and existing-store migration.
+- Fresh scoped-empty-store inference bypass and shared populated preflight/answer connection.
+- Singleton selection shortcuts and batch-one source embedding/reranking.
+- Four-thread model bound and same-request single-file descriptor handoff with fresh display hashes.
+- Compact MCP receipts and omission of redundant fields/plain identities, with advanced assertions and full CLI/HTTP audit metadata retained.
+- Canonical relative citations, bounded original source context, complete fences and adjacent recipe prerequisites.
+- Explicit source trust/current-read provenance, memory reuse versus actual new research, strict file-proof schema and qualification preservation.
+- Compatible v7 vectors; incompatible experimental indexes still rebuild.
+
+No current runtime feature or combined revision is claimed to have cleared the eight gates. The retained local diagnostic benefits and CPU/payload tradeoffs remain limited as documented; all historical failures are preserved.
 
 ## Historical paused checkpoint (superseded by explicit resume)
 
