@@ -134,6 +134,7 @@ def excerpts(
     candidate_chunks: list[tuple[str, int, str]] | None = None,
     claims: str | None = None,
     whole_files: bool = False,
+    section_context: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
     if whole_files and 1 <= len(unique) <= 4:
@@ -237,4 +238,24 @@ def excerpts(
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
         occupied.append((ref, start, end))
         budget -= len(text)
+    if section_context and len(selected) == 1 and budget >= 300:
+        # An isolated detail paragraph can omit definitions or qualifications
+        # introduced at the start of its section. Use an otherwise empty second
+        # excerpt slot for that context, without evicting another ranked passage
+        # or increasing the existing text/excerpt budgets. No new file is read.
+        item = selected[0]
+        ref, line = item["ref"], item["line"]
+        if Path(ref).suffix.lower() in {".md", ".markdown"}:
+            heading, fenced = None, False
+            for i, text in enumerate(cache[ref][: line - 1]):
+                if text.lstrip().startswith(("```", "~~~")):
+                    fenced = not fenced
+                elif not fenced and re.match(r"^#{1,6} ", text):
+                    heading = i + 1
+            if heading is not None:
+                start, text = context_window(ref, cache[ref], heading, 6)
+                if text and len(text) <= budget and start + text.count("\n") < line:
+                    selected.insert(
+                        0, {"ref": ref, "line": start, "text": text, "complete_file": False}
+                    )
     return selected

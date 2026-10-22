@@ -14,8 +14,21 @@ from colony.models import Model, Source, Trail
 class FileEvidence(Model):
     """File fingerprints obtained during research."""
 
-    ref: str = Field(min_length=1, max_length=1024)
-    content_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    ref: str = Field(
+        min_length=1,
+        max_length=1024,
+        description="Copy the exact ref from the same new research read as content_hash.",
+    )
+    content_hash: str = Field(
+        min_length=64,
+        max_length=64,
+        pattern=r"^[a-f0-9]{64}$",
+        description=(
+            "Copy all 64 lowercase hexadecimal characters verbatim from that new research "
+            "read's fingerprint. Compare the entire value before submitting; never retype, "
+            "shorten, reconstruct or use ask's hash."
+        ),
+    )
     kind: str = Field(default="file", pattern="^file$")
 
 
@@ -28,6 +41,15 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "supported answer and those file fingerprints. Check the receipt for stored=true "
         "or queued=true; otherwise report the save failure. Push is separate from research "
         "tool calls. Never invent fingerprints or save using only ask's reads/hashes."
+        " Copy each ref/content_hash pair verbatim from the same successful new research read. "
+        "Compare all 64 lowercase hexadecimal hash characters with that read before submitting. "
+        "Never retype, shorten or reconstruct a fingerprint. Report a rejected save."
+    )
+    sufficiency_guidance = (
+        "Check whether the current text supplies every requested fact. A validated hit only "
+        "checks file identity, not answer completeness. If a requested fact is absent, research "
+        "that gap before answering; saying the excerpt lacks the answer does not resolve it. "
+        "If all requested facts are present, use them directly without confirmation reads or push."
     )
     research_guidance = (
         "A memory lookup does not test other tools' availability. If its evidence is insufficient, "
@@ -44,7 +66,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "Push requires new external research; ask's reads/hashes never qualify. "
         "Never reread just to push. Copy citation verbatim; use repository-relative paths "
         "without a leading slash. Keep required steps, conditions, exceptions and source citations."
-        " " + save_guidance
+        " " + sufficiency_guidance + " " + save_guidance
     )
     # State the required save explicitly as well as restricting when saves are allowed.
     server = FastMCP("Colony", instructions=reuse_guidance)
@@ -139,7 +161,10 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             }
             response["next_action"] = (
                 "Reuse sufficient reads: answer and cite; no read or push, even for a new question. "
-                "Research gaps; never push ask's reads/hashes. " + save_guidance
+                "Research gaps; never push ask's reads/hashes. "
+                + sufficiency_guidance
+                + " "
+                + save_guidance
             )
         else:
             response["research_guidance"] = research_guidance
@@ -163,7 +188,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         ]
 
     @server.tool(
-        annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False), structured_output=False
+        annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
+        structured_output=False,
     )
     def push(
         namespace: str,
@@ -178,7 +204,9 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         After needed external research, save before answering with the original question and
         namespace, and confirm stored=true or queued=true; otherwise report the save failure.
         Search matches alone supply no file fingerprint. Client scrubs secrets; mark external
-        content tainted."""
+        content tainted. Copy each ref/content_hash pair verbatim from the same successful new
+        research read. Compare all 64 lowercase hexadecimal hash characters before submitting;
+        never retype, shorten or reconstruct a fingerprint. Report a rejected save."""
         result = client.push(
             Trail(
                 id=uuid.uuid4().hex,

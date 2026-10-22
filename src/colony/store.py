@@ -297,46 +297,69 @@ class Store:
             lexical = keyword_coverage(question, [text for _, text in candidates])
             dense = [
                 i for i, (linked, _) in enumerate(candidates) if 1 - linked[0]["distance"] >= 0.45
-            ][:24]
+            ]
             sparse = [
                 i
                 for i in sorted(range(len(lexical)), key=lexical.__getitem__, reverse=True)
                 if lexical[i] >= 0.15
-            ][:24]
+            ]
             # A lexical candidate can rescue evidence below the dense cutoff. Keep
             # the expensive cross-encoder bounded to at most 48 distinct passages.
-            chosen = sorted(set(dense) | set(sparse))
-            # These eligibility guards do not use model scores. Apply them after
-            # candidate selection so IDF, cutoffs and tie order stay unchanged,
-            # but before spending inference on passages that cannot be returned.
-            chosen = [
-                i
-                for i in chosen
-                if (
-                    procedural_text(candidates[i][1])
-                    if procedure
-                    else lexical[i] >= 0.5 and local_term_support(query_terms, candidates[i][1])
-                )
-            ]
+            chosen = set(dense[:24]) | set(sparse[:24])
+            # Dense and lexical pools often overlap. Fill their unused shared
+            # budget from the remaining eligible passages rather than letting
+            # repeated topic paragraphs crowd out a terse declaration. The
+            # original eligibility cutoffs and total cap of 48 remain intact.
+            for i in dict.fromkeys([*dense, *sparse]):
+                if len(chosen) >= 48:
+                    break
+                chosen.add(i)
+            chosen = sorted(chosen)
+            if procedure:
+                chosen = [i for i in chosen if procedural_text(candidates[i][1])]
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
             scores = rank(question, [text for _, text in candidates])
+            nonliteral = [
+                i
+                for i, (_, text) in enumerate(candidates)
+                if not procedure
+                and not (lexical[i] >= 0.5 and local_term_support(query_terms, text))
+            ]
+            # A short declaration can answer a question without repeating its
+            # vocabulary. Compare each section-conditioned passage with its
+            # heading alone: the body must add support, while retaining the
+            # heading needed to interpret terse declarations such as a format list.
+            topics = []
+            for i in nonliteral:
+                text = candidates[i][1]
+                title = text.partition("\n")[0]
+                topics.append(title if title.startswith("Section: ") else question)
+            topic_scores = rank(question, topics) if nonliteral else []
+            semantic_support = set()
+            for i, topic_score in zip(nonliteral, topic_scores, strict=True):
+                if scores[i] > max(0.0, topic_score):
+                    semantic_support.add(i)
             ordered = sorted(
                 [
-                    (linked, evidence_score(1 - linked[0]["distance"], score, coverage))
-                    for (linked, text), score, coverage in zip(
-                        candidates, scores, lexical, strict=True
+                    (linked, evidence_score(1 - linked[0]["distance"], score, coverage), score)
+                    for i, ((linked, text), score, coverage) in enumerate(
+                        zip(candidates, scores, lexical, strict=True)
                     )
                     if score >= -5.0
                     and (
                         (coverage >= 0.5 and (procedure or local_term_support(query_terms, text)))
                         or (procedure and procedural_text(text) and score >= -2)
+                        or i in semantic_support
                     )
                     and (not procedure or procedural_text(text))
                 ],
-                key=lambda item: item[1],
+                # Direct answer support must not lose to repeated topic words.
+                # Keep the existing procedural ordering and all candidate caps.
+                key=lambda item: (item[1],) if procedure else (item[2], item[1]),
                 reverse=True,
             )
+            ordered = [(linked, relevance) for linked, relevance, _ in ordered]
             checked = set()
             for linked, relevance in ordered:
                 for row in linked:
@@ -372,6 +395,7 @@ class Store:
                         preferred=preferred,
                         candidate_chunks=prepared,
                         whole_files=include_evidence_files,
+                        section_context=not procedure,
                     )
                     if evidence:
                         break
@@ -504,7 +528,9 @@ class Store:
             candidates = sorted(
                 (
                     item
-                    for i, item in enumerate(zip(rows, contents, relevance_scores, scores, strict=True))
+                    for i, item in enumerate(
+                        zip(rows, contents, relevance_scores, scores, strict=True)
+                    )
                     if i not in topic_scores or item[3] > max(0.0, topic_scores[i])
                 ),
                 # Raw logits retain the difference between strong positive matches;
