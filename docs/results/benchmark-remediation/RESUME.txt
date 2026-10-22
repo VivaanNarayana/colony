@@ -1,3 +1,23 @@
+PAUSED AFTER USER-REQUESTED research_paths REMOVAL, 2026-10-22.
+Do not resume or run tests/benchmarks without a new user request. No further run is
+scheduled. Same branch feat/benchmark-independent-evaluation; PR3 draft/unmerged.
+Removed the optional navigation-only miss hint from Store.ask/find_evidence and
+its MCP guidance, removed the product README description and the 11 hint-specific
+regression cases. Runtime source exactly matches pre-hint revision b215655 (same
+runtime as measured trial32). The21 strict proof-admission/copy tests are unchanged.
+All benchmark fixes, benchmark scripts, independent evaluator tests, canonical
+workload/rubric/budgets and all8 numerical gates are unchanged. No weakened gates.
+No tests, profiles, local benchmarks, native sessions or analyzer replays were run
+for this removal. Static source hashes/diffs/whitespace checked only. Current head
+is unmeasured; all8required statuses pending. Do not carry forward old green checks.
+Trial40's5/8 and302pass1skip are HISTORICAL, source554f239, not current-head results.
+All trial40/preflight/prior failed evidence and manifests are preserved unchanged.
+No source-equivalent retry is authorized; all-eight objective remains unfinished.
+Strict active ruleset25440133,8required,up-to-date,no bypass remain unchanged.
+No standalone work-plan file. This is a factual resume checkpoint, not a new plan.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THE REMOVAL RECORD ABOVE.
+
 PAUSED AT USER REQUEST AFTER TRIAL40, 2026-10-22.
 Do not resume without a new user request. No further optimization/run is scheduled.
 PR3 remains draft/unmerged, same branch feat/benchmark-independent-evaluation.

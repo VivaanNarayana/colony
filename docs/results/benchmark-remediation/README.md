@@ -1,10 +1,14 @@
 # Strict gate remediation against main
 
-**Paused at the user's request after trial 40. The completed run passes 5/8 gates; gross-token, uncached-token and live-time confidence gates fail.** All eight checks remain strict and required. Every failure is retained, and PR #3 remains draft and unmerged. No further optimization or run is scheduled.
+**Paused at the user's request after removing the optional `research_paths` miss hint.** The current revision has not been rerun. Trial 40's historical 5/8 result applies only to source `554f239`, which included the now-removed hint. All eight checks remain strict and required; current-head checks are pending, with no historical passes carried forward. All failures are retained, and PR #3 remains draft and unmerged. No further test or benchmark run is scheduled.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+The user requested removal of `research_paths` while keeping the benchmark corrections and then pausing without another run. Store misses no longer collect or return navigation paths, and MCP no longer adds path-specific guidance. The product README no longer advertises the hint. The 11 cases testing the removed feature are removed with it; the 21 strict proof-admission/copy-fidelity regressions remain unchanged. All benchmark scripts, independent evaluator tests, acceptance gates, workload and rubric remain unchanged. The runtime source is restored exactly to the pre-hint revision `b215655` (the same runtime measured in trial 32), without a retry or new performance claim. Only static source/diff checks were made for this removal; no tests, profiles, local benchmarks or native sessions were run.
+
+## Last completed run: historical trial 40
 
 Trial 40 measures source `554f239c0f57710dc0c437d2c94c86cda84913d6` against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`, still current when publishing. All 48 native sessions completed once; every answer, current source packet, new research read and push receipt was reviewed. Facts are 24/24 in both arms, citations 19/24 main and 24/24 feature, with zero protocol violations in both arms.
 
@@ -16,7 +20,7 @@ Trial 40 measures source `554f239c0f57710dc0c437d2c94c86cda84913d6` against fres
 
 Local lookup passes all 117 oracle observations per arm: 2.487960199941881s main versus 1.8454217002145015s feature, 25.825916% lower, with 95% reduction interval +16.687796% to +36.101352%. All 234 raw observations independently reconstruct correctly. Full verification is 302 passed, one existing Windows symlink skip, 68.54s; Ruff and whitespace checks pass. The 32 new regressions cover strict proof admission/copy fidelity and navigation scope, age, stale or missing files, advanced assertions, all-proof validation, bounded work and unchanged validated hits. Existing benchmarks and tests were not weakened.
 
-The runtime can attach one navigation-only file path to an actual miss, using existing scoped/fresh dense and lexical candidates and freshly validating every attached proof, with at most three trail validations. It supplies no answer, current read or fingerprint. Original answer eligibility, model inputs/weights, scores/cutoffs and contexts are preserved. Actual new research and a successful save using its returned fingerprints remain mandatory.
+The runtime measured in trial 40 could attach one navigation-only file path to an actual miss, using existing scoped/fresh dense and lexical candidates and freshly validating every attached proof, with at most three trail validations. It supplies no answer, current read or fingerprint. Original answer eligibility, model inputs/weights, scores/cutoffs and contexts are preserved. Actual new research and a successful save using its returned fingerprints remain mandatory.
 
 In the full trial, all four hinted misses (`serve-2`, `scope-2`, `stale-3`, `serve-3`) returned `README.md`, and all four subjects still searched. No saved search can be attributed to these hints in this run. Main/feature research calls are 22/11, tool calls 53/40 and asks 24/24; these totals do not establish a causal effect of the new hint. Gross cost worsens in tests, scope and stale; uncached cost worsens in MCP, capture and serve. Live time worsens overall. Every cost and cache variation remains counted.
 
@@ -26,7 +30,7 @@ The separate fixed eight-session independent preflight retains all facts/citatio
 
 ## Earlier retained revisions
 
-The following historical checkpoint notes are superseded by trial 40 above; their failures and original evidence remain retained.
+The following historical checkpoint notes are superseded by the current paused removal record above; their failures and original evidence remain retained.
 
 Candidates35–39 also produced no new full benchmark. Scheduling35 added research and input; query framing36 recovered no misses; enclosing Python scopes37 failed the actual Store screen despite an isolated model win and passing tests. Transport diagnostic38 followed both initialization markers, so instruction truncation was not established. Compact proof schema39 omitted a mandatory save in one native case, so the original schema was restored. Complete diagnostic failures, sources and reviews are retained in their attempt directories. The later navigation-only miss hint was measured in trial 40 above; its full performance gates fail.
 

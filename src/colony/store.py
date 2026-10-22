@@ -246,32 +246,19 @@ class Store:
             )
         if answer.get("status") == "validated" or not namespaces:
             return answer
-        research_paths = []
-        result = (
+        return (
             self.find_evidence(
                 question,
                 namespaces,
                 max_age,
                 include_evidence_files=include_evidence_files,
                 query_vector=query_vector,
-                research_paths=research_paths if not answer.get("hit") else None,
             )
             or answer
         )
-        if not result.get("hit") and research_paths:
-            # Navigation is not an answer, source read, fingerprint or proof.
-            result["research_paths"] = research_paths
-        return result
 
     def find_evidence(
-        self,
-        question,
-        namespaces,
-        max_age,
-        *,
-        include_evidence_files=False,
-        query_vector=None,
-        research_paths=None,
+        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         if not namespaces:
@@ -320,18 +307,6 @@ class Store:
             # A lexical candidate can rescue evidence below the dense cutoff. Keep
             # the expensive cross-encoder bounded to at most 48 distinct passages.
             chosen = sorted(set(dense) | set(sparse))
-            # Retain only already-selected, both dense and lexical candidates
-            # for optional navigation after a miss. Answer eligibility below is
-            # unchanged; a path cannot supply facts or a push fingerprint.
-            navigation = (
-                [
-                    candidates[i][0]
-                    for i in chosen
-                    if 1 - candidates[i][0][0]["distance"] >= 0.45 and lexical[i] >= 0.15
-                ]
-                if research_paths is not None
-                else []
-            )
             # These eligibility guards do not use model scores. Apply them after
             # candidate selection so IDF, cutoffs and tie order stay unchanged,
             # but before spending inference on passages that cannot be returned.
@@ -446,30 +421,6 @@ class Store:
                     "evidence": evidence,
                     "complete_files": [e["ref"] for e in evidence if e.get("complete_file")],
                 }
-            # No answer qualified. At most three already-scoped, fresh trails
-            # can supply one previously cited file location. Validate every
-            # attached proof now; stale bytes/assertions/URLs never supply hints.
-            checked_hints = set()
-            for linked in navigation:
-                for row in linked:
-                    if row["id"] in checked_hints:
-                        continue
-                    if len(checked_hints) >= 3:
-                        return None
-                    checked_hints.add(row["id"])
-                    sources = self.sources(db, row["id"])
-                    if row["created_at"] < time.time() - max_age:
-                        continue
-                    if not any(
-                        source.kind == "file"
-                        and source.ref == row["ref"]
-                        and source.content_hash == row["content_hash"]
-                        for source in sources
-                    ):
-                        continue
-                    if validate(self.repo, sources)[0] == "validated":
-                        research_paths.append(row["ref"])
-                        return None
         return None
 
     def find_answer(
