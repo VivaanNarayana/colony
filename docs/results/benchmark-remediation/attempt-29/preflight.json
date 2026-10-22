@@ -1,0 +1,9 @@
+{
+  "tests_passed": 267,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 121.97,
+  "ruff_passed": true,
+  "diff_check_passed": true,
+  "scope": "Full suite with current four-thread cap; all source safety, MCP receipt, numerical equivalence, descriptor handoff, native raw-budget and independent oracle regressions; existing Windows symlink skip"
+}
