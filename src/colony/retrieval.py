@@ -24,7 +24,12 @@ CANDIDATES = 12
 
 @lru_cache(maxsize=1)
 def models():
-    options = {"cache_dir": os.environ.get("COLONY_MODEL_CACHE"), "threads": 2}
+    # Bounded CPU parallelism accelerates the same batch-one inference without
+    # padding, changing model inputs, or consuming every processor on a shared host.
+    options = {
+        "cache_dir": os.environ.get("COLONY_MODEL_CACHE"),
+        "threads": min(4, os.cpu_count() or 1),
+    }
     return TextEmbedding(
         model_name=EMBED_MODEL,
         revision=EMBED_REVISION,

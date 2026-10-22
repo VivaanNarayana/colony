@@ -23,6 +23,29 @@ def read_json(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def successful_push(call):
+    """Transport completion alone does not establish a successful save."""
+    if call.get("status") != "completed" or call.get("error"):
+        return False
+    result = call.get("result")
+    if not isinstance(result, dict) or result.get("isError") or result.get("is_error"):
+        return False
+    try:
+        content = result["content"]
+        if len(content) != 1:
+            return False
+        receipt = json.loads(content[0]["text"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not isinstance(receipt, dict):
+        return False
+    if any(type(receipt[k]) is not bool for k in ["stored", "queued"] if k in receipt):
+        return False
+    return (receipt.get("stored") is True and receipt.get("queued") is not True) or (
+        receipt.get("stored") is False and receipt.get("queued") is True
+    )
+
+
 def evaluate_gates(main, feature, local, verification, implementations_verified, intervals=None):
     intervals = intervals or {}
     return {
@@ -274,9 +297,7 @@ def compare(results, local, *, local_directory=None):
             pushes = [c for c in calls if c["server"] == "colony" and c["tool"] == "push"]
             compliant = compliant and (bool(research) if not reused else True)
             compliant = compliant and len(pushes) == (0 if reused else 1)
-            compliant = compliant and all(
-                p.get("status") == "completed" and not p.get("error") for p in pushes
-            )
+            compliant = compliant and all(successful_push(p) for p in pushes)
             totals["protocol_violations"] += not compliant
             totals["correct"] += review["correct"]
             totals["valid_citations"] += review["citation_valid"]

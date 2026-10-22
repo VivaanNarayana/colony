@@ -316,3 +316,46 @@ def test_relevant_validated_reuse_needs_no_push_or_research(trial):
     reviews["independent-0.colony"]["relevant_asks"] = [True]
     write_json(directory / "reviews.json", reviews)
     assert compare(trial, read_json(trial / "local.json"))["gate"]["feature_follows_tool_protocol"]
+
+
+@pytest.mark.parametrize("arm", ["main", "feature"])
+@pytest.mark.parametrize(
+    "receipt,expected",
+    [
+        ({"stored": True}, True),
+        ({"stored": False, "queued": True}, True),
+        ({"stored": False}, False),
+        ({"stored": False, "queued": False}, False),
+        ({"stored": True, "queued": True}, False),
+        ({"stored": 1}, False),
+        ({"stored": "true"}, False),
+        ({"error": "write rejected"}, False),
+        ([], False),
+        ("Error executing tool push: write failed", False),
+    ],
+)
+def test_researched_push_requires_success_receipt_in_both_arms(trial, arm, receipt, expected):
+    from analyze_lookup_live import compare, read_json
+
+    directory = trial / arm
+    path = directory / "independent-0.colony.events.jsonl"
+    events = [json.loads(s) for s in path.read_text().splitlines()]
+    result = events[2]["item"]["result"]
+    result["content"][0]["text"] = receipt if isinstance(receipt, str) else json.dumps(receipt)
+    write_jsonl(path, events)
+    report = compare(trial, read_json(trial / "local.json"))
+    assert report["arms"][arm]["protocol_violations"] == int(not expected)
+    assert report["gate"]["feature_follows_tool_protocol"] == expected
+
+
+@pytest.mark.parametrize("arm", ["main", "feature"])
+def test_error_envelope_cannot_turn_a_save_receipt_into_success(trial, arm):
+    from analyze_lookup_live import compare, read_json
+
+    path = trial / arm / "independent-0.colony.events.jsonl"
+    events = [json.loads(s) for s in path.read_text().splitlines()]
+    events[2]["item"]["result"]["isError"] = True
+    write_jsonl(path, events)
+    assert not compare(trial, read_json(trial / "local.json"))["gate"][
+        "feature_follows_tool_protocol"
+    ]

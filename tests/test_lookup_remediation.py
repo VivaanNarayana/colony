@@ -377,3 +377,41 @@ def test_prose_does_not_expand_into_an_unselected_recipe():
     assert "Unavailable relays queue requests for fifteen seconds." in text
     assert "orbitctl bootstrap" not in text
     assert text == "\n".join(lines[start - 1 : start - 1 + len(text.split("\n"))])
+
+
+def test_bounded_cpu_parallelism_preserves_two_thread_model_outputs():
+    import os
+
+    from fastembed import TextEmbedding
+    from fastembed.rerank.cross_encoder import TextCrossEncoder
+
+    from colony.retrieval import EMBED_MODEL, EMBED_REVISION, RANK_MODEL, RANK_REVISION
+
+    texts = [
+        "Signed archives expire after thirty-seven days.",
+        "Short operational note.",
+        "Unrelated audit logging details. " * 100,
+        "```sh\norbitctl verify --strict\n```",
+        "Signed archives expire after thirty-seven days.",
+    ]
+    query = "How long are signed archives retained?"
+    baseline_embed = TextEmbedding(
+        model_name=EMBED_MODEL,
+        revision=EMBED_REVISION,
+        specific_model_path=os.environ.get("COLONY_EMBED_MODEL_DIR"),
+        threads=2,
+    )
+    baseline_rank = TextCrossEncoder(
+        model_name=RANK_MODEL,
+        revision=RANK_REVISION,
+        specific_model_path=os.environ.get("COLONY_RANK_MODEL_DIR"),
+        threads=2,
+    )
+    vectors = list(baseline_embed.passage_embed(texts, batch_size=1))
+    actual = embed_passages(texts)
+    for current, original in zip(actual, vectors, strict=True):
+        np.testing.assert_allclose(np.frombuffer(current, dtype=np.float32), original, atol=1e-5)
+    expected = list(baseline_rank.rerank(query, texts, batch_size=1))
+    scores = rank(query, texts)
+    np.testing.assert_allclose(scores, expected, atol=1e-5, rtol=1e-5)
+    assert np.argsort(scores).tolist() == np.argsort(expected).tolist()

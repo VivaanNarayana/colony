@@ -1,3 +1,13 @@
+TRIAL26 preparation: new runtime uses up to4 CPU model threads (logical-CPU capped),
+unchanged batch1/model snapshots/inputs/weights/cutoffs/index, exact diagnostic
+outputs vs original2 threads; independent medians26.5%/36.9% lower.
+Mandatory researched-miss push rule now requires a real successful stored/queued
+receipt, not just a completed transport. Both-arm regressions; full suite237 pass,
+1 existing skip, lint/diff clean. Prior22 pass and25 rejection replay identically.
+Trial26 plan in attempt26; fresh local first then all48 live if local qualifies.
+Current main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d unchanged. No new branch or feature;
+no source25 retry. All8 strict required statuses remain blocking; draft/unmerged.
+
 LATEST: trial25 source e4a3980456de1a7ed2ec6b8c2c6f28525d257611 complete but
 NONQUALIFYING. Strict analyzer rejects main scope-2 push fingerprint mismatch;
 main then pushes again. All48 sessions retained; exact public replay exit1.

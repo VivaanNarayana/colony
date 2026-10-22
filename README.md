@@ -199,7 +199,8 @@ Lexical selection rereads scoped, cited files with matching hashes; this bounded
 approach is intended for small teams and does not provide a scalable full-text index.
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
-FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
+FastEmbed/ONNX, with up to four CPU threads per model, capped by the logical processor
+count. Agent text stays on this host. Set
 `COLONY_MODEL_CACHE` to choose a shared model cache. For fully offline provisioning, set
 `COLONY_EMBED_MODEL_DIR` to the BGE-small ONNX snapshot directory and
 `COLONY_RANK_MODEL_DIR` to the MiniLM reranker snapshot directory. Both must contain the
