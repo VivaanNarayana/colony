@@ -1,5 +1,9 @@
 # Benchmark independence audit
 
+**Latest: single trial 43 failed local quality and is paused.** Feature `8fb06ee` versus freshly fetched main `6fa6826` passes 108/117 source-backed observations versus main's 117/117. The descriptive saved-answer term guard added at checkpoint 42 rejects legitimate archive-retention paraphrases; all three variants fail in all three scheduled repetitions. Every raw row/error is retained and all 234 observations independently reconstruct exactly. The faster timing is disqualified by correctness failure. Under the predeclared stopping rule, zero live sessions were started; protocol and live performance are untested. Identical-code tests from checkpoint 42 remain green, local lookup is failed, six other checks are pending and blocking, and all eight strict required checks are unchanged. No fix, retry or further run. PR #3 remains draft/unmerged. [Trial 43 evidence](results/benchmark-remediation/attempt-43/README.md).
+
+## Historical tests-only checkpoint 42
+
 **Latest revision: tests-only correctness checkpoint 42, paused.** Source `f7066168c8023113291f8aac464286711ff69bf6` passes 268 tests with one existing Windows skip; Ruff/whitespace pass. The three previously failing assertions are unchanged. Related descriptive saved answers now require the existing local fact-support guard, and MCP guidance explicitly requires a file-backed save/receipt after needed external research. Nine new regression cases pass. All prior failures remain retained. No benchmark, profile or analyzer replay was run, so live protocol compliance and performance remain unverified; seven required checks are pending and blocking. All eight strict required gates and the benchmark fixes are unchanged. PR #3 remains draft and unmerged. [Checkpoint 42 evidence](results/benchmark-remediation/attempt-42/README.md).
 
 ## Last completed benchmark: historical trial 41

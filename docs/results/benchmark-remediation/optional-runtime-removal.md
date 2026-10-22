@@ -1,5 +1,7 @@
 # Removal of optional runtime changes, October 22, 2026
 
+**Current validation:** [Trial 43](attempt-43/README.md) subsequently fails local quality: the checkpoint 42 descriptive-answer term guard rejects valid archive-retention paraphrases, feature 108/117 versus main 117/117. The faster timing cannot qualify. Live sessions were not started under the stopping rule; no fix or retry occurred. This does not establish the live effect of the save guidance.
+
 **Later correctness repair:** [Checkpoint 42](attempt-42/README.md) adds local fact-support eligibility for descriptive saved answers and an explicit required research/save sequence. These are user-requested correctness repairs with passing tests, not demonstrated performance gains. Optional search/path hints and the other removed heuristics remain absent; no further benchmark was run.
 
 **Subsequent authorized validation:** [Trial 41](attempt-41/README.md) later tested this source once and passed 3/8 gates, retaining all five failed gates. The no-run statements below describe the original removal checkpoint, not current validation status. No implementation change or retry occurred during that later trial.

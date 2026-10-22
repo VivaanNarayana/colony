@@ -1,0 +1,9 @@
+{
+  "result": {
+    "observations": 234,
+    "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+    "raw_measurements_verified": true
+  },
+  "exactly_matches_private_audit": true,
+  "new_lookup_or_model_inference_started": false
+}

@@ -1,10 +1,18 @@
 # Strict gate remediation against main
 
-**Paused after tests-only correctness checkpoint 42: 268 passed, one existing Windows skip; Ruff passes.** The three previously failing assertions pass unchanged. Nine new regressions cover local fact support for descriptive saved answers and explicit research/save guidance. No benchmark was run. Only the tests/lint check is validated for this changed source; the other seven required checks remain pending and blocking. PR #3 remains draft and unmerged.
+**Paused after the single authorized trial 43: local quality failed.** Main passes 117/117 observations; the feature passes 108/117. The new descriptive-answer term guard rejects three valid paraphrase cases in all three scheduled repetitions. All failures are retained. The existing stopping rule prevents starting the live stage, so live protocol/performance remain untested. Tests/lint is green from identical-code checkpoint 42; local lookup fails and six other required checks remain pending and blocking. PR #3 stays draft and unmerged. No retries or further run.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
-## Current revision: correctness checkpoint 42, no benchmark
+## Current revision: trial 43, local failure; no live sessions
+
+Feature `8fb06eed9524919bf86511d950cc03c10cd4ae0f` was compared once with freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. Both implementations were frozen and independently loaded; the harness/workload/models/oracle/gates are unchanged. All 234 raw observations audit exactly. Main time is 2.849069200048689s and feature time 2.0737383997184224s, a 27.213477% reduction with interval +17.693594% to +37.804338%; **quality failure disqualifies this timing**.
+
+The feature returns misses for "How long do archived records stay available?" despite a current saved "Archive retention interval is N days" fact. The new majority-term guard finds only one shared term and filters the answer before reranking. `paraphrase-0/1/2` fail in all three repetitions; every failure is retained unchanged. No code fix or retry is made in this request. The local prerequisite failed, so no live sessions or analyzer run were started and no complete eight-gate result exists for trial 43. [Complete trial 43 failure evidence](attempt-43/README.md).
+
+Tests are reused from checkpoint 42 because application, scripts and tests are identical: 268 passed, one existing Windows skip; Ruff/whitespace passed. Only tests/lint is green, local lookup is failed, and six benchmark-dependent contexts remain pending and blocking. All eight original checks remain required and strict with no bypass. Trial 41 below remains the last full live comparison. Pause after this single run without further work.
+
+## Historical checkpoint 42: correctness changes and tests only
 
 Source `f7066168c8023113291f8aac464286711ff69bf6` applies the existing local term-support guard to related descriptive saved answers, preventing an unrelated requested fact from passing on subject similarity alone. Exact-question reuse and procedural paraphrases retain their existing rules. MCP guidance explicitly requires a file-backed save and successful stored/queued receipt after needed external research, while preserving no-save reuse and actual-new-research-only proofs. Neither change is tailored to the benchmark task names or paths.
 
