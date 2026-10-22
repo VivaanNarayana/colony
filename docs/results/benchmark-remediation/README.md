@@ -1,10 +1,20 @@
 # Strict gate remediation against main
 
-**Trial 28 stopped at a blocking local latency failure.** All 117 oracle cases pass in each arm, but the 95% reduction interval crosses zero, so live testing did not start. Every failed row and import proof is retained. The latest clean live comparison remains trial 26 at 7/8; trials 27 and 28 do not qualify. All eight checks stay strict and required, and PR #3 remains draft and unmerged.
+**Trial 29 passes 7/8; uncached tokens remain a blocking failure.** Every failed result is retained. All eight checks remain strict and required, and PR #3 remains draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 29 (`ee764bbc44a0a395b2ab32393efe74c8ef592a79`) completes all48 sessions and passes **7/8**. All facts24/24 per arm, citations main15/24 versus feature24/24; both arms have zero protocol violations. Every answer/source packet and actual research/push trace was reviewed. Local117/117 each,25.101443% lower time, interval +12.589824% to +39.268945%. Full267pass1skip; Ruff/whitespace clean. All48 native sessions,234 local rows and source proofs are retained; the exported archive reproduces exact JSON and exit1. No retry or excluded outcome.
+
+| Measurement | Main | Feature | 95% reduction interval | Gate |
+| --- | ---: | ---: | --- | --- |
+| Gross native tokens | 1,174,564 | 1,037,831 | +3.095208% to +21.071953% | Pass |
+| Uncached input + output | 176,292 | 178,567 | -19.967526% to +14.094539% | **Fail** |
+| Subject wall seconds | 294.653 | 252.036 | +8.977227% to +18.980566% | Pass |
+
+Uncached cost is1.29% higher. All cache variation and output costs remain counted. Main/feature research calls19/11, tools49/40, asks24each. The reversible idle-wake request released after child exit; persistent power settings, clocks and budgets unchanged. Four-thread inference and descriptor handoff improve local and time gates but do not establish uncached savings. All eight checks remain strict required and PR3 draft/unmerged. The all-eight objective remains unfinished.
 
 Trial 29 preparation caps both CPU pools at four, preserving the newer descriptor handoff and compact MCP receipts. The fixed independent interleaved query/reranker matrix shows 18.6783ms median at 4/4 versus 32.0171ms at 8/8, with 65.1% lower process CPU and identical numerical outputs. Both 2/2 and hybrid controls, every fixed-order block, and all raw observations are retained. This corrects a short-query execution tradeoff that the earlier bulk-passage profile missed; it does not establish native-token savings. Full suite: 267 pass, one existing skip; lint/whitespace clean. This complete runtime differs from prior four-thread versions. One fresh local comparison is planned, with live testing only if local qualifies. Trial 28 below remains a blocking failure.
 

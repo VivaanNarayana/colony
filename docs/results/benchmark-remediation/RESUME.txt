@@ -1,3 +1,13 @@
+LATEST trial29 COMPLETE 7/8; uncached FAIL. Source ee764bbc44a0a395b2ab32393efe74c8ef592a79.
+Main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d unchanged. Local117each/25.101443%
+lower CI+12.589824..39.268945%. Facts24both,cites15main24feature,protocol0.
+Gross1174564/1037831 CI+.030952..210720; seconds294.653/252.036 CI+.089772..189806.
+Uncached176292/178567 (feature1.29%higher), CI-.199675..+.140945 FAIL.
+All48manualreviewed, complete native archive/234localrows, exact public replay1.
+267pass1skip/lintdiffclean. No retry/exclusion/normalization. New trial requires
+real justified runtime change and predeclared plan; do not retry29 source.
+All8strictrequired; same branch; draft/unmerged. Objective unfinished.
+
 TRIAL29 PREPARATION COMPLETE: cap both CPU model pools at4/logicalCPUcount,
 retaining descriptor handoff/MCP compaction/strict native budgets/all audit fixes.
 Independent fixed interleaved short query+two-passage matrix:4/4median18.6783ms,
