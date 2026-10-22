@@ -1,3 +1,13 @@
+LATEST trial30 COMPLETE5/8. All3live confidence gates FAIL. Source687d2a79bef92255dea8d6d37f06567cd9708bf9.
+Local117each25.284843%lower CI+16.090774..35.903765.269pass1skip/lintdiffclean.
+Facts24both,cites18main24feature,protocol0. Gross1132148/1059668 CI-.000756..+.166696;
+uncached186740/164564 CI-.026713..+.258488; seconds251.131/231.013 CI-.047420..+.187470.
+All48reviewed/completearchive/234localrows/fulltestreport/exactpublicreplay1 retained.
+Feature scope2 reads3files vs main2. Every cost and cache variation counted. No retry.
+Next investigate general answer abstraction at caller vs helper level using fixed
+one-shot paired independent fixtures BEFORE another full native trial. Do not treat
+minor edits as a reason to resample unchanged behavior. Strict8required,draftunmerged.
+
 TRIAL30 PREPARATION COMPLETE: compact one-block UTF8 push receipts and general
 direct-answer policy retaining steps/conditions/exceptions/citations. Deterministic
 wire receipts42->33,39->30,257->197bytes, decoded fields identical; no claim of

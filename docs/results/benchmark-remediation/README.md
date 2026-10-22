@@ -1,10 +1,20 @@
 # Strict gate remediation against main
 
-**Trial 29 passes 7/8; uncached tokens remain a blocking failure.** Every failed result is retained. All eight checks remain strict and required, and PR #3 remains draft and unmerged.
+**Trial30 passes5/8; all three live confidence gates fail and remain blocking.** Every failure is retained. PR3 remains draft/unmerged; all eight checks stay strict required.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial30 (`687d2a79bef92255dea8d6d37f06567cd9708bf9`) completes all48 sessions and passes **5/8**. All three live performance confidence gates fail despite lower totals. Facts24/24 both, citations main18/24 and feature24/24; protocol violations zero. Local117/117each,25.284843% lower time, CI+16.090774% to +35.903765%. Full269pass1skip73.57s, Ruff/diff clean. All48 answers/current packets/actual research traces reviewed; exact public replay exit1. Native archive,234raw local rows, full test report and every failed cost retained.
+
+| Measurement | Main | Feature | 95% reduction interval | Gate |
+| --- | ---: | ---: | --- | --- |
+| Gross native tokens | 1,132,148 | 1,059,668 | -0.075594% to +16.669593% | **Fail** |
+| Uncached input + output | 186,740 | 164,564 | -2.671332% to +25.848825% | **Fail** |
+| Subject wall seconds | 251.131 | 231.013 | -4.741957% to +18.747015% | **Fail** |
+
+Feature scope-2 reads three files versus main two; feature install and scope latency also worsen. Main/feature research calls17/12, tools47/41, asks24each. No outcome exclusions, time adjustments, baseline exemptions or identical-source/task retries. SDK wire diagnostics show modest lossless compaction and do not establish native savings. Four independent output fixtures retain all requested qualifications/steps/dependencies; their unsupported numeric-range citation is retained as invalid. Main's named #quick-start anchor in this live trial was manually verified against the actual frozen heading, as the numeric-only helper does not resolve named anchors. All absolute targets remain invalid. PR3 stays draft/unmerged and all8checks strict required; objective unfinished.
 
 Trial 29 (`ee764bbc44a0a395b2ab32393efe74c8ef592a79`) completes all48 sessions and passes **7/8**. All facts24/24 per arm, citations main15/24 versus feature24/24; both arms have zero protocol violations. Every answer/source packet and actual research/push trace was reviewed. Local117/117 each,25.101443% lower time, interval +12.589824% to +39.268945%. Full267pass1skip; Ruff/whitespace clean. All48 native sessions,234 local rows and source proofs are retained; the exported archive reproduces exact JSON and exit1. No retry or excluded outcome.
 

@@ -1,37 +1,10 @@
 # Benchmark independence audit
 
-The benchmarks had implementation-dependent and incomplete acceptance criteria.
-This establishes weaknesses in the evidence, not intent to manipulate results.
-The initial audit commit (`e2b865a`) left the production package unchanged.
-The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
-adds runtime and citation fixes on the same branch. **Completed trial 22 passes all
-eight unchanged blocking gates** against freshly fetched main `6fa6826` with source
-`b6691a8`. Gross tokens fall 9.883710% (95% interval +1.219991% to +19.790718%),
-uncached tokens 13.880644% (+5.614520% to +20.838154%), and live time 11.485126%
-(+4.427843% to +17.692149%). All 48 answers/source packets and research traces were
-reviewed: feature facts/citations 24/24, main facts 24/24 and citations 16/24, zero
-protocol violations in either arm. Full suite: 184 pass, one existing skip;
-Ruff/whitespace clean. Independent local oracle: 117/117 each; 23.62% lower time
-with positive interval. Exported native evidence replays to identical JSON and exit 0.
-Trial 21 remains retained with its two failed gates and exact replay exit 1; the
-trial-19 pause and attempt-20 diagnostics remain historical evidence. New hints
-have costs too: broad file search and an additional permission read remain counted.
-PR #3 stays draft and unmerged. No gate was weakened or made advisory, no identical
-source revision was retried for sampling, and no new branch/feature was started.
-Repeated public development tasks and implementing-assistant labels are not
-held-out production evidence or independent approval.
+The benchmark acceptance weaknesses and four follow-up audit findings are fixed with regression tests. **The current measured source still fails all three live performance confidence gates.** Trial30 passes5/8 against current main6fa6826; full269pass1skip, local117/117both, feature facts/citations24/24, both-arm protocol violations zero. Complete raw results, source/import proofs, native traces, manual labels and exact public replay exit1 are retained in [the remediation history](results/benchmark-remediation/README.md).
 
-## Post-completion audit fixes in progress
+The four fixes bound keyword parsing to prevent exponential backtracking, retain adjacent prose qualifications, require actual successful researched-miss pushes in both arms, and reconstruct local gates from canonical workload/raw observations. The verifier additionally checks the unchanged240-second/session and8M-token budgets from recorded values. No numerical gate, quality rubric, frozen workload, prompt or budget is relaxed. Active main ruleset25440133 requires all eight statuses with strict up-to-date enforcement and no bypass actors; original protection rules remain. PR3 stays draft and unmerged.
 
-A follow-up audit found exponential regex backtracking, omission of adjacent source
-qualifications, missing required-push enforcement, and reliance on local summary
-measurements. Trial 23 fixes all four and adds regression tests: 207 pass, one
-existing skip. Its new source must clear a fresh local/live comparison. The existing
-numerical gates remain unchanged; the analyzer now applies stronger evidence and
-protocol checks. The original trial-22 rows and report remain untouched and also
-reproduce exactly with the hardened verifier. Main's active ruleset now requires
-all eight benchmark statuses with strict up-to-date enforcement, preserving prior
-rules and bypass settings. PR #3 remains draft and unmerged.
+Historical trial22 passed for its older source and remains retained, but cannot validate the audited fixes/current source. All failed trials remain available. No identical-code retry, task retry, outcome exclusion, baseline exemption or gate waiver is allowed. These repeatedly observed public development tasks and implementing-assistant labels do not establish held-out production savings or independent approval.
 
 ## Findings
 
