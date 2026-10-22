@@ -1,10 +1,22 @@
 # Strict gate remediation against main
 
-**Post-audit remediation in progress on the same branch.** All four findings have fixes and regression tests; completed trial 23 passes 5/8; trial 24 will evaluate a concrete literal-hint correction under the stronger verifier checks. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
+**Post-audit remediation in progress on the same branch.** All four findings have fixes and regression tests; completed trials 23 and 24 each pass 5/8. Trial 24 has complete retained evidence and an exact hardened public replay; all three live confidence intervals still fail. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 24 (`6031c44`) completed all 48 sessions against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **5/8**. Full suite: **214 pass**, one existing Windows skip; Ruff and whitespace checks pass. Both arms have 24/24 correct facts and zero protocol violations; citations are main 18/24, feature 24/24. Local lookup has 117/117 oracle passes per arm, 21.528818% lower time, interval +11.337512% to +33.064323%; all 234 raw rows pass independent reconstruction.
+
+| Measurement | Main | Candidate | 95% reduction interval |
+| --- | ---: | ---: | --- |
+| Native input + output | 1,114,021 | 1,066,429 | -4.694647% to +12.401369% |
+| Uncached input + output | 186,533 | 170,429 | -15.417096% to +28.942590% |
+| Subject wall seconds | 268.672 | 238.970 | -1.981681% to +20.628403% |
+
+All three live interval gates remain **blocking failures** despite lower totals. Main/feature research calls are 15/12, tool calls 45/41, asks 24/24. The operation-context hint removed the extra validation search, but feature scope-2 still researched more dependencies than main; feature outage-3 also had higher native usage despite only one ask. Every cost remains included. The complete public archive reproduces identical comparison JSON and exit 1 under the strengthened verifier. No baseline exemption, identical-source retry, task retry or outcome exclusion occurred.
+
+Follow-up diagnostics are retained in `attempt-24/next-step-diagnostic.json`. Choosing the final property noun for passive questions was rejected because it regresses the existing independent bucket-access defining-source example. The actual author-written introduction plus the full startup recipe remains below the unchanged model cutoff. Neither candidate was implemented or benchmarked. Earlier unsafe document-introduction boosting remains rejected. No follow-up source revision has been selected; the request to clear all eight gates is **unfinished**.
 
 Trial 23 (`6b7c6ae`) completed all 48 sessions and passes 5/8. Facts are 24/24 per arm, citations main 17/24 and feature 24/24. Main capture-1 makes two identical relevant asks: both remain counted and the both-arm protocol gate fails (main 25 asks versus feature 24). Gross tokens 1,164,225 versus 1,041,762, reduction interval -0.552886% to +20.449537%; uncached 176,833 versus 166,114, interval -17.390335% to +31.853820%; both fail. Live seconds 286.069 versus 251.850, interval +0.827324% to +21.585302%, passes. Complete failed results and exact hardened public replay exit 1 remain in attempt-23. The broad file hint caused an extra validation search and remains cost. Trial 24 addresses explicit operation-context selection with independent positive/negative hint fixtures; no baseline protocol failure is waived.
 
@@ -77,8 +89,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 21 | `c33ef37` | 6/8; gross tokens pass; uncached-token and live-time intervals fail; full audit/public replay retained |
 | 22 | `b6691a8` | **8/8** historical result; later audit found runtime/verifier defects, corrected in trial 23 |
 | 23 | `6b7c6ae` | 5/8; main duplicate ask and gross/uncached token intervals fail; complete hardened replay exit 1 retained |
+| 24 | `6031c44` | 5/8; quality, protocol and local pass; all three live intervals fail; complete hardened replay exit 1 retained |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19, 21 and 22 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–24 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Earlier integrity rejection: trial 12
 
@@ -133,6 +146,6 @@ Expand-Archive docs/results/benchmark-remediation/attempt-22/live-native.zip <fr
 python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-22/lookup-summary.json
 ```
 
-Expected live replay exit for completed attempts 1–13, 16–19 and 21: **1**; trial 22: **0** with all eight gates true. Attempt 20 is diagnostic-only. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected live replay exit for completed attempts 1–13, 16–19, 21, 23 and 24: **1**; trial 22: **0** with all eight gates true. Attempt 20 is diagnostic-only. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.

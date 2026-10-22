@@ -1,25 +1,45 @@
-COLONY PR #3 â€” POST-AUDIT REMEDIATION IN PROGRESS
+COLONY PR #3 — POST-AUDIT REMEDIATION UNFINISHED
 
-User authorized fixing all four audit findings, making eight GitHub checks required,
-and evaluating new source on the existing feat/benchmark-independent-evaluation
-branch. Keep draft/unmerged; no new feature/branch or agents. All failed evidence retained.
+Stay on feat/benchmark-independent-evaluation; draft/unmerged; no new feature,
+branch, agents, identical-source rerun, task retries, outcome exclusions or gate waivers.
+All four audit findings are fixed with regressions. All eight GitHub checks are
+required by active main ruleset 25440133, strict up-to-date enabled, no bypass actors;
+original rules preserved. Ruleset before/request/after snapshots: attempt-23.
+Main last fetched unchanged: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Measured candidate: 6031c44c2b3ed62de9ba8ecdee4a60eecadce859.
+Full suite 214 pass, one existing Windows symlink skip; Ruff/whitespace clean.
 
-Trial 24 plan: docs/results/benchmark-remediation/attempt-24/
-Audit corrections and failed full trial: docs/results/benchmark-remediation/attempt-23/
-Current main: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d
-Full verification: 214 pass, one existing skip; Ruff/whitespace clean.
-All eight checks required in active ruleset 25440133, strict up-to-date true,
-prior rules/conditions/bypass list unchanged. Before/request/after snapshots retained.
-New analyzer requires researched-miss pushes in both arms and recomputes raw local
-workload/oracle/counts/timings/intervals; no numerical gates weakened. Original
-trial 22 replays identically through the hardened verifier; historical pass remains
-retained, but new source must run fresh local and live comparisons.
+Trial 23: complete 5/8, main duplicate ask plus gross/uncached intervals fail.
+Trial 24: complete 5/8. Feature facts/citations 24/24, both-arm protocol violations
+zero. Local 117/117 each, 21.528818% reduction, CI +11.337512% to +33.064323%.
+Main / feature gross tokens 1114021 / 1066429; CI -4.694647% to +12.401369%.
+Uncached 186533 / 170429; CI -15.417096% to +28.942590%.
+Seconds 268.672 / 238.970; CI -1.981681% to +20.628403%.
+All three live confidence gates FAIL and remain required/blocking.
+Complete 48-session evidence and exact hardened public replay exit 1 retained in
+attempt-24. All source packets, answers and new research reads reviewed. No costs
+excluded. See README.md and outcome.json for details; source operation hint worked
+but scope-2 overresearch and outage-3 higher native usage remain actual costs.
 
-Follow the recorded plan, retain all failures, never retry identical source for luck.
-Report completion only after all eight gates, exact public replay, evidence publication
-and required-status verification pass against current main.
+No runtime edits after source24. Two follow-up ideas rejected without a new trial:
+1. Final property-noun hints regress the independent bucket_access example.
+2. Actual recipe introduction still fails existing model cutoff. Older synthetic
+   document-introduction boosts also raised unrelated commands; remain rejected.
+Recorded in attempt-24/next-step-diagnostic.json. Do not resurrect unsafe boosting,
+raw neural reordering, score/cutoff/model changes, repository-specific answers,
+source caching from the sibling branch, or test/benchmark weakening for a pass.
 
-Trial 23 fully retained: 5/8, gross/uncached intervals and main duplicate ask fail;
-exact public replay exit 1. Trial 24 fixes the concrete broad file-hint regression
-by preferring an explicit single-word during operation context; independent
-ingestion/replay/failover plus ambiguous/secret/identifier tests. One fresh run only.
+Any next trial needs a concrete justified runtime change, regressions and a new
+committed plan; fresh fetch main; full tests/lint; isolated local first, then all48
+live sessions at gpt-6-luna/low with the frozen corpus/order/prompts/rubric/budgets.
+Hardened analyzer now requires --local to have raw plan/workload/measurements in
+its directory, both for live analysis and extracted public archive replay.
+Example (after extracting attempt-24/live-native.zip into a fresh directory):
+python scripts/analyze_lookup_live.py --results <fresh-directory> --local docs/results/benchmark-remediation/attempt-24/lookup-summary.json
+Expected exit 1, exact comparison.json. Recompute manifests from exported LF bytes;
+check against git show bytes. Evidence-only publication commits may reuse results
+only after git diff 6031c44 HEAD -- src scripts tests is empty.
+
+The user's all-eight-gates objective remains UNFINISHED. Do not mark complete or
+claim production savings. Update all eight statuses on any evidence-only head to
+the exact retained trial24 outcomes, never substitute historical trial22's pass.

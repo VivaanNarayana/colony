@@ -124,3 +124,20 @@ These A/A runs validate evaluator behavior. They are not estimates of a new
 application improvement. The new contract fixture remains public, small and
 development-only; follow the [evaluation protocol](benchmark.md) for independent
 confirmation before making general performance claims.
+
+
+## PR #3 post-audit correction
+
+The four final-diff findings are corrected with regressions: keyword hints no longer
+backtrack exponentially on long punctuated imperatives; prose compaction preserves
+adjacent qualifications; both arms must successfully push after researched misses;
+and local summaries/intervals are reconstructed from the canonical workload and
+all raw observations. These harden acceptance without changing numerical gates.
+Main's active ruleset now requires all eight statuses with strict up-to-date enforcement.
+
+The new source has not cleared the full benchmark. Trial 23 fails three gates;
+trial 24 also passes 5/8, with all three live confidence intervals failing. Complete
+failed evidence, exact public replays, test results, and ruleset snapshots remain in
+[the remediation report](results/benchmark-remediation/README.md). Historical
+trial 22's eight passes do not validate this changed source. PR #3 remains draft
+and unmerged; the all-eight-gates objective is unfinished.
