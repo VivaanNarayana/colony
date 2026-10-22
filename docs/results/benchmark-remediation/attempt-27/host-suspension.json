@@ -1,0 +1,23 @@
+{
+  "role": "Environmental failure evidence, not a time correction",
+  "observed_wait_request_ms": 30000,
+  "observed_wait_elapsed_seconds": 380.7665,
+  "affected_session": "feature/capture-3.colony",
+  "recorded_session_seconds": 379.058,
+  "frozen_per_session_limit_seconds": 240,
+  "windows_events": [
+    {
+      "id": 42,
+      "provider": "Microsoft-Windows-Kernel-Power",
+      "time_local": "2026-10-21T20:49:02.9213215-07:00",
+      "reason": "System Idle"
+    },
+    {
+      "id": 1,
+      "provider": "Microsoft-Windows-Power-Troubleshooter",
+      "time_local": "2026-10-21T20:55:15.6151279-07:00",
+      "event": "System returned from low power state"
+    }
+  ],
+  "handling": "Retain full recorded duration and every session; no subtraction/exclusion/retry. Temporary ES_SYSTEM_REQUIRED request began later to prevent future idle suspension only; no persistent power setting changes."
+}

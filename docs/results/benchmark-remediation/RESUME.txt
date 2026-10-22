@@ -1,3 +1,30 @@
+LATEST trial27 aec86327bd1666be051b90d30af659ecd05b8778 completed48sessions,
+NONQUALIFYING: main scope2 hash mismatch then second push; unchanged verifier
+rejects, exact public replay1. Feature capture3 ALSO379.058s above240s afterconfirmed
+System Idle sleep (Windows42 at2026-10-21T20:49:02-07, resume20:55:15). No elapsed
+subtraction/exclusions/retries. Full native archive and power-request lifecycle retained.
+Temporary ES_SYSTEM_REQUIRED request was released automatically at benchmarkexit;
+no persistent power config changed. Future native trials need the same reversible
+idle-wake request before starting, equally for both arms; clocks/budgets unchanged.
+Facts24/24 both, citations19main/24feature. Full suite251pass1skip, local117each
+24.98%lower CI+14.46 to+36.45. All8statuses error/block, draft/unmerged.
+
+Next meaningful runtime idea (NOT IMPLEMENTED): evidence fallback already has
+single-source paragraph descriptors but excerpts rebuilds the entire candidate set
+before filtering preferred positions. Forward those same-request descriptors ONLY
+for a single file; preserve scope/validation and fresh hashed source_lines before
+actual display. Multi-source/global96-candidate caps and source order must remain.
+No persistent source cache, validation reuse, score/cutoff/model changes, or sibling
+source-cache code. Prove identical outputs, stale/secret/qualification negatives and
+measure independent helper latency before a new plan/source/trial.
+Also strengthen analyzer to enforce actual recorded seconds<=240 and aggregate
+native token cap8M; metadata must preserve both frozen budgets, negative controls
+for both arms. This closes a budget-verification gap, no thresholds relaxed.
+No source27 retry merely to avoid sleep or main sampling failure. Keep failures.
+Private operational helper ../keep_benchmark_awake.py; future launcher may set
+ES_SYSTEM_REQUIRED for only its benchmark child, release on exit, no code/harness
+or measurement/time adjustment. Read attempt27 ZIP and host-suspension.json.
+
 TRIAL27 preparation: new runtime up to8 CPU model threads (logical-CPU cap),
 independent4-vs8 medians14% faster, identical outputs; original2-thread equivalence
 regression retained. MCP explicitly scoped matching validated lookups omit only

@@ -1,12 +1,16 @@
 # Strict gate remediation against main
 
-**Trial26 completes with 7/8 blocking gates passing.** Gross-token and live-time intervals now pass; uncached input plus output remains a blocking failure. All four audit fixes and stronger successful-save receipts remain enforced. All eight GitHub statuses are required with strict up-to-date enforcement. PR3 stays draft and unmerged; the objective remains unfinished.
+**Trial27 completes with a blocking integrity rejection.** Main submitted a mismatched source fingerprint and then a second push. An additional feature session recorded379.058s after confirmed host idle sleep, above the frozen240s limit. All48 sessions, full elapsed times and failures are retained; no baseline exemption or time subtraction. The latest clean comparison remains trial26 at7/8. PR3 stays draft/unmerged and the objective is unfinished.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
 
-Trial27 preparation reduces duplicate explicitly scoped MCP receipt metadata and nonactionable successful-push IDs while preserving full client/API audit receipts and all trust/source/status fields. The independent byte check is806 to751 bytes for a scoped lookup and123 to81 for a push; implicit/conflicting cases are unchanged. Up-to8-thread inference is14% faster than4 in the independent diagnostic with identical outputs; the numerical regression still checks the original2-thread models. Full suite251pass1skip, lint/diff clean. These modest byte/execution diagnostics do not establish an uncached-token improvement. One fresh local/live trial is planned; trial26 below remains7/8 and blocking.
+Trial27 (`aec86327bd1666be051b90d30af659ecd05b8778`) completes all48 sessions but is **nonqualifying**. The unchanged analyzer rejects main/scope-2's source fingerprint, which does not match an actual read; main then makes a second push. Both calls and all costs are retained. The exported archive reproduces identical rejection JSON and exit1. Both arms' core facts are24/24; citations main19/24 and feature24/24. All final answers, current source packets, research traces and receipts were reviewed.
+
+A separate feature/capture-3 session recorded **379.058s**. Windows event42 confirms System Idle sleep at20:49:02 on October21 and event1 confirms resume at20:55:15 (America/Los_Angeles). A requested30-second wait elapsed380.7665s. The entire session time is retained, exceeding the unchanged240s limit; no normalization, exclusion or retry. A later temporary ES_SYSTEM_REQUIRED request prevented further idle sleep while the benchmark process lived, then automatically released. Persistent power configuration was unchanged. Exact helper/log evidence is in the native archive; selected events and request lifetime are also retained separately.
+
+Full suite251pass1skip, lint/diff clean. Local117/117 each,24.98% lower time, interval +14.46% to +36.45%. Receipt compaction preserves full API audit metadata and trust/status/source fields; up-to8-thread inference preserves model snapshots/inputs/batch1/weights/cutoffs/index and numerical equivalence. Diagnostics report55-byte scoped-ask and42-byte push savings; they cannot substitute for native gates. The frozen benchmark/workload/prompts/rubric/budgets are unchanged. The next verifier update must independently enforce the recorded elapsed limit; the current post-run analyzer relies on the subprocess timeout, which host suspension exposed. All eight statuses block on this trial.
 
 Trial26 (`96c8b400883ac25fddac70da427edecc096a4a73`) completes all48 sessions and passes **7/8**. Main and feature facts are24/24, citations20/24 versus24/24, and both arms have zero protocol violations, including the stricter actual stored/queued receipt rule. Every answer, current source packet, new research read and push receipt was reviewed. Local117/117 per arm; 23.58% lower time, interval +13.35% to +35.07%. Full suite237 pass, one existing Windows skip; Ruff and whitespace clean.
 
@@ -112,8 +116,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 24 | `6031c44` | 5/8; quality, protocol and local pass; all three live intervals fail; complete hardened replay exit 1 retained |
 | 25 | `e4a3980` | Nonqualifying integrity failure: main push fingerprint mismatch and second push; exact public replay exit 1 retained |
 | 26 | `96c8b40` | 7/8; gross/time intervals pass; uncached-token gate fails; exact public replay exit1 retained |
+| 27 | `aec8632` | Nonqualifying: main fingerprint mismatch/second push, plus confirmed idle sleep and379.058s feature session; all retained |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–26 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–27 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Earlier integrity rejection: trial 12
 
