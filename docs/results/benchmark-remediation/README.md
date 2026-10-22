@@ -1,16 +1,38 @@
 # Strict gate remediation against main
 
-**Resumed at the user's request. Latest full trial32 passes6/8; gross-token and uncached-token confidence gates still fail.** All eight checks remain strict and required. Every failure is retained, and PR3 remains draft/unmerged.
+**Paused at the user's request after trial 40. The completed run passes 5/8 gates; gross-token, uncached-token and live-time confidence gates fail.** All eight checks remain strict and required. Every failure is retained, and PR #3 remains draft and unmerged. No further optimization or run is scheduled.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
 
-Candidates35–39 also produced no new full benchmark. Scheduling35 added research and input; query framing36 recovered no misses; enclosing Python scopes37 failed the actual Store screen despite an isolated model win and passing tests. Transport diagnostic38 followed both initialization markers, so instruction truncation was not established. Compact proof schema39 omitted a mandatory save in one native case, so the original schema was restored. Complete diagnostic failures, sources and reviews are retained in their attempt directories. A navigation-only miss hint is under independent preflight; it supplies no answer or proof and has no gate credit yet.
+Trial 40 measures source `554f239c0f57710dc0c437d2c94c86cda84913d6` against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`, still current when publishing. All 48 native sessions completed once; every answer, current source packet, new research read and push receipt was reviewed. Facts are 24/24 in both arms, citations 19/24 main and 24/24 feature, with zero protocol violations in both arms.
+
+| Measurement | Main | Feature | Reduction | 95% reduction interval | Gate |
+| --- | ---: | ---: | ---: | --- | --- |
+| Gross native tokens | 1,188,540 | 1,042,404 | 12.295421% | -0.740093% to +31.138510% | **Fail** |
+| Uncached input + output | 239,036 | 174,180 | 27.132315% | -0.160295% to +51.109444% | **Fail** |
+| Subject wall seconds | 317.704 | 344.227 | -8.348337% | -27.376389% to +6.207154% | **Fail** |
+
+Local lookup passes all 117 oracle observations per arm: 2.487960199941881s main versus 1.8454217002145015s feature, 25.825916% lower, with 95% reduction interval +16.687796% to +36.101352%. All 234 raw observations independently reconstruct correctly. Full verification is 302 passed, one existing Windows symlink skip, 68.54s; Ruff and whitespace checks pass. The 32 new regressions cover strict proof admission/copy fidelity and navigation scope, age, stale or missing files, advanced assertions, all-proof validation, bounded work and unchanged validated hits. Existing benchmarks and tests were not weakened.
+
+The runtime can attach one navigation-only file path to an actual miss, using existing scoped/fresh dense and lexical candidates and freshly validating every attached proof, with at most three trail validations. It supplies no answer, current read or fingerprint. Original answer eligibility, model inputs/weights, scores/cutoffs and contexts are preserved. Actual new research and a successful save using its returned fingerprints remain mandatory.
+
+In the full trial, all four hinted misses (`serve-2`, `scope-2`, `stale-3`, `serve-3`) returned `README.md`, and all four subjects still searched. No saved search can be attributed to these hints in this run. Main/feature research calls are 22/11, tool calls 53/40 and asks 24/24; these totals do not establish a causal effect of the new hint. Gross cost worsens in tests, scope and stale; uncached cost worsens in MCP, capture and serve. Live time worsens overall. Every cost and cache variation remains counted.
+
+The separate fixed eight-session independent preflight retains all facts/citations/protocol outcomes, research 7 to 4 and input 262421 to 226074. Its uncached cost worsens from 26234 to 27556 and seconds from 43.396 to 85.396. That predeclared input/research screen qualifies the candidate for one full comparison; it does not establish the full performance gates.
+
+[Complete trial 40 evidence](attempt-40/README.md) retains the full native archive, all raw local rows, source/import proofs, manual labels, full test report, operational wake logs and strict ruleset snapshot. The public archive replays to exactly the same comparison JSON and exit 1 without new native sessions. The reversible idle-wake request released after child exit; clocks, persistent power configuration and budgets are unchanged. No identical-code/task retry, exclusion, baseline exemption, rounding waiver or cache/time normalization occurred. Harness, workloads, live prompts, rubrics, models and all eight numerical gates are unchanged. These repeatedly observed public development tasks and primary-assistant labels are not held-out production evidence or independent approval.
+
+## Earlier retained revisions
+
+The following historical checkpoint notes are superseded by trial 40 above; their failures and original evidence remain retained.
+
+Candidates35–39 also produced no new full benchmark. Scheduling35 added research and input; query framing36 recovered no misses; enclosing Python scopes37 failed the actual Store screen despite an isolated model win and passing tests. Transport diagnostic38 followed both initialization markers, so instruction truncation was not established. Compact proof schema39 omitted a mandatory save in one native case, so the original schema was restored. Complete diagnostic failures, sources and reviews are retained in their attempt directories. The later navigation-only miss hint was measured in trial 40 above; its full performance gates fail.
 
 Candidates33 and34 were rejected and reverted before any full benchmark. Candidate33's optional JSON Schema title projection saved SDK bytes but showed no input savings in equal-action native controls; its baseline partial-answer failure is retained. Candidate34's shorter descriptions preserved all8 facts/protocol outcomes but increased aggregate input from191587 to207149, failing its predeclared requirement. Their full8-session archives, both source trees, tests, reviews and rejection records remain in [attempt33](attempt-33/rejection.json) and [attempt34](attempt-34/rejection.json). Neither failure is a new green gate or permission to rerun source32. The work plan is in chat only, as requested.
 
-Trial32 (`ece8855b2f1426ccdaa2f2cbdff8685057f32597`) completes all48 sessions against freshly fetched current main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **6/8**. Work has resumed; this remains the latest full comparison. Gross-token and uncached-token confidence gates remain blocking failures. Facts24/24 both, citations main15/24 and feature24/24; protocol violations zero. Local117/117each,26.380060% lower time, CI+17.656231% to +36.410306%. Full270pass1skip81.65s; Ruff/diff clean. Every answer, current packet, new research read and push receipt was reviewed. Complete48native sessions,234local rows, import/source proofs, full test report and exact public replay exit1 are retained.
+Trial32 (`ece8855b2f1426ccdaa2f2cbdff8685057f32597`) completes all48 sessions against freshly fetched current main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **6/8**. This historical comparison is superseded by trial 40 above. Gross-token and uncached-token confidence gates remain blocking failures. Facts24/24 both, citations main15/24 and feature24/24; protocol violations zero. Local117/117each,26.380060% lower time, CI+17.656231% to +36.410306%. Full270pass1skip81.65s; Ruff/diff clean. Every answer, current packet, new research read and push receipt was reviewed. Complete48native sessions,234local rows, import/source proofs, full test report and exact public replay exit1 are retained.
 
 | Measurement | Main | Feature | Reduction | 95% reduction interval | Gate |
 | --- | ---: | ---: | ---: | --- | --- |

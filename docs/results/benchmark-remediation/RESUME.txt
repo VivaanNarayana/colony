@@ -1,3 +1,35 @@
+PAUSED AT USER REQUEST AFTER TRIAL40, 2026-10-22.
+Do not resume without a new user request. No further optimization/run is scheduled.
+PR3 remains draft/unmerged, same branch feat/benchmark-independent-evaluation.
+Measured source554f239c0f57710dc0c437d2c94c86cda84913d6; main freshly fetched unchanged
+6fa6826aa4c835001c0d2bc8f3bec838499e5b5d. Publication commits contain evidence/docs only.
+Trial40 completes48sessions once;5/8. Gross/uncached/live-time gates FAIL.
+Gross1188540/1042404, reduction12.295421%, CI-.0074009298334..+.3113850982794.
+Uncached239036/174180, reduction27.132315%, CI-.0016029468169..+.5110944371873.
+Seconds317.704/344.227, reduction-8.348337%, CI-.2737638923667..+.0620715403725.
+Local117/117each,25.825916% lower,CI+.1668779602403..+.3610135194174.
+All234rawrows independently audited. Full302pass1existingWindows skip68.54s;
+Ruff/diffclean.32new proof-admission/navigation regressions; existingtests unchanged.
+Facts24/24both,citations19main24feature,protocol0. Research22/11,tools53/40,asks24each.
+Every answer/current packet/new read/push receipt reviewed. FullnativeZIP,rawlocal,
+manual labels,source/import/modelproofs,fullJUnit,wake logs,ruleset snapshot retained
+in attempt40. Publicarchive replays exactcomparisonJSON,exit1,no newnativesessions.
+Four feature misses emitREADME.md research_paths; allfour subjects stillsearch.
+Do not claim these hints saved research in the full run. Independentpreflight
+research7->4/input262421->226074 butuncached26234->27556/time43.396->85.396 WORSEN.
+Allfailedoutcomes/costs retained. Original strict proof schema restored after39.
+All8strictrequired active ruleset25440133,no bypass; first5success,last3failure.
+No harness/workload/prompt/rubric/model/scoring/cutoff/budget/gate weakening.
+No identical-code/task retries, exclusions, cache/time normalization or oldsourcegreen
+carryover. Reversible idle-wake request released; persistent power/clocks unchanged.
+No next runtime change selected. Do not rerun source40 for favorable sampling.
+Any later continuation needs a new user request and actual justified generalizable
+change before another comparison. Objectiveunfinished; paused rather thancomplete.
+No standalone work-plan file; chat plan only. Runner-generated lookup-plan.json is
+frozen evidence, not a newly authored work-plan file. Prior failures retained.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THE PAUSED TRIAL40 RECORD ABOVE.
+
 SOURCE40 READY FOR ONE FRESH FROZEN COMPARISON, 2026-10-22.
 Navigation-only miss paths preserve original hit eligibility/scoring/models/contexts.
 Fixed realStore screen:3misses remainmiss,3correct paths; negativehits/hintsabsent.
