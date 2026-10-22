@@ -1,0 +1,29 @@
+{
+  "role": "Independent literal-query diagnostic; not live benchmark clearance. Explicit technical names identify the lookup subject. The previous longest-prose heuristic chose framing instead. No repository answers or retrieval scores involved.",
+  "cases": [
+    {
+      "question": "How do I connect an agent through RPC?",
+      "explicit_identifier": "RPC",
+      "old_hint": "connect",
+      "revised_hint": "RPC"
+    },
+    {
+      "question": "Which verification rules apply to TLS?",
+      "explicit_identifier": "TLS",
+      "old_hint": "verification",
+      "revised_hint": "TLS"
+    },
+    {
+      "question": "Explain HTTPS protocol compatibility.",
+      "explicit_identifier": "HTTPS",
+      "old_hint": "compatibility",
+      "revised_hint": "HTTPS"
+    },
+    {
+      "question": "Describe the `status` identifier.",
+      "explicit_identifier": "status",
+      "old_hint": "identifier",
+      "revised_hint": "status"
+    }
+  ]
+}

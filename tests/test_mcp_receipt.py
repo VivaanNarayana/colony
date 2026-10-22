@@ -29,8 +29,8 @@ def test_miss_suggests_a_literal_question_keyword_without_claiming_an_answer(
     server = colony.mcp.create_mcp(tmp_path)
     result = json.loads(server._tool_manager.get_tool("ask").fn(question)[0].text)
     keyword = result["research_keyword"]
-    assert re.fullmatch(r"[a-z][a-z0-9_]+", keyword)
-    assert keyword in question.casefold()
+    assert re.fullmatch(r"[A-Za-z][A-Za-z0-9_]+", keyword)
+    assert keyword.casefold() in question.casefold()
     assert result["hit"] is False and result["reason"] == "no_relevant_trail"
     assert not {"content", "current_repository_reads", "sources", "status"} & result.keys()
 
@@ -49,6 +49,26 @@ def test_keyword_suggestion_does_not_resurface_scrubbed_secrets(secret):
 
 def test_framing_alone_does_not_invent_a_search_subject():
     assert colony.mcp.research_keyword("How and why should we?") is None
+
+
+@pytest.mark.parametrize(
+    "question, identifier",
+    [
+        ("How do I connect an agent through RPC?", "RPC"),
+        ("Which verification rules apply to TLS?", "TLS"),
+        ("Explain HTTPS protocol compatibility.", "HTTPS"),
+        ("Describe the `status` identifier.", "status"),
+    ],
+)
+def test_literal_hint_targets_explicit_identifiers_without_changing_their_spelling(
+    question, identifier
+):
+    # Case-sensitive literal search is deliberately independent of the helper:
+    # the named subject occurs in its defining reference, not in topic framing.
+    reference = f"Reference: {identifier}\nThe requested configuration is documented here."
+    hint = colony.mcp.research_keyword(question)
+    assert hint == identifier and hint in reference
+    assert hint not in "How to connect and apply verification compatibility rules."
 
 
 def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):

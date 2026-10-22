@@ -1,10 +1,12 @@
 # Strict gate remediation against main
 
-**Trial 18 is in verification. Trial 17 passes 6/8 gates; both token intervals remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
+**Trial 19 is in verification. Trial 18 passes 6/8 gates; both token intervals remain blocking. PR #3 remains draft and must not merge.** Work resumed at the user's request; no next feature or feature branch has started.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 19 corrects keyword selection to prefer explicit backticked identifiers, acronyms and camel-case names over generic prose. Their spelling is preserved, including final S in HTTPS/status; longest prose is only a fallback. The retained trial 18 `connect` suggestion caused an extra broad/failed search. Independent RPC/TLS/HTTPS/status fixtures reproduce the defect and verify literal lookup of the named subject without retrieval-score mocks. All scrubbing, miss status, source/access checks and benchmark requirements remain unchanged.
 
 Trial 18 supplies one literal search keyword from the scrubbed question on a miss. It is a suggestion, supplies no facts/source reads, performs no research, and cannot turn a miss into a hit. Longest nonframing identifier/word is selected with singular-prefix normalization; recognized secret patterns are scrubbed before selection. No model package is imported for the hint. Full suite: 162 pass, one existing skip; Ruff/whitespace checks pass. This addresses the actual repeated empty phrase search, while retaining all source/access/age checks, budgets and model cutoffs.
 
@@ -45,8 +47,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 15 | `909b366` | Stopped at local speed gate: 8.33% lower time, interval -2.94% to +21.95%; 117/117 facts in both arms, no live sessions |
 | 16 | `898e4b7` | 5/8; local speed restored, quality/compliance pass; all three live performance intervals fail |
 | 17 | `b5b2afe` | 6/8; time interval and compliance pass; both token intervals fail |
+| 18 | `4e1f784` | 6/8; time/quality/compliance pass; both token intervals fail; hint regression and unnecessary research retained |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16 and 17 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 and 16–18 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Latest trial: 12 (rejected)
 
@@ -54,21 +57,21 @@ The strict analyzer exits 1 with `main/capture-2.colony: push fingerprint does n
 
 All 48 sessions, manual labels and raw diagnostics remain retained. Feature `mcp-2` is labelled an irrelevant return: its connection configuration and current reads did not include exposed-tool facts, and the correct final answer required new research. Manual correctness labels do not waive the integrity rejection. See `attempt-12/observations.json` for explicitly nonqualifying raw totals.
 
-### Latest valid comparison: trial 17
+### Latest valid comparison: trial 18
 
 | Measurement | Main | Candidate | Reduction interval (95%) |
 | --- | ---: | ---: | ---: |
-| Native input + output | 1,136,001 | 1,096,156 | -2.67% to +13.19% |
-| Uncached input + output | 139,649 | 128,348 | -7.05% to +23.86% |
-| Subject wall time | 248.296s | 222.639s | +4.65% to +17.65% |
+| Native input + output | 1,148,044 | 1,126,643 | -16.92% to +17.97% |
+| Uncached input + output | 147,212 | 139,123 | -14.21% to +25.13% |
+| Subject wall time | 250.273s | 220.796s | +3.47% to +18.83% |
 | Correct requested facts | 24/24 | 24/24 | implementing-assistant labels |
-| Valid citation targets | 19/24 | 24/24 | implementing-assistant labels |
+| Valid citation targets | 13/24 | 24/24 | implementing-assistant labels |
 | Tool protocol violations | 0 | 0 | unchanged compliance audit |
-| Research calls | 16 | 15 | descriptive count |
+| Research calls | 21 | 17 | descriptive count |
 
-Time clears its unchanged gate; both token intervals cross zero and remain blocking. Full suite: 155 pass, one existing Windows skip; Ruff clean. Local lookup time fell 22.60%, interval +11.81% to +34.37%, with 117/117 oracle passes per arm. All 48 sessions remain retained; public archive replay reproduces the comparison and exit 1 exactly. No invalid citation was waived.
+Time clears the unchanged gate; both token intervals remain blocking. Full suite: 162 pass, one existing Windows skip; Ruff clean. Local lookup time fell 22.64%, interval +11.94% to +34.28%, with 117/117 oracle passes per arm. All 48 sessions remain retained; public archive replay exactly reproduces the comparison and exit 1. No citation was waived.
 
-The feature still searched `namespace permission` (empty) before `permission` and `namespace`. Both arms then read server/security; the extra empty search makes the feature scope family cost 185,570 versus main's 172,407 tokens. Server-start research also made an extra defining-file read. Guidance alone does not prevent these outcomes; no session is dropped or retried.
+The `connect` hint led to a second search for MCP. The tools question then did unnecessary research even though both the saved summary and current Tools paragraph supplied the answer; that lookup remains labelled relevant. Its extra cost is retained, not relabelled as a missing fact. The feature MCP family used 218,505 tokens versus main's 145,889; no task retry or identical-code rerun is selected.
 
 ## Runtime changes retained
 
@@ -92,10 +95,10 @@ Trial 13 confirms the omitted-fact fix, while the remaining token intervals stil
 Each complete attempt contains local rows, workload, source/import proofs, live rows, reviewer labels, verification, checksums and `live-native.zip` with every native event, answer, prompt, stderr, metadata and implementation proof. Private databases, credentials, caches and issuer keys are excluded. Only proof host prefixes become runtime-relative; measured values, revisions and source hashes are unchanged.
 
 ```powershell
-Expand-Archive docs/results/benchmark-remediation/attempt-17/live-native.zip <fresh-output-dir>
-python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-17/lookup-summary.json
+Expand-Archive docs/results/benchmark-remediation/attempt-18/live-native.zip <fresh-output-dir>
+python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-18/lookup-summary.json
 ```
 
-Expected live replay exit for completed attempts 1–13, 16 and 17: **1**. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected live replay exit for completed attempts 1–13 and 16–18: **1**. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.

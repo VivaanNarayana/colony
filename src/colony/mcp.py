@@ -73,9 +73,23 @@ def research_keyword(question: str) -> str | None:
             "redacted",
         ]
     )
+    safe = scrub(question)
+    identifiers = [
+        w for w in re.findall(r"`([A-Za-z][A-Za-z0-9_]{1,31})`", safe) if w.casefold() != "redacted"
+    ]
+    if not identifiers:
+        identifiers = [
+            w
+            for w in re.findall(r"\b[A-Za-z][A-Za-z0-9_]{1,31}\b", safe)
+            if w.casefold() not in framing and (w.isupper() or re.search(r"[a-z][A-Z]", w))
+        ]
+    if identifiers:
+        # Preserve literal identifiers, including final S in HTTPS or status.
+        # A generic verb such as 'connect' is a poorer query than a named API.
+        return max(identifiers, key=len)
     words = [
         w.lower()
-        for w in re.findall(r"\b[A-Za-z][A-Za-z0-9_]{1,31}\b", scrub(question))
+        for w in re.findall(r"\b[A-Za-z][A-Za-z0-9_]{1,31}\b", safe)
         if w.lower() not in framing
     ]
     word = max(words, key=len, default=None)
