@@ -1,3 +1,30 @@
+RESUMED WORK IN PROGRESS 2026-10-22; no standalone work-plan file (chat only).
+Publication c659ed4 retains rejected33/34; latest full trial remains32 at6/8.
+Candidates35/36/37/39 REJECTED and runtime changes reverted before a full benchmark.
+35 fixed8 native scheduling controls keep facts/protocol but add1 research call,
+input274507->287198. One earlier invalid-corpus baseline setup failure retained;
+no completed task retried.36 query framing recovers0misses; no runtime edit.
+37 real enclosing-scope labels recover4isolated model snippets but0actualStore
+answers; checksum evidence disappears.272tests pass1skip but candidate rejected.
+38 diagnostic only: native follows both prefix and >512-character tail marker;
+no evidence of instruction truncation; no runtime change or gate credit.
+39 compact exposed proof schema passes77focused tests but native partial hit reads
+and omits mandatory push. Strict original schema restored;21strong malformed-proof
+and copy-fidelity regressions remain in working tests for the next source.
+All diagnostics, raw observations, source snapshots, failed outcomes and reviews
+retained in respective attempt directories. Do not turn them into passing gates.
+Candidate40 now adds navigation-only research_paths on actual misses, using at most
+three existing scoped/fresh trails from already-selected dense+lexical candidates;
+all attached proofs must validate. One path max, no answer/read/hash/proof supplied.
+Original hit eligibility/models/scores/cutoffs/contexts unchanged. No source cache.
+Three independent realStore misses get correct paths; all negative hints absent.
+Nine scope/freshness/assertion/no-proof regression cases pass. Fixed8 native cases
+running once, requireallfacts/protocol, >=2fewer research calls and >=10000fewer
+native INPUT tokens before qualification. ../benchmark-remediation-navigation-regressions-40.
+Candidate40 is uncommitted; full checks/local/currentmain/live48 still required if
+nativequalifies. No full32retry, no weakened gates, samebranch, draft/unmerged.
+All8strictrequired active/no bypass remains freshly verified. Objective unfinished.
+
 CANDIDATE34 REJECTED and reverted before any full benchmark. Smaller repeated
 tool descriptions preserve all8 independent facts/protocol outcomes but aggregate
 native input rises191587->207149 despite equal calls. Full8sessions/bothsource trees,

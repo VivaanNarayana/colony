@@ -1,0 +1,5 @@
+{
+  "status": "Rejected without runtime edit or benchmark",
+  "reason": "Zero recovered misses under unchanged -5 cutoff; unrelated optional-cloud command remains above cutoff. No representation or score changes adopted.",
+  "diagnostic_helper_lint": "Two unused imports removed before its only execution; executed helper retained."
+}

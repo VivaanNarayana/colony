@@ -1,0 +1,161 @@
+{
+  "qualified_for_implementation": false,
+  "improved_misses": 0,
+  "false_positives": [
+    "Install the optional image codecs."
+  ],
+  "rows": [
+    {
+      "question": "Launch the local event collector.",
+      "framed": "How do I launch the local event collector?",
+      "passages": [
+        "Section: Collector setup\n```sh\nevent-collector --listen localhost --spool events/\n```",
+        "Section: Collector cleanup\n```sh\nevent-collector purge --all\n```"
+      ],
+      "positive_case": true,
+      "scores": {
+        "before": [
+          2.903609037399292,
+          -4.529496192932129
+        ],
+        "framed": [
+          1.5385295152664185,
+          -6.298861026763916
+        ]
+      }
+    },
+    {
+      "question": "Start the background task worker.",
+      "framed": "How do I start the background task worker?",
+      "passages": [
+        "Section: Worker startup\n```sh\njob-runner worker --queue tasks --background\n```",
+        "Section: Worker logs\n```sh\njob-runner logs --follow\n```"
+      ],
+      "positive_case": true,
+      "scores": {
+        "before": [
+          0.6304465532302856,
+          -11.220611572265625
+        ],
+        "framed": [
+          -1.8900715112686157,
+          -11.153770446777344
+        ]
+      }
+    },
+    {
+      "question": "Run the static type checker.",
+      "framed": "How do I run the static type checker?",
+      "passages": [
+        "Section: Validation\n```sh\npython -m mypy app/\n```",
+        "Section: Unit checks\n```sh\npython -m pytest tests/\n```"
+      ],
+      "positive_case": true,
+      "scores": {
+        "before": [
+          -11.187397003173828,
+          -9.581748962402344
+        ],
+        "framed": [
+          -11.228554725646973,
+          -10.484216690063477
+        ]
+      }
+    },
+    {
+      "question": "Install the optional image codecs.",
+      "framed": "How do I install the optional image codecs?",
+      "passages": [
+        "Section: Optional image support\n```sh\npython -m pip install 'picture[codecs]'\n```",
+        "Section: Optional cloud support\n```sh\npython -m pip install 'picture[cloud]'\n```"
+      ],
+      "positive_case": true,
+      "scores": {
+        "before": [
+          7.072551727294922,
+          -0.3876419961452484
+        ],
+        "framed": [
+          4.777048110961914,
+          -1.465719223022461
+        ]
+      }
+    },
+    {
+      "question": "Restore the encrypted backup.",
+      "framed": "How do I restore the encrypted backup?",
+      "passages": [
+        "Section: Recovery\n```sh\nbackupctl restore --decrypt snapshot.enc\n```",
+        "Section: Storage cleanup\n```sh\nbackupctl delete snapshot.enc\n```"
+      ],
+      "positive_case": true,
+      "scores": {
+        "before": [
+          1.1776639223098755,
+          -7.175253868103027
+        ],
+        "framed": [
+          -1.7668483257293701,
+          -8.932360649108887
+        ]
+      }
+    },
+    {
+      "question": "Configure TLS for the gateway.",
+      "framed": "How do I configure TLS for the gateway?",
+      "passages": [
+        "Section: Gateway transport security\n```sh\ngate config set tls.cert gateway.pem tls.key gateway.key\n```",
+        "Section: Gateway monitoring\n```sh\ngate config set metrics.port 9100\n```"
+      ],
+      "positive_case": true,
+      "scores": {
+        "before": [
+          5.665182113647461,
+          -0.8876809477806091
+        ],
+        "framed": [
+          2.6159861087799072,
+          -5.101046085357666
+        ]
+      }
+    },
+    {
+      "question": "Rotate the signing key.",
+      "framed": "How do I rotate the signing key?",
+      "passages": [
+        "Section: Key inspection\n```sh\nsigner list-keys\n```",
+        "Section: Key removal\n```sh\nsigner delete-key expired\n```"
+      ],
+      "positive_case": false,
+      "scores": {
+        "before": [
+          -4.230236530303955,
+          -5.20179557800293
+        ],
+        "framed": [
+          -6.996820449829102,
+          -7.590518474578857
+        ]
+      }
+    },
+    {
+      "question": "Deploy the billing service to production.",
+      "framed": "How do I deploy the billing service to production?",
+      "passages": [
+        "Section: Testing\n```sh\nbill deploy --target staging\n```",
+        "Section: Database creation\n```sh\nbill db create\n```"
+      ],
+      "positive_case": false,
+      "scores": {
+        "before": [
+          -6.855894088745117,
+          -10.843160629272461
+        ],
+        "framed": [
+          -8.590947151184082,
+          -11.184869766235352
+        ]
+      }
+    }
+  ]
+}
