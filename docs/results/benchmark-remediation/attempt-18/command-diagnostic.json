@@ -1,0 +1,62 @@
+{
+  "role": "Public development diagnostic, not benchmark clearance. Same pinned model and unchanged ranking cutoff; full current source chunk versus individual shell commands. Original displayed evidence/hash would remain unchanged.",
+  "source_sha256": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547",
+  "source_line": 12,
+  "query": "Start the local memory server.",
+  "scores": [
+    {
+      "view": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "score": -11.211770057678223
+    },
+    {
+      "view": "Command: python -m venv .venv",
+      "score": -11.29768180847168
+    },
+    {
+      "view": "Command: . .venv/bin/activate",
+      "score": -11.049230575561523
+    },
+    {
+      "view": "Command: python -m pip install -e '.[dev]'",
+      "score": -11.391694068908691
+    },
+    {
+      "view": "Command: colony init --dir .colony/admin",
+      "score": -11.391279220581055
+    },
+    {
+      "view": "Command: colony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json",
+      "score": -11.441459655761719
+    },
+    {
+      "view": "Command: colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub",
+      "score": -11.348620414733887
+    }
+  ],
+  "equivalent_question_diagnostics": [
+    {
+      "query": "How do I start the local memory server?",
+      "scores": [
+        -11.036641120910645,
+        -11.21276569366455,
+        -10.669708251953125,
+        -11.313852310180664,
+        -11.345771789550781,
+        -11.433866500854492,
+        -11.321704864501953
+      ]
+    },
+    {
+      "query": "How to start the local memory server?",
+      "scores": [
+        -11.039541244506836,
+        -11.156306266784668,
+        -10.534040451049805,
+        -11.269956588745117,
+        -11.314619064331055,
+        -11.421969413757324,
+        -11.285152435302734
+      ]
+    }
+  ]
+}

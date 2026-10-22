@@ -1,10 +1,54 @@
 import copy
 import json
+import re
 from types import SimpleNamespace
 
 import pytest
 
 import colony.mcp
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How are ledger archives rotated?",
+        "Which migration flags are required?",
+        "Describe AssetRegistry.",
+    ],
+)
+def test_miss_suggests_a_literal_question_keyword_without_claiming_an_answer(
+    monkeypatch, tmp_path, question
+):
+    monkeypatch.setattr(
+        colony.mcp,
+        "Client",
+        lambda home: SimpleNamespace(
+            ask=lambda *a, **kw: {"hit": False, "reason": "no_relevant_trail"}
+        ),
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    result = json.loads(server._tool_manager.get_tool("ask").fn(question)[0].text)
+    keyword = result["research_keyword"]
+    assert re.fullmatch(r"[a-z][a-z0-9_]+", keyword)
+    assert keyword in question.casefold()
+    assert result["hit"] is False and result["reason"] == "no_relevant_trail"
+    assert not {"content", "current_repository_reads", "sources", "status"} & result.keys()
+
+
+@pytest.mark.parametrize(
+    "secret",
+    [
+        "sk-proj-" + "sensitive" * 3,
+        "postgresql://user:privatepassword@example.invalid/data",
+        "password=privatevalue",
+    ],
+)
+def test_keyword_suggestion_does_not_resurface_scrubbed_secrets(secret):
+    assert colony.mcp.research_keyword(secret) is None
+
+
+def test_framing_alone_does_not_invent_a_search_subject():
+    assert colony.mcp.research_keyword("How and why should we?") is None
 
 
 def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):

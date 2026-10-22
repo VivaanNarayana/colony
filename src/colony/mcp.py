@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 from pathlib import Path
 from urllib.parse import quote
@@ -9,6 +10,79 @@ from pydantic import Field
 
 from colony.client import Client
 from colony.models import Model, Source, Trail
+from colony.security import scrub
+
+
+def research_keyword(question: str) -> str | None:
+    """Suggest one literal keyword from the scrubbed question, never repository data."""
+    framing = set(
+        [
+            "a",
+            "an",
+            "the",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "do",
+            "does",
+            "did",
+            "can",
+            "could",
+            "would",
+            "should",
+            "how",
+            "why",
+            "what",
+            "which",
+            "when",
+            "where",
+            "who",
+            "to",
+            "of",
+            "in",
+            "on",
+            "for",
+            "from",
+            "with",
+            "and",
+            "or",
+            "as",
+            "at",
+            "it",
+            "its",
+            "this",
+            "that",
+            "i",
+            "we",
+            "you",
+            "our",
+            "your",
+            "up",
+            "please",
+            "about",
+            "through",
+            "these",
+            "those",
+            "their",
+            "there",
+            "into",
+            "have",
+            "has",
+            "redacted",
+        ]
+    )
+    words = [
+        w.lower()
+        for w in re.findall(r"\b[A-Za-z][A-Za-z0-9_]{1,31}\b", scrub(question))
+        if w.lower() not in framing
+    ]
+    word = max(words, key=len, default=None)
+    # Literal substring searches can match both plural prose and singular names.
+    if word and len(word) > 4 and word.endswith("s") and not word.endswith("ss"):
+        word = word[:-1]
+    return word
 
 
 class FileEvidence(Model):
@@ -53,6 +127,12 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         result = client.ask(question, namespace, include_evidence_files=evidence_files)
         if not result.get("hit"):
             result["research_guidance"] = research_guidance
+            keyword = research_keyword(question)
+            if keyword:
+                result["research_keyword"] = keyword
+                result["research_guidance"] += (
+                    " For an initial literal search, use research_keyword alone; broaden if empty."
+                )
             return [
                 TextContent(
                     type="text", text=json.dumps(result, separators=(",", ":"), ensure_ascii=False)
