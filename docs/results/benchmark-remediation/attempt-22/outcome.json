@@ -1,0 +1,15 @@
+{
+  "status": "complete; 8/8 blocking gates pass",
+  "source": "b6691a859d3c82b6658ceb7624214745d7758bbc",
+  "baseline": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "all_sessions_reviewed": 48,
+  "source_packets_reviewed": 48,
+  "public_replay_exit": 0,
+  "prior_failures_retained": true,
+  "known_costs": [
+    "Broad file hint caused an additional validation search; included without relabelling or exclusion.",
+    "Feature scope-1 researched credential/error detail despite a relevant hit; included, with no ask-derived push.",
+    "Stale family used more gross and uncached tokens; installation uncached tokens and scope/tests time were also worse. All remain in totals and intervals."
+  ],
+  "scope": "Repeated public development tasks and implementing-assistant review; no held-out production or independent blind-review claim."
+}

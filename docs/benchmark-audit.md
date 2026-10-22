@@ -4,15 +4,22 @@ The benchmarks had implementation-dependent and incomplete acceptance criteria.
 This establishes weaknesses in the evidence, not intent to manipulate results.
 The initial audit commit (`e2b865a`) left the production package unchanged.
 The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
-adds runtime and citation fixes on the same branch. Completed trial 21 passes
-6/8 gates: gross tokens now pass; uncached-token and live-time intervals remain
-blocking. The explicit user resume supersedes the historical trial-19 pause.
-Trial 21 orders eligible requested-field declarations before descriptive metadata;
-173 tests pass with one existing skip. All 48 source packets and answers were
-reviewed, both arms have zero protocol violations, and the public replay exactly
-reproduces exit 1. Trial 22 will address concrete literal-hint subject selection
-failures under the same frozen benchmark contract. All earlier failed evidence
-remains retained. No gate has been weakened or made advisory.
+adds runtime and citation fixes on the same branch. **Completed trial 22 passes all
+eight unchanged blocking gates** against freshly fetched main `6fa6826` with source
+`b6691a8`. Gross tokens fall 9.883710% (95% interval +1.219991% to +19.790718%),
+uncached tokens 13.880644% (+5.614520% to +20.838154%), and live time 11.485126%
+(+4.427843% to +17.692149%). All 48 answers/source packets and research traces were
+reviewed: feature facts/citations 24/24, main facts 24/24 and citations 16/24, zero
+protocol violations in either arm. Full suite: 184 pass, one existing skip;
+Ruff/whitespace clean. Independent local oracle: 117/117 each; 23.62% lower time
+with positive interval. Exported native evidence replays to identical JSON and exit 0.
+Trial 21 remains retained with its two failed gates and exact replay exit 1; the
+trial-19 pause and attempt-20 diagnostics remain historical evidence. New hints
+have costs too: broad file search and an additional permission read remain counted.
+PR #3 stays draft and unmerged. No gate was weakened or made advisory, no identical
+source revision was retried for sampling, and no new branch/feature was started.
+Repeated public development tasks and implementing-assistant labels are not
+held-out production evidence or independent approval.
 
 ## Findings
 

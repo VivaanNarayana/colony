@@ -1,10 +1,25 @@
 # Strict gate remediation against main
 
-**Resumed on the existing branch. Completed trial 21 passes 6/8: gross tokens now pass, uncached-token and live-time intervals fail. All gates remain blocking; PR #3 remains draft and must not merge.** Attempt 20 remains diagnostic-only; no new feature or branch has started.
+**Completed: trial 22 passes all eight blocking gates against current main. PR #3 remains draft and unmerged.** All failed evidence is retained, including trial 21; attempt 20 remains diagnostic-only. No new feature or branch has started. [Current completion state](RESUME.txt).
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 22 (`b6691a859d3c82b6658ceb7624214745d7758bbc`) clears all eight unchanged blocking gates against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. It adds conservative question-only command/subject/object hints to the eligible descriptive-field ordering from trial 21. Independent inspect/reconcile/bucket/archive/worker/daemon fixtures reproduce the longest-word defect, with ambiguous and scrubbed negative cases. No repository path, subject, answer, benchmark criteria, model, score weight, cutoff, budget, or source/access validation is changed.
+
+Full suite: **184 pass**, one existing Windows symlink skip; Ruff/whitespace checks pass. Whole-package isolated local comparison: **117/117 oracle checks per arm**, main 2.698998199950438s, feature 2.061513399705291s, **23.619312% lower time**, 95% interval **+14.161378% to +34.239363%**. Verification, local and live use the same measured source revision. All 48 live answers and source packets were reviewed, including current packet text identical to previously reviewed source bytes; actual new research reads were checked before every push. Both arms have zero protocol violations. Main facts 24/24 and citations 16/24; feature facts and citations 24/24 each. An invalid en-dash numeric fragment and root/host-absolute targets remain invalid under the unchanged rubric.
+
+| Measurement | Main | Candidate | Reduction | 95% reduction interval |
+| --- | ---: | ---: | ---: | --- |
+| Native input + output | 1,189,867 | 1,072,264 | 9.883710% | +1.219991% to +19.790718% |
+| Uncached input + output | 186,987 | 161,032 | 13.880644% | +5.614520% to +20.838154% |
+| Subject wall seconds | 270.637 | 239.554 | 11.485126% | +4.427843% to +17.692149% |
+
+The live run has 24 asks per arm, 20 main versus 13 feature research calls, and 50 versus 42 tool calls. Main relevant/raw hits are 18/18; feature 19/19. Feature research-free correct answers are 18 because scope-1 performs an extra read despite a relevant hit. The broad `file` hint also causes a second validation search; the stale family uses more gross and uncached tokens, installation uncached cost is higher, and scope/tests time is worse. All costs remain included. Positive aggregate interval bounds do not imply every family improves.
+
+The complete exported archive replays to **identical comparison JSON and exit 0**, including all eight passes. Attempt 21 remains a complete failed trial with exact public replay exit 1. Attempt 20 remains diagnostic-only. No identical-code retry, dropped outcome, task retry, gate waiver, merge, new feature or new branch occurred. This meets the public development regression contract; repeatedly exposed tasks and implementing-assistant labels do not establish held-out production savings or independent approval.
+
 
 Trial 21 (`c33ef3785949ec5310bdfeaa91fb9195d6449460`) prioritizes an explicit named descriptive field only inside the existing eligible excerpt window. Independent real-model Operations/Modes/Codecs fixtures and negative tests preserve exact/procedural behavior, score eligibility, line identities, bounds and stale-byte checks. Full suite: 173 pass, one existing skip. Local: 117/117 per arm, 21.12% lower time, interval +11.19% to +32.57%. All 48 sessions/source packets reviewed; zero protocol violations. Gross tokens 1,200,035 vs 1,039,279, interval +2.050700% to +27.652270% (pass); uncached tokens 204,963 vs 174,895, interval -9.007132% to +36.317572% (fail); time 275.888s vs 247.556s, interval -2.157653% to +23.628740% (fail). Main/feature facts: 24/24 each; citations 14/24 vs 24/24. Exact public replay exits 1. Complete failed evidence is retained under attempt-21.
 
@@ -54,8 +69,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 19 | `bb9ac24` | 6/8; time/quality/compliance pass; both token intervals remain blocking; paused after full audit/public replay |
 | 20 | diagnostic-only | No implementation or benchmark; original diagnostics preserved |
 | 21 | `c33ef37` | 6/8; gross tokens pass; uncached-token and live-time intervals fail; full audit/public replay retained |
+| 22 | `b6691a8` | **8/8**; full quality/protocol audit and exact public replay exit 0 |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13 and 16–19 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19, 21 and 22 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Earlier integrity rejection: trial 12
 
@@ -97,7 +113,7 @@ The positional-query masking experiment caused research misses and was reverted.
 
 ## Historical paused checkpoint (superseded by explicit resume)
 
-Trial 19 is complete, audited and publicly replayed, with 6/8 gates passing. No source change follows its measured revision. All eight remain mandatory, and the full benchmark contract, scripts, prompts, workloads and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
+At the historical pause, trial 19 was complete, audited and publicly replayed, with 6/8 gates passing and no subsequent source change. The explicit resume led to trials 21 and 22 above. All eight remain mandatory, and the full benchmark contract, scripts, prompts, workloads and quality rubrics remain unchanged. No identical-code retry is selected for provider/cache luck. Do not merge PR #3 or begin another feature.
 
 `attempt-20` contains only two source-order diagnostics and an explanatory outcome, not an implementation, test run, benchmark plan or completed trial. Raw neural ordering and sentence-focused ordering still favor metadata and were rejected. An independent ledger fixture reproduces metadata preceding the requested Operations declaration; prioritizing an explicit requested field within the existing eligible window is an unimplemented idea for the next chat to assess. No cutoff, scoring weight or response bound has changed. The user requested this pause before that fix began. See [RESUME.txt](RESUME.txt) for exact paths, commands and restrictions.
 
@@ -106,10 +122,10 @@ Trial 19 is complete, audited and publicly replayed, with 6/8 gates passing. No 
 Each complete attempt contains local rows, workload, source/import proofs, live rows, reviewer labels, verification, checksums and `live-native.zip` with every native event, answer, prompt, stderr, metadata and implementation proof. Private databases, credentials, caches and issuer keys are excluded. Only proof host prefixes become runtime-relative; measured values, revisions and source hashes are unchanged.
 
 ```powershell
-Expand-Archive docs/results/benchmark-remediation/attempt-19/live-native.zip <fresh-output-dir>
-python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-19/lookup-summary.json
+Expand-Archive docs/results/benchmark-remediation/attempt-22/live-native.zip <fresh-output-dir>
+python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-22/lookup-summary.json
 ```
 
-Expected live replay exit for completed attempts 1–13 and 16–19: **1**. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected live replay exit for completed attempts 1–13, 16–19 and 21: **1**; trial 22: **0** with all eight gates true. Attempt 20 is diagnostic-only. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.
