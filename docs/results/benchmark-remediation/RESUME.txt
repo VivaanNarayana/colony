@@ -1,3 +1,19 @@
+LATEST trial28 f60ef2add0b6818d67c96c42502de29c3a383724 STOPPED AT LOCAL GATE.
+117/117 oracle both; main5.173907900229096s, feature4.844286900770385s,
+6.370832% reduction CI -14.054582% to +26.403566%. No live started, no retry.
+All234rows/importproofs retained attempt28 and independently raw-audited.267pass1skip,
+lint/diffclean. Tests status success; local failure; other native checks error/notrun.
+Full eight-gate objective unfinished, draft/unmerged, branch unchanged.
+Independent pipeline profile ../benchmark-remediation-query-pipeline-profile-29.json:
+4/4threads median18.6783ms vs8/8threads32.0171ms, CPU7.640625s vs21.890625s
+per64requests.2/2latency20.1878ms; hybrids22-23ms. Every vector/logit identical.
+All fixed forward/reverse observations retained; no frozen-workload retry. Original
+bulk-passage microprofile missed interactive overhead. Next candidate should cap
+both pools at4 while retaining descriptor handoff/MCP compaction and strict budgets.
+This complete runtime differs from earlier4-thread versions. Full suite then fresh
+one-shot local/live if local qualifies. Use reversible ../run_awake.py for children;
+clocks/budgets unchanged, no persistent power changes, never adjust/drop27elapsed.
+
 TRIAL 28 PREPARATION COMPLETE: runtime forwards same-request paragraph descriptors
 for a single attached file instead of rebuilding them. Display still rereads and
 fingerprints current source bytes; full validation/scope/age/secrets/qualifications,
