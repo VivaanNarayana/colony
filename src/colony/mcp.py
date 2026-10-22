@@ -270,6 +270,17 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             )
         else:
             response["research_guidance"] = research_guidance
+        # An explicitly requested, matching namespace and its ordinary reuse
+        # recommendation are already conveyed by the call and next_action.
+        # Keep implicit scopes and any conflicting diagnostic recommendation.
+        if (
+            response.get("status") == "validated"
+            and namespace is not None
+            and response.get("namespace") == namespace
+            and response.get("recommendation") == "reuse_if_relevant"
+        ):
+            response.pop("namespace")
+            response.pop("recommendation")
         if not response.get("complete_files"):
             response.pop("complete_files", None)
         return [
@@ -291,7 +302,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         omit unasked background and dependencies. Don't research extra topics merely to fill memory.
         Copy actual research fingerprints, not ask's hashes. No invented hashes, snippets,
         symbols or rereads just to push. Client scrubs secrets; taint external content."""
-        return client.push(
+        result = client.push(
             Trail(
                 id=uuid.uuid4().hex,
                 namespace=namespace,
@@ -301,6 +312,19 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 tainted=tainted,
             )
         )
+        # There is no MCP operation taking a stored/queued trail ID. Keep that
+        # audit identity in the client/API receipt, as with validated ask IDs.
+        # Preserve every status/warning, and retain IDs on unexpected failures.
+        if (
+            isinstance(result, dict)
+            and not result.get("error")
+            and (
+                (result.get("stored") is True and result.get("queued", False) is False)
+                or (result.get("stored") is False and result.get("queued") is True)
+            )
+        ):
+            return {key: value for key, value in result.items() if key != "id"}
+        return result
 
     return server
 

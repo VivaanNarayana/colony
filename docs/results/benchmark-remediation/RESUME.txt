@@ -1,3 +1,15 @@
+TRIAL27 preparation: new runtime up to8 CPU model threads (logical-CPU cap),
+independent4-vs8 medians14% faster, identical outputs; original2-thread equivalence
+regression retained. MCP explicitly scoped matching validated lookups omit only
+duplicate namespace/reuse recommendation; implicit/conflicting cases remain.
+Successful push opaque IDs omitted from MCP only; full client/API audit receipts
+unchanged; flags, warnings, taint, status, proofs, citations, current text retained.
+Independent byte check806->751 ask,123->81push; not native-token gate evidence.
+Full suite251pass1skip,56.97s, lint/diff clean. attempt27 plan predeclares one fresh
+local trial then all48 live if local qualifies. No scripts/benchmark changes.
+All8 remain strict required and blocking, same branch, draft/unmerged. No identical
+source trial retries or baseline exemptions. Trial26 below is fully retained7/8.
+
 LATEST: trial26 complete7/8, measured96c8b400883ac25fddac70da427edecc096a4a73.
 Only uncached-input-plus-output fails: main176308, feature183248, CI -42.145260%
 to +30.118634%. Gross1118132/1038928 CI +0.159258% to +15.660843% passes;

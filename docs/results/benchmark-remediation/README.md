@@ -6,6 +6,8 @@ Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate i
 
 ## Current revision
 
+Trial27 preparation reduces duplicate explicitly scoped MCP receipt metadata and nonactionable successful-push IDs while preserving full client/API audit receipts and all trust/source/status fields. The independent byte check is806 to751 bytes for a scoped lookup and123 to81 for a push; implicit/conflicting cases are unchanged. Up-to8-thread inference is14% faster than4 in the independent diagnostic with identical outputs; the numerical regression still checks the original2-thread models. Full suite251pass1skip, lint/diff clean. These modest byte/execution diagnostics do not establish an uncached-token improvement. One fresh local/live trial is planned; trial26 below remains7/8 and blocking.
+
 Trial26 (`96c8b400883ac25fddac70da427edecc096a4a73`) completes all48 sessions and passes **7/8**. Main and feature facts are24/24, citations20/24 versus24/24, and both arms have zero protocol violations, including the stricter actual stored/queued receipt rule. Every answer, current source packet, new research read and push receipt was reviewed. Local117/117 per arm; 23.58% lower time, interval +13.35% to +35.07%. Full suite237 pass, one existing Windows skip; Ruff and whitespace clean.
 
 | Measurement | Main | Feature | 95% reduction interval | Gate |

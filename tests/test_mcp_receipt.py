@@ -337,3 +337,94 @@ def test_mcp_projection_preserves_decision_facts_without_mutating_full_receipt(
     else:
         assert result["id"] == packet["id"] and result["producer_id"] == packet["producer_id"]
         assert result["recommendation"] == "research" and result["sources"] == packet["sources"]
+
+
+@pytest.mark.parametrize(
+    "requested,status,recommendation,compacted",
+    [
+        ("lab", "validated", "reuse_if_relevant", True),
+        (None, "validated", "reuse_if_relevant", False),
+        ("other", "validated", "reuse_if_relevant", False),
+        ("lab", "stale", "research", False),
+        ("lab", "validated", "research", False),
+    ],
+)
+def test_scoped_receipt_omits_only_recoverable_scope_metadata(
+    monkeypatch, tmp_path, requested, status, recommendation, compacted
+):
+    packet = {
+        "hit": True,
+        "namespace": "lab",
+        "status": status,
+        "recommendation": recommendation,
+        "tainted": True,
+        "content": "Archives expire after 37 days.",
+        "sources": [source("policy.md", "a" * 64)],
+        "evidence": [{"ref": "policy.md", "line": 5, "text": "Archives expire after 37 days."}],
+    }
+    original = copy.deepcopy(packet)
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(ask=lambda *a, **kw: packet)
+    )
+    result = json.loads(
+        colony.mcp.create_mcp(tmp_path)
+        ._tool_manager.get_tool("ask")
+        .fn("Archive lifetime?", requested)[0]
+        .text
+    )
+    assert packet == original
+    assert result["status"] == status and result["tainted"] is True
+    assert result["content"] == packet["content"]
+    assert ("namespace" not in result) == compacted
+    assert ("recommendation" not in result) == compacted
+    if status == "validated":
+        assert result["current_repository_reads"][0]["sha256"] == "a" * 64
+        assert result["current_repository_reads"][0]["citation"] == "[policy.md:5](policy.md#L5)"
+        assert "UNTRUSTED" in result["provenance"]
+        assert result["verification"]["new_research_performed"] is False
+    else:
+        assert result["sources"] == packet["sources"]
+
+
+@pytest.mark.parametrize(
+    "flags,compacted",
+    [
+        ({"stored": True, "duplicate": False}, True),
+        ({"stored": True, "duplicate": True}, True),
+        ({"stored": False, "queued": True}, True),
+        ({"stored": False, "queued": False}, False),
+        ({"stored": True, "queued": True}, False),
+        ({"stored": True, "queued": None}, False),
+        ({"stored": True, "queued": "false"}, False),
+        ({"stored": "true"}, False),
+        ({"stored": True, "error": "inconsistent response"}, False),
+    ],
+)
+def test_push_compaction_preserves_save_state_and_client_audit_receipt(
+    monkeypatch, tmp_path, flags, compacted
+):
+    packet = {"id": "a" * 32, **flags, "warning": "Keep issuer backups private."}
+    original = copy.deepcopy(packet)
+    saved = []
+
+    def push(trail):
+        saved.append(trail)
+        return packet
+
+    monkeypatch.setattr(colony.mcp, "Client", lambda home: SimpleNamespace(push=push))
+    result = (
+        colony.mcp.create_mcp(tmp_path)
+        ._tool_manager.get_tool("push")
+        .fn(
+            "lab",
+            "Archive lifetime?",
+            "37 days.",
+            [colony.mcp.FileEvidence(ref="policy.md", content_hash="b" * 64)],
+        )
+    )
+    assert packet == original
+    assert saved[0].namespace == "lab" and saved[0].tainted is True
+    assert saved[0].sources[0].content_hash == "b" * 64
+    assert result == ({k: v for k, v in packet.items() if k != "id"} if compacted else packet)
+    if compacted:
+        assert len(json.dumps(result)) < len(json.dumps(packet))

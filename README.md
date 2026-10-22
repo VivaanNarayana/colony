@@ -108,9 +108,15 @@ target instead of adding a leading slash or a server filesystem root.
 Validated file identities already present in these reads are not repeated in `sources`.
 Sources with advanced assertions or without a displayed read remain in `sources`, preserving
 the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.
+Explicitly scoped validated MCP
+receipts omit the matching namespace already supplied by the caller and the ordinary
+reuse recommendation already expressed by `next_action`. Implicit scopes and conflicting
+recommendations remain explicit. Successful MCP push receipts omit the opaque trail ID,
+which no MCP operation accepts; stored/queued/duplicate flags and warnings remain.
+CLI/HTTP receipts retain the full audit metadata.
 Validated MCP results omit opaque trail/producer audit IDs and a false age flag; the
-full client/API receipt keeps them. Namespace, taint, status, reuse recommendation,
-source proofs and provenance warnings remain in the MCP result.
+full client/API receipt keeps them. Taint, status, source proofs and provenance warnings
+remain explicit; namespace and reuse hints remain when not redundant as described above.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
@@ -199,7 +205,7 @@ Lexical selection rereads scoped, cited files with matching hashes; this bounded
 approach is intended for small teams and does not provide a scalable full-text index.
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
-FastEmbed/ONNX, with up to four CPU threads per model, capped by the logical processor
+FastEmbed/ONNX, with up to eight CPU threads per model, capped by the logical processor
 count. Agent text stays on this host. Set
 `COLONY_MODEL_CACHE` to choose a shared model cache. For fully offline provisioning, set
 `COLONY_EMBED_MODEL_DIR` to the BGE-small ONNX snapshot directory and
