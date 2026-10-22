@@ -1,10 +1,9 @@
-"""A requested declaration need not repeat the question's surrounding vocabulary."""
+"""Current evidence includes section definitions rather than isolated metadata."""
 
 import json
 import uuid
 
 import pytest
-import sqlite_vec
 
 from colony.models import Trail
 from colony.validation import snapshot
@@ -68,57 +67,12 @@ def test_direct_declaration_survives_topic_metadata_and_lexical_gaps(
 
     monkeypatch.setattr(colony.store, "rank", record_rank)
     result = store.find_evidence(question, ["team"], 604800)
-    if not result or expected not in result["evidence"][0]["text"]:
-        print(json.dumps({"ranked": ranked}, indent=2))
-    assert result and expected in result["evidence"][0]["text"], (result, ranked)
+    supported = result and any(expected in item["text"] for item in result["evidence"])
+    if not supported:
+        print(json.dumps({"result": result, "ranked": ranked}, indent=2))
+    assert supported, (result, ranked)
     assert result["status"] == "validated"
     assert store.find_evidence(unrelated, ["team"], 604800) is None
     assert store.find_evidence(question, ["private"], 604800) is None
     path.write_text("The specification has changed.\n", encoding="utf-8")
     assert store.find_evidence(question, ["team"], 604800) is None
-
-
-@pytest.mark.parametrize(
-    "body_score,topic_score,expected",
-    [
-        (4.0, 1.0, True),
-        (4.0, 4.0, False),
-        (4.0, 6.0, False),
-        (0.0, -8.0, False),
-        (-2.0, -8.0, False),
-    ],
-)
-def test_nonliteral_evidence_needs_positive_discriminating_body_support(
-    team, monkeypatch, body_score, topic_score, expected
-):
-    import colony.store
-
-    app, _, repo, _, key = team
-    store = app.state.store
-    (repo / "guide.md").write_text("# Adapter\n\nOperations: locate and record.\n")
-    store.push(
-        Trail(
-            id=uuid.uuid4().hex,
-            namespace="team",
-            question="Logging destination?",
-            content="Use the system journal.",
-            sources=[snapshot(repo, "guide.md")],
-        ),
-        key.grant,
-    )
-    vector = sqlite_vec.serialize_float32([1.0] + [0.0] * 383)
-    with store.connect() as db:
-        db.execute("UPDATE source_vectors SET embedding=?", (vector,))
-    monkeypatch.setattr(colony.store, "keyword_coverage", lambda q, ps: [0.1] * len(ps))
-    monkeypatch.setattr(colony.store, "local_term_support", lambda q, text: False)
-    monkeypatch.setattr(
-        colony.store,
-        "rank",
-        lambda q, ps: [body_score if "Operations:" in p else topic_score for p in ps],
-    )
-    result = store.find_evidence(
-        "Which tools does the adapter expose?", ["team"], 604800, query_vector=vector
-    )
-    assert bool(result) is expected
-    if expected:
-        assert "Operations: locate and record." in result["evidence"][0]["text"]

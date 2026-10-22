@@ -9,7 +9,10 @@ def document(introduction, fact):
         "## Retention\n\n"
         + introduction
         + "\n\n"
-        + "\n\n".join(f"Diagnostic detail {i}." for i in range(40))
+        + "\n\n".join(
+            f"Diagnostic detail {i} preserves opaque field names and result formatting metadata."
+            for i in range(40)
+        )
         + "\n\n"
         + fact
         + "\n"

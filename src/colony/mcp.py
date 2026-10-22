@@ -46,8 +46,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "Never retype, shorten or reconstruct a fingerprint. Report a rejected save."
     )
     sufficiency_guidance = (
-        "Check whether the current text supplies every requested fact. A validated hit only "
-        "checks file identity, not answer completeness. If a requested fact is absent, research "
+        "Check whether the current text supplies every requested fact. A validated hit reports "
+        "source checks, not answer completeness. If a requested fact is absent, research "
         "that gap before answering; saying the excerpt lacks the answer does not resolve it. "
         "If all requested facts are present, use them directly without confirmation reads or push."
     )

@@ -254,7 +254,17 @@ def excerpts(
                     heading = i + 1
             if heading is not None:
                 start, text = context_window(ref, cache[ref], heading, 6)
-                if text and len(text) <= budget and start + text.count("\n") < line:
+                end = start + text.count("\n")
+                if (
+                    text
+                    and start <= line
+                    and end >= line + item["text"].count("\n")
+                    and len(text) <= budget + len(item["text"])
+                ):
+                    # A complete short section can contain both the definition
+                    # and selected detail. Keep that contiguous context once.
+                    selected[0] = {"ref": ref, "line": start, "text": text, "complete_file": False}
+                elif text and len(text) <= budget and end < line:
                     selected.insert(
                         0, {"ref": ref, "line": start, "text": text, "complete_file": False}
                     )
