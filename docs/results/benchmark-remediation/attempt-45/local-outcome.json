@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "modes": {
+    "main": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 2.5506163998506963,
+      "query_embeddings": 108,
+      "reranker_calls": 99,
+      "reranked_passages": 99
+    },
+    "feature": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 1.9136535002035089,
+      "query_embeddings": 90,
+      "reranker_calls": 27,
+      "reranked_passages": 27
+    }
+  },
+  "quality_passed": true,
+  "lookup_improves": true,
+  "lookup_time_reduction": 0.24972900655875685,
+  "latency_reduction_95pct": [
+    0.15910547714227574,
+    0.35575260128237873
+  ],
+  "raw_audit": {
+    "observations": 234,
+    "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+    "raw_measurements_verified": true
+  }
+}

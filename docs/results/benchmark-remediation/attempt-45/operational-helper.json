@@ -1,0 +1,7 @@
+{
+  "role": "Reversible system-idle prevention only; no clock, CPU-budget or persistent-power changes",
+  "sha256": "0839437ef45ec22eb2ce5eed4838bf004623788898a584877db01cbf9c0a6ec2",
+  "file": "run_awake.py.txt",
+  "original_runtime_bytes_sha256": "694902dba201b943136cc0dbb7b9eb6c95f450781aec3bc0be2261b25cd8d78c",
+  "publication_normalization": "Physical CRLF is normalized to LF in the published source text; original runtime-byte hash is retained separately."
+}

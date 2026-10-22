@@ -1,0 +1,8 @@
+{
+  "tested_source": "5b7ee4838618610f836e1de15b2edbc6d905b5a5",
+  "measured_source": "a4fcb7aaeb3f65b05cb5129d8942f105bb30fb6d",
+  "src_scripts_tests_diff_empty": true,
+  "new_test_invocations": 0,
+  "verification_from": "../attempt-44/verification.json",
+  "full_results": "277 passed,1 existing Windows skip,Ruff passed; full logs retained in attempt44"
+}

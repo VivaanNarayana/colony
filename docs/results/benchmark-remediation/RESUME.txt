@@ -1,3 +1,38 @@
+PAUSED AFTER USER'S SINGLE BENCHMARK TRIAL45, 2026-10-22.
+Measuredsourcea4fcb7aaeb3f65b05cb5129d8942f105bb30fb6d vs currentmain
+6fa6826aa4c835001c0d2bc8f3bec838499e5b5d(recheckedunchanged). SamebranchPR3draft,
+unmerged,noauto-merge. No source/harness/test/benchmarkcontract changesduringrun.
+LocalONCE:117/117both,all234rowsauditexact. Paraphrase3variants*3repeatsPASS.
+Mainseconds2.5506163998506963,feature1.9136535002035089,reduction24.972901%,
+CI+.15910547714227574..+.35575260128237873. Rerankcalls99main/27feature.
+All48native sessionsONCE;runnerexit0. Officialanalyzerexit1 EVIDENCE_INTEGRITY:
+feature/scope-3.colony: push fingerprint does not match an actual source read.
+R36firstREADMEhash63chars(missing7),MCPschemaREJECTS. Modelsecondpushusesvalid
+server.pyonlyandstores. Bothattemptsandcostsretained;secondcannoterasefirst.
+No benchmark/subjectsessionrestart. No hashrepair/exclusion/fix/newbenchmarkrun.
+R21featuremcp2 getsirrelevantvalidatedmetadataexcerptREADME96;doesnotnameask/push,
+doesnoresearch/save.CorefactFALSE,relevanceFALSE,citationmetadataformatvalid.
+R15maintests1alreadyhaspytestcommandinvalidatedexcerpt;readsREADMEandpushesagain
+(queued),violatingreusepolicy. Main no exemption. Facts24main/23feature,cites19/24.
+Five mainabsolutecitationsinvalidR07/R27/R32/R35/R43. All48answers/packets,1novel
+context,15researchsessions/allpushes/unusablehit reviewed;notindependentblind.
+DescriptivetotalsONLY:gross1209784/1292976,uncached179384/180144,
+seconds262.308/245.993,toolcalls52/55,research21/22,asks24each.
+Mainpushes7(3stored4queued);feature9attempts(8stored1failed). Raw/relevanthits
+main18/18feature16/15;researchfreecorrect17/15. No liveCI/performanceverdict.
+No complete8gatecount:officialcomparisonisrejectionJSON. Statuses independently
+validatedtests/localSUCCESS,knownquality/protocolFAIL,4uncomputedcontextsPENDING.
+All8originalgatesstrictrequiredactive25440133,no bypass/defaultbranchmain.
+TestsREUSEDidenticalsrc/scripts/tests5b7ee48:277pass1existingskip,Ruffpass.No newtests.
+Publicarchive EXACTreplays rejectionJSON/exit1 offline,no newnative/modelcalls.
+All historicalattempts/manifests untouched. Complete local+native raw/labels/import/
+source/model/harnesshashes,badproof/error,receipts,audits,operational+wakelogs in45.
+Wake requestsreleased,persistentpowerunchanged. Pause afterPRupdate,no further
+work/run scheduled,no planfile. Lastfull8gatereport41=3/8onitsownsource.
+Resumeonlynewuserrequest.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS FAILED LIVE AUDIT RECORD.
+
 PAUSED AFTER USER'S TESTS-ONLY PARAPHRASE FIX CHECKPOINT44, 2026-10-22.
 Testedsource5b7ee4838618610f836e1de15b2edbc6d905b5a5,samebranchPR3draft/unmerged.
 Relateddescriptiveanswerswithoutliteraltermsupport nowrequirepositiveactual

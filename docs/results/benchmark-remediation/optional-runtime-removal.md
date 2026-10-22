@@ -1,5 +1,7 @@
 # Removal of optional runtime changes, October 22, 2026
 
+**Latest measured validation:** [Trial 45](attempt-45/README.md) passes all 117 local checks in both arms, including the paraphrase repair. Its 48-session live evidence is rejected for a malformed feature push fingerprint; quality/protocol failures are also retained. No full eight-gate or live performance result is asserted. No fix/restart followed; PR #3 remains draft/unmerged and paused.
+
 **Latest repair, tests only:** [Checkpoint 44](attempt-44/README.md) permits descriptive semantic paraphrases through a positive answer-versus-question control comparison. The full suite passes 277 tests with one existing skip, and all pre-fix/current historical failures remain retained. This adds bounded ranking work with no benchmark/performance claim; seven required checks remain pending and blocking. Optional navigation/search heuristics remain absent.
 
 **Historical benchmark validation:** [Trial 43](attempt-43/README.md) subsequently fails local quality: the checkpoint 42 descriptive-answer term guard rejects valid archive-retention paraphrases, feature 108/117 versus main 117/117. The faster timing cannot qualify. Live sessions were not started under the stopping rule; no fix or retry occurred. This does not establish the live effect of the save guidance.
