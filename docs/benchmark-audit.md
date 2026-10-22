@@ -5,8 +5,11 @@ This establishes weaknesses in the evidence, not intent to manipulate results.
 The initial audit commit (`e2b865a`) left the production package unchanged.
 The subsequent [gate-remediation attempt](results/benchmark-remediation/README.md)
 adds runtime and citation fixes on the same branch. Eight-gate clearance remains
-incomplete: trial 18 passes 6/8 gates; both token intervals remain blocking.
-Work continues at the user's request. Trial 19 corrects the literal-keyword hint to prefer explicit technical identifiers, retaining all failed outcomes and unchanged benchmark requirements.
+incomplete: completed trial 19 passes 6/8 gates; both token intervals remain blocking.
+Work is paused at the user's request after retaining and replaying all 48 sessions.
+Trial 19 corrects the literal-keyword hint to prefer explicit technical identifiers;
+166 tests pass with one existing skip. Time passes; token lower confidence bounds
+remain negative. Read [the continuation handoff](results/benchmark-remediation/RESUME.txt).
 All earlier attempts and failures are retained. No gate has been weakened or made advisory.
 
 ## Findings

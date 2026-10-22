@@ -1,0 +1,179 @@
+COLONY PR #3 CONTINUATION HANDOFF — PAUSED BY USER, 2026-10-21
+
+Resume only when the user asks the next chat to continue. Continue existing PR #3
+until all eight blocking gates pass. Never weaken benchmarks, make checks advisory,
+merge PR #3, or start another feature/branch. No agents are authorized. Update the
+PR with complete evidence and report completion without merging.
+
+Repository:
+C:\Users\b3vel\Documents\Codex\2026-10-20\https-github-com-vivaannarayana-colony-https\work\colony
+Remote: https://github.com/VivaanNarayana/colony
+PR: https://github.com/VivaanNarayana/colony/pull/3 (open draft, no auto-merge)
+Branch: feat/benchmark-independent-evaluation
+Measured source: bb9ac24194577bcfec1bcb206d46c03c89f793a5 (trial 19)
+Measured main: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d
+The checkpoint after this source commit changes evidence/docs only. Inspect HEAD,
+git status, repository instructions and PR before continuing. Fetch main on resume;
+if it moved, do not call the old baseline current main. PR #2 was already merged.
+Do not touch sibling colony-source-cache / feat/reuse-cited-source-vectors.
+No benchmark/server process remains running at this pause.
+
+LATEST COMPLETE RESULT: 6/8 PASS, TWO TOKEN GATES STILL FAIL
+Authoritative report: docs/results/benchmark-remediation/README.md
+Audit: docs/benchmark-audit.md
+Complete evidence: docs/results/benchmark-remediation/attempt-19/
+Native input+output: main 1,236,018; feature 1,102,543; reduction 10.79879%;
+95% paired-family reduction interval [-0.106263%, +26.372975%]. FAIL.
+Uncached input+output: main 187,442; feature 157,135; reduction 16.16873%;
+interval [-0.955310%, +26.469006%]. FAIL.
+Live time: main 273.365s; feature 218.489s; reduction 20.07426%;
+interval [+8.272746%, +29.995407%]. PASS.
+Both token lower bounds are negative. Never round positive or waive uncertainty.
+Facts 24/24 each; citations main 17/24, feature 24/24; zero protocol violations.
+Ask calls 24 each; research calls 23 vs 15; tool calls 54 vs 44;
+relevant/raw hits main 18/18, feature 19/19.
+Full suite: 166 passed, one existing Windows symlink skip; Ruff/whitespace clean.
+Local: 117/117 oracle passes per arm; main 2.989104300s, feature 2.3304029997s;
+22.036745% reduction, interval [+12.292773%, +33.066416%].
+All 48 live sessions completed and manually reviewed. Public archive replay
+reproduced identical comparison and exit 1. All prior failures remain retained.
+
+GRADING DETAILS
+Main's explicit bare repository filename in the server answer is valid under the
+existing rubric; referenced lines were checked. Invalid absolute targets stay
+invalid. Installation uses the existing requested-fact rubric (including the dev
+extra in pyproject), not an added unasked venv criterion. Main outage-1 used six
+research operations, within the original budget. Repeated unnecessary research
+remains cost, not relabelled/dropped. Feature MCP family: 146,674 vs 145,809 gross
+tokens; server family 246,433 vs 241,421. Hints do not improve every family.
+
+CURRENT RUNTIME, ALL COMMITTED THROUGH TRIAL 19
+Reuse query embedding for answer/evidence. Skip ranking only where selection
+cannot change. Preserve scope/age/validation/assertions and model thresholds.
+Whole-src passage inputs match main; semantic-v7 indexes reused, experimental
+v8/v9 rebuild. Positional-query masking and procedure focusing were reverted.
+Embedding/cross-encoder batch size 1 avoids padding; real vector/logit checks.
+Preserve whole procedural recipes/fences/prerequisites. Compact only standalone
+complete descriptive prose. Focus descriptive sentence pairs, not procedures.
+Canonical relative citations/current reads; deduplicate plain identities while
+preserving assertions and undisplayed identities. Current source-derived answers
+are memory reuse even for a new question. Never reread/push solely from ask reads.
+Compact MCP policy/projection but retain required recommendation; Client/API full
+payload remains. Related descriptive questions can drop obsolete claim bonuses
+when another passage has strictly better query coverage; weights stay unchanged.
+Fresh scoped-empty preflight avoids embeddings, no absence cache or age filter;
+share answer DB connection, commit before separate evidence fallback.
+Miss guidance: literal keyword search, requested facts only, stop once supported.
+Trial 19 optional scrubbed hint prefers explicit backticked identifiers, acronyms
+and camelCase, preserving exact case/final S. Longest prose is fallback. Independent
+RPC/TLS/HTTPS/status fixtures reproduce trial 18's connect-vs-MCP regression.
+No repository-specific keywords/paths/answers or mocked retrieval scores added.
+
+NEXT IDEA: NOT IMPLEMENTED
+attempt-20 contains only two diagnostic JSON files, outcome explanation and hashes.
+No source edit, test run, plan or benchmark for trial 20 exists.
+source-order-diagnostic.json: Tools raw logit 2.5495 vs metadata 4.2509/3.7743;
+focused Tools 2.5302 vs metadata 5.3345/2.5840. Both reorderings rejected.
+field-order-diagnostic.json: independent real-model ledger fixture's query
+"Which operations does the ledger bridge expose?" returns metadata before the
+actual "Operations: read_entry and append_entry" fact. Modes/Codecs already work.
+Possible next fix: conservatively prefer an explicit field declaration named by
+the question INSIDE the existing eligible excerpt window for descriptive related
+questions only. This is an unvalidated idea, not an instruction to ship it.
+Preserve exact/procedural behavior, weights/cutoffs, maximum two reads/2800 chars,
+proof/scope/age checks. Add independent real-model facts-first and negative tests.
+No raw neural reorder, keyword-score promotion, cutoff lowering, unsafe recipe
+intro boosting, model swap or benchmark-specific answer matching.
+
+FROZEN CONTRACT
+Plan benchmark_sha256 is authoritative. Workload SHA256:
+f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325
+Do not change scripts/workload/prompts/rubrics/thresholds/interval requirements.
+Eight mandatory gates:
+loaded_implementations_verified
+tests_and_lint_pass
+local_lookup_improves
+correctness_not_reduced (24/24 feature facts AND valid citations, no loss)
+feature_follows_tool_protocol (BOTH arms, zero violations)
+observed_live_tokens_improve
+observed_uncached_input_plus_output_improve
+observed_live_time_improves
+Live metrics require lower totals AND strictly positive lower 95% paired-family
+bootstrap reduction bounds. Gross=native input+output; uncached=gross-cached input.
+Local: 39 independent cases, 13 families, three repetitions, 117 per arm.
+Whole-src Git archives run isolated -I workers with path/hash proofs. Local/live/
+verification must use the SAME source revision, even for MCP-only source edits.
+Live: 48 sessions, alternating first arms, fresh stores/frozen main corpus,
+gpt-6-luna/low, six research operations, 240s/session, 8M native-token total cap.
+No dropped outcomes, task retries, identical-code cache-luck reruns, budget/rubric
+changes, baseline exemptions or softened citation checks. Retain every failure.
+Integrity-rejected trials have no qualifying performance result. Repeated public
+development tasks and implementing-assistant grading are not held-out production
+or independent blind review. No automatic merge-readiness claim.
+
+ENVIRONMENT (PowerShell, from repository)
+Use .venv\Scripts\python.exe and .venv\Scripts\ruff.exe.
+$env:COLONY_EMBED_MODEL_DIR='C:\Users\b3vel\Documents\Codex\2026-10-19\colony-summary-what-it-is-colony\work\colony-models\embed'
+$env:COLONY_RANK_MODEL_DIR='C:\Users\b3vel\Documents\Codex\2026-10-19\colony-summary-what-it-is-colony\work\colony-models\rank'
+$env:PYTHONIOENCODING='utf-8'
+Pinned offline models; Python3.13.1, FastEmbed0.7.4, ORT1.24.4, numpy2.4.4,
+sqlite-vec0.1.9, mcp1.30.0. Existing CLI login authorized for live benchmarking.
+No credential provisioning or changes needed. Never print secrets.
+
+FUTURE TRIAL SEQUENCE
+First concrete fix, meaningful tests, full suite/lint, recorded plan and new
+committed source; clean tracked tree. Record current main/source/model/benchmark
+hashes. Use next unused trial number N (20 has diagnostics only), fresh output/
+runtime directories and unused port. Example commands, substitute BASE/N/PORT:
+.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\ruff.exe check .
+git diff --check
+.venv\Scripts\python.exe scripts/benchmark_lookup.py --baseline-ref BASE --feature-ref HEAD --runtime ../benchmark-remediation-local-N-runtime --output ../benchmark-remediation-local-N-results --name lookup --seed 20261021 --variants 3 --repetitions 3
+Only if local qualifies:
+.venv\Scripts\python.exe -u scripts/benchmark_lookup_live.py --baseline-ref BASE --work ../benchmark-remediation-live-N-runtime --output ../benchmark-remediation-live-N-results --port PORT
+No competing neural tests/profiles during live. Keep the user updated.
+
+REVIEW / EXPORT / PUBLICATION
+Prepare shuffled answers/source packets (does not grade correctness):
+.venv\Scripts\python.exe docs/results/benchmark-remediation/attempt-1/prepare-review.py ../benchmark-remediation-live-N-results ../benchmark-remediation-live-N-runtime
+Read all 48 answers and source packets. Persist per-task fact/citation/relevance/
+wrong-reuse labels and notes in arm reviews.json, following existing labels.
+Helper recognizes numeric fragments only; manually check named Markdown anchors.
+Preserve requested-fact rubric. Matching file hashes do not replace actual new
+research reads before push. Both arms' compliance is blocking.
+Analyze complete results (exit 1 when any gate fails):
+.venv\Scripts\python.exe scripts/analyze_lookup_live.py --results ../benchmark-remediation-live-N-results --local ../benchmark-remediation-local-N-results/lookup-summary.json
+Existing local external exporter, inspect before use:
+.venv\Scripts\python.exe ../retain_remediation.py N
+It publishes all local/native events/answers/prompts/stderr/metadata/proofs and
+completion/protocol evidence, excluding private DBs/credentials/caches. Only proof
+host prefixes become runtime-relative; never alter measurements or source hashes.
+Extract public live-native.zip into a fresh directory, rerun analyzer using public
+lookup-summary.json, compare JSON exactly plus exit/rejection. Verify sha256
+manifests against committed Git bytes (not CRLF-translated worktree bytes).
+Update report/audit/PR and all eight benchmarks/<gate> status contexts, preserving
+failure states. Reuse measured checks on evidence-only commits ONLY after proving
+git diff MEASURED HEAD -- src scripts tests is empty. PR body via --body-file.
+Keep PR draft; no merging or new feature. Stop/report when all eight pass.
+
+EXISTING LOCAL FILES
+Sibling ../benchmark-remediation-{local,live}-19-{runtime,results}: original results.
+../benchmark-remediation-public-replay-19: completed exact public replay, exit 1.
+../../benchmark-pr-body-running.txt: latest PR body.
+Git/PR evidence is portable; sibling helpers/runtimes may be absent on other hosts.
+
+FAILED HISTORY TO PRESERVE
+Trials 4/12 integrity-rejected for push-from-ask reads, including main in 12.
+Trials 14/15 failed local speed intervals and correctly never ran live.
+16 shared DB connection restored local speed but all three live intervals failed.
+17 cleared time, both token gates failed. 18 introduced longest-word hint;
+19 fixed the concrete connect regression but both token gates still fail.
+Full history, rejected experiments and all plans are retained in the report.
+
+MCP INSTRUCTION INVESTIGATION (NO SOURCE CHANGE)
+Official docs confirm Codex forwards MCP initialize instructions and recommend
+essential guidance early (first 512 characters). No evidence of missing forwarding
+or hard truncation. Do not invent a client bug. Current policy prioritizes reuse/
+provenance early. Read-only investigation required no new credentials.
+https://developers.openai.com/cookbook/examples/partners/harness_aware_plugin_evals/harness_aware_plugin_evals
+https://developers.openai.com/plugins/build/mcp-server
