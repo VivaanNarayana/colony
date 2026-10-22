@@ -1,3 +1,18 @@
+LATEST: trial26 complete7/8, measured96c8b400883ac25fddac70da427edecc096a4a73.
+Only uncached-input-plus-output fails: main176308, feature183248, CI -42.145260%
+to +30.118634%. Gross1118132/1038928 CI +0.159258% to +15.660843% passes;
+seconds281.055/248.683 CI +2.938289% to +19.884518% passes. Both-arm protocols0;
+facts24/24, citationsmain20/feature24. Full suite237 pass1skip, lint/diffclean.
+Local117/117 each,23.58% lower time CI +13.35% to +35.07%. Exact public replay1.
+All48answers/source packets/research traces/real save receipts reviewed; failures
+fully retained in attempt26,7success+1failure statuses published. No gate weakening,
+baseline exemptions, identical-source full-trial retries or outcome exclusions.
+Next investigation: independent4-vs8thread diagnostic shows14% lower execution
+medians with identical outputs; no source implemented yet. Redundant MCP receipt
+fields may be compacted only without losing trust/status/taint/citations/source
+proofs or warnings, and with regressions. Thread changes do not directly establish
+an uncached-token gain. User requires continued work until all8pass, draft/unmerged.
+
 TRIAL26 preparation: new runtime uses up to4 CPU model threads (logical-CPU capped),
 unchanged batch1/model snapshots/inputs/weights/cutoffs/index, exact diagnostic
 outputs vs original2 threads; independent medians26.5%/36.9% lower.

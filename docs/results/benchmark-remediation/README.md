@@ -1,12 +1,22 @@
 # Strict gate remediation against main
 
-**Trial 25 completed with a blocking integrity rejection on the same branch.** All four findings have fixes and regression tests; completed trials 23 and 24 each pass 5/8. Trial 24 has complete retained evidence and an exact hardened public replay; all three live confidence intervals still fail. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
+**Trial26 completes with 7/8 blocking gates passing.** Gross-token and live-time intervals now pass; uncached input plus output remains a blocking failure. All four audit fixes and stronger successful-save receipts remain enforced. All eight GitHub statuses are required with strict up-to-date enforcement. PR3 stays draft and unmerged; the objective remains unfinished.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
 
-Trial26 preparation adds bounded CPU parallelism (up to four threads, capped by logical processors), preserving model snapshots, inputs and outputs. The independent diagnostic improves embedding/ranking medians by26.5%/36.9%; numerical regression compares against the original two-thread models. It also completes the authorized mandatory-save protocol by rejecting failed/error push receipts despite transport completion. Full suite237 pass, one existing skip; lint/whitespace clean. Historical trial22 and rejected trial25 replay identically through this stronger verifier. Trial25 below remains nonqualifying; no runtime-identical retry.
+Trial26 (`96c8b400883ac25fddac70da427edecc096a4a73`) completes all48 sessions and passes **7/8**. Main and feature facts are24/24, citations20/24 versus24/24, and both arms have zero protocol violations, including the stricter actual stored/queued receipt rule. Every answer, current source packet, new research read and push receipt was reviewed. Local117/117 per arm; 23.58% lower time, interval +13.35% to +35.07%. Full suite237 pass, one existing Windows skip; Ruff and whitespace clean.
+
+| Measurement | Main | Feature | 95% reduction interval | Gate |
+| --- | ---: | ---: | --- | --- |
+| Gross native tokens | 1,118,132 | 1,038,928 | +0.159258% to +15.660843% | Pass |
+| Uncached input + output | 176,308 | 183,248 | -42.145260% to +30.118634% | **Fail** |
+| Subject wall seconds | 281.055 | 248.683 | +2.938289% to +19.884518% | Pass |
+
+Feature uncached cost is3.94% higher; it worsens in six families. Cached-input variation and every observed cost remain included without normalization. Main/feature research calls17/11, tool calls47/40, and asks24/24. The feature still reads a permission helper and stores unasked capture background; those costs remain. The complete exported archive reproduces identical comparison JSON and exit1. Seven successes and one blocking failure are published; no baseline exemption, task retry, identical-source trial retry or outcome exclusion.
+
+Bounded CPU parallelism uses up to4 threads, capped by logical processor count. Independent embedding/reranking diagnostic medians improve26.5%/36.9% with identical outputs; real-model regression compares against the original two-thread snapshots. Batch1, model snapshots, inputs, weights, cutoffs, source eligibility and index version remain unchanged. The protocol verifier now requires actual stored/queued success, rejecting error receipts despite transport completion. Historical trial22 pass and trial25 rejection replay identically through the stronger verifier.
 
 Trial 25 (`e4a3980`) completed all 48 sessions but is **nonqualifying**: the unchanged analyzer rejects `main/scope-2.colony: push fingerprint does not match an actual source read`. Main first submitted an invalid security-file digest, then a second push. Both calls and all native costs are retained. All eight GitHub statuses block; no main exemption or substitution of another trial. The exported archive reproduces the identical integrity rejection and exit 1.
 
@@ -99,8 +109,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 23 | `6b7c6ae` | 5/8; main duplicate ask and gross/uncached token intervals fail; complete hardened replay exit 1 retained |
 | 24 | `6031c44` | 5/8; quality, protocol and local pass; all three live intervals fail; complete hardened replay exit 1 retained |
 | 25 | `e4a3980` | Nonqualifying integrity failure: main push fingerprint mismatch and second push; exact public replay exit 1 retained |
+| 26 | `96c8b40` | 7/8; gross/time intervals pass; uncached-token gate fails; exact public replay exit1 retained |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–25 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–26 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Earlier integrity rejection: trial 12
 
@@ -155,6 +166,6 @@ Expand-Archive docs/results/benchmark-remediation/attempt-22/live-native.zip <fr
 python scripts/analyze_lookup_live.py --results <fresh-output-dir> --local docs/results/benchmark-remediation/attempt-22/lookup-summary.json
 ```
 
-Expected live replay exit for completed attempts 1–13, 16–19, 21, 23 and 24: **1**; trial 22: **0** with all eight gates true. Attempt 20 is diagnostic-only. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
+Expected live replay exit for completed attempts 1–13, 16–19, 21, 23, 24 and 26: **1**; trial 22: **0** with all eight gates true. Attempt 20 is diagnostic-only. Attempts 14 and 15 contain local results only and have no live archive; their local speed gates failed. Source commits must be available in Git. Checksum manifests have been checked against committed Git bytes. `attempt-1/prepare-review.py` prepares shuffled answers and citation checks; it does not assign fact correctness. Named Markdown anchors are manually verified against actual headings because the helper only recognizes numeric fragments.
 
 All gates are mandatory, including positive lower paired-family interval bounds, full feature fact/citation correctness and both arms' tool compliance. No gate is advisory. These repeatedly exposed public development tasks, descriptive intervals and primary-assistant grades do not establish held-out production savings or independent approval.

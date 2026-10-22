@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "Every final answer, citation target, saved claim, current source packet and actual research/push trace reviewed. Identical current source text/line bytes from trials24/25 checked by equality; five novel displayed contexts separately inspected. Requested core facts correct; no wrong reuse. Main root-absolute targets remain invalid, no citation exceptions. Real stored/queued receipts checked for both arms. Offline-push answer reports queueing without asserting automatic retries; explicit retry question separately supplies the explicit command."
+  }
+}
