@@ -1,3 +1,28 @@
+PAUSED AT USER REQUEST AFTER TRIAL32 CHECK. Do not resume without a new user request.
+No further trial/optimization is scheduled. PR3 stays draft/unmerged; never merge.
+Latest measured source ece8855b2f1426ccdaa2f2cbdff8685057f32597; same branch
+feat/benchmark-independent-evaluation. Currentmain freshly fetched unchanged:
+6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Trial32 completes48sessions;6/8. Gross/uncached confidence gates FAIL.
+Gross1189754/1040677 reduction12.530069%, CI-.006685286..+.267762762.
+Uncached171642/154405 reduction10.042414%, CI-.083111235..+.245845681.
+Seconds251.126/221.899 reduction11.638381%, CI+.012477110..+.204708668 PASS.
+Local117/117each;26.380060% lower CI+.176562309..+.364103056; all234rawrowsaudited.
+Facts24both,cites15main24feature,protocol0.270pass1skip81.65s/lintdiffclean.
+All48answers/sourcepackets/research/pushtraces manually reviewed. FullnativeZIP,
+rawlocalfiles,model/source/importproofs,fullJUnit,operationalguardlogs retained
+in attempt32. Exact public replay JSON/exit1. Required8checks stillstrict,active
+ruleset25440133,no bypass actors; current snapshot attempt32/required-gates.json.
+Source32 indexes trail_sources(trail_id), preserves explicit rowid order/all
+advancedassertions; legacy-store regression and fixed independentquerymatrix pass.
+No sourcecache/eligibility/model/scoring/prompt/rubric/budget changes. Candidate31
+rejected beforefullbenchmark, all8paired diagnostic sessions/bothsource trees
+retained; its policy reverted. Trials29(7/8),30(5/8) and priorfailures retained.
+Do not retry this source for sampling. No next runtime change selected. Any future
+trial requires actual justified implementation change, predeclared plan,full
+checks,freshcurrentmaincomparison,rawlocal audit thenall48live iflocalpasses.
+Unfinished all-eight objective; paused rather than complete.
+
 TRIAL32 PREPARATION COMPLETE: index trail_sources(trail_id), explicit rowid proof
 order; automatic idempotent migration on existing stores. No source cache or proof
 validation/model/scoring change. Fixed independent1536/24576/98304row matrix all

@@ -1,10 +1,22 @@
 # Strict gate remediation against main
 
-**Trial30 passes5/8; all three live confidence gates fail and remain blocking.** Every failure is retained. PR3 remains draft/unmerged; all eight checks stay strict required.
+**Paused after trial32 at the user's request. Trial32 passes6/8; gross-token and uncached-token confidence gates still fail.** All eight checks remain strict and required. Every failure is retained, and PR3 remains draft/unmerged. No next trial is scheduled.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial32 (`ece8855b2f1426ccdaa2f2cbdff8685057f32597`) completes all48 sessions against freshly fetched current main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **6/8**. **Paused at the user's request after this check; no next trial is scheduled.** Gross-token and uncached-token confidence gates remain blocking failures. Facts24/24 both, citations main15/24 and feature24/24; protocol violations zero. Local117/117each,26.380060% lower time, CI+17.656231% to +36.410306%. Full270pass1skip81.65s; Ruff/diff clean. Every answer, current packet, new research read and push receipt was reviewed. Complete48native sessions,234local rows, import/source proofs, full test report and exact public replay exit1 are retained.
+
+| Measurement | Main | Feature | Reduction | 95% reduction interval | Gate |
+| --- | ---: | ---: | ---: | --- | --- |
+| Gross native tokens | 1,189,754 | 1,040,677 | 12.530069% | -0.668529% to +26.776276% | **Fail** |
+| Uncached input + output | 171,642 | 154,405 | 10.042414% | -8.311123% to +24.584568% | **Fail** |
+| Subject wall seconds | 251.126 | 221.899 | 11.638381% | +1.247711% to +20.470867% | Pass |
+
+Main/feature research calls19/11, tools49/40, asks24each. Feature capture/tests time and MCP/scope/tests/stale gross costs worsen; every cost remains included. All cache variation remains counted. No task/identical-source retries, baseline exemptions, outcome exclusions or time adjustments. The reversible idle-wake request released after child exit.
+
+The source-proof index replaces repeated full-table scans while explicitly preserving insertion order and every advanced proof assertion. A legacy-store migration regression passes. A separate fixed1536/24576/98304-row matrix retains identical results and all observations, but does not establish native-token savings. Candidate31's paired diagnostic is retained and its unsuccessful policy is reverted. All previous failures remain retained. Frozen harness/workload/prompts/rubric/models/scoring/budgets/numerical gates are unchanged. Active main ruleset25440133 still requires all8checks, strict up-to-date, no bypass actors; original protection rules remain. PR3 stays draft/unmerged.
 
 Candidate31 was rejected before any full benchmark. One fixed before/after pair on four independent caller/helper fixtures retained all8sessions and both source trees. Facts/protocol passed, but the predeclared caller-read criterion failed, and one saved read was offset by an extra search. The guard helper read was defensible; no qualification was removed to force less research. The candidate policy is reverted, with its exact plan/traces archived under attempt31. Latest qualifying-source comparison remains the failed trial30 below.
 
