@@ -1,0 +1,14 @@
+{
+  "commit": "568712878f810ae77be9930400b091dc7f810c3c",
+  "tests_passed": 256,
+  "tests_failed": 3,
+  "tests_skipped": 1,
+  "pytest_seconds": 74.417,
+  "pytest_exit_code": 1,
+  "ruff_passed": true,
+  "ruff_exit_code": 0,
+  "diff_check_passed": true,
+  "diff_check_exit_code": 0,
+  "scope": "One full suite after optional runtime removals; all failures retained; no code fix or rerun.",
+  "platform": "Windows / Python3.13.1"
+}

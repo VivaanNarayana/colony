@@ -1,3 +1,36 @@
+PAUSED AFTER USER'S SINGLE TEST/BENCHMARK TRIAL41, 2026-10-22.
+No fixes, retries or further run scheduled. Resume only on a new user request.
+Measured source568712878f810ae77be9930400b091dc7f810c3c; main freshly fetched and
+rechecked unchanged6fa6826aa4c835001c0d2bc8f3bec838499e5b5d. Same branch PR3draft,
+unmerged,noauto-merge. Publication changes documentation/evidence only.
+Fulltests ONCE:256passed,3failed,1existingWindows symlinkskip; summary74.44s,
+JUnit74.417s. Ruff/diffpass. Three adapted cases fail unrelated-topic hit assertion.
+Local ONCE:117/117both,main2.925747199857142s,feature2.1176323997206055s;
+27.620801%lower,CI+.1819955287505..+.3783785347432. All234rawrowsaudited.
+All48native sessions ONCE, frozen analyzer exits1;3/8. Pass loaded/local/quality.
+FAIL tests,protocol,gross,uncached,time. All8requiredstrictblocking,no bypass.
+Gross1154983/1251082,feature8.320382%MORE,CI-.2757749040805..+.0562361827561.
+Uncached178983/167178,reduction6.595598%,CI-.2659355723098..+.3007272756690.
+Seconds253.218/228.492,reduction9.764709%,CI-.0306543499095..+.2021407323598.
+Facts24both,citations18main24feature,protocol0main2feature. Relevant/researchfree
+hits18/17;research20/26,tools50/55,asks24each. All costs/cache variation retained.
+Featureoutage1:6research2reads,no requiredsave. Featureserve3:searchonly,no save.
+All11actualpushes sourcehashesmatchprecedingnewreads,successstored/queued.
+Additionalobservationfeaturemcp1tainted:false; frozenanalyzernotaseparatetaintgate.
+All48answers/currentpackets,5novelcontexts,research/pushtraces manually reviewed;
+no independentblindreview. Completefailedtests/fullnative/rawlocal/hashes/labels/
+checks/wakelogs retainedattempt41. Publicarchive replays EXACTJSON/exit1 with no
+newnative sessions. Temporarywake requestreleased; clocks/budgets unchanged.
+No src/scripts/tests or benchmark workload/prompt/rubric/threshold/budget changes
+or repairs duringtrial. No retries, exclusions, normalization or waivers.
+Sixoptional runtime groups and research_paths remainremoved. Measuredlocal/work/
+byteoptimizations and coreprovenance/proof/qualification guards remain.
+No causal attribution to individual removals and no production-savings claim.
+No plan file. All earlier evidence preserved. Current check requested is complete;
+all-eight performance objective remains unfinished and paused.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THE TRIAL41 PAUSE RECORD.
+
 PAUSED AFTER USER-REQUESTED OPTIONAL RUNTIME REMOVALS, 2026-10-22.
 Starting revision004f4381b0ca0a570eb42b0dffda483eed269c5f. Same branch PR3draft,
 unmerged,noauto-merge. Do not resume/run without a new user request.

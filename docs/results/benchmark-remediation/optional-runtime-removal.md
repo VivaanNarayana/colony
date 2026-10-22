@@ -1,5 +1,7 @@
 # Removal of optional runtime changes, October 22, 2026
 
+**Subsequent authorized validation:** [Trial 41](attempt-41/README.md) later tested this source once and passed 3/8 gates, retaining all five failed gates. The no-run statements below describe the original removal checkpoint, not current validation status. No implementation change or retry occurred during that later trial.
+
 At the user's request, remove optional runtime changes without demonstrated performance benefits, preserve benchmark fixes and failed evidence, update PR #3, keep it draft/unmerged, and pause without another run. Starting revision: `004f4381b0ca0a570eb42b0dffda483eed269c5f`.
 
 The preceding [retention review](runtime-retention-review.md) used a broader standard that also retained optional features for source-quality benefits. That judgment is superseded by this user-requested removal. Lack of a demonstrated performance benefit does not establish that these features caused a slowdown; no causal speedup claim is made for their removal.
