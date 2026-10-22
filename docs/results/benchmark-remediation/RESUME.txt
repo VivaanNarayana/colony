@@ -1,12 +1,13 @@
-COLONY PR #3 — POST-AUDIT REMEDIATION IN PROGRESS
+COLONY PR #3 â€” POST-AUDIT REMEDIATION IN PROGRESS
 
 User authorized fixing all four audit findings, making eight GitHub checks required,
 and evaluating new source on the existing feat/benchmark-independent-evaluation
 branch. Keep draft/unmerged; no new feature/branch or agents. All failed evidence retained.
 
-Trial 23 plan and audit corrections: docs/results/benchmark-remediation/attempt-23/
+Trial 24 plan: docs/results/benchmark-remediation/attempt-24/
+Audit corrections and failed full trial: docs/results/benchmark-remediation/attempt-23/
 Current main: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d
-Full verification: 207 pass, one existing skip; Ruff/whitespace clean.
+Full verification: 214 pass, one existing skip; Ruff/whitespace clean.
 All eight checks required in active ruleset 25440133, strict up-to-date true,
 prior rules/conditions/bypass list unchanged. Before/request/after snapshots retained.
 New analyzer requires researched-miss pushes in both arms and recomputes raw local
@@ -17,3 +18,8 @@ retained, but new source must run fresh local and live comparisons.
 Follow the recorded plan, retain all failures, never retry identical source for luck.
 Report completion only after all eight gates, exact public replay, evidence publication
 and required-status verification pass against current main.
+
+Trial 23 fully retained: 5/8, gross/uncached intervals and main duplicate ask fail;
+exact public replay exit 1. Trial 24 fixes the concrete broad file-hint regression
+by preferring an explicit single-word during operation context; independent
+ingestion/replay/failover plus ambiguous/secret/identifier tests. One fresh run only.

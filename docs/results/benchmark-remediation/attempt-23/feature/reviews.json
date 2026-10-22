@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames. Broad file hint caused extra search; cost retained."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "All trial-23 answers/source packets reviewed against frozen main source; requested facts correct and returned hits relevant. Citation target/line valid under unchanged rubric, including explicit bare repository filenames."
+  }
+}

@@ -96,6 +96,13 @@ def research_keyword(question: str) -> str | None:
         re.I,
     )
     subject = re.match(r"^how\s+(?:is|are)\s+([A-Za-z][\w-]*)\b", safe.strip(), re.I)
+    # An explicit operation context is more specific than a generic leading
+    # object (for example, record handling during ingestion). Keep multiword
+    # or unspecified contexts on the existing fallback, and retain identifiers'
+    # priority above. This suggests a literal term, never an answer or path.
+    operation = re.search(r"\bduring\s+([A-Za-z][\w-]*)[.!?]?$", safe.strip(), re.I)
+    if subject and operation and operation[1].casefold() not in framing:
+        return operation[1]
     # Parse tokens separately: nested repetitions over a word and optional
     # whitespace backtrack exponentially on punctuation such as a trailing comma.
     imperative = re.match(r"^(?:please\s+)?(?:start|launch|run)\s+", safe.strip(), re.I)

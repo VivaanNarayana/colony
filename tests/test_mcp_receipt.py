@@ -122,6 +122,38 @@ def test_subject_hint_falls_back_for_ambiguous_or_scrubbed_phrases(question, exp
     assert colony.mcp.research_keyword(question) == expected
 
 
+@pytest.mark.parametrize(
+    "question,context,definition",
+    [
+        (
+            "How are record formats normalized during ingestion?",
+            "ingestion",
+            "def ingestion(batch): ...",
+        ),
+        ("How is message ordering preserved during replay?", "replay", "def replay(log): ..."),
+        ("How are writes retried during failover?", "failover", "def failover(peer): ..."),
+    ],
+)
+def test_explicit_operation_context_is_a_more_specific_literal_subject(
+    question, context, definition
+):
+    hint = colony.mcp.research_keyword(question)
+    assert hint == context and hint in definition and hint in question
+
+
+@pytest.mark.parametrize(
+    "question,expected",
+    [
+        ("How are records handled during an outage?", "records"),
+        ("How are records handled during warm restart?", "records"),
+        ("How are RPC requests handled during replay?", "RPC"),
+        ("How are records handled during password=privatevalue?", "records"),
+    ],
+)
+def test_operation_hint_does_not_guess_ambiguous_or_scrubbed_context(question, expected):
+    assert colony.mcp.research_keyword(question) == expected
+
+
 def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):
     packet = {
         "hit": True,

@@ -1,10 +1,13 @@
 # Strict gate remediation against main
 
-**Post-audit remediation in progress on the same branch.** All four findings have fixes and regression tests; trial 23 will evaluate the new source under stronger verifier checks. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
+**Post-audit remediation in progress on the same branch.** All four findings have fixes and regression tests; completed trial 23 passes 5/8; trial 24 will evaluate a concrete literal-hint correction under the stronger verifier checks. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
+
+Trial 23 (`6b7c6ae`) completed all 48 sessions and passes 5/8. Facts are 24/24 per arm, citations main 17/24 and feature 24/24. Main capture-1 makes two identical relevant asks: both remain counted and the both-arm protocol gate fails (main 25 asks versus feature 24). Gross tokens 1,164,225 versus 1,041,762, reduction interval -0.552886% to +20.449537%; uncached 176,833 versus 166,114, interval -17.390335% to +31.853820%; both fail. Live seconds 286.069 versus 251.850, interval +0.827324% to +21.585302%, passes. Complete failed results and exact hardened public replay exit 1 remain in attempt-23. The broad file hint caused an extra validation search and remains cost. Trial 24 addresses explicit operation-context selection with independent positive/negative hint fixtures; no baseline protocol failure is waived.
+
 
 Trial 23 fixes exponential backtracking in keyword hints, preserves adjacent prose qualifications, requires researched-miss pushes in both arms, and recomputes the local gate from the canonical workload and raw rows. The analyzer/local verifier changes strengthen acceptance; all existing numerical gates, workload, prompts, rubrics, model snapshots, score weights, cutoffs and budgets remain unchanged. Regression suite/full verification: 207 pass, one existing Windows skip; Ruff/whitespace clean. The initial 206-pass/one-failure verification and fixture correction are retained. Main's ruleset snapshots are retained in attempt-23. Trial 22 still replays to identical JSON/exit 0 through the hardened verifier, but its measured source is historical and does not validate the new source.
 
@@ -72,7 +75,8 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 19 | `bb9ac24` | 6/8; time/quality/compliance pass; both token intervals remain blocking; paused after full audit/public replay |
 | 20 | diagnostic-only | No implementation or benchmark; original diagnostics preserved |
 | 21 | `c33ef37` | 6/8; gross tokens pass; uncached-token and live-time intervals fail; full audit/public replay retained |
-| 22 | `b6691a8` | **8/8**; full quality/protocol audit and exact public replay exit 0 |
+| 22 | `b6691a8` | **8/8** historical result; later audit found runtime/verifier defects, corrected in trial 23 |
+| 23 | `6b7c6ae` | 5/8; main duplicate ask and gross/uncached token intervals fail; complete hardened replay exit 1 retained |
 
 Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19, 21 and 22 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
