@@ -94,6 +94,12 @@ The compact JSON receipt states that checking the included current text is verif
 evidence-only answers also count as reuse and need no duplicate read or push. Session
 initialization provides the trust/reuse policy, while the ask description provides
 research steps. Hit instructions repeat the evidence-only rule at the decision to answer or push.
+Misses may include one `research_paths` location from a fresh, scoped, previously
+cited file after all attached proofs match. This is navigation only: it is not an
+answer, current source read, or fingerprint, and does not guarantee the file answers
+the question. Read the relevant file through research tools; saving still requires
+actual new-read fingerprints. Stale, expired, unverified or out-of-scope proof sets
+cannot supply these hints.
 Missing requested facts still require research. File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.

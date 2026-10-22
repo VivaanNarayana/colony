@@ -1,0 +1,11 @@
+{
+  "full-tests-awake.json": "7b1a4b193c9dbbfe5faee2340f72e27e4f0cd87847b8123335aa9a094ff3d256",
+  "full-tests.xml": "fb17b005967b79fa60311a86cd0e032c911a0d0aea7babb6028e1fbe1f590585",
+  "independent-native.zip": "9f62700e9b699436595bf0dc874ccce8e4bb6f8b37af3824e3bdc73611d7ed46",
+  "navigation-native-diagnostic.py": "3347100497c53d04d67d68a8462998595c9a38926b8caad474616bfcae36c8e5",
+  "navigation-store-diagnostic.py": "249d3a19afa56d90684a783e54f4e563d3cf60471b6f3aefd9e79d9fefdcebd6",
+  "preflight-review.json": "c9f952586697562393765ab62b6bdff9c228c8bda2335ef825d6c5222934825b",
+  "store-diagnostic-awake.json": "8e758e18f4a31873ce096527948fc8fdcc9af6e6bd0d2cbb986b7ced27b11330",
+  "verification-preflight.json": "375a52890d9a8050e28e9558c7f7e6b81d6f8796d600b77a7bad56b895112b06",
+  "verified-source-hashes.json": "beacbe460ba6895adf8ac22b9266ca00bfdea65c09cfbaaf7fb4e5403a4215b6"
+}

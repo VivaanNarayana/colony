@@ -181,6 +181,11 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         result = client.ask(question, namespace, include_evidence_files=evidence_files)
         if not result.get("hit"):
             result["research_guidance"] = research_guidance
+            if result.get("research_paths"):
+                result["research_guidance"] += (
+                    " research_paths are prior cited locations only, not answers, reads or proofs. "
+                    "Read a relevant known path before searching; save only actual new-read fingerprints."
+                )
             keyword = research_keyword(question)
             if keyword:
                 result["research_keyword"] = keyword
@@ -291,7 +296,8 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         ]
 
     @server.tool(
-        annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False), structured_output=False
+        annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
+        structured_output=False,
     )
     def push(
         namespace: str,

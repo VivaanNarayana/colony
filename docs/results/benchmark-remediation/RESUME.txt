@@ -1,3 +1,19 @@
+SOURCE40 READY FOR ONE FRESH FROZEN COMPARISON, 2026-10-22.
+Navigation-only miss paths preserve original hit eligibility/scoring/models/contexts.
+Fixed realStore screen:3misses remainmiss,3correct paths; negativehits/hintsabsent.
+Fixed8native screen allfacts/citations/protocol pass; research7->4, input262421->226074.
+Uncached26234->27556 andseconds43.396->85.396 WORSEN; allcounts retained, no full
+performance-gate claim. Predeclared input/research criterion qualifies; no cache
+selection. Full302pass1existingWindows skip68.54s; Ruff/diffclean;32newregressions.
+Completepreflight traces/bothsource snapshots/testreport/sourcehashes in attempt40.
+Commit this exact source and fetchmain6fa6826...; run once local40(seed20261021,
+3variants,3repetitions), independentlyauditall234rawrows, thenall48native40 onlyif
+localqualifies. Frozen10harnesshashes verified againstattempt32;no gatechanges.
+No standalone workplan file; chat plan only. All8required statuses must be pending
+on newsource, nevercarryover32greens. Samebranchdraft/unmerged. No source40retry.
+After all48, revieweveryanswer/currentpacket/newread/push, analyze, retainfullfailures,
+replayexportexactly, and publish truthfulstatuses/PR. Objectiveunfinisheduntilall8pass.
+
 RESUMED WORK IN PROGRESS 2026-10-22; no standalone work-plan file (chat only).
 Publication c659ed4 retains rejected33/34; latest full trial remains32 at6/8.
 Candidates35/36/37/39 REJECTED and runtime changes reverted before a full benchmark.
