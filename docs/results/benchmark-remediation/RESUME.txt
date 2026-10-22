@@ -1,3 +1,12 @@
+LATEST: trial25 source e4a3980456de1a7ed2ec6b8c2c6f28525d257611 complete but
+NONQUALIFYING. Strict analyzer rejects main scope-2 push fingerprint mismatch;
+main then pushes again. All48 sessions retained; exact public replay exit1.
+All8 statuses block. No baseline exemption. Local passes; full suite214 pass1skip.
+Feature facts/citations24/24; requested-fact stopping rule avoids extra helpers.
+Raw descriptive intervals positive but NOT qualifying gate evidence; see attempt25.
+Next trial requires a meaningful new runtime change and new plan, not rerunning
+this source to avoid a sampled main failure. PR remains draft/unmerged.
+
 COLONY PR #3 — POST-AUDIT REMEDIATION UNFINISHED
 
 Stay on feat/benchmark-independent-evaluation; draft/unmerged; no new feature,

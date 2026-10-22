@@ -1,0 +1,131 @@
+{
+  "role": "Nonqualifying raw descriptive diagnostics only; unchanged analyzer rejects main scope-2 push fingerprint mismatch; no gate conclusions",
+  "totals": {
+    "main": {
+      "tokens": 1191729,
+      "uncached_input_plus_output": 207025,
+      "seconds": 326.558,
+      "tool_calls": 51,
+      "ask_calls": 24
+    },
+    "feature": {
+      "tokens": 1021632,
+      "uncached_input_plus_output": 137152,
+      "seconds": 278.22999999999996,
+      "tool_calls": 39,
+      "ask_calls": 24
+    }
+  },
+  "intervals": {
+    "tokens": [
+      0.03034913090555602,
+      0.26249137730984784
+    ],
+    "uncached_input_plus_output": [
+      0.14046338100516365,
+      0.5061252096098355
+    ],
+    "seconds": [
+      0.025726994130248926,
+      0.2525381929987508
+    ]
+  },
+  "families": {
+    "mcp": {
+      "main": {
+        "tokens": 146332,
+        "uncached_input_plus_output": 20380,
+        "seconds": 47.162000000000006
+      },
+      "feature": {
+        "tokens": 146040,
+        "uncached_input_plus_output": 24824,
+        "seconds": 48.054
+      }
+    },
+    "outage": {
+      "main": {
+        "tokens": 186158,
+        "uncached_input_plus_output": 44334,
+        "seconds": 53.388999999999996
+      },
+      "feature": {
+        "tokens": 99636,
+        "uncached_input_plus_output": 13876,
+        "seconds": 43.877
+      }
+    },
+    "install": {
+      "main": {
+        "tokens": 100651,
+        "uncached_input_plus_output": 17067,
+        "seconds": 25.458
+      },
+      "feature": {
+        "tokens": 99503,
+        "uncached_input_plus_output": 14127,
+        "seconds": 23.717999999999996
+      }
+    },
+    "capture": {
+      "main": {
+        "tokens": 99623,
+        "uncached_input_plus_output": 18599,
+        "seconds": 29.991
+      },
+      "feature": {
+        "tokens": 99332,
+        "uncached_input_plus_output": 12932,
+        "seconds": 22.481
+      }
+    },
+    "serve": {
+      "main": {
+        "tokens": 204641,
+        "uncached_input_plus_output": 32097,
+        "seconds": 49.196000000000005
+      },
+      "feature": {
+        "tokens": 193768,
+        "uncached_input_plus_output": 22120,
+        "seconds": 33.828
+      }
+    },
+    "tests": {
+      "main": {
+        "tokens": 99178,
+        "uncached_input_plus_output": 23786,
+        "seconds": 31.043
+      },
+      "feature": {
+        "tokens": 99712,
+        "uncached_input_plus_output": 16896,
+        "seconds": 37.935
+      }
+    },
+    "scope": {
+      "main": {
+        "tokens": 190398,
+        "uncached_input_plus_output": 32190,
+        "seconds": 44.304
+      },
+      "feature": {
+        "tokens": 144999,
+        "uncached_input_plus_output": 21095,
+        "seconds": 38.014
+      }
+    },
+    "stale": {
+      "main": {
+        "tokens": 164748,
+        "uncached_input_plus_output": 18572,
+        "seconds": 46.015
+      },
+      "feature": {
+        "tokens": 138642,
+        "uncached_input_plus_output": 11282,
+        "seconds": 30.323
+      }
+    }
+  }
+}

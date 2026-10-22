@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "All requested core facts, final citation targets, saved claims and current source packets manually reviewed. Identical source text/line bytes from trial24 checked by equality; four novel displayed contexts separately inspected. All actual research-and-push traces reviewed. Root/host-absolute citations remain invalid. Main scope-2 invalid-hash push followed by a second push is not waived; strict analyzer must reject."
+  }
+}

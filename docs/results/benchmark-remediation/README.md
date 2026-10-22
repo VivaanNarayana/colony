@@ -1,12 +1,16 @@
 # Strict gate remediation against main
 
-**Trial 25 preparation in progress on the same branch.** All four findings have fixes and regression tests; completed trials 23 and 24 each pass 5/8. Trial 24 has complete retained evidence and an exact hardened public replay; all three live confidence intervals still fail. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
+**Trial 25 completed with a blocking integrity rejection on the same branch.** All four findings have fixes and regression tests; completed trials 23 and 24 each pass 5/8. Trial 24 has complete retained evidence and an exact hardened public replay; all three live confidence intervals still fail. All eight benchmark statuses are now required by main's active GitHub ruleset with strict up-to-date enforcement. Historical trial 22 remains retained; PR #3 stays draft and unmerged.
 
 Main remains `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d`. The current candidate is on `feat/benchmark-independent-evaluation`. Workloads, live prompts, quality rubrics, confidence requirements and all eight mandatory gates are unchanged throughout remediation.
 
 ## Current revision
 
-Trial 25 plans an explicit per-read missing-fact check and requested-facts-only capture policy, addressing retained dependency overresearch. Four independent one-shot native behavioral fixtures passed, including two cases where dependencies are necessary; traces, plan and runner are retained. These do not establish performance improvement. Sorted-length inference batching was slower and rejected. Trial 24 below remains the latest completed benchmark; all eight gates remain blocking.
+Trial 25 (`e4a3980`) completed all 48 sessions but is **nonqualifying**: the unchanged analyzer rejects `main/scope-2.colony: push fingerprint does not match an actual source read`. Main first submitted an invalid security-file digest, then a second push. Both calls and all native costs are retained. All eight GitHub statuses block; no main exemption or substitution of another trial. The exported archive reproduces the identical integrity rejection and exit 1.
+
+The general policy checks for a requested fact still unsupported before another read and saves requested supported facts. Feature scope-2 used one search and one defining-file read, avoiding trial24's extra dependency reads; feature stale-3 also used one search and one read. All 48 final answers/source packets and actual research/push traces were reviewed; both arms' core facts are 24/24, citations main 12/24 and feature 24/24. Local passes 117/117 each, 19.90% lower time, interval +9.98% to +31.43%. Full suite 214 pass, one existing skip; lint/whitespace clean. One initial unchanged wording assertion failure and its restored clause are retained.
+
+Raw diagnostics are **not qualifying gate results**: gross tokens 1,191,729 versus 1,021,632, uncached 207,025 versus 137,152, seconds 326.558 versus 278.230. Their descriptive lower bounds are positive (+3.03%, +14.05%, +2.57%), but cannot rescue the failed integrity check. No trial retry or outcome exclusion occurred. Four separate one-shot independent behavioral fixtures passed, including necessary-helper cases; full traces and runner are retained. Sorted-length inference batching was slower and rejected without implementation. All evidence is under attempt-25. The all-eight-gates objective remains unfinished.
 
 Trial 24 (`6031c44`) completed all 48 sessions against freshly fetched main `6fa6826aa4c835001c0d2bc8f3bec838499e5b5d` and passes **5/8**. Full suite: **214 pass**, one existing Windows skip; Ruff and whitespace checks pass. Both arms have 24/24 correct facts and zero protocol violations; citations are main 18/24, feature 24/24. Local lookup has 117/117 oracle passes per arm, 21.528818% lower time, interval +11.337512% to +33.064323%; all 234 raw rows pass independent reconstruction.
 
@@ -92,8 +96,9 @@ Full verification: **146 tests pass**, one existing Windows skip; Ruff and white
 | 22 | `b6691a8` | **8/8** historical result; later audit found runtime/verifier defects, corrected in trial 23 |
 | 23 | `6b7c6ae` | 5/8; main duplicate ask and gross/uncached token intervals fail; complete hardened replay exit 1 retained |
 | 24 | `6031c44` | 5/8; quality, protocol and local pass; all three live intervals fail; complete hardened replay exit 1 retained |
+| 25 | `e4a3980` | Nonqualifying integrity failure: main push fingerprint mismatch and second push; exact public replay exit 1 retained |
 
-Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–24 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
+Each measured revision has a committed plan and fresh independent stores. Revisions 1–13, 16–19 and 21–25 completed the same 48-session frozen-corpus comparison with alternating first arms. Revisions 14 and 15 did not advance past their failed local gates; complete local rows and import proofs remain retained. No identical-code retry was selected for better cache or sampling results. Every failure remains retained, including attempt 4's integrity rejection. A fingerprint matching the file cannot substitute for a required new research read.
 
 ### Earlier integrity rejection: trial 12
 

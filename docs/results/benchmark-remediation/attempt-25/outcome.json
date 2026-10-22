@@ -1,0 +1,16 @@
+{
+  "status": "complete; nonqualifying integrity failure; retained",
+  "source": "e4a3980456de1a7ed2ec6b8c2c6f28525d257611",
+  "all_answers_and_source_packets_reviewed": 48,
+  "blocking_gates": [
+    "evidence_integrity"
+  ],
+  "reason": "Main scope-2 submits a malformed source hash not matching an actual read, then submits a second push. Both events and all costs retained; no baseline exemption.",
+  "local_gate_passed": true,
+  "feature_facts_and_citations": [
+    24,
+    24
+  ],
+  "nonqualifying_observations": "Raw totals/intervals are diagnostic only and cannot qualify or substitute for rejected gates.",
+  "public_replay_exit": 1
+}

@@ -1,0 +1,12 @@
+{
+  "tests_passed": 214,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 65.76,
+  "ruff_passed": true,
+  "diff_check_passed": true,
+  "scope": "Full suite; all audit regressions preserved; four separate one-shot native behavioral fixtures reviewed; existing Windows symlink skip",
+  "commit": "e4a3980456de1a7ed2ec6b8c2c6f28525d257611",
+  "platform": "Windows / Python 3.13.1",
+  "command": "python -m pytest -q; ruff check .; git diff --check"
+}
