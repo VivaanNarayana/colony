@@ -1,3 +1,33 @@
+PAUSED AFTER USER'S SINGLE BENCHMARK TRIAL47, 2026-10-23 UTC.
+Measuredsource1bcb38ebeeaecb29a548ecd02017804043d8a789 vs freshlyfetchedcurrentmain
+6fa6826aa4c835001c0d2bc8f3bec838499e5b5d, recheckedunchanged. SamebranchPR3draft,
+unmerged,noauto-merge. No runtime/harness/test/benchmarkcontractchangesduringrun.
+LocalONCE117/117both,234rowsauditexact;25.260605%lower,
+CI+15.696777..+36.513030%. Paraphrasesallvariants/repetitionspass.
+All48nativesessionsONCE,runnerexit0;officialanalyzerexit1,complete5/8verdict.
+PASSloadedimplementations/tests/local/correctness/frozenboth-armtoolprotocol.
+FAILall3performance:gross1138615/1231629,CI-16.103423..-2.603626%;
+uncached144823/195853,CI-57.368621..-13.060073%;
+seconds306.117/290.257,CI-1.699157..+11.077753%. Allremainblocking.
+Corefacts24/24both,citations18main/24feature. Sixinvalidmainabsolutecitesretained.
+13pushesallactualnew-readfingerprints,no malformed/mismatch/no retries.
+Main6pushes3stored3queued;feature7allstored. Bothfrozenprotocolviolations0.
+Featuremcp2answersask/pushwithoutresearch/save;featurescope3onevalidsave;
+maintests1sufficientreuse,no research/push. Singlerunobservations,notcausalisolation.
+ADDITIONALfeatureR38scope2tainted:falseinstructiondeviationretained;unchanged
+verifierdoesnotcheckthatfield. Do notclaimallinstructionsfollowed/exempttheissue.
+All48answers/packetsand13researchtracesreviewedbyprimaryassistant,notindependent
+blindreview. No novelcurrentreadtexts;allsearchlines/readbytes/hashesverified.
+ExactpublicarchiveofflinecomparisonJSON/exit1replay;0newsubjectsessions.
+TestsREUSEDidenticalcodefromc181654:285pass1existingskip,Ruff/whitespacepass;
+no newtest/profileinvocations. Allpriorattempts/manifestsbyteunchanged.
+All8originalcontextsstrictrequiredactive25440133,nobypass;5success3failure.
+Wake requestsreleased,persistentpower/clocksunchanged. Currenteightgateobjective
+remainsUNFINISHED. UpdatePR3andpause;no fixes,retries,additionalrunorworkscheduled.
+No standaloneplanfile. Resumeonlynewuserrequest.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS COMPLETE FAILED TRIAL RECORD.
+
 PAUSED AFTER USER'S TESTS-ONLY CHECKPOINT46, 2026-10-22.
 Testedsourcec181654bcf3422075310386b85b78c9ae80babbd, samebranchPR3draft/unmerged/noauto-merge.
 FullsuiteONCE285passed,1existingWindowsskip,144.977sJUnit;Ruff/diffpass.

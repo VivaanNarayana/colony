@@ -1,5 +1,11 @@
 # Benchmark independence audit
 
+**Latest: single trial 47 completes 5/8 gates and is paused.** Both arms pass 117/117 local checks and 24/24 live core facts; feature citations pass 24/24 versus main's 18/24. All 13 actual push fingerprints validate, and the frozen both-arm protocol gate passes. Gross tokens increase 8.17%, uncached input/output increase 35.24%, and time's 5.18% lower point total has a confidence interval crossing zero: all three performance gates remain failed and blocking. A separate feature `tainted:false` instruction deviation is retained; the frozen analyzer does not check that field. One comparison only, no retries, complete failures/evidence retained, exact offline public replay and unchanged required gates. Tests are reused from identical checkpoint-46 code: 285 passed, one existing skip; Ruff/whitespace pass. PR #3 stays draft and unmerged; no further work or run is scheduled.
+
+[Complete trial 47 evidence](results/benchmark-remediation/attempt-47/README.md).
+
+## Historical evidence below
+
 **Latest: tests-only correctness/protocol checkpoint 46; paused.** Source `c181654` passes **285 tests with one existing Windows skip**; Ruff/whitespace pass, and eight new regressions are included. Descriptive evidence retains bounded section definitions/qualifications; MCP publishes exact fingerprint length/copy instructions and an explicit missing-fact versus sufficient-reuse decision. Original relevance guards/candidate pools and every benchmark contract remain unchanged. A broader semantic admission attempt was rejected for a false hit, and all development failures remain retained. No benchmark, profile or analyzer replay ran; live adherence and performance are unverified. Only tests/lint is green; seven benchmark checks remain pending and blocking. All eight strict required checks remain active, without bypass. PR #3 stays draft/unmerged; no further run is scheduled.
 
 [Complete checkpoint 46 evidence](results/benchmark-remediation/attempt-46/README.md).
