@@ -1,3 +1,33 @@
+BUDGETED REMEDIATION — TRIAL54 INTEGRITY CHECKPOINT; NEAR STOPPING THRESHOLD.
+Baseline5%, latest12%, STOP13%; observed7points; reset1793294233. Readusagebeforeanywork.
+Allretrievalmodels unchanged. Subjects gpt-6-luna/low. PR3draft/unmerged/noautomerge.
+Runtime7f1cb1015ef18afde2f5e0b4be981bf35725a6cc;mainfresh6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt-54/README.md/comparison.json/manual-review.json/research-review.json/
+tool-audit.json/outcome.json/selected-native-review.json/sdk-policy-comparison.json.
+One local+one48native complete2671504gross;officialanalyzeronceafterlabelsfrozenexit1
+EVIDENCE_INTEGRITY main/install1: pushhashfromaskwithoutANYprecedingnewresearchread.
+Real64corpushash+queuedreceipt doesNOTqualify. ONEactualinvalidpush/twoauditmessages.
+No repair/readinjection/retry/mainexemption. NO COMPLETE8GATEVERDICT for54; do notcarry
+priorgreens. Latestcomplete53=3/8 ondistinctsource. All8strict25440133stillrequired.
+Final340pass/1fail/1Windows skip,Ruff/whitespacepass; realwrong-attributeredtestretained.
+Core24/24both,citations15/24main24/24feature(question-specificfrozenrubric). R21ask/push
+names sufficient; don'trequirefullsignatures. InitialREADME96metadatairrelevant.
+17pushes/19fingerprints,18validnewreadprovenance/1invalidmainreuseproof; allactualtainttrue.
+Main8storedrows5queueentries;feature9rows0queue/noexplicitfalsecase. Unchangedtestsonly
+providefeatureoffline/falsecoverage. Source/auth/scope/freshness/proof/queueguardssame.
+Runtimeinitdedup2291to1705bytes(25.58%); first512/tools/schemas/8SDKreceiptsidentical.
+No nativecausalbenefitproven. CLIcap512KiBnot512characters, no truncationclaim.
+Local117/117both35.89%lower/positiveCI. Rawmain/featuregross1233904/1437600,
+uncached171120/183584,seconds254.06/236.78,research21/31; DESCRIPTIVE notgateverdict.
+Tasknative50+51+53+54gross10397218,52native0; allcosts/failures retained. No modelsadded.
+NEXT: finalizebudgetpublication, readusage; no newbenchmarkwith1pointobservedheadroom.
+At13stopallworker/modelphases, retainpartialresults and pauseexactcheckpoint. Allworkers
+currentlyidle/no activenative. Do not retry54unchanged, exemptmain, waive redtest orreset.
+Futureauthorizedremediationmustpreserveconsumedallowanceandfindmeaningfulgeneralruntime
+fixbeforefreshcomparison. Wrongattribute falsehit, wordingsensitivity/metadata andnative
+token/timegatesstillunresolved. Priorfailedheuristicsarenotapprovedfallbacks.
+Earliercheckpoints belowpreservedhistory. Noautomaticjob. Taskunfinished.
+
 ACTIVE BUDGETED REMEDIATION — TRIAL53 PUBLISHED CHECKPOINT.
 Baseline5%, latest10%, STOP13%; observed5points consumed; reset1793294233.
 Read reliableusagebeforeanyphase. Allretrievalmodels unchanged, subjects gpt-6-luna/low.

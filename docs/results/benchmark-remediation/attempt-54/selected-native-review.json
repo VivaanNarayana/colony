@@ -1,0 +1,12 @@
+{
+  "role": "Bounded selected nonblind AstraHigh read-only native review; not all48 blind grading",
+  "findings": [
+    "R42 one mainpush without newresearch; valid64corpushash/queuedreceipt cannot establish temporalprovenance. Twoauditmessages refer to same actualattempt. No mainexemption/repair/retry.",
+    "Main15/24/feature24/24citationlabels confirmed.",
+    "R21 names ask/push with roles, sufficient for question/frozen expected. Do not invent fullsignature requirement; initialmetadata stillirrelevant.",
+    "R26 supplies hash-mismatch mechanism, not exhaustive optionalassertions explanation.",
+    "R37 satisfies servecommand rubric; do not require newinit/setuprecipe."
+  ],
+  "analyzer_expectation": "Expected integrity rejection before complete8gate verdict; no passing gates inferred.",
+  "tests_or_analyzer_run_by_reviewer": false
+}

@@ -1,0 +1,51 @@
+{"wake_request_active": true, "child_pid": 72164}
+Completed repetition 1/3
+Completed repetition 2/3
+Completed repetition 3/3
+{
+  "schema_version": 2,
+  "evaluation_role": "public-development-contracts",
+  "baseline_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "feature_commit": "7f1cb1015ef18afde2f5e0b4be981bf35725a6cc",
+  "seed": 20261021,
+  "repetitions": 3,
+  "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+  "harness_sha256": {
+    "benchmark_lookup.py": "701357766f616a368d0055287cb484d3ef2b78288e5defa98261ceb5d0e568a7",
+    "benchmark_statistics.py": "2615bb8acfc1f0aca764b76e5af39b02bf9920b2c2c51d02ef4db75c287dbdb6",
+    "lookup_workload.py": "e7d7433d8ea219f0d07eca343f73e64b7d3739e9c46f1135460bb33d1f47feb3",
+    "lookup_benchmark_worker.py": "4576981e3d20a684badafda9442c206d4e47fa4323281d01319fc90da314d451"
+  },
+  "modes": {
+    "main": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 2.40295230015181,
+      "query_embeddings": 108,
+      "reranker_calls": 99,
+      "reranked_passages": 99
+    },
+    "feature": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 1.5405001997132786,
+      "query_embeddings": 90,
+      "reranker_calls": 27,
+      "reranked_passages": 27
+    }
+  },
+  "same_implementation": false,
+  "implementation_isolated": true,
+  "quality_passed": true,
+  "lookup_improves": true,
+  "lookup_time_reduction": 0.3589135333165143,
+  "latency_reduction_95pct": [
+    0.2917184880574807,
+    0.43747571209532155
+  ],
+  "limitations": [
+    "Public development fixtures, not held-out production evidence.",
+    "Warm asks only; setup, push, cold start and concurrency are not timed.",
+    "Family bootstrap is descriptive; repeated runs are not independent confirmation."
+  ]
+}

@@ -1,5 +1,8 @@
 # Benchmark independence audit
 
+Latest [trial54](results/benchmark-remediation/attempt-54/README.md) is an evidence-integrity rejection: main pushed askhash without newresearch. No complete8gateverdict; latestcomplete53=3/8.340pass/1fail/1skip;48sessions/allcostsretained. Weeklybaseline5%,observed12%,stop13%; nearbudgetstop/no newbenchmark, PR3draft.
+
+
 Latest: [trial53](results/benchmark-remediation/attempt-53/README.md) passes3/8; tests, citations and all3nativeperformancegates remain blocking. Local34.14%lower; gross+33.82%,uncached+31.16%,timeCIcrosszero.340pass/1fail/1skip. Failed52retainedincomplete. Sharedbaseline5%,observed10%,stop13%; active, allmodelsfrozen,PR3draft/unmerged.
 
 

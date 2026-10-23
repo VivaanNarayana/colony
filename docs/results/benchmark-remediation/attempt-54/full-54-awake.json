@@ -1,0 +1,16 @@
+{
+  "role": "Operational idle-sleep prevention only; clocks/budgets/outcomes unchanged",
+  "started_utc": "2026-10-23T04:46:35.828953+00:00",
+  "request": "ES_CONTINUOUS | ES_SYSTEM_REQUIRED",
+  "persistent_power_configuration_changed": false,
+  "command": [
+    ".venv/Scripts/python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "--junitxml=work/full-54.xml"
+  ],
+  "child_pid": 59760,
+  "ended_utc": "2026-10-23T04:48:02.165945+00:00",
+  "request_released": true
+}
