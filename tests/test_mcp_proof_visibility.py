@@ -30,6 +30,10 @@ def test_full_proof_copy_rule_is_early_in_initialized_and_push_policy(monkeypatc
         assert "verbatim" in prefix and re.search(r"new (?:research )?read", prefix)
         assert "shorten" in prefix and "reconstruct" in prefix
 
+    initialized_prefix = normalized(initialized[:512])
+    assert "repository relative paths" in initialized_prefix
+    assert "without a leading slash" in initialized_prefix
+
     policy = normalized(initialized)
     assert "do not repeat rejected arguments" in policy
     assert "reread" in policy

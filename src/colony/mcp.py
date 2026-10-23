@@ -73,6 +73,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "Confirm a non-error receipt with stored=true or queued=true; "
         "otherwise report the save failure. "
         "With no new research, reuse sufficient reads without reads or push. "
+        "Cite repository-relative paths without a leading slash. "
         "When current_repository_reads suffice, "
         "answer and cite "
         "without reads or push, even for a new question. "
