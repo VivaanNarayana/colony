@@ -1,0 +1,21 @@
+{
+  "earlier_full52_citation_only": {
+    "passed": 325,
+    "failed": 1,
+    "skipped": 1
+  },
+  "first_consolidated_suite": {
+    "passed": 334,
+    "failed": 6,
+    "skipped": 1,
+    "reason": "Five wording assertions required conditional reuse updates; same retained wrong-attribute red test."
+  },
+  "initial_lint": {
+    "command": "ruff check .",
+    "errors": 194,
+    "reason": "Accidentally included untracked scratch scripts; no autofix applied. Proper tracked project scope src/tests/scripts passes."
+  },
+  "preflight_initial_failure": "History anchor initially used initial commit before legitimate50/51 additions; fixed to published51; no benchmark had started.",
+  "post51_retrieval_diagnostics": "Source-witness, contextual-sentence, parent-child and contextual-child proposals disconfirmed; all exact inputs, outputs and failures in development.zip; none integrated.",
+  "cost_note": "Native50+51 gross5,088,862 retained;52native0. Development/model usage included in observed shared account delta, not inferred from tokens."
+}

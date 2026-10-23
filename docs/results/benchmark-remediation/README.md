@@ -1,5 +1,8 @@
 # Strict gate remediation against main
 
+Latest [trial52](attempt-52/README.md) is an incomplete startup failure, not a gate verdict. No retry/native/analyzer. Final339pass/1fail/1skip; latest completed51remains3/8 on differentcode. Sharedbaseline5%,observed7%,stop13%; active, all models frozen, PR3draft.
+
+
 Latest: **[trial51](attempt-51/README.md) passes3/8** (loaded,local,protocol). Tests, correctness/citations and all3 native performance gates remain blocking. Full325pass/1fail/1skip; feature citation23/24. All proofs valid in51;50 integrity failure retained. Shared weekly baseline5%, observed7%, stop13%; remediation remains active. PR3 draft/unmerged.
 
 

@@ -1,3 +1,26 @@
+ACTIVE BUDGETED REMEDIATION — TRIAL52 INCOMPLETE STARTUP CHECKPOINT.
+Baseline5%, latest7%, STOP13%; reset1793294233. Read reliable usage before furtherwork.
+All retrieval models remain unchanged. PR3draft/unmerged/noautomerge, all8strictrequired.
+Runtimee38923577f3baa10e558a5a89220bd3affcd340f; main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt-52/README.md/outcome.json/verification-52.json/independent-review-52.json
+and cli-instruction-source-audit-52.json. MatchingCLI cap512KiB, NOT512characters.
+One localinvocationfailed BEFOREqueries because coordinatoromittedexplicitverified
+modeldirectoryenvironmentvariables; defaultcachemissingspecial_tokens_map.json.
+No native52/analyzer52 invocation, NOeight-gateverdict, NOidentical-runtime retry.
+Keep52incomplete; incompleteevidencecannotestablishpasses. Latestcomplete51=3/8.
+Finalsuite339pass/1fail/1existingWindows skip; Ruff/whitespacepass. Wrong-attribute
+sessionexpiry/deletionpermission redtest retained. Allproof/taint/queue/scope/freshness
+unchanged. Conditionalmixedresearch/reuse andsafeI/Ochangesreviewed, benefitunmeasured.
+Source-witness/contextualsentence/parent-child/contextual-child diagnostics REJECTED,
+notpending: no demonstrated safe admission repair. Exactinputs/resultsretained52archive.
+NEXT: consistentmemberLEFTJOINscope snapshot before no-opregister; returnunchanged
+withoutwriterlock, elseBEGINIMMEDIATE recheckandrefreshatomically. Independentreview
+and lock/authorization tests before consideringmeaningfulnewruntime comparison.
+Do not benchmark52again; use explicit verified modelenv in ALLfuturetest/benchmarkcalls.
+All3workersused/no nesting; coordinatoralone commits/push/PR/checks/fullbenchmarks.
+Tasknative50+51gross5088862;52native0. Allcostsretained; allowanceNOTrenewedonreset.
+Taskunfinished/active; no automation. Earliercheckpoints below preservedhistory.
+
 ACTIVE BUDGETED REMEDIATION — TRIAL51 PUBLISHED CHECKPOINT, October22,2026 Pacific.
 Task unfinished/active. Weekly baseline5%, latest7%, STOP13%; observed consumption2points.
 Combined allowance covers coordinator,all3workers,subjects/reviews; no newallowance/reset.
