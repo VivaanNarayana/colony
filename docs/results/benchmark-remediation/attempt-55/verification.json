@@ -1,0 +1,13 @@
+{
+  "commit": "8380724d8ed678b01cf2f76265ec441626574cec",
+  "tests_passed": 356,
+  "tests_failed": 1,
+  "tests_skipped": 1,
+  "pytest_seconds": 83.01,
+  "pytest_exit_code": 1,
+  "ruff_passed": true,
+  "ruff_exit_code": 0,
+  "diff_check_passed": true,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "known_failure": "Unchanged explanatory session-expiry/deletion-permission false hit; no waiver."
+}

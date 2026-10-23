@@ -1,0 +1,20 @@
+{
+  "frozen_label_protocol_violations": [
+    {
+      "id": "R33",
+      "arm": "main",
+      "task": "scope-1",
+      "reason": "Relevant validated packet followed by one new read and push; frozen rule requires no push for relevant reuse."
+    },
+    {
+      "id": "R48",
+      "arm": "feature",
+      "task": "scope-1",
+      "reason": "Relevant validated packet followed by one new read and push; frozen rule requires no push for relevant reuse."
+    }
+  ],
+  "all_new_research_saved": true,
+  "all_proofs_admissible": true,
+  "labels_unchanged_after_analyzer": true,
+  "failed_supplemental_diagnostic": "A first inline extraction omitted UTF-8 decoding and failed with UnicodeDecodeError; preserved here; subsequent summary reads existing UTF-8 audited records, no native rerun."
+}

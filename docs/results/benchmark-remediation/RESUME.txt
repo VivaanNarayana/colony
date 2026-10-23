@@ -1,3 +1,25 @@
+ACTIVE ALLOWANCE 2 — TRIAL55 PUBLISHED CHECKPOINT, TASK UNFINISHED.
+Explicit fresh budget baseline22%, latest observed23%, STOP30%; reset1793294233.
+Runtime8380724d8ed678b01cf2f76265ec441626574cec; main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt-55/README.md, comparison/manual-review/research-review/tool-audit/protocol-detail.
+One local + one48-session native + one analyzer:3/8 pass loaded/local/correctness.
+FAIL tests, protocol, gross, uncached, time.356pass/1knownfail/1Windows skip; Ruff pass.
+Observed source-read contradictions now downgrade candidate checks/status and try alternatives;
+no extra reads or atomic-snapshot claim. All retrieval models unchanged/no auxiliary model.
+Native55gross2680060, cumulative50/51/53/54/55gross13077278;52native0. Every outcome retained.
+Core24both,citations15main/24feature.17pushes/22fingerprints allactualprecedingnewreadsvalid.
+Main7rows/2queue,feature10rows/0queue; allactualtainttrue, featureoffline/false unit-only.
+MainR33 and featureR48 scope1 unnecessarily research+save after relevantvalidatedhit;
+frozen labels requirezero pushes forreuse. Do not relabel/rerun or waive eitherarm.
+Featuremcp2 metadatairrelevant,3research+save; stale2miss4research+save127209gross.
+Gross+22.46%,uncached+32.38%,time+.31% withCIcrosszero; nativebenefit notdemonstrated.
+Current strict8checks require exact verdict; no inheritedgreens, no bypass/main exemption.
+No identical-runtime retry. Token-window restriction rejected:7diagnostics show genuine
+displayedtail would be rejected and falseecho survivesfallback; no patch/measurement.
+One bounded separate no-answer control diagnostic pending under work/no-answer-control-56;
+no approved new production proposal. Checkusage afterphase; allworkersidleduring55.
+PR3 draft/unmerged/noauto-merge. Historical1–54 evidence/manifests/harness byte-unchanged.
+
 ACTIVE ALLOWANCE 2 — SOURCE-INTEGRITY PATCH PREPARATION.
 Explicit fresh budget: baseline 22%, latest observed 23%, STOP 30%; reset 1793294233.
 Current patch reproduces/fixes a later observed file change retaining validated status.

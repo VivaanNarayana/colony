@@ -1,5 +1,7 @@
 # Strict gate remediation against main
 
+Latest [trial55](attempt-55/README.md):3/8 pass loaded/local/correctness; tests,protocol and all native performance gates fail. Source-integrity correction;356pass/1fail/1skip. All48sessions/2,680,060gross retained. Fresh explicitly authorized allowance2:22%baseline,23%observed,30%stop. Work continues; allmodels unchanged,PR3draft/unmerged. [Exact checkpoint](RESUME.txt).
+
 [Paused checkpoint](RESUME.txt): observedweekly5%to12%(+7points), threshold13%notyetobserved; remainingreportedpointreservedforlag/finalreport. Unfinished. Trial54integrityrejection/no completeverdict; latestcomplete53=3/8. Allmodels/gatesfixed,PR3draft/unmerged.
 
 
