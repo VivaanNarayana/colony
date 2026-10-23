@@ -1,3 +1,18 @@
+ACTIVE ALLOWANCE2 — DEVELOPMENT CHECKPOINT56; NO BENCHMARK56.
+Baseline22%, latestobserved24%, STOP30%; reset1793294233. Readusagebeforework.
+Runtime8380724d8ed678b01cf2f76265ec441626574cec; latestfullcomparison55=3/8.
+Read investigation-56/README.md,outcome.json,diagnostics.zip; all6candidateprocedures
+rejected, including exactredtest-fixing ablation that loses independent positives.
+No production change after55, no identical-code benchmark retry, no pendingapprovedfix.
+Sourcefreshnessfix retained; tests356pass/1knownfalsehitfailure/1Windows skip; Ruffpass.
+Unresolved: wrongattributehit, sufficientprosemisses, metadatafactselection, unnecessary
+research/save afterrelevance and all3nativeperformancegates. Models unchanged/noauxmodel.
+All3workersidle, noactivebenchmark. No external blocker currently demonstrated; Gitpush
+connectionreset resolved. All1–55evidence/manifests andcosts preserved; PRdraft/unmerged.
+No safe next runtimeproposal identified by bounded audits; further work needs a distinct
+justified hypothesis, with preregistered controls before edits and new meaningfulruntime
+before any freshcomparison. Do not retune rejected controls, weaken gates or invent proofs.
+
 ACTIVE ALLOWANCE 2 — TRIAL55 PUBLISHED CHECKPOINT, TASK UNFINISHED.
 Explicit fresh budget baseline22%, latest observed23%, STOP30%; reset1793294233.
 Runtime8380724d8ed678b01cf2f76265ec441626574cec; main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.

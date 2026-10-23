@@ -1,0 +1,66 @@
+{
+  "kind": "Development investigation checkpoint; NO native/local benchmark trial56",
+  "runtime": "8380724d8ed678b01cf2f76265ec441626574cec",
+  "latest_measurement": "attempt-55",
+  "gates_passed": 3,
+  "gates_total": 8,
+  "models_harness_source_unchanged": true,
+  "no_production_proposal_approved": true,
+  "all_workers_idle": true,
+  "no_active_benchmark": true,
+  "usage": {
+    "allowance": 2,
+    "baseline": 22,
+    "last_observed": 24,
+    "stop": 30,
+    "observed_increase": 2,
+    "reset": 1793294233
+  },
+  "diagnostics": [
+    {
+      "name": "token-window",
+      "cases": 7,
+      "verdict": "Reject; narrower model visibility also rejects genuine displayed answer; false echo survives source fallback."
+    },
+    {
+      "name": "no-answer-control",
+      "cases": 18,
+      "verdict": "Reject; zero decision changes, extra inference with familiar false hit retained."
+    },
+    {
+      "name": "AST augmentation",
+      "cases": 11,
+      "verdict": "Recall mechanism demonstrated; reject pooled augmentation because IDF shift creates new legitimate archive miss; two prior false hits persist."
+    },
+    {
+      "name": "floor calibration",
+      "fresh_cases": 32,
+      "predictions": 97,
+      "verdict": "Preregistered selection floor0/nochange; useful scores1.33/1.40 below fresh falsehit2.07; higher floors lose positives. Known illustration used different savedquestion and does not repair exactredfixture."
+    },
+    {
+      "name": "AST secondstage",
+      "fresh_cases": 16,
+      "motivating_archived_case": 1,
+      "verdict": "Reject; one new unsupported encryption/backup relation; zero lost positives, one fresh recovery. Four prior falsehits retained, eight successful original packets byteidentical. Selection simulation, not Storeintegration."
+    },
+    {
+      "name": "query ablation",
+      "fresh_cases": 16,
+      "nonindependent_controls": 4,
+      "predictions": 40,
+      "verdict": "Reject; freshworkshoprefund and existingferrycollection positive lost, despite falsehit rejections including exactredfixture.26additionalrerankpairs. No retuning."
+    }
+  ],
+  "reviews": {
+    "final_causal_audit": "No additional observable source-binding contradiction found; source and savedexpiry text truly match. Relevance is unresolved, not fileidentity. No impossibility claim.",
+    "context_prefix": "Rejected before diagnostic: prior spare-capacity prefix proposals already preserved selected evidence; new16lineboundary still may omit qualifications. Not approved under unsafecontextcompaction ban.",
+    "cpu_cache": "Hypothesis only; no edits or measurement. Must retain every current read/hashcheck; no native benefit established. Not a remedy for semantic recall/errors."
+  },
+  "private_artifact_exclusions": [
+    "runtime directories including SQLite databases, encryption/identity keys; retained locally, not published",
+    "__pycache__"
+  ],
+  "all_costs_outcomes_and_baseline_errors_retained": true,
+  "at_utc": "2026-10-23T14:06:05.210462+00:00"
+}

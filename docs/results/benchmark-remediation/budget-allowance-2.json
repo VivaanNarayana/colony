@@ -22,7 +22,8 @@
   "no_reset_credits_accounts_or_api_billing": true,
   "reporting_may_lag": true,
   "at_utc": "2026-10-23T12:45:20.962510+00:00",
-  "last_observed_weekly_used_percent": 23,
-  "observed_increase_percentage_points": 1,
-  "last_phase": "source-integrity implementation and independent review; full suite pending"
+  "last_observed_weekly_used_percent": 24,
+  "observed_increase_percentage_points": 2,
+  "last_phase": "Trial55 published; token-window/no-answer/floor diagnostics rejected; ASTsecondstage pending",
+  "last_observed_utc": "2026-10-23T13:44:33.122318+00:00"
 }

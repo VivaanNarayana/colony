@@ -1,5 +1,7 @@
 # Strict gate remediation against main
 
+[Investigation checkpoint56](investigation-56/README.md) preserves six rejected candidates; **no benchmark56 and no new runtime**. Latestfull55still3/8, budget22%to24%observed,stop30%. Alloutcomesretained; no safe newproductionproposal approved.
+
 Latest [trial55](attempt-55/README.md):3/8 pass loaded/local/correctness; tests,protocol and all native performance gates fail. Source-integrity correction;356pass/1fail/1skip. All48sessions/2,680,060gross retained. Fresh explicitly authorized allowance2:22%baseline,23%observed,30%stop. Work continues; allmodels unchanged,PR3draft/unmerged. [Exact checkpoint](RESUME.txt).
 
 [Paused checkpoint](RESUME.txt): observedweekly5%to12%(+7points), threshold13%notyetobserved; remainingreportedpointreservedforlag/finalreport. Unfinished. Trial54integrityrejection/no completeverdict; latestcomplete53=3/8. Allmodels/gatesfixed,PR3draft/unmerged.
