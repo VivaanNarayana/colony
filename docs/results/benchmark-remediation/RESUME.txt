@@ -1,3 +1,185 @@
+PAUSED: DIAGNOSIS AND NEXT-CHAT HANDOFF UPDATED, October 22, 2026 (America/Los_Angeles).
+This is a documentation-only continuation of trial49 publication
+e916931230d6bb6a6c1eb4ccf2ca2419d56e41e4. No new tests, model profiles,
+local/native benchmarks, subject sessions or analyzer replays ran for this update.
+No runtime, benchmark, gate or historical evidence changed. Current verdict remains
+trial49's FOUR PASSES / FOUR BLOCKING FAILURES. PR3 stays draft and unmerged.
+Do not start more work or a run from this documentation request. Resume fixes only
+after a new explicit user instruction; the future-work handoff below is conditional.
+
+LOCATION AND REFERENCES
+Repository:
+C:\Users\b3vel\Documents\Codex\2026-10-20\https-github-com-vivaannarayana-colony-https\work\colony
+This file: docs/results/benchmark-remediation/RESUME.txt
+Branch: feat/benchmark-independent-evaluation
+PR: https://github.com/VivaanNarayana/colony/pull/3
+Measured trial49 source: e631f5b3d001e6ddf53286b1c60ff78af743c955
+Identical tested source: 2261d26fa76ef0e0a5e71356490a6233d537fdc0
+Trial49 main: 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d (freshly fetched and rechecked).
+The new documentation-only HEAD must not be mistaken for a new measured runtime.
+Read attempt-49/README.md, outcome.json, comparison.json, manual-review.json,
+research-review.json, tool-audit.json and both arms' raw-measurements.jsonl first.
+Compare attempt-47, then read attempt-48 for the changes and regression-test evidence.
+Every reference above is relative to docs/results/benchmark-remediation unless stated.
+
+WHAT mcp-2 / stale-2 MEAN; WHAT HAPPENED TO THE OTHER QUESTIONS
+These are fixed benchmark question IDs, NOT new features, versions, trials or gates.
+The suffix distinguishes three question variants in the same family. All 24 task
+identities, exact questions, expected facts and task order are identical in trials
+47 and 49; this was checked against protocol.json in both retained native archives.
+No old question was replaced, removed, renamed or excluded.
+
+Feature-arm comparison (research = actual Repository MCP operations):
+- mcp-1: "How do I connect an agent through MCP?"
+  Trial47: miss, 2 research calls, 1 push. Trial49: miss, 2 research calls, 1 push.
+  Both final answers are correct. This question still ran and was saved normally.
+- mcp-2: "Which tools does the MCP wrapper expose?"
+  Trial47: sufficient saved-answer hit, no research/push, 34,921 gross tokens.
+  Trial49: metadata-only evidence hit, 4 new research calls, NO PUSH, 95,207 tokens.
+  Final answer correctly names ask/push, but the required researched-answer save
+  is missing. That is trial49's one feature protocol violation. Its initial packet
+  is labeled irrelevant because validated source identity is not answer completeness.
+- mcp-3: "Start Colony as an MCP stdio server."
+  Both trials: sufficient saved-answer hit, no research/push, correct final answer.
+- stale-1: "Why is a changed file trail stale?"
+  Both trials: sufficient saved-answer hit, no research/push, correct final answer.
+- stale-2: "What happens when repository evidence changes?"
+  Trial47: sufficient saved-answer hit, no research/push, 34,831 gross tokens.
+  Trial49: miss, 3 research calls, 1 valid push, 98,174 tokens. Its final answer
+  is correct and its save is valid. This is a retrieval/cost regression, not a new
+  incorrect-answer, malformed-proof or missing-save failure.
+- stale-3: "How are file changes detected during validation?"
+  Trial47: miss, 3 research calls, 1 push, 87,265 tokens.
+  Trial49: miss, 2 research calls, 1 valid push, 74,470 tokens. It still ran and
+  improved on these observed costs; it was not replaced by stale-2.
+- scope-3: "Can an agent pull from an ungranted namespace?"
+  The earlier trial45 malformed-fingerprint failure remains retained in attempt-45.
+  In trials47 and49 this question has a miss followed by one valid save and a
+  correct answer. Trial49 has 3 research calls versus trial47's 2. It was ALREADY
+  a feature-side miss in trial47; describing an additional scope-3 miss in trial49
+  refers to comparison with main, not a newly introduced miss relative to trial47.
+
+All 14 actual trial49 push fingerprints match preceding new reads. The earlier
+proof failure is absent in this run; that is an observation, not a promise of future
+model adherence. Earlier unanswered-tool failures are distinct from trial49 mcp-2:
+the latest final tool answer is correct, while retrieval and the save workflow fail.
+The gate count fell 5/8 -> 4/8 because protocol regressed. The SAME THREE native
+performance gates already failed in trial47; their token measurements became worse.
+
+DIAGNOSIS: WHY THE NATIVE RESULT GOT WORSE
+The feature did more research and less useful reuse, overwhelming the intended
+savings from shorter receipts, HTTP reuse and redundant-inference removal.
+Feature relevant hits/research-free correct answers: 17 -> 15 (trials47 ->49).
+Feature research calls: 20 -> 31; total tool calls: 51 -> 63.
+Feature gross tokens: 1,231,629 -> 1,429,053 (+197,424).
+Feature uncached input/output: 195,853 -> 235,453 (+39,600).
+Main gross tokens barely changed: 1,138,615 -> 1,127,063.
+Main uncached input/output: 144,823 -> 145,815.
+
+Largest feature gross-token increases by matched question:
+  stale-2  +63,343 (reuse becomes research plus save)
+  mcp-2    +60,286 (sufficient answer becomes metadata-only hit plus research)
+  outage-1 +41,745 (3 -> 6 research operations)
+  scope-3  +23,541 (2 -> 3 research operations; already a miss previously)
+  serve-2  +22,590 (3 -> 4 research operations)
+mcp-2 and stale-2 together add 123,629 tokens, 62.62% of the net feature increase.
+Other changes partly offset these, notably stale-3 at -12,795 tokens.
+Extra tool rounds resend growing model context; smaller individual receipts do
+not establish lower aggregate native-token usage when more rounds are performed.
+
+Elapsed time did not show the same absolute deterioration: feature seconds fell
+290.257 -> 246.336 (15.13% lower), but main fell 306.117 -> 245.936 (19.66% lower).
+Thus feature's relative time advantage disappeared; its confidence interval still
+does not establish a win. Do not infer isolated HTTP-pool savings from these totals.
+
+What is established: actual saved answers/attached sources differed, later memory
+results differed, and the extra research/costs above occurred. The shortened-policy
+change can affect model behavior; wording-sensitive retrieval is a hypothesis worth
+testing. This combined stochastic comparison does NOT isolate their separate causal
+contributions. Do not label all worsening mere sampling noise or assert that one
+optimization caused it without further evidence. Mechanism tests passing did not
+prove improved live decisions, adherence or total performance. The next fixes need
+general correctness/behavior regressions, not only byte/work-count tests.
+Only each trial's own observations are scored. Retaining historical failed trials
+does not add their costs to trial49 or cause its gates to fail.
+
+CURRENT STATE THAT MUST BE PRESERVED
+- Trial49: loaded implementations, tests/lint, local lookup and correctness PASS.
+  Protocol, gross tokens, uncached tokens and time FAIL; complete 4/8 verdict.
+- Native main/feature gross: 1,127,063 / 1,429,053 (+26.794421% feature).
+  Uncached: 145,815 / 235,453 (+61.473785%). Seconds: 245.936 / 246.336 (+0.162644%).
+  Reduction intervals: gross [-44.929844%,-9.536998%], uncached
+  [-119.949509%,-23.792566%], time [-17.398182%,+12.603186%].
+- Local: 117/117 both, all234 rows audited, feature25.047743% lower lookup time;
+  reduction interval [+16.206957%,+35.437965%].
+- Core facts24/24 both; valid citations14/24 main,24/24 feature. Protocol0 main,1 feature.
+- All8 actual feature saves tainted. No feature explicit-false or offline-queue case
+  occurred here; checkpoint48 regressions exercise those enforcement paths.
+  Main R37/serve-2 stores/queues explicit tainted:false. That additional issue is
+  retained outside the frozen analyzer's taint-agnostic gate; no waiver/regrading.
+- Identical-source tests from checkpoint48:300 passed,1 existing Windows skip,
+  Ruff/whitespace pass. No tests were rerun for trial49 or this docs-only update.
+- Full policy once in MCP initialization, shortened receipt decisions, identity-scoped
+  MCP HTTP pool, exact within-call duplicate inference removal and skipped impossible
+  nonpositive semantic-control inference remain the checkpoint48 implementation.
+  Their unit mechanisms pass; their native performance benefit is unproven.
+- All8 original GitHub contexts remain required, strict/up-to-date, active main ruleset
+  25440133, no bypass. Four success/four failure statuses must carry to a docs-only head
+  only after verifying src/scripts/tests remain identical to the measured source.
+- All trials through49, source/import proofs, native events, attempted saves, frozen
+  labels, costs, test failures and auxiliary audit-helper diagnostic remain unchanged.
+  The archive's exact offline replay already passed; do not rerun it for this edit.
+
+FUTURE HANDOFF -- ONLY WHEN THE USER EXPLICITLY RESUMES FIXES
+Objective: fix the retrieval/context, researched-answer-save protocol and three
+performance failures with generalizable changes until all eight gates pass.
+Start with a concise plan in chat; do NOT create a plan file. Stay on this branch.
+
+1. Read the references and matched-question diagnosis above. Investigate robust reuse
+   across differently worded saved answers and ordinary question paraphrases. Do not
+   admit unrelated facts or lower relevance standards to manufacture more hits.
+2. Ensure retrieved context supplies requested facts/definitions/qualifications rather
+   than merely on-topic metadata, within existing source/freshness/privacy/budget rules.
+   Source validation never certifies natural-language answer completeness.
+3. Fix the general required-save workflow after actual new research. Require an actual
+   stored=true or queued=true receipt, retain/report rejected saves, and preserve
+   legitimate reuse without extra research, fingerprint rereads or unnecessary pushes.
+4. Review the checkpoint48 optimizations against end-to-end evidence. Investigate,
+   replace or revert unsupported optimizations if justified; preserve the taint and
+   other correctness fixes. Do not assume fewer receipt bytes or local work proves
+   lower full native costs. Do not attribute causality from this one combined trial.
+5. Add meaningful regressions with unrelated examples: varied saved-answer wording,
+   paraphrases, incomplete versus sufficient contexts, false-hit rejection, required
+   post-research saves, valid reuse without saves, and unchanged scope/freshness/proofs.
+
+Nonnegotiable constraints for that future work:
+- Retain all existing benchmark fixes, failed attempts, costs, labels and manifests.
+  Never weaken gates, confidence requirements, oracles, workload, prompts, rubric,
+  models, source/freshness/scope guards or budgets; never exempt main.
+- Preserve server-enforced MCP research taint, including explicit false requests,
+  encrypted offline queue/retry, strict64-lowercase-hex proof admission and actual
+  preceding new-read fingerprints. Never repair/invent/substitute malformed hashes.
+- No benchmark-specific task/path/keyword hints, answer templates or fixture targeting.
+  Do not restore research_paths or rejected relevance boosts/unsafe context compaction.
+- Run appropriate tests before measurement. Fetch current main afresh. Both arms must
+  use the same unchanged benchmark harness, corpus, adapter, prompts and configuration,
+  while loading their separately pinned implementation sources with proofs.
+- Benchmark only after a meaningful generalizable runtime change. A docs-only commit
+  is not such a change. No identical-code benchmark retries, per-session resampling,
+  best-of selection or dropped outcomes. Use fresh output/runtime directories and
+  retain every failure. Keep existing gpt-6-luna/low,6 research operations,240s/session,
+  8M aggregate-token budget, local seed20261021/3variants/3repetitions unless the user
+  explicitly changes the evaluation contract (never change it just to get a pass).
+- Public invocation details are in attempt-49/local-awake.json and live-awake.json.
+  Existing helpers/commands and all evidence are available in the sibling work folder;
+  inspect them before reuse because some old publishers hardcode older outcomes.
+- Continue toward all8 only under the new resume request; keep PR3 draft/unmerged,
+  update complete evidence, distinguish hypotheses from proven results, and report
+  genuine external blockers honestly. Never merge, ready the PR or enable auto-merge.
+
+THIS DOCUMENTATION UPDATE ENDS PAUSED. No run, fix, automation or further work is
+scheduled. The original trial49 record and older checkpoints remain below unchanged.
+
 PAUSED AFTER USER'S SINGLE BENCHMARK TRIAL49, 2026-10-23 UTC.
 Measured source e631f5b3d001e6ddf53286b1c60ff78af743c955 vs fresh current main 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d; rechecked unchanged.
 Same branch PR3 draft/unmerged/no auto-merge. Runtime/tests/harness unchanged during run.
