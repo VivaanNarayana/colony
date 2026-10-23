@@ -145,15 +145,34 @@ class Store:
 
     def register(self, keyfile: Keyfile):
         grant = keyfile.grant
+        member = (grant.member_id, grant.name, "agent", fingerprint(keyfile))
+        scopes = [(grant.member_id, s.namespace, s.push, s.pull) for s in grant.scopes]
         with self.connect() as db:
+            # Authentication still verifies every request before reaching here.
+            # Serialize comparison and refresh so concurrent signed grants cannot
+            # leave one grant's member row paired with another grant's scopes.
+            db.execute("BEGIN IMMEDIATE")
+            previous = db.execute(
+                "SELECT id,name,kind,keyfile_hash FROM members WHERE id=?", (grant.member_id,)
+            ).fetchone()
+            previous_scopes = db.execute(
+                "SELECT member_id,namespace,can_push,can_pull FROM scopes WHERE member_id=?",
+                (grant.member_id,),
+            ).fetchall()
+            if (
+                previous is not None
+                and tuple(previous) == member
+                and sorted(map(tuple, previous_scopes)) == sorted(scopes)
+            ):
+                return
             db.execute(
                 "INSERT OR REPLACE INTO members VALUES (?,?,?,?)",
-                (grant.member_id, grant.name, "agent", fingerprint(keyfile)),
+                member,
             )
             db.execute("DELETE FROM scopes WHERE member_id=?", (grant.member_id,))
             db.executemany(
                 "INSERT INTO scopes VALUES (?,?,?,?)",
-                [(grant.member_id, s.namespace, s.push, s.pull) for s in grant.scopes],
+                scopes,
             )
 
     def push(self, trail: Trail, grant: Grant):
@@ -232,8 +251,8 @@ class Store:
                 return {"hit": False, "reason": "no_relevant_trail"}
             query_vector = embed(question, query=True)
             # Reuse this connection instead of loading sqlite-vec and setting
-            # WAL again for the answer lookup. Commit its validation writes
-            # before opening the separate evidence-fallback transaction below.
+            # WAL again for the answer lookup and evidence fallback. Preserve
+            # the answer-validation commit boundary before the fallback stage.
             answer = self.find_answer(
                 question,
                 namespaces,
@@ -243,21 +262,30 @@ class Store:
                 query_vector=query_vector,
                 _connection=db,
             )
-        if answer.get("status") == "validated" or not namespaces:
-            return answer
-        return (
-            self.find_evidence(
-                question,
-                namespaces,
-                max_age,
-                include_evidence_files=include_evidence_files,
-                query_vector=query_vector,
+            if answer.get("status") == "validated":
+                return answer
+            db.commit()
+            return (
+                self.find_evidence(
+                    question,
+                    namespaces,
+                    max_age,
+                    include_evidence_files=include_evidence_files,
+                    query_vector=query_vector,
+                    _connection=db,
+                )
+                or answer
             )
-            or answer
-        )
 
     def find_evidence(
-        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None
+        self,
+        question,
+        namespaces,
+        max_age,
+        *,
+        include_evidence_files=False,
+        query_vector=None,
+        _connection: sqlite3.Connection | None = None,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         if not namespaces:
@@ -267,7 +295,8 @@ class Store:
         procedure = requires_procedure(question)
         query_terms = terms(question)
         placeholders = ",".join("?" for _ in namespaces)
-        with self.connect() as db:
+        connection = nullcontext(_connection) if _connection is not None else self.connect()
+        with connection as db:
             rows = db.execute(
                 f"""SELECT t.*, c.ref, c.content_hash, c.line,
                 vec_distance_cosine(v.embedding, ?) AS distance

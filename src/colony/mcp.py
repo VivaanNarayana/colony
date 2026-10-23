@@ -74,15 +74,15 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "otherwise report the save failure. "
         "With no new research, reuse sufficient reads without reads or push. "
         "Cite repository-relative paths without a leading slash. "
-        "When current_repository_reads suffice, "
+        "When current_repository_reads suffice and no new research was performed, "
         "answer and cite "
         "without reads or push, even for a new question. "
         "File validation does not certify saved-answer truth. "
         "Research missing/contradictory facts, misses and nonvalidated results; "
         "try configured research tools before declaring unavailable. "
         "Push requires new external research; ask's reads/hashes never qualify. "
-        "Never reread just to push. Copy citation verbatim; use repository-relative paths "
-        "without a leading slash. Keep required steps, conditions, exceptions and source citations."
+        "Never reread just to push. Copy citation verbatim. "
+        "Keep required steps, conditions, exceptions and source citations."
         " " + sufficiency_guidance + " " + save_guidance
     )
 
@@ -99,8 +99,10 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False), structured_output=False
     )
     def ask(question: str, namespace: str | None = None) -> list[TextContent]:
-        """Look up shared answers or current repository reads. Deriving an answer from
-        sufficient reads is reuse: answer and cite without a read or push. Research missing facts,
+        """Look up shared answers or current repository reads. With no new research,
+        deriving an answer from sufficient reads is reuse: answer and cite without a read or push.
+        After any new research, push before answering, even when also reusing earlier reads.
+        Research missing facts,
         obtain actual supporting file fingerprints, then push before answering."""
         result = dict(client.ask(question, namespace, include_evidence_files=evidence_files))
         if not result.get("hit"):
@@ -227,8 +229,9 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         Compare all 64 lowercase hexadecimal hash characters before submitting;
         never retype, shorten or reconstruct a fingerprint. Report a rejected save.
         Do not repeat rejected arguments or reread merely to retry a save.
-        Store only after new repository research, never after reuse of shared answers or
-        current_repository_reads, even for a new question. Copy exact research fingerprints,
+        Store only after new repository research, including research combined with reuse.
+        Never push solely for reuse of shared answers or current_repository_reads,
+        even for a new question. Copy exact research fingerprints,
         not ask's hashes; no invented hashes, snippets, symbols or rereads just to push.
         After needed external research, save before answering with the original question and
         namespace, and confirm stored=true or queued=true in a non-error receipt;

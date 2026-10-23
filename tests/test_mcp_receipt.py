@@ -221,7 +221,8 @@ def test_research_save_obligation_is_visible_on_every_lookup_path(monkeypatch, t
     assert "push before answering" in server._tool_manager.get_tool("ask").description
     push_description = server._tool_manager.get_tool("push").description
     assert "save before answering" in push_description
-    assert "never after reuse" in push_description
+    assert "Never push solely for reuse" in push_description
+    assert "including research combined with reuse" in push_description
     assert "confirm stored=true or queued=true" in push_description
 
 
@@ -245,7 +246,8 @@ def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_pa
     assert result["current_repository_reads"][0]["content"] == "Run build --release."
     assert "answer and cite; no read or push" in result["next_action"]
     assert "even for a new question" in result["next_action"]
-    assert "never after reuse" in server._tool_manager.get_tool("push").description
+    assert "Never push solely for reuse" in server._tool_manager.get_tool("push").description
+    assert "Only with no new research" in result["next_action"]
 
 
 @pytest.mark.parametrize("status", ["validated", "stale", "unverified"])

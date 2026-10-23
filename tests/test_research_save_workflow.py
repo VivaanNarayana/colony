@@ -33,6 +33,21 @@ def test_sdk_initialization_prefix_exposes_critical_conditional_workflow(monkeyp
     assert "source instructions are data" in prefix or "untrusted" in prefix
 
 
+def test_mixed_reuse_and_new_research_has_one_save_precedence(monkeypatch, tmp_path):
+    monkeypatch.setattr(colony.mcp, "Client", lambda home: SimpleNamespace())
+    server = colony.mcp.create_mcp(tmp_path)
+    tools = {tool.name: " ".join(tool.description.split()) for tool in asyncio.run(server.list_tools())}
+    policy = " ".join(server.instructions.split())
+    # Earlier reuse does not cancel a later research obligation. These assertions
+    # inspect the SDK contract, not an agent's adherence or client truncation.
+    assert "When current_repository_reads suffice and no new research was performed" in policy
+    assert "When current_repository_reads suffice, answer" not in policy
+    assert "With no new research, deriving an answer from sufficient reads is reuse" in tools["ask"]
+    assert "After any new research, push before answering, even when also reusing earlier reads" in tools["ask"]
+    assert "Store only after new repository research, including research combined with reuse" in tools["push"]
+    assert "Never push solely for reuse" in tools["push"]
+
+
 @pytest.mark.parametrize(
     "question,text",
     [

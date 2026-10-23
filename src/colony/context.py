@@ -213,6 +213,10 @@ def excerpts(
     by_ref = {s.ref: s for s in sources}
     order = sorted(range(len(scores)), key=scores.__getitem__, reverse=True)
     for index in order:
+        # No further passage can be displayed once either response limit is
+        # exhausted. Avoid rereading an unselected file merely to discover it.
+        if len(selected) >= 2 or budget < 300:
+            break
         ref, line, core = candidates[index]
         if scores[index] < best - (0.15 if claims is not None else 2):
             continue
@@ -220,8 +224,6 @@ def excerpts(
             cache[ref] = source_lines(root, by_ref[ref])
         if not cache[ref]:
             continue
-        if len(selected) >= 2 or budget < 300:
-            break
         start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
         limit = min(2400, budget)
         offset = len("\n".join(cache[ref][start - 1 : line - 1])) + int(line > start)
