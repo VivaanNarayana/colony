@@ -1,3 +1,82 @@
+PAUSED: FUTURE SUBAGENT SETUP AND SHARED USAGE BUDGET RECORDED,
+October 22, 2026 (America/Los_Angeles).
+This request authorizes a documentation update only. Do NOT spawn agents, fix code,
+run tests, profile, benchmark or replay an analyzer from this update. The fixing task
+has NOT started. PR3 remains draft/unmerged/no auto-merge; trial49 remains4/8 with
+all eight strict required checks intact. All historical failures/evidence stay unchanged.
+The diagnosis and original handoff below remain intact, subject to this new budget.
+
+COORDINATOR AND SUBAGENTS -- ONLY AFTER AN EXPLICIT FUTURE RESUME REQUEST
+The user should select GPT-6.1 Sol with High reasoning for the coordinating chat
+(model gpt-6.1-sol, effort high). This file does not change the active chat's model
+or global configuration. Use at most three subagents TOTAL, with no nested delegation:
+
+1. Retrieval investigator: GPT-6.1 Sol / High.
+   Read store.py, context.py, retrieval.py and trials47/49. Investigate saved-answer
+   wording sensitivity, missed reusable answers and metadata replacing requested facts.
+   Return concrete evidence, a general fix proposal and unrelated regression examples.
+2. Protocol investigator: GPT-6.1 Sol / High.
+   Investigate the missing push after actual research: MCP instructions, shortened
+   receipts, initialization policy and client behavior. Preserve valid reuse without
+   unnecessary saves, taint enforcement and exact new-read fingerprint requirements.
+3. Independent reviewer: GPT-6 Astra / High (gpt-6-astra, effort high).
+   Perform a BOUNDED read-only review of the diagnosis, proposed fixes, patch and
+   benchmark integrity. Identify unsupported causal claims, weakened safeguards,
+   overfitting, missing negative controls and complexity without demonstrated benefit.
+
+These are development/review model choices, NOT changes to benchmark subjects.
+The frozen benchmark subject model remains gpt-6-luna/low in both arms.
+Give each worker a concise, self-contained brief, relevant files/evidence and a concrete
+deliverable. Start investigations read-only. Require evidence and stated uncertainty.
+The coordinator reconciles findings, verifies work and assigns nonoverlapping file
+ownership before editing. Only the coordinator commits/pushes, updates PR/checks or
+launches full benchmarks. Pause worker activity during timed measurements.
+
+ONE SHARED WEEKLY USAGE BUDGET -- OVERRIDES "UNTIL ALL EIGHT PASS"
+The ENTIRE future fixing task has a combined limit of EIGHT ADDITIONAL PERCENTAGE
+POINTS of weekly account usage. This is one budget for the main coordinator, ALL
+subagents, benchmark subject sessions, reviews and every other model call for the task.
+It is NOT eight points per agent, phase, iteration or benchmark. Do not sum raw token
+counts as though all models consume the same proportion of the subscription allowance.
+
+Before substantive work or delegation, read the account's current WEEKLY used percentage
+and reset information and record the baseline. The baseline is NOT captured by this
+documentation request and must be measured when the user explicitly resumes fixes.
+Example ONLY: if the account then shows5% already used, stop around13% total used
+(5 percentage points already used +8 additional points), leaving87% remaining.
+This means8 points of the total weekly allowance, not8% of the remaining allowance.
+
+Check the read-only usage tool before starting and after every major investigation,
+implementation, testing, review and benchmark phase, and periodically during long work.
+Keep workers bounded and reserve headroom for in-flight calls and a final report. Do not
+launch another expensive phase that is expected to exhaust the remaining shared budget.
+Other chats share this account allowance; treat the observed account increase
+conservatively and do not subtract unrelated activity to grant this task extra budget.
+If a natural weekly reset occurs, preserve cumulative budget already consumed; the
+reset does not grant a fresh eight points. Record the relevant windows and usage samples.
+
+At the budget threshold, or when further work would exceed the remaining budget:
+- Stop starting model work, implementation/review phases and benchmarks.
+- Interrupt active subagents and stop an active benchmark if needed. Keep partial
+  outputs, costs and failed attempts; an incomplete comparison cannot establish a pass.
+- Do not repair/restart an identical benchmark or resample sessions to recover a partial
+  run. Preserve the original strict gates and clearly report unverified outcomes.
+- Update RESUME.txt and PR3 with starting/ending usage, consumed points, implemented
+  and tested changes, retained results, unresolved issues and exact resume checkpoint.
+- Pause even if gates still fail. Never claim that reaching the budget completes the
+  all-eight-gates objective. Do not schedule work, wakeups or automatic resumption.
+
+Do not reset the allowance, purchase/spend additional credits, switch accounts or use
+API billing to bypass this limit. If weekly usage cannot be read reliably, pause rather
+than assume it is zero. Usage accounting may lag and in-flight calls may overshoot:
+stop as soon as reported usage reaches the threshold and disclose actual consumption;
+do not claim this checkpoint-enforced limit is a hard provider billing cap.
+
+FUTURE STOPPING CONDITION: all eight gates pass OR the combined usage budget is reached,
+whichever happens first. All branch, draft/unmerged, evidence-retention, no-weakened-gates
+and no-identical-code-retry constraints below still apply. The budget takes precedence
+over older instructions to continue until all eight pass. No work is authorized now.
+
 PAUSED: DIAGNOSIS AND NEXT-CHAT HANDOFF UPDATED, October 22, 2026 (America/Los_Angeles).
 This is a documentation-only continuation of trial49 publication
 e916931230d6bb6a6c1eb4ccf2ca2419d56e41e4. No new tests, model profiles,
