@@ -10,15 +10,31 @@ from colony.security import PATTERNS
 from colony.validation import repo_file
 
 
-def source_lines(root: Path, source: Source) -> list[str]:
+class SourceChanged(Exception):
+    """A context read contradicted the candidate's successful file check."""
+
+    def __init__(self, ref: str, reason: str):
+        self.ref, self.reason = ref, reason
+        super().__init__(reason)
+
+
+def source_lines(root: Path, source: Source, *, strict: bool = False) -> list[str]:
     if source.kind != "file":
         return []
     try:
         data = repo_file(root, source.ref).read_bytes()
-        if hashlib.sha256(data).hexdigest() != source.content_hash:
-            return []
+    except (OSError, ValueError):
+        if strict:
+            raise SourceChanged(source.ref, "Evidence unavailable during context read") from None
+        return []
+    if hashlib.sha256(data).hexdigest() != source.content_hash:
+        if strict:
+            raise SourceChanged(source.ref, "File changed during context read")
+        return []
+    try:
         text = data.decode("utf-8")
-    except (OSError, ValueError, UnicodeError):
+    except UnicodeError:
+        # A matching binary file is valid evidence even though it supplies no text.
         return []
     # Scrub before chunking; multiline secrets cannot straddle excerpt boundaries.
     # Preserve original line numbers even when replacing a private key block.
@@ -27,11 +43,15 @@ def source_lines(root: Path, source: Source) -> list[str]:
     return text.splitlines()
 
 
-def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str]]:
+def source_chunks(
+    root: Path, sources: list[Source], *, strict: bool = False
+) -> list[tuple[str, int, str]]:
     candidates = []
     # Only explicitly attached, matching files supply context. Never crawl uncited files.
     for source in sources[:8]:
-        lines = source_lines(root, source)[:2000]
+        lines = (source_lines(root, source, strict=True) if strict else source_lines(root, source))[
+            :2000
+        ]
         headings, stack, fenced = {}, [], False
         if Path(source.ref).suffix.lower() in {".md", ".markdown"}:
             for i, text in enumerate(lines):
@@ -135,12 +155,20 @@ def excerpts(
     claims: str | None = None,
     whole_files: bool = False,
     section_context: bool = False,
+    strict_sources: bool = False,
 ) -> list[dict]:
+    def read(source):
+        return (
+            source_lines(root, source, strict=True)
+            if strict_sources
+            else source_lines(root, source)
+        )
+
     unique = {s.ref: s for s in sources}
     if whole_files and 1 <= len(unique) <= 4:
         files = []
         for source in unique.values():
-            lines = source_lines(root, source)
+            lines = read(source)
             text = "\n".join(lines)
             if not lines or len(text) > 16000:
                 break
@@ -161,7 +189,11 @@ def excerpts(
         and sources[0].kind == "file"
         and len(candidate_chunks) <= 96
         and all(chunk[0] == sources[0].ref for chunk in candidate_chunks)
-        else source_chunks(root, sources)
+        else (
+            source_chunks(root, sources, strict=True)
+            if strict_sources
+            else source_chunks(root, sources)
+        )
     )
     if preferred is not None:
         # A second reranking must not replace the globally selected passage
@@ -221,7 +253,7 @@ def excerpts(
         if scores[index] < best - (0.15 if claims is not None else 2):
             continue
         if ref not in cache:
-            cache[ref] = source_lines(root, by_ref[ref])
+            cache[ref] = read(by_ref[ref])
         if not cache[ref]:
             continue
         start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)

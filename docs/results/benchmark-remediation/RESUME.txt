@@ -1,3 +1,27 @@
+ACTIVE ALLOWANCE 2 — SOURCE-INTEGRITY PATCH PREPARATION.
+Explicit fresh budget: baseline 22%, latest observed 23%, STOP 30%; reset 1793294233.
+Current patch reproduces/fixes a later observed file change retaining validated status.
+Matching empty/binary sources stay valid. Candidate discovery remains tolerant; failed
+selected context downgrades checks/status, discards partial evidence and tries alternatives.
+No extra source reads, scores/models/policy/harness changes or native benefit claim.
+Independent Astra review found no blocker. Final suite pending; known wrong-attribute
+red test remains. Next: final tests, commit meaningful runtime, fresh main, one new
+comparison 55 in fresh directories. Never retry identical runtime or reuse old greens.
+All historical outcomes 1–54 and prior costs retained. PR3 draft/unmerged/noauto-merge.
+
+ACTIVE — EXPLICITLY AUTHORIZED FRESH ALLOWANCE2, October23,2026 Pacific.
+Human reply: Authorize fresh8points22%to30%. Baseline22%,STOP30%,reset1793294233.
+This separately authorized allowance supersedes the exhausted old13%cap for newwork;
+it does not erase prior costs/outcomes/accountgrowth. Read budget-allowance-2.json.
+Allcoordinator/workers/subjects/reviews share ONE8pointincrease; preserveconsumption
+acrossreset; nocredits/reset/accounts/APIbilling. Checkusageeachphaseandduringlongruns.
+Allretrievalmodelsunchanged/noauxmodel. Everyoutcome1-54preserved. Existing3workers
+mayresume boundedread-only investigations; no new/nestedworkers. Currentruntime7f1cb10,
+latesthead d615580, trial54integrityreject/no8verdict; latestcomplete53=3/8.
+Nextreconcileretrieval/protocol/reviewer findings before edits/tests/newmeaningfulruntime
+comparison. No identical-code retries, gate/model/harness weakening ormainexemption.
+PR3 staysdraft/unmerged/noautomerge. Olderpausedcheckpointbelowretainedhistory.
+
 PAUSED CONSERVATIVELY FOR SHARED USAGE HEADROOM — TASK UNFINISHED.
 Startingweekly5%, lastobserved12%, increase7percentagepoints; hardstoppingthreshold13%.
 13%HASNOTYETBEENOBSERVED. One reportedpoint reserved for accountinglag/inflightcosts

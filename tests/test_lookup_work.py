@@ -223,9 +223,9 @@ def test_single_file_evidence_forwards_descriptors_and_still_rereads_display(tea
     reads = []
     original = colony.context.source_lines
 
-    def read(root, source):
+    def read(root, source, **options):
         reads.append(source.ref)
-        return original(root, source)
+        return original(root, source, **options)
 
     def no_second_enumeration(*args):
         raise AssertionError("Excerpt selection rebuilt already selected descriptors")

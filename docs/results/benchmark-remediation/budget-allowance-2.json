@@ -1,0 +1,28 @@
+{
+  "allowance": 2,
+  "status": "Active explicitly authorized fresh allowance",
+  "human_authorization": "Authorize fresh 8 points:22%to30%",
+  "baseline_weekly_used_percent": 22,
+  "stopping_threshold_weekly_used_percent": 30,
+  "additional_percentage_points": 8,
+  "weekly_window_minutes": 10080,
+  "resets_at": 1793294233,
+  "resets_utc": "2026-10-29 17:17:13 UTC",
+  "prior_allowance": {
+    "baseline": 5,
+    "threshold": 13,
+    "last_pause_observed": 12,
+    "current_observation": 22,
+    "exhausted": true,
+    "prior_checkpoint": "budget-checkpoint.json"
+  },
+  "prior_outcomes_and_costs_preserved": true,
+  "one_shared_budget_for_all_model_work": true,
+  "natural_reset_does_not_renew_allowance": true,
+  "no_reset_credits_accounts_or_api_billing": true,
+  "reporting_may_lag": true,
+  "at_utc": "2026-10-23T12:45:20.962510+00:00",
+  "last_observed_weekly_used_percent": 23,
+  "observed_increase_percentage_points": 1,
+  "last_phase": "source-integrity implementation and independent review; full suite pending"
+}
