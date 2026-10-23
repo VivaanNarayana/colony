@@ -147,23 +147,31 @@ class Store:
         grant = keyfile.grant
         member = (grant.member_id, grant.name, "agent", fingerprint(keyfile))
         scopes = [(grant.member_id, s.namespace, s.push, s.pull) for s in grant.scopes]
-        with self.connect() as db:
-            # Authentication still verifies every request before reaching here.
-            # Serialize comparison and refresh so concurrent signed grants cannot
-            # leave one grant's member row paired with another grant's scopes.
-            db.execute("BEGIN IMMEDIATE")
+
+        def unchanged(db):
+            # One fully consumed statement gives a consistent member/scope
+            # snapshot without reserving SQLite's writer slot.
             previous = db.execute(
-                "SELECT id,name,kind,keyfile_hash FROM members WHERE id=?", (grant.member_id,)
-            ).fetchone()
-            previous_scopes = db.execute(
-                "SELECT member_id,namespace,can_push,can_pull FROM scopes WHERE member_id=?",
+                "SELECT m.id,m.name,m.kind,m.keyfile_hash,"
+                "s.member_id,s.namespace,s.can_push,s.can_pull "
+                "FROM members m LEFT JOIN scopes s ON s.member_id=m.id WHERE m.id=?",
                 (grant.member_id,),
             ).fetchall()
-            if (
-                previous is not None
-                and tuple(previous) == member
-                and sorted(map(tuple, previous_scopes)) == sorted(scopes)
-            ):
+            return (
+                bool(previous)
+                and tuple(previous[0][:4]) == member
+                and sorted(tuple(row[4:]) for row in previous if row[4] is not None)
+                == sorted(scopes)
+            )
+
+        with self.connect() as db:
+            # Authentication still verifies every request before reaching here.
+            if unchanged(db):
+                return
+            # Recheck under the writer lock before refreshing: another request
+            # may have changed membership since the first completed snapshot.
+            db.execute("BEGIN IMMEDIATE")
+            if unchanged(db):
                 return
             db.execute(
                 "INSERT OR REPLACE INTO members VALUES (?,?,?,?)",

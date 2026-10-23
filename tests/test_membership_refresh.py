@@ -162,3 +162,30 @@ def test_concurrent_refreshes_never_expose_mixed_member_and_scope_snapshots(team
     assert membership(app.state.store, key.grant.member_id) in {
         expected_membership(candidate) for candidate in alternatives
     }
+
+
+def test_unchanged_membership_needs_no_writer_lock_but_changes_still_do(team, monkeypatch):
+    app, _, _, admin, key = team
+    store = app.state.store
+    store.register(key)
+    changed = issue(admin / "issuer.pem", key.grant.model_copy(update={"name": "Archive reader"}))
+    connect = store.connect
+
+    @contextmanager
+    def impatient_connect():
+        with connect() as db:
+            db.execute("PRAGMA busy_timeout=0")
+            yield db
+
+    monkeypatch.setattr(store, "connect", impatient_connect)
+    with connect() as writer:
+        writer.execute("BEGIN IMMEDIATE")
+        # Another connection already holds SQLite's single writer slot. A
+        # completed consistent read of identical membership must still work.
+        store.register(key)
+        with pytest.raises(sqlite3.OperationalError, match="locked"):
+            store.register(changed)
+        assert membership(store, key.grant.member_id) == expected_membership(key)
+    assert membership(store, key.grant.member_id) == expected_membership(key)
+    store.register(changed)
+    assert membership(store, key.grant.member_id) == expected_membership(changed)
