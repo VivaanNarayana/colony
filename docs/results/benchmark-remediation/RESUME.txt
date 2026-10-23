@@ -1,3 +1,30 @@
+ACTIVE BUDGETED REMEDIATION — TRIAL53 PUBLISHED CHECKPOINT.
+Baseline5%, latest10%, STOP13%; observed5points consumed; reset1793294233.
+Read reliableusagebeforeanyphase. Allretrievalmodels unchanged, subjects gpt-6-luna/low.
+Runtime68fb205551c8f38148304adb5fa1bfd7fb22907c; mainfresh6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt-53/README.md/comparison.json/manual-review.json/research-review.json/
+tool-audit.json/independent-review.json. One local+one48sessionnative,2636852gross.
+Officialanalyzeronceafterlabelsfrozen exit1:3/8PASS loaded/local/protocol;5FAILtests,
+correctness/citations,gross,uncached,time. All8strict25440133required/no bypass/mainexemption.
+Final340pass/1fail/1existingWindows skip,Ruff/whitespacepass. Redwrongattributesession
+expiry/deletionpermissiontestpersists. Core24/24both,citations18/24main23/24feature:
+featureR06/outage1absolute/README.md invalid. R21/mcp2initialmetadatairrelevant.
+All15pushattempts/19fingerprintsvalidactualprecedingreads; allactualtainttruebotharms.
+Feature9stored0queued/noexplicitfalsecase; unchangedtestsofflinefalsecoverageonly.
+Research16main/32feature;usefulhits18/15. Gross+33.82%,uncached+31.16%;time2.28%
+lowerbutCIcrosszero. Local117/117both,34.14%lower/positiveCI. No nativebenefitproven.
+Writer-contentionregressionfailsbefore/passafter:unchangedregisterusesoneconsistent
+memberLEFTJOINscopereadbeforewriterlock;changedgrantslock/recheck/refreshatomically.
+Authentication/scope/freshness/source/proof/taint/queueretryunchanged; models/scoresfixed.
+52failedbeforequeriesbecausemissingmodelenvretainedINCOMPLETE/no retry/native/analyzer.
+Next: boundedreviewofduplicatedruntimeMCPpolicyconsolidation, preservingeveryexisting
+obligation. No newpatchapproved/measured. Do not retry53identicalorweaken/remove redtest.
+MatchingCLIcap512KiB,not512characters; no isolatedtruncation/receipt/policycausality.
+Rejectedsource-witness/sentence/childdiagnosticsremainrejected,allinputs/resultsarchived.
+All3workersused/no nesting,idleduringmeasurement;coordinatoralone commits/push/PR/checks.
+Native50+51+53gross7725714;52native0,alldevelopmentcostsretainedinaccountobservations.
+PR3draft/unmerged/noautomerge. Taskunfinished/active,noautomation. Earlierhistorybelow.
+
 ACTIVE BUDGETED REMEDIATION — TRIAL52 INCOMPLETE STARTUP CHECKPOINT.
 Baseline5%, latest7%, STOP13%; reset1793294233. Read reliable usage before furtherwork.
 All retrieval models remain unchanged. PR3draft/unmerged/noautomerge, all8strictrequired.

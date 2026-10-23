@@ -1,5 +1,8 @@
 # Benchmark independence audit
 
+Latest: [trial53](results/benchmark-remediation/attempt-53/README.md) passes3/8; tests, citations and all3nativeperformancegates remain blocking. Local34.14%lower; gross+33.82%,uncached+31.16%,timeCIcrosszero.340pass/1fail/1skip. Failed52retainedincomplete. Sharedbaseline5%,observed10%,stop13%; active, allmodelsfrozen,PR3draft/unmerged.
+
+
 Latest: [trial51](results/benchmark-remediation/attempt-51/README.md) passes3/8 (loaded,local,protocol); five gates remain blocking. Tests325pass/1fail/1skip; one feature citationinvalid; gross+17.64%,uncached+27.93%,timeCIcrosseszero. Full evidence/failedattempts retained, all8 strictchecksrequired. Shared weekly baseline5%,observed7%,stop13%; active remediation continues, PR3draft/unmerged.
 
 
