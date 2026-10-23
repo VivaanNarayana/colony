@@ -1,6 +1,6 @@
 {
   "allowance": 2,
-  "status": "Active explicitly authorized fresh allowance",
+  "status": "Paused at explicit human request; no automatic continuation",
   "human_authorization": "Authorize fresh 8 points:22%to30%",
   "baseline_weekly_used_percent": 22,
   "stopping_threshold_weekly_used_percent": 30,
@@ -24,6 +24,6 @@
   "at_utc": "2026-10-23T12:45:20.962510+00:00",
   "last_observed_weekly_used_percent": 24,
   "observed_increase_percentage_points": 2,
-  "last_phase": "Source byte-limit fix reviewed/tested; source-index lifecycle investigation active; no native56",
-  "last_observed_utc": "2026-10-23T14:30:08.171769+00:00"
+  "last_phase": "User pause; all workers stopped; source fix published, index-gap reproduction retained, age-crowding investigation interrupted",
+  "last_observed_utc": "2026-10-23T14:38:00.713784+00:00"
 }

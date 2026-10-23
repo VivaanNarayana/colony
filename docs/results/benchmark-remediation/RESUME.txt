@@ -1,3 +1,36 @@
+PAUSED BY EXPLICIT USER REQUEST — ALL WORKERS STOPPED; TASK UNFINISHED.
+Do not resume or run another benchmark without a new human instruction.
+User: pause your work and pause all subagents; update RESUME and PR; no benchmark.
+Fresh shared allowance2 baseline22%, endingobserved24%, +2points; STOP30%.
+Reset1793294233 =2026-10-29 17:17:13UTC. Reporting may lag; preserve allowance/history.
+Resume/reset does NOT authorize fresh8points. Read reliable usage before future work.
+Source commit bde1af1cafc391cad0dda0b0356486013fe2083f; branchfeat/benchmark-independent-evaluation.
+Documentation HEAD contains pause-checkpoint-58; read its README/outcome/diagnostics.
+Current source unmeasured. Last complete comparison55=3/8 on runtime8380724;
+all8 current-head checks conservatively failure, no inherited greens/new gate verdict.
+Source byte-limit fix committed/pushed/reviewed: actual read(MAX+1), reject oversize
+beforehash/decode/parse; path/assertion/strict handling retained. No atomic guarantee.
+Full367passed/1knownwrongattribute failure/1Windows skip; lint/whitespacepass.
+Read investigation57 for test errors,7beforefail/4pass,67focusedpass/1skip and
+rejected topic-document control (145pairs; two knownfalsehits remain).
+Source-index recovery gap reproduced with actual Store/SQLite and deterministic
+placeholdervectors (0inference/provider). Missing at push/migration stays unindexed
+after exactrestore/retry/restart; valid empty/binary0 is not deferred/corrupt state.
+No repair implemented. Astra proposes bounded selected-trail repair design first;
+preserve wholetrail8file/96chunk caps, transactions, version exclusion, age/scope.
+This does NOT explain stale2(112chunks) or knownfalseanswer; no native benefit claim.
+Protocol worker INTERRUPTED investigating age-before-LIMIT12 crowding; incomplete,
+no reproduction/deliverable/conclusion. Treat as unverified resume lead, not defect.
+Retrieval/reviewer completed and interruptacknowledged; no activeworker/benchmark.
+Protocol rereview found no demonstrated instruction conflict; extra reads supplied
+additional final details. Frozen55 labels/protocolfailures unchanged; no policy edit.
+Remaining: falsehit, sufficientwording misses, metadata selection, protocol, native
+gross/uncached/time and source-index recovery. No external blocker demonstrated.
+No native56/57, no identical-runtime retry; next actual native trial56 remains unused.
+No measurement merely for source-resource fix; reconcile general meaningful change
+and review/tests before any later comparison authorized by human.
+All historical1–55/costs/manifests/harness and models unchanged; PRdraft/unmerged/noauto.
+
 ACTIVE ALLOWANCE2 — SOURCE BYTE-LIMIT FIX; DEVELOPMENT CHECKPOINT57.
 User explicitly reaffirmed bounded exploration under unchanged models; no early pause.
 Baseline22%, latestobserved24%, STOP30%, reset1793294233; readusage after phases.
