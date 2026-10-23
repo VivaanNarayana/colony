@@ -1,3 +1,41 @@
+ACTIVE BUDGETED REMEDIATION — TRIAL51 PUBLISHED CHECKPOINT, October22,2026 Pacific.
+Task unfinished/active. Weekly baseline5%, latest7%, STOP13%; observed consumption2points.
+Combined allowance covers coordinator,all3workers,subjects/reviews; no newallowance/reset.
+Reset1793294233=2026-10-29 17:17:13UTC. Read usage before every further phase.
+All retrieval models MUST remain unchanged per explicit user clarification.
+
+Runtime/tested source8604fc883fc4f8a85cb58d6420713d1c18c6966e.
+Mainfresh/rechecked6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt-51/README.md/comparison.json/manual-review.json/research-review.json/tool-audit.json.
+One local+one native invocation,48sessions,2489169gross; NO retry/restart/resampling.
+Official unchangedanalyzeronce exit1:3/8 PASS (loaded,local,protocol);5 FAIL(test,
+correctness/citations,gross,uncached,time). All8 strict remainrequired, no bypass/mainexemption.
+Finalsuite325pass/1fail/1existingWindows skip,Ruff/whitespacepass. Redwrongattribute
+sessionexpiry/deletionpermissions test persists untouched. Featurecorefacts24/24,
+citations23/24 because R08 /README.md invalid; main24/24facts,16/24citations.
+All14pushattempts/15fingerprints valid; feature8storedtrue taint, nooffline/explicitfalse
+nativecase. MainR28 outagefalse taint remainsadditionalungateddeviation, no newrubric.
+
+Safe protocolchange frontloads full64hex/verbatimcopy in init/toolprefix and missreceipt;
+no repeatrejectedargs/rereadmerelytosave. Strictschema/taint/queue/runtime unchanged.
+No proofrepair. Trial50 two malformed40charattempts+costs+integrityfailure stayimmutable.
+Modeladherencecausalityunproven; do notclaim clienttruncation proven. MCPmetadatawrong
+selection and savedwording sensitivity stillunresolved. Gross+17.64%,uncached+27.93%,
+time+0.71% with CIcrossingzero. Local117/117both,23.71% lowertime/positiveCI.
+
+EXACT NEXT CHECKPOINT: retrievalworker currently investigating read-only source-witness
+hypothesis: existing claims-selected current source excerpts as independentpositive
+question support for otherwise rejected authoredanswer; originaldense/question/relevance/
+scope/freshness mustremain, return evidence not certifyanswer. No runtimepatchproven.
+Require unrelated negatives/independentreview; prior46 broadsemanticfallback is rejected,
+notallowed torestore. Topic-query and polar-only variants newly rejected on legitimate
+misses; frozenfresh24-input hash/all63outcomes retained in51 development.zip.
+Do not remove/xfail the redtest, change models, relax gates or retry identicalruntime.
+All3workers usedtotal,no nesting; coordinator alone commits/push/PR/checks/benchmarks.
+PR3 remainsdraft/unmerged/noautomerge. Task-native50+51gross5088862tokens, allcostsretained.
+
+EARLIER CHECKPOINTS BELOW — preserved history; this activecheckpoint takes precedence.
+
 ACTIVE BUDGETED REMEDIATION — TRIAL50 PUBLISHED CHECKPOINT, October22,2026 Pacific.
 The current explicit resume request supersedes the older documentation-only pause below.
 Task remains unfinished and active; no automatic job is scheduled. PR3 stays draft/unmerged.

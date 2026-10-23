@@ -1,5 +1,8 @@
 # Strict gate remediation against main
 
+Latest: **[trial51](attempt-51/README.md) passes3/8** (loaded,local,protocol). Tests, correctness/citations and all3 native performance gates remain blocking. Full325pass/1fail/1skip; feature citation23/24. All proofs valid in51;50 integrity failure retained. Shared weekly baseline5%, observed7%, stop13%; remediation remains active. PR3 draft/unmerged.
+
+
 Latest: **[trial50](attempt-50/README.md) fails evidence integrity** after all48 sessions. No complete eight-gate verdict; one full-suite regression remains red. Exact rejected proofs and all costs retained. Shared weekly usage baseline5%, observed6%, stop13%; remediation continues within that same allowance. PR3 remains draft/unmerged.
 
 

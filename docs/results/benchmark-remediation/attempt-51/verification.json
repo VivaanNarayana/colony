@@ -1,0 +1,14 @@
+{
+  "commit": "8604fc883fc4f8a85cb58d6420713d1c18c6966e",
+  "tests_passed": 325,
+  "tests_failed": 1,
+  "tests_skipped": 1,
+  "pytest_seconds": 82.844,
+  "pytest_exit_code": 1,
+  "ruff_passed": true,
+  "ruff_exit_code": 0,
+  "diff_check_passed": true,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "scope": "Final-source full suite. One preexisting newly exposed wrong-attribute false hit retained as blocking; no waiver.",
+  "known_failure": "tests/test_saved_wording_regression.py explanatory login-session unsupported deletion attribute"
+}

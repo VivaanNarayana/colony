@@ -1,5 +1,8 @@
 # Benchmark independence audit
 
+Latest: [trial51](results/benchmark-remediation/attempt-51/README.md) passes3/8 (loaded,local,protocol); five gates remain blocking. Tests325pass/1fail/1skip; one feature citationinvalid; gross+17.64%,uncached+27.93%,timeCIcrosseszero. Full evidence/failedattempts retained, all8 strictchecksrequired. Shared weekly baseline5%,observed7%,stop13%; active remediation continues, PR3draft/unmerged.
+
+
 **Latest: single trial 49 completes 4/8 gates; paused.** Both arms pass 117/117 local checks and 24/24 live core facts; feature citations pass 24/24 versus main's 14/24. All 14 push fingerprints validate and all eight actual feature stored taints are true. Feature `mcp-2` researches missing tool facts but omits its required save: protocol fails. Gross tokens increase 26.79%, uncached input/output increase 61.47%, and time's interval crosses zero: all three performance gates also fail. All four failures remain blocking; all eight strict required checks remain active without bypass. One comparison only, no retries; complete evidence retained and exact offline archive replay verified. Tests reuse identical checkpoint-48 code (300 passed, one existing skip; Ruff/whitespace pass). PR #3 stays draft/unmerged; no further work or run is scheduled.
 
 [Complete trial 49 evidence](results/benchmark-remediation/attempt-49/README.md).
