@@ -1,3 +1,19 @@
+ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT62; TASK UNFINISHED.
+Baseline16% used; latest17%; STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
+One shared5point allowance; prior costs retained; check after phases/long work.
+Source bf240ab0637d51732f803a56caa995a2d18d77ec; targeted authorized duplicate index recovery with completion marker.
+Complete marker means bounded immutable index construction, NOT current freshness.
+Queries/proofs/scopes/age/taint unchanged. No startup/query sweeps or scheduler.
+Tests401passed/1knownwrongattribute failure/1Windows skip;34focusedpassed; Ruffpass.
+AstraHigh no blocker. Prototype duplicate16MB reread regression retained; final0reads.
+Single descriptive timing observations, no CI/native benefit claim.
+Read investigation-62 README/outcome/archive; prefix61 ineffective, anaphora rejected.
+All errors/outcomes/costs1–55/checkpoints56–59 retained. Native56 remains unused.
+Current source unmeasured; all8current checks conservative failure; last55=3/8.
+Next bounded procedural-window63 diagnostic only; production read-only, fixed models.
+Known falsehit/sufficientwording/metadata/protocol/nativeperformance unresolved.
+PRdraft/unmerged/noauto. Stop workers/benchmark and pause atusage threshold; reserveheadroom.
+
 ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT59; TASK UNFINISHED.
 Explicit new5sharedpoints: baseline16%used/84%remaining, STOP21%used/79%remaining.
 Latestobserved16%; reset1793382050=2026-10-30 17:40:50UTC; checkusageafterphases.

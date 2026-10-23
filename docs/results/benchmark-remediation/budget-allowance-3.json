@@ -17,9 +17,9 @@
   "natural_reset_does_not_renew_allowance": true,
   "no_reset_credits_accounts_or_api_billing": true,
   "reporting_may_lag": true,
-  "last_observed_weekly_used_percent": 16,
-  "observed_increase_percentage_points": 0,
+  "last_observed_weekly_used_percent": 17,
+  "observed_increase_percentage_points": 1,
   "at_utc": "2026-10-23T22:49:26.471298+00:00",
-  "last_phase": "Matched fence fix tested/reviewed; three candidates rejected; query instruction/targeted index repair investigation active",
-  "last_observed_utc": "2026-10-23T23:09:00.002947+00:00"
+  "last_phase": "Index recovery tested/reviewed/committed; checkpoint62 publication; bounded procedural-window63 diagnostic active",
+  "last_observed_utc": "2026-10-23T23:34:29.274729+00:00"
 }
