@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import sqlite3
 import time
 from contextlib import contextmanager, nullcontext
@@ -29,6 +30,8 @@ from colony.retrieval import (
 from colony.security import fingerprint, private_write
 from colony.validation import validate
 
+logger = logging.getLogger(__name__)
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS members (
@@ -57,6 +60,8 @@ CREATE TABLE IF NOT EXISTS source_chunks (
  id INTEGER PRIMARY KEY, trail_id TEXT NOT NULL, ref TEXT NOT NULL,
  content_hash TEXT NOT NULL, line INTEGER NOT NULL);
 CREATE VIRTUAL TABLE IF NOT EXISTS source_vectors USING vec0(embedding float[384]);
+CREATE TABLE IF NOT EXISTS source_index_state (
+ trail_id TEXT PRIMARY KEY, index_version TEXT NOT NULL);
 """
 
 
@@ -114,6 +119,7 @@ class Store:
         )
         db.execute("DELETE FROM source_vectors")
         db.execute("DELETE FROM source_chunks")
+        db.execute("DELETE FROM source_index_state")
         for row in rows:
             self.index_sources(db, row["id"], self.sources(db, row["id"]))
         db.execute("INSERT OR REPLACE INTO settings VALUES ('index_version',?)", (active_version,))
@@ -130,9 +136,27 @@ class Store:
         ]
 
     def index_sources(self, db, trail_id, sources):
-        chunks = source_chunks(self.repo, sources)
-        hashes = {s.ref: s.content_hash for s in sources}
+        complete = True
+        try:
+            chunks = source_chunks(self.repo, sources, strict=True)
+        except SourceChanged:
+            # Preserve useful partial indexing, but do not claim the bounded
+            # index was completely built from the supplied source fingerprints.
+            complete = False
+            chunks = source_chunks(self.repo, sources)
         vectors = embed_passages([f"{ref}\n{text}" for ref, _, text in chunks])
+        self._insert_source_index(db, trail_id, sources, chunks, vectors)
+        if complete:
+            db.execute(
+                "INSERT OR REPLACE INTO source_index_state VALUES (?,?)",
+                (trail_id, index_version()),
+            )
+        else:
+            db.execute("DELETE FROM source_index_state WHERE trail_id=?", (trail_id,))
+
+    @staticmethod
+    def _insert_source_index(db, trail_id, sources, chunks, vectors):
+        hashes = {s.ref: s.content_hash for s in sources}
         for (ref, line, _), vector in zip(chunks, vectors, strict=True):
             cursor = db.execute(
                 "INSERT INTO source_chunks(trail_id,ref,content_hash,line) VALUES (?,?,?,?)",
@@ -142,6 +166,59 @@ class Store:
                 "INSERT INTO source_vectors(rowid,embedding) VALUES (?,?)",
                 (cursor.lastrowid, vector),
             )
+
+    def _refresh_duplicate_sources(self, db, trail):
+        # The caller already holds the writer lock and has checked the complete
+        # immutable payload/producer. Never mix descriptors from another version.
+        version = db.execute("SELECT value FROM settings WHERE key='index_version'").fetchone()
+        active_version = index_version()
+        if version is None or version[0] != active_version:
+            return
+        completed = db.execute(
+            "SELECT index_version FROM source_index_state WHERE trail_id=?", (trail.id,)
+        ).fetchone()
+        # This records construction of the immutable payload's bounded index,
+        # not current source freshness. Lookups still validate current bytes.
+        if completed is not None and completed[0] == active_version:
+            return
+        db.execute("SAVEPOINT source_index_refresh")
+        try:
+            # Strict preparation prevents a partial multisource reconstruction
+            # from replacing a previously complete or partially available index.
+            chunks = source_chunks(self.repo, trail.sources, strict=True)
+            hashes = {s.ref: s.content_hash for s in trail.sources}
+            expected = [(ref, hashes[ref], line) for ref, line, _ in chunks]
+            previous = [
+                tuple(row)
+                for row in db.execute(
+                    "SELECT ref,content_hash,line FROM source_chunks WHERE trail_id=? ORDER BY id",
+                    (trail.id,),
+                )
+            ]
+            if previous != expected:
+                # Prepare inference before deletion; also protect the old view
+                # if a subsequent vector or completion-marker insertion fails.
+                vectors = embed_passages([f"{ref}\n{text}" for ref, _, text in chunks])
+                db.execute(
+                    "DELETE FROM source_vectors WHERE rowid IN "
+                    "(SELECT id FROM source_chunks WHERE trail_id=?)",
+                    (trail.id,),
+                )
+                db.execute("DELETE FROM source_chunks WHERE trail_id=?", (trail.id,))
+                self._insert_source_index(db, trail.id, trail.sources, chunks, vectors)
+            db.execute(
+                "INSERT OR REPLACE INTO source_index_state VALUES (?,?)",
+                (trail.id, active_version),
+            )
+        except SourceChanged:
+            db.execute("ROLLBACK TO source_index_refresh")
+        except Exception as exc:
+            db.execute("ROLLBACK TO source_index_refresh")
+            # Optional maintenance must not turn an already durable duplicate
+            # into a failed save. Report the type, never private source/error text.
+            logger.warning("Source index refresh failed (%s)", type(exc).__name__)
+        finally:
+            db.execute("RELEASE source_index_refresh")
 
     @contextmanager
     def connect(self):
@@ -208,6 +285,7 @@ class Store:
                     or previous["payload_hash"] != payload_hash
                 ):
                     raise ValueError("Trail ID already belongs to a different payload")
+                self._refresh_duplicate_sources(db, trail)
                 return {"id": trail.id, "stored": True, "duplicate": True}
             ref = f"{trail.id}.enc"
             # An orphan blob after an interrupted transaction is safe to overwrite.

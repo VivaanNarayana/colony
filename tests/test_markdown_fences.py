@@ -133,7 +133,7 @@ def test_legacy_fence_index_migrates_atomically_with_original_trail_age(
         legacy.setattr(
             storage,
             "source_chunks",
-            lambda root, sources: [("plotter.md", line, "Section: Example heading\n" + FACT)],
+            lambda root, sources, **options: [("plotter.md", line, "Section: Example heading\n" + FACT)],
         )
         store.push(trail, key.grant)
     legacy_version = "semantic-v7:legacy-fence-descriptor"
@@ -152,6 +152,7 @@ def test_legacy_fence_index_migrates_atomically_with_original_trail_age(
                     "trail_questions",
                     "source_chunks",
                     "source_vectors",
+                    "source_index_state",
                 ]
             }
 
@@ -171,6 +172,7 @@ def test_legacy_fence_index_migrates_atomically_with_original_trail_age(
     assert after["trails"] == before["trails"]  # Includes original payload, age and taint.
     assert after["trail_sources"] == before["trail_sources"]
     assert dict(after["settings"])["index_version"] == index_version()
+    assert after["source_index_state"] == [(trail.id, index_version())]
     descriptors = source_chunks(repo, [source])
     assert next(c for _, start, c in descriptors if start == line).startswith(
         "Section: Manual > Operations\n"
