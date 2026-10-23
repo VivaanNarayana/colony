@@ -18,6 +18,19 @@ class SourceChanged(Exception):
         super().__init__(reason)
 
 
+def _fence_state(text: str, current: str | None) -> str | None:
+    """Track top-level fences; list/blockquote container parsing is out of scope."""
+    match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", text)
+    if not match:
+        return current
+    marker, suffix = match.groups()
+    if current is None:
+        return None if marker[0] == "`" and "`" in suffix else marker
+    if marker[0] == current[0] and len(marker) >= len(current) and not suffix.strip(" \t"):
+        return None
+    return current
+
+
 def source_lines(root: Path, source: Source, *, strict: bool = False) -> list[str]:
     if source.kind != "file":
         return []
@@ -52,12 +65,11 @@ def source_chunks(
         lines = (source_lines(root, source, strict=True) if strict else source_lines(root, source))[
             :2000
         ]
-        headings, stack, fenced = {}, [], False
+        headings, stack, fence = {}, [], None
         if Path(source.ref).suffix.lower() in {".md", ".markdown"}:
             for i, text in enumerate(lines):
-                if text.lstrip().startswith(("```", "~~~")):
-                    fenced = not fenced
-                elif not fenced and (match := re.match(r"^(#{1,6}) (.+)", text)):
+                fence = _fence_state(text, fence)
+                if fence is None and (match := re.match(r"^(#{1,6}) (.+)", text)):
                     level = len(match[1])
                     stack = [(depth, title) for depth, title in stack if depth < level]
                     stack.append((level, match[2]))
@@ -102,15 +114,14 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     low, high = 0, len(lines)
     fences = []
     if Path(ref).suffix.lower() in {".md", ".markdown"}:
-        headings, fenced, opening = [], False, None
+        headings, fence, opening = [], None, None
         for i, text in enumerate(lines):
-            if text.lstrip().startswith(("```", "~~~")):
-                fenced = not fenced
-                if fenced:
-                    opening = i
-                else:
-                    fences.append((opening, i + 1))
-            elif not fenced and re.match(r"^#{1,6} ", text):
+            previous, fence = fence, _fence_state(text, fence)
+            if previous is None and fence is not None:
+                opening = i
+            elif previous is not None and fence is None:
+                fences.append((opening, i + 1))
+            elif fence is None and re.match(r"^#{1,6} ", text):
                 headings.append(i)
         low = max((i for i in headings if i <= center), default=0)
         high = min((i for i in headings if i > center), default=len(lines))
@@ -280,11 +291,10 @@ def excerpts(
         item = selected[0]
         ref, line = item["ref"], item["line"]
         if Path(ref).suffix.lower() in {".md", ".markdown"}:
-            heading, fenced = None, False
+            heading, fence = None, None
             for i, text in enumerate(cache[ref][: line - 1]):
-                if text.lstrip().startswith(("```", "~~~")):
-                    fenced = not fenced
-                elif not fenced and re.match(r"^#{1,6} ", text):
+                fence = _fence_state(text, fence)
+                if fence is None and re.match(r"^#{1,6} ", text):
                     heading = i + 1
             if heading is not None:
                 start, text = context_window(ref, cache[ref], heading, 6)
