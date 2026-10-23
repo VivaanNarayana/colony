@@ -35,27 +35,6 @@ class FileEvidence(Model):
 
 def create_mcp(home: Path, *, evidence_files: bool = False):
     client = Client(home)
-    save_guidance = (
-        "If new external research is needed, obtain a supporting file's actual fingerprint "
-        "during that research; search matches alone do not supply a file fingerprint. "
-        "Before answering, call push with the original question and namespace, a concise "
-        "supported answer and those file fingerprints. Check for a non-error receipt with stored=true "
-        "or queued=true; otherwise report the save failure. Conflicting save flags are a failure. "
-        "Push is separate from research "
-        "tool calls. Never invent fingerprints or save using only ask's reads/hashes."
-        " Copy each ref/content_hash pair verbatim from the same successful new research read. "
-        "Compare all 64 lowercase hexadecimal hash characters with that read before submitting. "
-        "Never retype, shorten or reconstruct a fingerprint. Report a rejected save. "
-        "Do not repeat rejected arguments or reread merely to retry a save."
-        " MCP research is always marked tainted by the server."
-    )
-    sufficiency_guidance = (
-        "Check whether the current text supplies every requested fact. A validated hit reports "
-        "source checks, not answer completeness. If a requested fact is absent, research "
-        "that gap before answering; saying the excerpt lacks the answer does not resolve it. "
-        "If all requested facts are present and no new research was performed, use them directly "
-        "without confirmation reads or push."
-    )
     research_guidance = (
         "Research missing facts with configured tools; try before reporting unavailable. "
         "After new research, push before answering with new-read ref/hash pairs "
@@ -74,16 +53,23 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "otherwise report the save failure. "
         "With no new research, reuse sufficient reads without reads or push. "
         "Cite repository-relative paths without a leading slash. "
-        "When current_repository_reads suffice and no new research was performed, "
-        "answer and cite "
-        "without reads or push, even for a new question. "
+        "Check whether the current text supplies every requested fact. A validated hit reports "
+        "source checks, not answer completeness. "
         "File validation does not certify saved-answer truth. "
         "Research missing/contradictory facts, misses and nonvalidated results; "
         "try configured research tools before declaring unavailable. "
-        "Push requires new external research; ask's reads/hashes never qualify. "
-        "Never reread just to push. Copy citation verbatim. "
-        "Keep required steps, conditions, exceptions and source citations."
-        " " + sufficiency_guidance + " " + save_guidance
+        "Research absent requested facts before answering; "
+        "saying the excerpt lacks the answer does not resolve it. "
+        "The no-research reuse rule applies even for a new question and forbids confirmation reads. "
+        "Copy citation verbatim. Keep required steps, conditions, exceptions and source citations. "
+        "Push a concise supported answer with supporting files' actual fingerprints "
+        "obtained during that research. Push requires new external research "
+        "and is separate from research tool calls. Search matches and ask's reads/hashes never qualify. "
+        "Compare each ref/content_hash pair and all 64 lowercase hexadecimal characters "
+        "with the same successful new read before submitting; never invent or retype fingerprints. "
+        "Conflicting save flags are a failure. Report a rejected save. "
+        "Do not repeat rejected arguments or reread merely to push or retry a save. "
+        "MCP research is always marked tainted by the server."
     )
 
     @asynccontextmanager

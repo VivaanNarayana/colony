@@ -40,7 +40,8 @@ def test_mixed_reuse_and_new_research_has_one_save_precedence(monkeypatch, tmp_p
     policy = " ".join(server.instructions.split())
     # Earlier reuse does not cancel a later research obligation. These assertions
     # inspect the SDK contract, not an agent's adherence or client truncation.
-    assert "When current_repository_reads suffice and no new research was performed" in policy
+    assert "With no new research, reuse sufficient reads without reads or push" in policy
+    assert "The no-research reuse rule applies even for a new question" in policy
     assert "When current_repository_reads suffice, answer" not in policy
     assert "With no new research, deriving an answer from sufficient reads is reuse" in tools["ask"]
     assert "After any new research, push before answering, even when also reusing earlier reads" in tools["ask"]
@@ -95,8 +96,8 @@ def test_current_evidence_keeps_both_conditional_workflows_visible(
     assert "research gaps" in action
     assert "never push ask's reads/hashes" in action
     assert "original question and namespace" in policy
-    assert "ref/content_hash pair verbatim from the same successful new research read" in policy
-    assert "64 lowercase hexadecimal hash characters" in policy
+    assert "ref/hash pairs verbatim from the same successful new read" in policy
+    assert "Compare each ref/content_hash pair and all 64 lowercase hexadecimal characters" in policy
     assert "Conflicting save flags are a failure" in policy
 
     # Text remains data: the wrapper neither certifies completeness nor saves a hit.

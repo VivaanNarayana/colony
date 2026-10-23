@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -29,9 +30,10 @@ def test_validated_receipt_requires_fact_check_before_reuse_or_research(
     for guidance in (server.instructions,):
         assert "current text supplies every requested fact" in guidance
         assert "not answer completeness" in guidance
-        assert "research that gap before answering" in guidance
+        assert "Research absent requested facts before answering" in guidance
         assert "saying the excerpt lacks the answer does not resolve it" in guidance
-        assert "without confirmation reads or push" in guidance
+        assert "With no new research, reuse sufficient reads without reads or push" in guidance
+        assert "forbids confirmation reads" in guidance
     assert "Reuse sufficient reads" in result["next_action"]
     assert "Research gaps" in result["next_action"]
     assert "session policy" in result["next_action"]
@@ -58,10 +60,14 @@ def test_fingerprint_copy_contract_and_strict_schema_are_visible_on_wire(monkeyp
     assert "same new research read" in fields["ref"]["description"]
     for guidance in (server.instructions, push.description):
         guidance = " ".join(guidance.split())
-        assert "ref/content_hash pair verbatim" in guidance
-        assert "same successful new research read" in guidance
-        assert "64 lowercase hexadecimal hash characters" in guidance
-        assert "never retype, shorten or reconstruct" in guidance.casefold()
+        assert "ref/content_hash pair" in guidance and "verbatim" in guidance
+        assert re.search(r"same successful new (?:research )?read", guidance)
+        assert re.search(r"64 lowercase hexadecimal (?:hash )?characters", guidance)
+        if guidance == server.instructions:
+            assert "Never shorten or reconstruct hashes" in guidance
+            assert "never invent or retype fingerprints" in guidance
+        else:
+            assert "never retype, shorten or reconstruct" in guidance.casefold()
         assert "Report a rejected save" in guidance
     # Deleting one character from a genuine digest remains an error. No disk
     # read, padding, normalization, hash recomputation or client save repairs it.
