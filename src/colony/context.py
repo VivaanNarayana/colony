@@ -7,7 +7,7 @@ from pathlib import Path
 from colony.models import Source
 from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
-from colony.validation import repo_file
+from colony.validation import read_source
 
 
 class SourceChanged(Exception):
@@ -22,7 +22,7 @@ def source_lines(root: Path, source: Source, *, strict: bool = False) -> list[st
     if source.kind != "file":
         return []
     try:
-        data = repo_file(root, source.ref).read_bytes()
+        _, data = read_source(root, source.ref)
     except (OSError, ValueError):
         if strict:
             raise SourceChanged(source.ref, "Evidence unavailable during context read") from None

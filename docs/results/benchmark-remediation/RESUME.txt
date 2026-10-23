@@ -1,3 +1,22 @@
+ACTIVE ALLOWANCE2 — SOURCE BYTE-LIMIT FIX; DEVELOPMENT CHECKPOINT57.
+User explicitly reaffirmed bounded exploration under unchanged models; no early pause.
+Baseline22%, latestobserved24%, STOP30%, reset1793294233; readusage after phases.
+Latest measured runtime8380724; latest complete55=3/8; current source patch unmeasured.
+Read investigation-57/README.md/outcome.json/diagnostics.zip; actual growth reproduces
+2MByte cap bypass. Shared read(MAX+1) now rejects oversize before hash/decode/parse.
+Independent Astra no blocker;67focusedpass/1skip;367fullpass/1knownfail/1Windows skip;
+Ruff/whitespacepass. No native performance/relevance or atomic snapshot claim.
+Topic-document control rejected:1freshfalsehit removed,9baselinepositives preserved
+(only4exerciseguard),2knownfalsehits remain;145pairs including reconstructed32basecalls.
+Protocol rereview: extra reads supply additional final-answer details; motivation not
+observed. No demonstrated policy conflict, no policy edit or historical regrading.
+Current-head all8 conservativefailures; do not apply old runtime greens to new source.
+No native56/57; next native56 unused; do not benchmark merely for source-resource fix.
+Retrieval worker checking source-index lifecycle (missing during indexing then restored),
+deterministic stub reproduction only; no approved patch, no actual native causal claim.
+No active benchmark; otherworkersidle. All history1–55/costs/manifests unchanged;
+allmodels/harness/gates/proof/taint/queue safeguards unchanged; PRdraft/unmerged/noauto.
+
 ACTIVE ALLOWANCE2 — DEVELOPMENT CHECKPOINT56; NO BENCHMARK56.
 Baseline22%, latestobserved24%, STOP30%; reset1793294233. Readusagebeforework.
 Runtime8380724d8ed678b01cf2f76265ec441626574cec; latestfullcomparison55=3/8.
