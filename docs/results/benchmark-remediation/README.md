@@ -1,5 +1,8 @@
 # Strict gate remediation against main
 
+Latest: **[trial50](attempt-50/README.md) fails evidence integrity** after all48 sessions. No complete eight-gate verdict; one full-suite regression remains red. Exact rejected proofs and all costs retained. Shared weekly usage baseline5%, observed6%, stop13%; remediation continues within that same allowance. PR3 remains draft/unmerged.
+
+
 **Latest: single trial 49 completes 4/8 gates; paused.** Both arms pass 117/117 local checks and 24/24 live core facts; feature citations pass 24/24 versus main's 14/24. All 14 push fingerprints validate and all eight actual feature stored taints are true. Feature `mcp-2` researches missing tool facts but omits its required save: protocol fails. Gross tokens increase 26.79%, uncached input/output increase 61.47%, and time's interval crosses zero: all three performance gates also fail. All four failures remain blocking; all eight strict required checks remain active without bypass. One comparison only, no retries; complete evidence retained and exact offline archive replay verified. Tests reuse identical checkpoint-48 code (300 passed, one existing skip; Ruff/whitespace pass). PR #3 stays draft/unmerged; no further work or run is scheduled.
 
 [Complete trial 49 evidence](attempt-49/README.md).

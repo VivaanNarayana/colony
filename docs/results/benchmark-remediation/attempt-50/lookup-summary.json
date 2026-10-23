@@ -1,0 +1,101 @@
+{
+  "schema_version": 2,
+  "evaluation_role": "public-development-contracts",
+  "baseline_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "feature_commit": "d5a8669a0f354a33bbdaca470c6f26fab230eacf",
+  "seed": 20261021,
+  "repetitions": 3,
+  "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+  "harness_sha256": {
+    "benchmark_lookup.py": "701357766f616a368d0055287cb484d3ef2b78288e5defa98261ceb5d0e568a7",
+    "benchmark_statistics.py": "2615bb8acfc1f0aca764b76e5af39b02bf9920b2c2c51d02ef4db75c287dbdb6",
+    "lookup_workload.py": "e7d7433d8ea219f0d07eca343f73e64b7d3739e9c46f1135460bb33d1f47feb3",
+    "lookup_benchmark_worker.py": "4576981e3d20a684badafda9442c206d4e47fa4323281d01319fc90da314d451"
+  },
+  "modes": {
+    "main": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 2.402378599625081,
+      "query_embeddings": 108,
+      "reranker_calls": 99,
+      "reranked_passages": 99
+    },
+    "feature": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 1.8543914000620134,
+      "query_embeddings": 90,
+      "reranker_calls": 27,
+      "reranked_passages": 27
+    }
+  },
+  "same_implementation": false,
+  "implementation_isolated": true,
+  "loaded_implementations": {
+    "main": {
+      "source": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src",
+      "module_paths": {
+        "colony": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\__init__.py",
+        "colony.models": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\models.py",
+        "colony.retrieval": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\retrieval.py",
+        "colony.security": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\security.py",
+        "colony.validation": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\validation.py",
+        "colony.context": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\context.py",
+        "colony.store": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\main-source\\src\\colony\\store.py"
+      },
+      "source_sha256": {
+        "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
+        "colony/cli.py": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae",
+        "colony/client.py": "5e1f9d5555763fddb8b8edcf943c4f8ce19a1356012714b559e1358d9f4a8634",
+        "colony/context.py": "e8aeded90b8cee8d0d1659b4ecb3ae4112a5461cc6951f30ea4bcea484f19e5c",
+        "colony/mcp.py": "365f314d05efa6240a10b7ad93764968aee2989c45ab9d28298a35240e0c623f",
+        "colony/models.py": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a",
+        "colony/retrieval.py": "a1a5e52014abf23db81b07103ddf0dc0590a78af702322fc786e426ec63cda99",
+        "colony/security.py": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f",
+        "colony/server.py": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36",
+        "colony/store.py": "708f4d48c39dc02d130c4fdc96519c3298c9c919aaa3f2d588bebbe496232aed",
+        "colony/validation.py": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac",
+        "colony/__init__.py": "07fa1670cc2b9e8776cf87c5297f6cc5ad8e68e65bfcf9a731e943803c1c9cdf"
+      }
+    },
+    "feature": {
+      "source": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src",
+      "module_paths": {
+        "colony": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\__init__.py",
+        "colony.models": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\models.py",
+        "colony.retrieval": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\retrieval.py",
+        "colony.security": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\security.py",
+        "colony.validation": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\validation.py",
+        "colony.context": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\context.py",
+        "colony.store": "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\benchmark-remediation-local-50-runtime\\feature-source\\src\\colony\\store.py"
+      },
+      "source_sha256": {
+        "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
+        "colony/cli.py": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae",
+        "colony/client.py": "407aa97dd8b01f303b3123d6503e1aed2777abed473e8bcf021721e5fe813c7a",
+        "colony/context.py": "49578b5b2ec06ab4c47fbee0bd710fd251ec4996c848bbc8e1c9fac527812eb9",
+        "colony/mcp.py": "61684cccba280827f31bef31bd4a90aebcfe4afce6fbc84b85b051dd8fa8f605",
+        "colony/models.py": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a",
+        "colony/retrieval.py": "9170f6eae83bf00656a292b4bf91e82d0c9d55ddf00a41839aa201e1bc46c92a",
+        "colony/security.py": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f",
+        "colony/server.py": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36",
+        "colony/store.py": "beea70302cb6de956c73c2f051f29da990a5c9272fed8b61f2e8e811d59666e7",
+        "colony/validation.py": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac",
+        "colony/__init__.py": "07fa1670cc2b9e8776cf87c5297f6cc5ad8e68e65bfcf9a731e943803c1c9cdf"
+      }
+    }
+  },
+  "quality_passed": true,
+  "lookup_improves": true,
+  "lookup_time_reduction": 0.22810193183063954,
+  "latency_reduction_95pct": [
+    0.12851161552682655,
+    0.3414642319199911
+  ],
+  "limitations": [
+    "Public development fixtures, not held-out production evidence.",
+    "Warm asks only; setup, push, cold start and concurrency are not timed.",
+    "Family bootstrap is descriptive; repeated runs are not independent confirmation."
+  ]
+}

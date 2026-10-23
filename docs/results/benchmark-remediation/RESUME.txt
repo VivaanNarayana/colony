@@ -1,3 +1,43 @@
+ACTIVE BUDGETED REMEDIATION — TRIAL50 PUBLISHED CHECKPOINT, October22,2026 Pacific.
+The current explicit resume request supersedes the older documentation-only pause below.
+Task remains unfinished and active; no automatic job is scheduled. PR3 stays draft/unmerged.
+
+BUDGET: initial weekly5% (recorded before agents/work); last observed6%; STOP13%.
+Combined observed consumption1 percentage point for coordinator+allworkers+subjects.
+Reset1793294233 =2026-10-29 17:17:13UTC. Preserve consumed allowance across any reset.
+No reset credits/API billing/account switch used. Check usage before any further phase.
+All retrieval models MUST remain unchanged (explicit user clarification); no auxiliary model.
+
+Runtime/tested commit d5a8669a0f354a33bbdaca470c6f26fab230eacf.
+Main freshly fetched/rechecked6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt-50/README.md, comparison.json, outcome.json, manual-review.json,
+research-review.json, tool-audit.json, raw-totals.json, verification.json and archives.
+Trial50: one local+one native invocation,48sessions,2,599,693gross tokens, no retry.
+Official analyzer exit1 EVIDENCE_INTEGRITY: feature/scope-3 submitted first40 of actual64
+hash twice; both schema-rejected, redundant reread and failed saves retained untouched.
+NO COMPLETE EIGHT-GATE VERDICT exists for50; all8 remain strictly required, no bypass.
+Full suite322pass/1fail/1existing Windows skip; Ruff/whitespace pass. Red test remains
+explanatory session-expiry answer falsely matching deletion permission question.
+Local117/117both,22.81% lowerfeaturetime with positiveCI; native descriptivecosts
+are not a gate verdict. Both core facts24/24, citations19/24main and24/24feature.
+
+Safe scoped changes: mcp conditional save/reuse priority+non-error receipt confirmation;
+store literal support restricted to explicit4000-char prefix alreadyindexed/ranked/displayed.
+No store/context/model/ranking threshold expansion. Taint/proof/scope/freshness unchanged.
+All three requested workers used, no nestedagents, read-only first and bounded reviews.
+Workers idle during measurement. Coordinator owns commits/push/PR/checks/fullcomparisons.
+
+EXACT NEXT CHECKPOINT: inspect40-char repeated proof failure and missing early full64-copy
+instruction; propose/review general policy placement change with unrelated proof tests.
+Do not repair traces/hashes or retry identical runtime. Keep all retrieval models frozen.
+Wrong-attribute false hit, metadata selection and saved-wording misses remain unresolved.
+Many fixed-model heuristics were disconfirmed by independent controls; diagnostics retained
+in development.zip. Do not reinstate them or remove/xfail the red regression to get green.
+Trial50 mcp-2 nowresearches+saves, but its metadata packet is still irrelevant. Stale-2
+reuse changed with authored wording; do not call this a proven retrieval improvement.
+
+HISTORICAL PAUSE/HANDOFF BELOW — superseded only by current authorized budgeted work.
+
 PAUSED: FUTURE SUBAGENT SETUP AND SHARED USAGE BUDGET RECORDED,
 October 22, 2026 (America/Los_Angeles).
 This request authorizes a documentation update only. Do NOT spawn agents, fix code,

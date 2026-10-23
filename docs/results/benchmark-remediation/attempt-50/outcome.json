@@ -1,0 +1,36 @@
+{
+  "trial": 50,
+  "source": "d5a8669a0f354a33bbdaca470c6f26fab230eacf",
+  "baseline": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "all_gates_passed": false,
+  "current_complete_eight_gate_verdict_available": false,
+  "blocking_gates": [
+    "evidence_integrity",
+    "tests_and_lint_pass"
+  ],
+  "analyzer_exit_code": 1,
+  "official_analyzer_invocations": 1,
+  "local_invocations": 1,
+  "native_invocations": 1,
+  "native_sessions_completed": 48,
+  "native_gross_tokens": 2599693,
+  "benchmark_or_subject_session_restarts": 0,
+  "all_attempts_and_costs_retained": true,
+  "proof_repair": false,
+  "tests_passed": 322,
+  "tests_failed": 1,
+  "tests_skipped": 1,
+  "ruff_passed": true,
+  "models_harness_and_gates_unchanged": true,
+  "usage": {
+    "baseline": 5,
+    "last_observed": 6,
+    "stop": 13,
+    "observed_increase": 1,
+    "reset": 1793294233
+  },
+  "status": "Published intermediate checkpoint; authorized budgeted remediation continues. No comparison retry is authorized for identical runtime.",
+  "draft": true,
+  "merged": false,
+  "auto_merge": false
+}
