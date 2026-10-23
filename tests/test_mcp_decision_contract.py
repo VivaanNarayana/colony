@@ -26,12 +26,16 @@ def test_validated_receipt_requires_fact_check_before_reuse_or_research(
     )
     server = colony.mcp.create_mcp(tmp_path)
     result = json.loads(server._tool_manager.get_tool("ask").fn("Which operations?", "lab")[0].text)
-    for guidance in (server.instructions, result["next_action"]):
+    for guidance in (server.instructions,):
         assert "current text supplies every requested fact" in guidance
         assert "not answer completeness" in guidance
         assert "research that gap before answering" in guidance
         assert "saying the excerpt lacks the answer does not resolve it" in guidance
         assert "without confirmation reads or push" in guidance
+    assert "Reuse sufficient reads" in result["next_action"]
+    assert "Research gaps" in result["next_action"]
+    assert "session policy" in result["next_action"]
+    assert server._mcp_server.create_initialization_options().instructions == server.instructions
     assert result["current_repository_reads"][0]["content"] == text
     assert result["verification"]["new_research_performed"] is False
     # The server must not claim to have certified answer completeness itself.

@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -17,6 +18,20 @@ class Client:
         verify(self.keyfile, self.home / "issuer.pub")
         self.url = self.keyfile.grant.server.rstrip("/")
         self.headers = {"Authorization": f"Bearer {token(self.keyfile)}"}
+        self._http = None
+
+    @contextmanager
+    def pooled(self):
+        """Reuse connections only within this client's explicit lifetime."""
+        if self._http is not None:
+            yield self
+            return
+        with httpx.Client(follow_redirects=False) as transport:
+            self._http = transport
+            try:
+                yield self
+            finally:
+                self._http = None
 
     @staticmethod
     def join(home: Path, keyfile: Path, issuer: Path):
@@ -52,7 +67,8 @@ class Client:
         return response.json()
 
     def request(self, route: str, payload: dict):
-        response = httpx.post(self.url + route, json=payload, headers=self.headers, timeout=5)
+        post = self._http.post if self._http is not None else httpx.post
+        response = post(self.url + route, json=payload, headers=self.headers, timeout=5)
         if response.status_code >= 500:
             raise httpx.ConnectError("Colony unavailable")
         response.raise_for_status()

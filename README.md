@@ -72,6 +72,9 @@ path if `colony` is not on its PATH, and an absolute home path:
 ```
 
 Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`.
+MCP pushes always store or queue researched content as tainted, including when a caller
+passes `tainted: false`. A corrected receipt reports `tainted: true`. CLI and HTTP clients
+retain the explicit taint choice for authored trails.
 MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
 assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
@@ -118,7 +121,11 @@ Validated MCP results omit opaque trail/producer audit IDs and a false age flag;
 full client/API receipt keeps them. Taint, status, source proofs and provenance warnings
 remain explicit; namespace and reuse hints remain when not redundant as described above.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
-the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
+the CLI. Its HTTP connection pool lasts for the MCP server session and closes at shutdown;
+redirects remain disabled. MCP initialization carries the complete research, proof, reuse,
+trust and citation policy. Each lookup receipt keeps the immediate action and save-status
+requirements and refers back to that policy. Tool results are JSON data with an explicit
+provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
 
 ## Capture and privacy

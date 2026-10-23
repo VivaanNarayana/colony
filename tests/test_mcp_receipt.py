@@ -198,7 +198,9 @@ def test_research_save_obligation_is_visible_on_every_lookup_path(monkeypatch, t
     server = colony.mcp.create_mcp(tmp_path)
     result = json.loads(server._tool_manager.get_tool("ask").fn("New facts?", "lab")[0].text)
     guidance = result["next_action" if status == "validated" else "research_guidance"]
-    for text in (server.instructions, guidance):
+    # Complete policy is sent once during MCP initialization. Each receipt
+    # retains the immediate save/reuse decision and refers back to that policy.
+    for text in (server.instructions,):
         assert "If new external research is needed" in text
         assert "search matches alone do not supply a file fingerprint" in text
         assert "Before answering, call push with the original question and namespace" in text
@@ -206,6 +208,10 @@ def test_research_save_obligation_is_visible_on_every_lookup_path(monkeypatch, t
         assert "otherwise report the save failure" in text
         assert "Push is separate from research tool calls" in text
         assert "Never invent fingerprints or save using only ask's reads/hashes" in text
+    assert "session policy" in guidance
+    assert "push before answering" in guidance
+    assert "stored=true" in guidance and "queued=true" in guidance
+    assert "otherwise report the save failure" in guidance
     if status == "validated":
         assert "no read or push, even for a new question" in guidance
         assert result["verification"]["new_research_performed"] is False

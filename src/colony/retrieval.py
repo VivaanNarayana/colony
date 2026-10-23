@@ -108,7 +108,13 @@ def rank(question: str, passages: list[str]) -> list[float]:
     # Cross-encoder batches also pad every pair to the longest passage. Source
     # snippets vary substantially in length; avoid that work without changing
     # the passage set, ordering, model or relevance thresholds.
-    return [float(score) for score in model.rerank(question, passages, batch_size=1)]
+    # Identical pairs have identical batch-one model inputs. Compute them once
+    # within this invocation and scatter back, without caching text across calls.
+    unique = list(dict.fromkeys(passages))
+    scores = dict(
+        zip(unique, [float(s) for s in model.rerank(question, unique, batch_size=1)], strict=True)
+    )
+    return [scores[p] for p in passages]
 
 
 def embed_passages(texts: list[str]) -> list[bytes]:

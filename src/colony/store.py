@@ -483,15 +483,18 @@ class Store:
                 len(rows) == 1 and rows[0]["question"].strip().casefold() == normalized_question
             )
             scores = [0.0] if exact_singleton else rank(question, [c[:4000] for c in contents])
+            # A nonpositive answer cannot satisfy the existing strictly positive
+            # contrastive rule, whatever the question-only control would score.
+            positive_support = [i for i in needs_semantic_support if scores[i] > 0]
             topic_scores = (
                 dict(
                     zip(
-                        needs_semantic_support,
-                        rank(question, [rows[i]["question"] for i in needs_semantic_support]),
+                        positive_support,
+                        rank(question, [rows[i]["question"] for i in positive_support]),
                         strict=True,
                     )
                 )
-                if needs_semantic_support
+                if positive_support
                 else {}
             )
             # MS MARCO logits are not calibrated confidence: useful paraphrases can be negative.
@@ -505,8 +508,11 @@ class Store:
             candidates = sorted(
                 (
                     item
-                    for i, item in enumerate(zip(rows, contents, relevance_scores, scores, strict=True))
-                    if i not in topic_scores or item[3] > max(0.0, topic_scores[i])
+                    for i, item in enumerate(
+                        zip(rows, contents, relevance_scores, scores, strict=True)
+                    )
+                    if i not in needs_semantic_support
+                    or (i in topic_scores and item[3] > max(0.0, topic_scores[i]))
                 ),
                 # Raw logits retain the difference between strong positive matches;
                 # sigmoid saturation must not let a weaker answer win on dense score.

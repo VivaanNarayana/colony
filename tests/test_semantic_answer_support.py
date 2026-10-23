@@ -75,7 +75,13 @@ def test_descriptive_paraphrases_reuse_facts_without_accepting_different_attribu
 
 @pytest.mark.parametrize(
     "answer_score,topic_score,expected",
-    [(4.0, 1.0, True), (4.0, 4.0, False), (4.0, 6.0, False), (0.0, -8.0, False), (-2.0, -8.0, False)],
+    [
+        (4.0, 1.0, True),
+        (4.0, 4.0, False),
+        (4.0, 6.0, False),
+        (0.0, -8.0, False),
+        (-2.0, -8.0, False),
+    ],
 )
 def test_nonliteral_answer_requires_positive_discriminating_semantic_support(
     team, monkeypatch, answer_score, topic_score, expected
@@ -113,4 +119,4 @@ def test_nonliteral_answer_requires_positive_discriminating_semantic_support(
     monkeypatch.setattr(colony.store, "rank", controlled_rank)
     result = store.find_answer(question, ["team"], 604800, 0.60, query_vector=vector)
     assert result["hit"] == expected
-    assert ranked == [content, saved_question]
+    assert ranked == ([content, saved_question] if answer_score > 0 else [content])
