@@ -1,3 +1,44 @@
+ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT59; TASK UNFINISHED.
+Explicit new5sharedpoints: baseline16%used/84%remaining, STOP21%used/79%remaining.
+Latestobserved16%; reset1793382050=2026-10-30 17:40:50UTC; checkusageafterphases.
+Read budget-allowance-3.json; allpriorcosts/allowancesretained; noresetrenewsbudget.
+Runtime 89809f6e1fd09cb79b2c7e59baeda049bcddb4e0; matchedfenceparser +indexrepresentationv10.
+Source byte cap fixbde1af1 retained. Models/weights/scoring/guards unchanged.
+Tests382passed/1knownwrongattribute failure/1Windows skip;45focusedpass;Ruffpass.
+IndependentAstra no blocker. Rebuildall3vectortables; missing-source recoverygap remains.
+50retainedcorpusfiles/1588packetcomparisons unchanged; no nativebenefitclaim/benchmark.
+Read investigation59/README,outcome,diagnostics. Agecrowding reproduced(0models);
+freshfirstSQL rejected forlosingageddiagnostic; answerprojection andresidualcosine
+rejected. Allnegativeoutcomes/inputs/costsretained; no heuristicsintegrated/retuned.
+Optional official queryinstruction(scoreonly) pending; no-instructionmodeisvalid.
+Targeted sourceindex repair via exactduplicateretry onlyproposal; noacknowledgment
+regression or automaticquery/startupscan accepted. Reconcilebeforeimplementation.
+No activebenchmark; currentruntimeunmeasured; all8currentchecks conservativefailures.
+Last complete55=3/8 on8380724; nextnative56unused. Neveridenticalcoderetry/resample.
+All1–55evidence/checkpoints56–58/harness/subject/gates/proof/taint/scope/freshness
+unchanged. PRdraft/unmerged/noauto. Continueboundedworkonlywhile sharedbudgetpermits.
+
+ACTIVE EXPLICIT FRESH ALLOWANCE3 — FIVE SHARED POINTS, ALL PRIOR COSTS RETAINED.
+Human: newallowance5%,84%remaining→79%; same usage behavior rules.
+Baseline16%used, STOP21%used. Reset1793382050=2026-10-30 17:40:50UTC.
+All coordinator/workers/subjects/reviews share this5point increase. Checkafterphases
+and longwork; reserveheadroom; atthreshold stopworkers/benchmark, retainpartialcosts,
+updatecheckpoint andpauseunfinished. Unreliableusage requirespause; noreset/bypass.
+Read budget-allowance-3.json. Priorallowances2points+allhistoricalcostsretained.
+Current sourcebde1af1, docs679eea5; measured8380724/trial55=3/8; modelsunchanged.
+Next reconcile bounded age-candidate-crowding investigation before edits/tests;
+no fullbenchmark merely for source-byte fix. No benchmark active.
+
+ACTIVE AFTER EXPLICIT HUMAN CONTINUATION — SAME ALLOWANCE2, NO RENEWAL.
+Read budget-allowance-2.json active_segment. Original22→24 consumed2points retained.
+Sameaccount twice nowreports16%, reset1793382050 (2026-10-30 17:40:50UTC), causeunknown.
+Newsegment baseline16%, STOP22%; atmost6remainingpoints shared by all modelwork.
+Do not use old30% threshold after discontinuity or grant another8points on reset.
+Current sourcebde1af1, docs679eea5; latest measured8380724/trial55=3/8.
+Models/harness/gates unchanged. Preserve historical pause58 and all outcomes/costs.
+Next bounded age-candidate-crowding investigation; reconcile before changes/tests;
+no full benchmark solely for existing source-byte cap fix. No benchmark active.
+
 PAUSED BY EXPLICIT USER REQUEST — ALL WORKERS STOPPED; TASK UNFINISHED.
 Do not resume or run another benchmark without a new human instruction.
 User: pause your work and pause all subagents; update RESUME and PR; no benchmark.

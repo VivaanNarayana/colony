@@ -1,6 +1,6 @@
 {
   "allowance": 2,
-  "status": "Paused at explicit human request; no automatic continuation",
+  "status": "Superseded for new work by explicit fresh5point allowance3; consumed costs retained",
   "human_authorization": "Authorize fresh 8 points:22%to30%",
   "baseline_weekly_used_percent": 22,
   "stopping_threshold_weekly_used_percent": 30,
@@ -22,8 +22,18 @@
   "no_reset_credits_accounts_or_api_billing": true,
   "reporting_may_lag": true,
   "at_utc": "2026-10-23T12:45:20.962510+00:00",
-  "last_observed_weekly_used_percent": 24,
+  "last_observed_weekly_used_percent": 16,
   "observed_increase_percentage_points": 2,
-  "last_phase": "User pause; all workers stopped; source fix published, index-gap reproduction retained, age-crowding investigation interrupted",
-  "last_observed_utc": "2026-10-23T14:38:00.713784+00:00"
+  "last_phase": "Human resumed; new usage segment recorded before investigation; original2points retained",
+  "last_observed_utc": "2026-10-23T22:48:56.990285+00:00",
+  "active_segment": {
+    "baseline_observed_weekly_percent": 16,
+    "stopping_threshold_weekly_percent": 22,
+    "carried_consumed_percentage_points": 2,
+    "remaining_percentage_points": 6,
+    "reset_unix": 1793382050,
+    "reset_utc": "2026-10-30 17:40:50 UTC",
+    "reason": "Same account twice reports16 instead of prior24, with changed reset; cause unknown; do not restore consumed allowance",
+    "observed_at_utc": "2026-10-23T22:48:56.990268+00:00"
+  }
 }
