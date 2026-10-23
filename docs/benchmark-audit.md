@@ -1,5 +1,11 @@
 # Benchmark independence audit
 
+**Latest: tests-only taint and efficiency checkpoint 48; paused.** Source `2261d26` passes **300 tests with one existing Windows skip**, 148 focused tests, and Ruff/whitespace checks. MCP research is tainted before storage/queue even when a caller requests false. Complete policy remains in MCP initialization; receipts avoid repeating it. MCP sessions reuse an HTTP pool, duplicate inference pairs are scored once, and nonpositive answers skip a control that cannot admit them. Existing fact/relevance/proof/freshness/scope decisions and all benchmark contracts remain unchanged. Fifteen new regressions and all failed development phases are retained. **No benchmark ran; the three performance failures are not demonstrated fixed.** Only tests/lint is green; seven benchmark checks remain pending and blocking. Trial 47 remains the last measured report, 5/8 on its own source. All eight strict required checks remain active without bypass. PR #3 stays draft/unmerged; no further work or run is scheduled.
+
+[Complete checkpoint 48 tests and evidence](results/benchmark-remediation/attempt-48/README.md).
+
+## Historical evidence below
+
 **Latest: single trial 47 completes 5/8 gates and is paused.** Both arms pass 117/117 local checks and 24/24 live core facts; feature citations pass 24/24 versus main's 18/24. All 13 actual push fingerprints validate, and the frozen both-arm protocol gate passes. Gross tokens increase 8.17%, uncached input/output increase 35.24%, and time's 5.18% lower point total has a confidence interval crossing zero: all three performance gates remain failed and blocking. A separate feature `tainted:false` instruction deviation is retained; the frozen analyzer does not check that field. One comparison only, no retries, complete failures/evidence retained, exact offline public replay and unchanged required gates. Tests are reused from identical checkpoint-46 code: 285 passed, one existing skip; Ruff/whitespace pass. PR #3 stays draft and unmerged; no further work or run is scheduled.
 
 [Complete trial 47 evidence](results/benchmark-remediation/attempt-47/README.md).

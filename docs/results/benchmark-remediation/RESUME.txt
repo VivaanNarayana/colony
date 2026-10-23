@@ -1,3 +1,28 @@
+PAUSED AFTER USER'S TESTS-ONLY CHECKPOINT48, 2026-10-23 UTC.
+Tested source 2261d26fa76ef0e0a5e71356490a6233d537fdc0; same branch, PR3 draft/unmerged/no auto-merge.
+Full suite ONCE:300 passed,1 existing Windows symlink skip,85.445s JUnit.
+Final focused148pass; Ruff/diff pass.15 new regression cases.
+MCP research cannot downgrade taint:false; server marks true before storage/queue.
+Actual stored/scrubbed/encrypted queued/retried trails and failed receipts tested.
+Full policy retained in MCP initialization; receipts retain immediate action,
+save-status and session-policy reference. Actual text/proofs/trust/citations unchanged.
+MCP session reuses identity-scoped HTTP pool; closes on error/shutdown, no redirects.
+Exact duplicate model pairs scored once within invocation; no persistent cache.
+Nonpositive saved-answer scores skip question-only control, same strict admission.
+All existing relevance/fact/proof/freshness/scope decisions pass unchanged.
+Red9fail2pass and first-focused7fail107pass retained byte-for-byte in raw ZIP;
+missing repository-relative citation reminder restored, no old assertion relaxed.
+No local/native benchmark, profile or analyzer replay. Three performance failures
+are NOT demonstrated fixed; no performance gain or current 8-gate verdict claimed.
+Trial47 remains historical5/8 for own source; all failures/R38 taint issue unchanged.
+Only tests/lint SUCCESS;7 benchmark checks PENDING/blocking on changed runtime.
+All8 strict required active25440133,no bypass; harness/models/contracts unchanged.
+Main freshly fetched unchanged 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d, provenance only, no comparison run.
+All wake requests released; persistent power unchanged. Publish evidence/update PR3
+and pause. No further work/run/automation/plan file. Resume only on new user request.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS TESTS-ONLY RECORD.
+
 PAUSED AFTER USER'S SINGLE BENCHMARK TRIAL47, 2026-10-23 UTC.
 Measuredsource1bcb38ebeeaecb29a548ecd02017804043d8a789 vs freshlyfetchedcurrentmain
 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d, recheckedunchanged. SamebranchPR3draft,

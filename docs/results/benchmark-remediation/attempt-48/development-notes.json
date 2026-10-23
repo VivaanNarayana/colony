@@ -1,0 +1,12 @@
+{
+  "red": "Before the runtime fixes, 9 failures expose accepted tainted:false, duplicated receipt policy, and repeated identical reranking work; 2 taint-true cases already pass.",
+  "focused": "107 pass, 7 fail: unchanged miss-guidance tests require the literal repository-relative targets reminder. It was restored in production guidance; those assertions were not relaxed.",
+  "focused2": "148 pass after restoring the citation reminder and adding two failed/inconsistent save-receipt taint regressions.",
+  "full": "One full-suite invocation on committed source; 300 pass, one existing Windows symlink skip. Original expected hit/miss, relevance, freshness, scope, malformed-proof and fact-support decisions remain intact.",
+  "existing_tests_updated": [
+    "test_mcp_receipt.py and test_mcp_decision_contract.py assert complete policy in MCP initialization rather than verbatim in every receipt; per-receipt immediate action/save-status/session-policy checks and SDK initialization instruction checks remain.",
+    "test_semantic_answer_support.py retains all five score inputs and expected hit/miss decisions; its work-count assertion now expects no question-only inference when the actual answer score cannot pass the original strictly-positive rule."
+  ],
+  "source_provenance": "Final source and all tests are committed and hashed. Earlier uncommitted intermediate source variants were not separately archived; all original test outputs, JUnit, exit and wake records are archived byte-for-byte.",
+  "not_demonstrated": "No live model adherence, token savings, elapsed-time savings or performance-gate pass was measured. Changing policy repetition can affect model behavior; a future authorized benchmark must still validate both arms under the unchanged gates."
+}
