@@ -1,3 +1,36 @@
+PAUSED AFTER USER'S SINGLE BENCHMARK TRIAL49, 2026-10-23 UTC.
+Measured source e631f5b3d001e6ddf53286b1c60ff78af743c955 vs fresh current main 6fa6826aa4c835001c0d2bc8f3bec838499e5b5d; rechecked unchanged.
+Same branch PR3 draft/unmerged/no auto-merge. Runtime/tests/harness unchanged during run.
+Local ONCE117/117 both,234 raw rows audit exact;25.047743% lower,
+CI+16.206957..+35.437965%. All paraphrases/variants/repetitions pass.
+All48 native sessions ONCE,runner exit0;official analyzer exit1,complete4/8 verdict.
+PASS loaded implementations/tests/local/correctness. FAIL protocol+all3performance.
+Gross1127063/1429053,+26.794421%; reductionCI-44.929844..-9.536998%.
+Uncached145815/235453,+61.473785%; reductionCI-119.949509..-23.792566%.
+Seconds245.936/246.336,+0.162644%; reductionCI-17.398182..+12.603186%.
+Core facts24/24 both,citations14main/24feature. Ten main invalid targets retained.
+Feature R21 mcp2 hit metadata insufficient for requested tool signatures; labelFALSE.
+Four new research calls obtain correct facts, but NO PUSH: protocol failure retained.
+Main frozen protocol0,feature1. No malformed/mismatched push:all14 actual fingerprints
+match preceding new reads. Main6pushes2stored4queued;feature8allstored.
+All8 actual feature stored taints true; no feature explicit-false or offline case here;
+checkpoint48 regressions cover those paths. Main R37 serve2 explicitfalse stored/queued
+false is additional ungated deviation; no taint exemption or retroactive regrading.
+Feature31research/63tools/15relevant hits vs main16/46/18. Additional scope3/stale2 misses.
+No isolated causal claim for each optimization; all native costs retained.
+48 shuffled answers/packets,3 novel excerpts,15 research traces primary-assistant reviewed,
+not independent blind. Labels frozen before official analysis. All source bytes/hash valid.
+Exact public archive offline comparisonJSON/exit1 replay,0 new subject/provider calls.
+Supplemental audit-helper redaction comparison error retained, fixed helper only;
+no benchmark/raw data/rubric/label changed. Tests reused identical2261d26 source:
+300pass1existing skip,Ruff/whitespace pass;0 new test/profile invocations.
+All attempts1..48 byte unchanged. All8 strict required active25440133,no bypass;
+4 success4 failure. Wake released,persistent power/clocks unchanged. Full objective
+remains UNFINISHED. Publish/update PR3 and pause;no fixes,retries,further work/run.
+No standalone plan file. Resume only on new user request.
+
+HISTORICAL CHECKPOINTS BELOW ARE SUPERSEDED BY THIS COMPLETE FAILED TRIAL RECORD.
+
 PAUSED AFTER USER'S TESTS-ONLY CHECKPOINT48, 2026-10-23 UTC.
 Tested source 2261d26fa76ef0e0a5e71356490a6233d537fdc0; same branch, PR3 draft/unmerged/no auto-merge.
 Full suite ONCE:300 passed,1 existing Windows symlink skip,85.445s JUnit.

@@ -1,0 +1,69 @@
+{
+  "role": "Primary-assistant review of all 48 shuffled answers/current packets and 15 research/save traces; not an independent blind review. Three novel current-source excerpts were reviewed in full.",
+  "answers_reviewed": 48,
+  "novel_current_contexts": 3,
+  "core_facts_correct": {
+    "main": 24,
+    "feature": 24
+  },
+  "valid_citations": {
+    "main": 14,
+    "feature": 24
+  },
+  "incorrect_core_fact_review_ids": [],
+  "invalid_citation_review_ids": [
+    "R04",
+    "R07",
+    "R15",
+    "R27",
+    "R31",
+    "R32",
+    "R37",
+    "R39",
+    "R43",
+    "R47"
+  ],
+  "relevant_packet_exceptions": [
+    {
+      "id": "R21",
+      "arm": "feature",
+      "task": "mcp-2",
+      "relevant": false,
+      "reason": "The validated current README excerpt starts at line96 and describes receipt metadata, not the requested ask/push tool signatures. Source validity alone does not establish answer completeness."
+    }
+  ],
+  "all_current_excerpts_match_scrubbed_frozen_source_lines_and_original_hashes": true,
+  "all_read_bytes_and_hashes_match_frozen_corpus": true,
+  "all_search_matches_match_actual_frozen_lines": true,
+  "all_14_push_fingerprints_match_actual_preceding_new_reads": true,
+  "known_protocol_failure": {
+    "id": "R21",
+    "arm": "feature",
+    "task": "mcp-2",
+    "reason": "Four new research calls obtain the missing tool facts, but there is no push before the correct final answer. Missing researched-answer save remains blocking."
+  },
+  "bare_relative_repository_reference_accepted_under_unchanged_rubric": [
+    "R26",
+    "R41",
+    "R45"
+  ],
+  "taint": {
+    "feature_stored": 8,
+    "feature_stored_all_true": true,
+    "feature_queued": 0,
+    "feature_explicit_false_arguments": 0,
+    "limit": "This run does not exercise a feature-side explicit-false override or offline queue. Checkpoint48 regressions cover both. The eight actual stored feature trails are tainted.",
+    "additional_ungated_main_deviation": {
+      "id": "R37",
+      "task": "serve-2",
+      "explicit_tainted": false,
+      "stored_tainted": false,
+      "queued_tainted": false,
+      "reason": "Main retains externally researched content with false taint in its stored row and encrypted queue. The frozen analyzer does not gate the taint field; no mid-run waiver or regrading is introduced."
+    }
+  },
+  "rubric_unchanged": true,
+  "labels_frozen_before_gate_analysis": true,
+  "supplemental_audit_correction": "An initial new audit-helper assertion compared eight scrubbed README excerpts to raw file text. The existing scrubber replaces the prose 'bearer credentials' with '[REDACTED]'. The helper now compares the same scrubbed source lines while still checking original full-file hashes. No runtime, benchmark, raw evidence, rubric or label was changed to resolve this helper error; the initial diagnostic is retained separately.",
+  "frozen_utc": "2026-10-23T00:54:43.176073+00:00"
+}

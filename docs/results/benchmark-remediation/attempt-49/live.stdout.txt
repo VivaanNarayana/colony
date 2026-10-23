@@ -1,0 +1,97 @@
+{"wake_request_active": true, "child_pid": 15024}
+{"arm": "main", "task": "mcp-1"}
+{"task_id": "mcp-1", "mode": "colony", "tokens": 79940, "seconds": 18.416, "tool_calls": 4, "ask_calls": 1}
+{"arm": "feature", "task": "mcp-1"}
+{"task_id": "mcp-1", "mode": "colony", "tokens": 81677, "seconds": 13.355, "tool_calls": 4, "ask_calls": 1}
+{"arm": "feature", "task": "outage-3"}
+{"task_id": "outage-3", "mode": "colony", "tokens": 34166, "seconds": 7.288, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "outage-3"}
+{"task_id": "outage-3", "mode": "colony", "tokens": 33409, "seconds": 8.465, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "install-2"}
+{"task_id": "install-2", "mode": "colony", "tokens": 33921, "seconds": 7.708, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "install-2"}
+{"task_id": "install-2", "mode": "colony", "tokens": 34363, "seconds": 8.379, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "capture-3"}
+{"task_id": "capture-3", "mode": "colony", "tokens": 34258, "seconds": 7.897, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "capture-3"}
+{"task_id": "capture-3", "mode": "colony", "tokens": 33199, "seconds": 7.343, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "outage-1"}
+{"task_id": "outage-1", "mode": "colony", "tokens": 90307, "seconds": 19.579, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "outage-1"}
+{"task_id": "outage-1", "mode": "colony", "tokens": 137461, "seconds": 19.757, "tool_calls": 8, "ask_calls": 1}
+{"arm": "feature", "task": "outage-2"}
+{"task_id": "outage-2", "mode": "colony", "tokens": 34463, "seconds": 7.405, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "outage-2"}
+{"task_id": "outage-2", "mode": "colony", "tokens": 33413, "seconds": 6.94, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "mcp-2"}
+{"task_id": "mcp-2", "mode": "colony", "tokens": 33729, "seconds": 7.516, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "mcp-2"}
+{"task_id": "mcp-2", "mode": "colony", "tokens": 95207, "seconds": 11.151, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "mcp-3"}
+{"task_id": "mcp-3", "mode": "colony", "tokens": 34846, "seconds": 8.217, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "mcp-3"}
+{"task_id": "mcp-3", "mode": "colony", "tokens": 33554, "seconds": 12.342, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "serve-2"}
+{"task_id": "serve-2", "mode": "colony", "tokens": 92224, "seconds": 17.882, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "serve-2"}
+{"task_id": "serve-2", "mode": "colony", "tokens": 118304, "seconds": 15.297, "tool_calls": 6, "ask_calls": 1}
+{"arm": "feature", "task": "tests-2"}
+{"task_id": "tests-2", "mode": "colony", "tokens": 34264, "seconds": 7.728, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "tests-2"}
+{"task_id": "tests-2", "mode": "colony", "tokens": 33069, "seconds": 7.586, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "scope-2"}
+{"task_id": "scope-2", "mode": "colony", "tokens": 88535, "seconds": 13.332, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "scope-2"}
+{"task_id": "scope-2", "mode": "colony", "tokens": 122364, "seconds": 16.055, "tool_calls": 7, "ask_calls": 1}
+{"arm": "feature", "task": "stale-3"}
+{"task_id": "stale-3", "mode": "colony", "tokens": 74470, "seconds": 10.484, "tool_calls": 4, "ask_calls": 1}
+{"arm": "main", "task": "stale-3"}
+{"task_id": "stale-3", "mode": "colony", "tokens": 71388, "seconds": 13.965, "tool_calls": 4, "ask_calls": 1}
+{"arm": "main", "task": "capture-2"}
+{"task_id": "capture-2", "mode": "colony", "tokens": 33195, "seconds": 6.358, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "capture-2"}
+{"task_id": "capture-2", "mode": "colony", "tokens": 34599, "seconds": 7.452, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "install-3"}
+{"task_id": "install-3", "mode": "colony", "tokens": 34218, "seconds": 6.478, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "install-3"}
+{"task_id": "install-3", "mode": "colony", "tokens": 33353, "seconds": 9.321, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "tests-3"}
+{"task_id": "tests-3", "mode": "colony", "tokens": 33051, "seconds": 7.584, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "tests-3"}
+{"task_id": "tests-3", "mode": "colony", "tokens": 34136, "seconds": 6.536, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "install-1"}
+{"task_id": "install-1", "mode": "colony", "tokens": 34398, "seconds": 6.81, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "install-1"}
+{"task_id": "install-1", "mode": "colony", "tokens": 33361, "seconds": 7.221, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "serve-3"}
+{"task_id": "serve-3", "mode": "colony", "tokens": 103994, "seconds": 18.935, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "serve-3"}
+{"task_id": "serve-3", "mode": "colony", "tokens": 82616, "seconds": 12.29, "tool_calls": 4, "ask_calls": 1}
+{"arm": "feature", "task": "stale-1"}
+{"task_id": "stale-1", "mode": "colony", "tokens": 34349, "seconds": 7.868, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "stale-1"}
+{"task_id": "stale-1", "mode": "colony", "tokens": 33358, "seconds": 7.493, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "scope-3"}
+{"task_id": "scope-3", "mode": "colony", "tokens": 33616, "seconds": 7.193, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "scope-3"}
+{"task_id": "scope-3", "mode": "colony", "tokens": 103818, "seconds": 14.366, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "scope-1"}
+{"task_id": "scope-1", "mode": "colony", "tokens": 34698, "seconds": 11.816, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "scope-1"}
+{"task_id": "scope-1", "mode": "colony", "tokens": 33190, "seconds": 8.292, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "serve-1"}
+{"task_id": "serve-1", "mode": "colony", "tokens": 33536, "seconds": 8.077, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "serve-1"}
+{"task_id": "serve-1", "mode": "colony", "tokens": 34324, "seconds": 7.542, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "tests-1"}
+{"task_id": "tests-1", "mode": "colony", "tokens": 34242, "seconds": 7.18, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "tests-1"}
+{"task_id": "tests-1", "mode": "colony", "tokens": 33140, "seconds": 7.593, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "stale-2"}
+{"task_id": "stale-2", "mode": "colony", "tokens": 33355, "seconds": 7.578, "tool_calls": 1, "ask_calls": 1}
+{"arm": "feature", "task": "stale-2"}
+{"task_id": "stale-2", "mode": "colony", "tokens": 98174, "seconds": 17.397, "tool_calls": 5, "ask_calls": 1}
+{"arm": "feature", "task": "capture-1"}
+{"task_id": "capture-1", "mode": "colony", "tokens": 33638, "seconds": 7.588, "tool_calls": 1, "ask_calls": 1}
+{"arm": "main", "task": "capture-1"}
+{"task_id": "capture-1", "mode": "colony", "tokens": 33226, "seconds": 9.217, "tool_calls": 1, "ask_calls": 1}

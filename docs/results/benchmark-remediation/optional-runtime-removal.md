@@ -1,5 +1,11 @@
 # Removal of optional runtime changes, October 22, 2026
 
+**Latest: single trial 49 completes 4/8 gates; paused.** Both arms pass 117/117 local checks and 24/24 live core facts; feature citations pass 24/24 versus main's 14/24. All 14 push fingerprints validate and all eight actual feature stored taints are true. Feature `mcp-2` researches missing tool facts but omits its required save: protocol fails. Gross tokens increase 26.79%, uncached input/output increase 61.47%, and time's interval crosses zero: all three performance gates also fail. All four failures remain blocking; all eight strict required checks remain active without bypass. One comparison only, no retries; complete evidence retained and exact offline archive replay verified. Tests reuse identical checkpoint-48 code (300 passed, one existing skip; Ruff/whitespace pass). PR #3 stays draft/unmerged; no further work or run is scheduled.
+
+[Complete trial 49 evidence](attempt-49/README.md).
+
+## Historical evidence below
+
 **Latest: tests-only taint and efficiency checkpoint 48; paused.** Source `2261d26` passes **300 tests with one existing Windows skip**, 148 focused tests, and Ruff/whitespace checks. MCP research is tainted before storage/queue even when a caller requests false. Complete policy remains in MCP initialization; receipts avoid repeating it. MCP sessions reuse an HTTP pool, duplicate inference pairs are scored once, and nonpositive answers skip a control that cannot admit them. Existing fact/relevance/proof/freshness/scope decisions and all benchmark contracts remain unchanged. Fifteen new regressions and all failed development phases are retained. **No benchmark ran; the three performance failures are not demonstrated fixed.** Only tests/lint is green; seven benchmark checks remain pending and blocking. Trial 47 remains the last measured report, 5/8 on its own source. All eight strict required checks remain active without bypass. PR #3 stays draft/unmerged; no further work or run is scheduled.
 
 [Complete checkpoint 48 tests and evidence](attempt-48/README.md).

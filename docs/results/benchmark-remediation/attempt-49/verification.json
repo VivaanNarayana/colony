@@ -1,0 +1,19 @@
+{
+  "commit": "2261d26fa76ef0e0a5e71356490a6233d537fdc0",
+  "measured_commit": "e631f5b3d001e6ddf53286b1c60ff78af743c955",
+  "tests_passed": 300,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 85.445,
+  "pytest_exit_code": 0,
+  "ruff_passed": true,
+  "ruff_exit_code": 0,
+  "diff_check_passed": true,
+  "tests_reused_from": "docs/results/benchmark-remediation/attempt-48",
+  "source_scripts_tests_identical_to_tested_commit": true,
+  "new_test_invocations": 0,
+  "full_suite_invocations_in_checkpoint48": 1,
+  "all_test_phase_failures_retained_in_checkpoint48": true,
+  "platform": "Windows-11-10.0.26200-SP0 / Python3.13.1",
+  "scope": "Identical-code full-suite reuse for one authorized benchmark; no test rerun or benchmark retry."
+}

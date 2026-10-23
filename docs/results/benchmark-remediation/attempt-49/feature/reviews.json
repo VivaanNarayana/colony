@@ -1,0 +1,170 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ]
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ]
+  }
+}
