@@ -11,6 +11,14 @@ from colony.models import Keyfile, Trail
 from colony.security import fingerprint, private_write, scrub, token, verify
 
 
+class RetryReceiptError(ValueError):
+    """A retry stopped with an unconfirmed item and any later items retained."""
+
+    def __init__(self, sent: int):
+        super().__init__("Save acknowledgment not confirmed; queued item retained")
+        self.sent = sent
+
+
 class Client:
     def __init__(self, home: Path | None = None):
         self.home = home or Path(os.environ.get("COLONY_HOME", str(Path.home() / ".colony")))
@@ -131,9 +139,19 @@ class Client:
                 raise ValueError("Queued trail belongs to another identity")
             trail = self.sanitized(Trail.model_validate(payload["trail"]))
             try:
-                self.request("/trails", trail.model_dump())
+                receipt = self.request("/trails", trail.model_dump())
             except httpx.TransportError:
                 return {"sent": sent, "pending": True}
+            # HTTP success alone does not confirm durable storage of this item.
+            # Never discard ciphertext on malformed or conflicting receipts.
+            if (
+                not isinstance(receipt, dict)
+                or receipt.get("id") != trail.id
+                or receipt.get("stored") is not True
+                or receipt.get("queued", False) is not False
+                or receipt.get("error")
+            ):
+                raise RetryReceiptError(sent)
             path.unlink()
             sent += 1
         return {"sent": sent, "pending": False}
