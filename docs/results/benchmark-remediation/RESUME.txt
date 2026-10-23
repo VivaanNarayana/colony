@@ -1,3 +1,32 @@
+PAUSED CONSERVATIVELY FOR SHARED USAGE HEADROOM — TASK UNFINISHED.
+Startingweekly5%, lastobserved12%, increase7percentagepoints; hardstoppingthreshold13%.
+13%HASNOTYETBEENOBSERVED. One reportedpoint reserved for accountinglag/inflightcosts
+and finalreport; do not claim full8point allowanceconsumed or allgatespassed.
+All3workersidle, noactivebenchmark, noautomaticjob. No furthermodel/runtime/benchmark
+phase started after thischeckpoint. Naturalresetdoesnotrenew consumedallowance.
+Reset1793294233=2026-10-29 17:17:13UTC. Noresetcredits/APIbilling/accountswitch used.
+Usageisobserved/coarse/lagged, nothardbillingcap. Read reliableusagebeforefuturework;
+preserveoriginal5%baseline/13%threshold and alreadyobserved7pointsconsumption.
+
+EXACT RESUME: runtime7f1cb1015ef18afde2f5e0b4be981bf35725a6cc, evidencecommit9cf60d3,
+main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d, branchfeat/benchmark-independent-evaluation.
+Read attempt-54/README.md,comparison.json,manual-review.json,research-review.json,
+tool-audit.json,outcome.json,implementation-review.json,selected-native-review.json,
+sdk-policy-comparison.json and budget-checkpoint.json. No pendingapprovedretrievalfix.
+Trial54local+48nativecomplete; analyzeronceEVIDENCE_INTEGRITY: maininstall1usedaskhash
+withoutprecedingnewresearch. Actual64hash/queuedreceipt doesn'tqualify. No mainexemption,
+repair, injectedread, discardedcost, resampling oridentical-coderetry. No complete8gate
+verdict for54; latestcomplete53=3/8 ondistinctruntime. Eightstrictchecksallrequired,
+currentheadconservativelyfailure; nevercarryhistoricalgreensonto unprovenruntime.
+Final340pass/1fail/1existingWindows skip; Ruff/whitespacepass. Wrong-attributeexpiry/
+deletionpermissionredtestretained. Modelsunchanged/noauxmodel, subjectgpt-6-luna/low.
+Core24/24both,citations15/24main24/24feature54reviewed; qualitylabelsdon'tcureproofviolation.
+Tasknative50+51+53+54gross10397218,52native0; alldevelopment/reviewcostscountedaccountwide.
+RESIDUAL: falsehit/wordingmisses, irrelevantmetadata and nativeperformance remainunsolved.
+Any futurecomparisonneedsmeaningfulgeneralruntimechange, appropriatefinaltests/review,
+freshmain, unchangedharness/model/budgets and actualnewreadproofs; neverretry54unchanged.
+PR3draft/unmerged/noautomerge; history1-54/manifestsimmutable. Earliercheckpointbelow.
+
 BUDGETED REMEDIATION — TRIAL54 INTEGRITY CHECKPOINT; NEAR STOPPING THRESHOLD.
 Baseline5%, latest12%, STOP13%; observed7points; reset1793294233. Readusagebeforeanywork.
 Allretrievalmodels unchanged. Subjects gpt-6-luna/low. PR3draft/unmerged/noautomerge.

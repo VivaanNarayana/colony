@@ -1,0 +1,48 @@
+{
+  "status": "Paused conservatively to preserve shared usage headroom; unfinished",
+  "baseline_weekly_used_percent": 5,
+  "last_observed_weekly_used_percent": 12,
+  "observed_increase_percentage_points": 7,
+  "stopping_threshold_weekly_used_percent": 13,
+  "threshold_observed": false,
+  "reported_percentage_point_headroom": 1,
+  "reason": "Reserve remaining reported point for usage-report lag, any accounting still in flight and final reporting; no new runtime/model/benchmark phase.",
+  "weekly_window_minutes": 10080,
+  "resets_at": 1793294233,
+  "resets_utc": "2026-10-29 17:17:13 UTC",
+  "natural_reset_does_not_renew_allowance": true,
+  "no_credits_resets_or_api_billing": true,
+  "measurement_lag_can_overshoot": true,
+  "at_utc": "2026-10-23T05:10:25.795746+00:00",
+  "branch": "feat/benchmark-independent-evaluation",
+  "runtime": "7f1cb1015ef18afde2f5e0b4be981bf35725a6cc",
+  "evidence_commit": "9cf60d34136d3dede5a929d581730ce44f7efb1a",
+  "baseline_main": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "latest_trial": 54,
+  "latest_complete_eight_gate_trial": 53,
+  "latest_complete_gates_passed": 3,
+  "current_complete_eight_gate_verdict": false,
+  "final_tests": {
+    "passed": 340,
+    "failed": 1,
+    "skipped": 1,
+    "ruff": true
+  },
+  "native_subject_tokens_this_task": 10397218,
+  "all_costs_and_failures_retained": true,
+  "all_three_workers_idle": true,
+  "active_benchmark": false,
+  "unresolved": [
+    "Saved-answer wording sensitivity and wrong-attribute false hit",
+    "Current-source metadata selected instead of requested facts",
+    "Native gross/uncached/time improvement requirements",
+    "Trial54 main install1 proof from ask without preceding newread invalidates official analysis"
+  ],
+  "resume_checkpoint": "Read RESUME.txt top and attempt54 README/comparison/manual-review/research-review/tool-audit. No identical-source benchmark retry. All models/guardrails/eight strict gates fixed. Reconcile original5% baseline/13% threshold and observed7point consumption before any future authorized work; stop if threshold already reached. Find a meaningful general runtime fix before another comparison; no approved pending retrieval patch.",
+  "pr": {
+    "number": 3,
+    "draft": true,
+    "merged": false,
+    "auto_merge": false
+  }
+}

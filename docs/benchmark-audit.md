@@ -1,5 +1,8 @@
 # Benchmark independence audit
 
+[Paused checkpoint](results/benchmark-remediation/RESUME.txt): observedweekly5%to12%(+7points), threshold13%notyetobserved; remainingreportedpointreservedforlag/finalreport. Unfinished. Trial54integrityrejection/no completeverdict; latestcomplete53=3/8. Allmodels/gatesfixed,PR3draft/unmerged.
+
+
 Latest [trial54](results/benchmark-remediation/attempt-54/README.md) is an evidence-integrity rejection: main pushed askhash without newresearch. No complete8gateverdict; latestcomplete53=3/8.340pass/1fail/1skip;48sessions/allcostsretained. Weeklybaseline5%,observed12%,stop13%; nearbudgetstop/no newbenchmark, PR3draft.
 
 
