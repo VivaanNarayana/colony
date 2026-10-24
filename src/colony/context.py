@@ -252,6 +252,7 @@ def excerpts(
                 lexical[i] + 0.5 * fused_score(0, s) for i, s in zip(eligible, scores, strict=True)
             ]
     selected, occupied, cache, budget = [], [], {}, 2800
+    overlapping = []
     best = max(scores, default=0)
     by_ref = {s.ref: s for s in sources}
     order = sorted(range(len(scores)), key=scores.__getitem__, reverse=True)
@@ -279,6 +280,7 @@ def excerpts(
         text = text[:limit]
         end = start + text.count("\n")
         if any(r == ref and start <= b and end >= a for r, a, b in occupied):
+            overlapping.append((ref, start, end, text))
             continue
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
         occupied.append((ref, start, end))
@@ -312,4 +314,36 @@ def excerpts(
                     selected.insert(
                         0, {"ref": ref, "line": start, "text": text, "complete_file": False}
                     )
+    # Finish the original selection first: an overlap must not consume space
+    # that would have supplied another independent passage or section context.
+    # Then retain distinct facts in skipped overlapping windows when their
+    # complete contiguous union fits the unused original budgets. No new read,
+    # ranking, clipping, replacement of existing text or excerpt slot is needed.
+    budget = 2800 - sum(len(item["text"]) for item in selected)
+    for ref, start, end, text in overlapping:
+        for item in selected:
+            low = item["line"]
+            high = low + item["text"].count("\n")
+            if item["ref"] != ref or start > high or end < low:
+                continue
+            begin, finish = min(low, start), max(high, end)
+            merged = "\n".join(cache[ref][begin - 1 : finish])
+            added = len(merged) - len(item["text"])
+            if (
+                added > 0
+                and len(merged) <= 2400
+                and added <= budget
+                and item["text"] in merged
+                and text in merged
+                and not any(
+                    other is not item
+                    and other["ref"] == ref
+                    and begin <= other["line"] + other["text"].count("\n")
+                    and finish >= other["line"]
+                    for other in selected
+                )
+            ):
+                item["line"], item["text"] = begin, merged
+                budget -= added
+            break
     return selected

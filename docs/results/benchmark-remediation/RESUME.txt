@@ -1,3 +1,18 @@
+CHECKPOINT81 — GENERAL OVERLAP FACT PRESERVATION; NATIVE UNMEASURED.
+Same allowance4 baseline20%, latest23%, STOP25%; reset2026-10-30 17:40:50UTC.
+Parent4e39df9; read investigations80/81 and retained trial58 (4/8).
+80policy prototype rejected for only229-byte savings; reverted, errors/costs retained.
+81reproduces three omitted selected qualifications and adds only complete overlapping
+source unions after full baseline selection, within unchanged2400/2800/two-excerptcaps.
+All baseline bytes/slots retained; no newread/rank/model/threshold/admission/harnesschange.
+Final433pass1existingWindows skip; Ruffpass. All initial fixture failures retained.
+Independentreview no runtimeblocker with limits; both existingworkersidle.
+Known native metadata failure is disjoint and NOT explained by this overlap mechanism.
+Next native59 needs freshmain, this separately pinnedsource, freshdirs, unchangedharness.
+All8originalstrict gates remain; no inheritancenativegreens on unmeasured runtime.
+Cumulative native50through58=20,411,150; all older costs/outcomes retained.
+No activebenchmark. PR3draft/unmerged/noauto. At25stop and preserve partial results.
+
 TRIAL58 COMPLETE — 4/8STRICTGATES; TESTS NOW PASS, TASK UNFINISHED.
 Sameallowance4 baseline20%, latest23%, STOP25%; +3observedpoints; lagpossible.
 Reset2026-10-30 17:40:50UTC; priorcosts/outcomes preserved, no remainderadded.

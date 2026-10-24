@@ -1,0 +1,12 @@
+{
+  "commit": "pending source commit",
+  "tests_passed": 433,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 88.15,
+  "pytest_exit_code": 0,
+  "ruff_passed": true,
+  "ruff_exit_code": 0,
+  "diff_check_passed": true,
+  "platform": "Windows-11-10.0.26200-SP0"
+}

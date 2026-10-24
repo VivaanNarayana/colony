@@ -1,0 +1,22 @@
+{
+  "proposal": 80,
+  "decision": "rejected before full comparison: insufficient material savings",
+  "source": "4e39df93a459d367d7d086714158466742fac81f",
+  "before_initialization_bytes": 1705,
+  "after_initialization_bytes": 1670,
+  "before_tools_json_bytes": 3208,
+  "after_tools_json_bytes": 3014,
+  "total_bytes_saved": 229,
+  "packets_byte_semantics_identical": true,
+  "tool_schemas_unchanged": true,
+  "tests_passed": 54,
+  "tests_setup_errors": 2,
+  "setup_error": "Default FastEmbed cache lacked special_tokens_map.json; storage assertions not reached. No replacement/download/inference attempted.",
+  "model_or_provider_calls": 0,
+  "native_comparisons": 0,
+  "runtime_reverted": true,
+  "new_passing_gates": 0,
+  "usage_baseline": 20,
+  "usage_last_observed": 23,
+  "stop": 25
+}
