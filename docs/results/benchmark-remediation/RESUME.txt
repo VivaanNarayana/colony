@@ -1,3 +1,21 @@
+ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT66; TASK UNFINISHED.
+Baseline16%used, latest19%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
+One shared5point allowance; observed+3points,2remain. Priorcosts retained; lagpossible.
+Source 75b4af31ee7556b931a387de6762014ac6f4b44a; retry ACK must confirm exactID/storedtrue/noerror/noqueuedconflict.
+Unconfirmed ciphertext retained; sanitized RetryReceiptError.sent counts prior successes.
+Directpush/HTTPauth/transport/taint/payload/fingerprints unchanged; no inventedproofs.
+Tests421pass/1knownwrongattribute failure/1Windows skip;79focusedpass; Ruffpass.
+AstraHigh no blocker; malformedJSONafterpartialsuccess covered. Nullfixturemistake retained.
+Read investigation-66 README/outcome/archive. Procedurewindow63 rejected(fullAPI/diagnostic
+loss); packet64 zero exact duplicates48packets; SQL66 mechanismreproduced but unadopted,
+syntheticrank precisionrisk explicitly NOT actualmodel evidence. FinalDBcounts7/10 only.
+All outcomes/errors/costs/history1–55/checkpoints56–62 retained. Models/harness/gates unchanged.
+Current runtimeunmeasured; all8checks conservativefailures; latestfull55=3/8 on8380724.
+Native56 unused. No safe approved nextcorecandidate; new causal evidence needed, no retuning.
+Continue bounded work onlywhile sharedbudget permits; reserveheadroom. No activebenchmark.
+PRdraft/unmerged/noauto. Atstopthreshold interruptworkers/benchmark, retainpartialcosts,
+updateexactcheckpoint andpauseunfinished. No credit/reset/APIbilling/accountswitch bypass.
+
 ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT62; TASK UNFINISHED.
 Baseline16% used; latest17%; STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5point allowance; prior costs retained; check after phases/long work.
