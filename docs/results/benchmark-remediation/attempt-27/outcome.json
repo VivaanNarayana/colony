@@ -1,0 +1,17 @@
+{
+  "status": "complete; nonqualifying integrity and elapsed-budget failures retained",
+  "source": "aec86327bd1666be051b90d30af659ecd05b8778",
+  "sessions_retained_and_reviewed": 48,
+  "blocking_reasons": [
+    "Main scope-2 push fingerprint not from actual read, then second push; no baseline exemption.",
+    "Feature capture-3 recorded379.058s, above frozen240s limit; confirmed host idle sleep. No subtraction/exclusion/retry."
+  ],
+  "local_gate_passed": true,
+  "feature_facts_and_citations": [
+    24,
+    24
+  ],
+  "public_replay_exit": 1,
+  "idle_wake_request_released": true,
+  "followup": "Independently enforce recorded duration and aggregate token caps in analyzer; a temporary idle-wake request for later measurements leaves clocks/budgets unchanged. New source required for another trial."
+}

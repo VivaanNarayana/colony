@@ -1,0 +1,38 @@
+{
+  "source": "2261d26fa76ef0e0a5e71356490a6233d537fdc0",
+  "baseline_refreshed": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "full_suite_invocations": 1,
+  "test_phases": 4,
+  "full": {
+    "tests": 301,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 300,
+    "seconds": 85.445
+  },
+  "new_regression_cases": 15,
+  "all_test_failures_retained": true,
+  "old_correctness_expectations_and_proof_admission_unchanged": true,
+  "complete_policy_present_in_mcp_initialization": true,
+  "taint_stored_and_encrypted_queued_then_retried_true": true,
+  "failed_save_receipts_and_client_audit_unchanged_by_taint_enforcement": true,
+  "http_keep_alive_two_requests_one_connection_test_passes": true,
+  "pool_closed_on_shutdown_and_error_and_redirect_credentials_not_forwarded": true,
+  "identical_pair_scores_scattered_in_original_order_without_persistent_cache": true,
+  "existing_real_model_logit_equivalence_test_passes": true,
+  "semantic_control_skip_preserves_original_positive_discriminating_rule": true,
+  "all_historical_attempt_directories_unchanged": true,
+  "harness_and_models_unchanged": true,
+  "eight_original_strict_required_checks_without_bypass_verified": true,
+  "all_wake_requests_released": true,
+  "persistent_power_configuration_changed": false,
+  "new_local_benchmarks": 0,
+  "new_native_sessions": 0,
+  "new_profiles": 0,
+  "new_analyzer_replays": 0,
+  "ruff_and_whitespace_exit_codes": {
+    "ruff_exit_code": 0,
+    "diff_exit_code": 0
+  }
+}

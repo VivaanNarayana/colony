@@ -1,0 +1,41 @@
+[
+  {
+    "question": "Does an offline push get queued?",
+    "hit": true,
+    "status": "validated",
+    "evidence": [
+      {
+        "ref": "README.md",
+        "line": 35,
+        "text": "a public key supplied by an untrusted keyfile. Keyfiles are [REDACTED]\n\nCLI commands return JSON. A miss returns `hit: false`. Authentication/scope errors fail\nwith a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed\npushes locally, encrypted. `colony --home .colony/agent-a retry` retries queued pushes;\nretry is explicit, without a background worker. IDs make retries idempotent, including\nwhen the server committed a push but its response was lost.\n",
+        "complete_file": false
+      }
+    ]
+  },
+  {
+    "question": "What happens when the server is down?",
+    "hit": true,
+    "status": "validated",
+    "evidence": [
+      {
+        "ref": "README.md",
+        "line": 35,
+        "text": "a public key supplied by an untrusted keyfile. Keyfiles are [REDACTED]\n\nCLI commands return JSON. A miss returns `hit: false`. Authentication/scope errors fail\nwith a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed\npushes locally, encrypted. `colony --home .colony/agent-a retry` retries queued pushes;\nretry is explicit, without a background worker. IDs make retries idempotent, including\nwhen the server committed a push but its response was lost.\n",
+        "complete_file": false
+      }
+    ]
+  },
+  {
+    "question": "How do I run the tests?",
+    "hit": true,
+    "status": "validated",
+    "evidence": [
+      {
+        "ref": "README.md",
+        "line": 229,
+        "text": "```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```\n\nThe [CI template](docs/ci.example.yml) runs tests on Linux and Windows, Python 3.11\nand 3.13 when copied to `.github/workflows/ci.yml`. It is supplied as a template because\nthe initial implementation credential cannot write Actions workflows. Local verification\nwas performed on Windows/Python 3.13; the other matrix entries are not yet verified.\nTests exercise enrollment,\nscope boundaries, changed repo evidence, freshness, encryption, retries, real CLI/HTTP,\nand MCP stdio. See [the evaluation protocol](docs/benchmark.md) for a 24-task overlapping\nsuite and paired measurements. The automated demo is a functional check, not evidence\nof token savings. Live trial results and their limits are documented separately under docs/results/.",
+        "complete_file": false
+      }
+    ]
+  }
+]

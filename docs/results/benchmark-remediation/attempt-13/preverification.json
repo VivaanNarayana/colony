@@ -1,0 +1,9 @@
+{
+  "initial_full_suite": {
+    "passed": 145,
+    "skipped": 1,
+    "seconds": 53.39
+  },
+  "recorded_case_failure": "Initial query-weight promotion selected receipt metadata and still omitted Tools paragraph; result retained in recorded-gap-reproduction.json",
+  "correction": "Keep existing query/model weights and remove only the unrelated cached-claim bonus; add independent keyword-rich metadata decoy fixture before measuring"
+}

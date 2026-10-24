@@ -1,0 +1,10 @@
+{
+  "role": "Actual recorded receipt projection; character counts, not native token estimates or passing gate evidence",
+  "source_trial": 9,
+  "validated_packets": 19,
+  "previous_chars": 36776,
+  "candidate_chars": 33869,
+  "reduction": 0.07904611703284747,
+  "proofs_reads_trust_namespace_taint_recommendation_equal": true,
+  "client_api_packet_not_mutated": true
+}

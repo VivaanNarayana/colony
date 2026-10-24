@@ -1,0 +1,80 @@
+{
+  "role": "Primarycoordinator reviewed all48shuffled answers/currentpackets,zero newexcerptbytes and17research/save traces including invalid mainreusepush. Selected bounded nonblind Astra review; not all48 independently blind graded.",
+  "answers_reviewed": 48,
+  "novel_current_contexts": 0,
+  "core_facts_correct": {
+    "main": 24,
+    "feature": 24
+  },
+  "valid_citations": {
+    "main": 15,
+    "feature": 24
+  },
+  "incorrect_core_fact_review_ids": [],
+  "invalid_citation_review_ids": [
+    "R01",
+    "R04",
+    "R09",
+    "R11",
+    "R28",
+    "R31",
+    "R32",
+    "R35",
+    "R43"
+  ],
+  "relevant_packet_exceptions": [
+    {
+      "id": "R21",
+      "arm": "feature",
+      "task": "mcp-2",
+      "relevant": false,
+      "reason": "Same validated receipt metadata at README96 lacks requested tool signatures; new research necessary."
+    }
+  ],
+  "source_bytes_searches_and_new_read_hashes_verified": true,
+  "push_attempts": 17,
+  "file_fingerprints": 19,
+  "all_attempted_proofs_match_actual_preceding_new_reads": false,
+  "rejected_proofs": 0,
+  "taint": {
+    "feature_stored": 9,
+    "feature_queued": 0,
+    "feature_all_true": true,
+    "feature_explicit_false": 0,
+    "main_stored": 8,
+    "main_queued": 5,
+    "main_all_true": true,
+    "limit": "No feature explicitfalse/offline native case; unchanged tests cover those paths. Main earlier deviations retained in historical50/51; no main exemption/newrubric."
+  },
+  "review_qualifications": [
+    "R21 names ask/push with roles, sufficient for actual question/frozen expected; do not invent full signature requirement. Initial metadata still irrelevant.",
+    "R26 supplies requested SHA256 mismatch mechanism; statement about matching hashes is simplified and omits optional assertions, so no exhaustive-validation claim.",
+    "R37 matches server command rubric; do not newly require full init/setup recipe.",
+    "Capture/outage use historical question-specific facts, not every family-level clause in every answer.",
+    "MainR42 invalid provenance retained even though valid64hash matches actual frozen file and queued receipt. Quality labels do not establish a passing integrity gate."
+  ],
+  "mcp2": "Four research calls:two reads/two searches(oneempty),then valid storedpush; metadata initially irrelevant.",
+  "stale2": "Miss;three research calls(two searches/oneempty,one read),then valid storedpush;91145gross,five totaltools includingask/push.",
+  "serve2": "Miss;six research calls (four searches including one empty,two reads) then valid stored push;research budget exhausted without omission of save.",
+  "scope3": "Miss;two research calls(one search/one read),then valid storedpush.",
+  "rubric_unchanged": true,
+  "labels_frozen_before_analyzer": true,
+  "frozen_utc": "2026-10-23T05:02:12.729924+00:00",
+  "integrity_violation": {
+    "id": "R42",
+    "arm": "main",
+    "task": "install-1",
+    "actual_push_attempts": 1,
+    "reported_audit_messages": 2,
+    "ref": "README.md",
+    "format_and_frozen_hash_match": true,
+    "preceding_new_research_reads": 0,
+    "ask_hash_only": true,
+    "result": "queued=true",
+    "status": "Inadmissible temporal proof; do not exempt main, repair, inject research or retry."
+  },
+  "valid_fingerprint_provenance_count": 18,
+  "invalid_fingerprint_provenance_count": 1,
+  "rejected_proofs_definition": "No schema rejection; independent provenance audit rejects one actual attempt.",
+  "expected_integrity_outcome": "Unchanged officialanalyzer expected to reject maininstall1 proof before complete eight-gate verdict; preserve error, no mainexemption."
+}

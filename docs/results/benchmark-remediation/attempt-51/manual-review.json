@@ -1,0 +1,66 @@
+{
+  "role": "Primary coordinator reviewed all48 shuffled answers/current packets and14 research/save traces; not independent blind grading. Astra reviewer checked selected quality/proof cases only.",
+  "answers_reviewed": 48,
+  "novel_current_contexts": 0,
+  "core_facts_correct": {
+    "main": 24,
+    "feature": 24
+  },
+  "valid_citations": {
+    "main": 16,
+    "feature": 23
+  },
+  "incorrect_core_fact_review_ids": [],
+  "invalid_citation_review_ids": [
+    "R04",
+    "R08",
+    "R10",
+    "R11",
+    "R27",
+    "R31",
+    "R39",
+    "R43",
+    "R44"
+  ],
+  "relevant_packet_exceptions": [
+    {
+      "id": "R21",
+      "arm": "feature",
+      "task": "mcp-2",
+      "relevant": false,
+      "reason": "Same validated receipt metadata at README96 lacks requested tool signatures; research remains necessary."
+    }
+  ],
+  "source_bytes_searches_and_new_read_hashes_verified": true,
+  "push_attempts": 14,
+  "file_fingerprints": 15,
+  "all_attempted_proofs_match_actual_preceding_new_reads": true,
+  "rejected_proofs": 0,
+  "taint": {
+    "feature_stored": 8,
+    "feature_queued": 0,
+    "feature_all_true": true,
+    "feature_explicit_false": 0,
+    "main_stored": 6,
+    "main_queued": 3,
+    "main_all_true": false,
+    "main_ungated_deviation": {
+      "id": "R28",
+      "task": "outage-1",
+      "explicit_false": true,
+      "stored_taint": false,
+      "queued_taint": false
+    },
+    "limit": "No feature explicitfalse/offline case; unchanged tests cover those paths. Do not waive main or alter frozen taint-agnostic gate."
+  },
+  "review_qualifications": [
+    "R25 savedanswer explains queueing, but displayed client.py59 excerpt concerns ask transport. Its citation is accepted under frozen target/path standard; do not claim displayed lines directly prove queue implementation.",
+    "Capture/outage answers graded against question-specific facts consistent with historical rubric; no new requirement that every family-level clause occur in every answer.",
+    "R08 feature absolute /README.md citation remains invalid."
+  ],
+  "mcp2": "Three new research calls (two searches, one read) followed by valid stored push; same insufficient initial packet.",
+  "scope3": "Four new research calls (two searches, two reads) followed by one valid64-character stored push; does not repair or erase trial50 malformed attempts.",
+  "rubric_unchanged": true,
+  "labels_frozen_before_analyzer": true,
+  "frozen_utc": "2026-10-23T03:36:32.526055+00:00"
+}

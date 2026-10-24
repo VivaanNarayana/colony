@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "Requested core facts checked against frozen source, with current read support assessed separately from saved summaries. Citation targets checked; missing explicit repository target and root-absolute links remain invalid."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "verdict": "pass_with_documentation_correction",
+  "conclusion": "No actionable runtime or benchmark-contract defect found in this bounded patch review. Retained evidence shows no new sufficient-answer loss or unsafe fallback; universal recall and safety are not established. One inaccurate diagnostic qualification must be corrected in the published account while preserving its original artifact.",
+  "findings": [
+    {
+      "severity": "low",
+      "action_required": true,
+      "file": "work/full-literal-77/store-results.json",
+      "related_file": "work/full-literal-77/store_reconcile.py",
+      "topic": "inaccurate_garden_qualification",
+      "detail": "The generic qualification says Garden authored-answer rejection is not total no-hit and source fallback can expose text. The recorded Garden candidate answer and ask both have hit=false; ask reason is no_relevant_trail. The new Garden regression also asserts both misses. Correct the final account to say this observed Garden case is rejected through fallback, while broader fallback safety is not established. Preserve the original result and script error as history."
+    },
+    {
+      "severity": "info",
+      "action_required": false,
+      "topic": "patch_semantics",
+      "detail": "The default local_term_support rule remains mathematically equivalent to the old strict-majority rule, including empty queries. Only nonexact, nonprocedural find_answer candidates switch to complete=True. This requires all existing normalized query terms in the same existing two-sentence window to bypass the unchanged positive-answer-logit greater than saved-question guard. Exact/procedural paths, 4000-character boundary, CE inputs for answer scoring, dense eligibility, relevance threshold, and ordering are unchanged. Additional question-control inference is possible; no performance gain follows from inspection. Complete stemmed-term coverage is not semantic proof."
+    },
+    {
+      "severity": "info",
+      "action_required": false,
+      "topic": "retained_outcomes",
+      "detail": "Twenty frozen diagnostic rows report no lost baseline-admitted positives and no new false hits. Garden changes from hit to miss. Camera positive was already missed; locker/poster/reservation and known deletion false hits remain. Six actual Store pairs agree: three sufficient answers (field-trip qualification, expiry, native offline saved-answer text) preserve content, evidence and sources; their candidate validated answers remain tainted. Known deletion and locker false hits remain. Garden does not fall back to a hit. This is bounded evidence, not proof against sufficient-answer losses in other inputs or multi-candidate cases."
+    },
+    {
+      "severity": "info",
+      "action_required": false,
+      "topic": "source_scope_proof_and_contract",
+      "detail": "The diff changes no source binding, fingerprints, namespace filtering, validation, age, taint, evidence construction or fallback rules. Fallback still uses the default lexical helper and the same permitted-source validation. Rejecting an authored answer can make that existing fallback newly reachable, so unchanged fallback code alone cannot prove universal safety. Three added regression cases meaningfully cover Garden rejection, qualified sufficient answers, namespace isolation and stale-source behavior. The retained focused run is 37 passed and the unchanged known expiry/deletion failure. No model, threshold, harness or strict-gate change appears in the patch; no benchmark benefit or contract relaxation is established or claimed."
+    }
+  ],
+  "limits": [
+    "Exactly eight substantive files inspected, with store.py limited to find_answer and fallback call sites. No expanded search, nested delegation, inference, tests, benchmarks, providers, subjects or autonomous follow-up.",
+    "Read-only review except this report. No independent re-execution or manifest/hash verification. Full-suite results and benchmark execution remain coordinator-owned and were not inspected.",
+    "The Store native-offline control stores the retained native answer text in synthetic policy.md; it does not reproduce the full native R25 repository/selection/subject scenario.",
+    "This is nonblind correctness and integrity review, not trial grading. Frozen twenty-row and six-Store-pair evidence cannot guarantee universal recall, false-hit absence or fallback safety.",
+    "Shared allowance baseline20%, latest reliable observation23%, stop25%; no separate allowance or usage measurement claimed. Stop after this pass and remain idle during timed measurements."
+  ],
+  "files": [
+    "src/colony/retrieval.py",
+    "src/colony/store.py",
+    "tests/test_full_literal_support.py",
+    "work/full-literal-77/inputs.json",
+    "work/full-literal-77/results.json",
+    "work/full-literal-77/store-results.json",
+    "work/full-literal-77/focused.txt",
+    "work/full-literal-77/store_reconcile.py"
+  ]
+}

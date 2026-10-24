@@ -1,0 +1,221 @@
+{
+  "state": "General lexical-bypass patch reviewed; native impact not yet measured; task unfinished",
+  "source_parent": "6e0a4e1475fb67c93bdb0f39af27e5ebc9de588e",
+  "patch": "Complete local coverage only for bypassing existing semantic support; default majority mode unchanged for source retrieval; scores/models/thresholds/fallback/exact/procedure/validation/proofs unchanged",
+  "summaries": {
+    "paired-rerank-73": {
+      "error": null,
+      "cost": {
+        "CE_pair_entries": 57,
+        "embedding_items": 57,
+        "providers": 0,
+        "subjects": 0
+      },
+      "elapsed_seconds": 0.9548535000067204,
+      "lost_positives": [],
+      "candidate_false_hits": [
+        "garden-access-wrong-attribute"
+      ],
+      "baseline_false_hits": [
+        "garden-access-wrong-attribute",
+        "catalog-snapshot-wrong-attribute",
+        "exhibit-loan-wrong-attribute",
+        "known-deletion-negative"
+      ],
+      "baseline_positive_misses": [
+        "parcel-retention-supported",
+        "sound-export-supported",
+        "garden-access-supported",
+        "known-scope-sufficient"
+      ],
+      "rejected": true
+    },
+    "reverse-support-74": {
+      "error": null,
+      "cost": {
+        "embeddings": 60,
+        "CE_pairs": 60,
+        "providers": 0,
+        "subjects": 0
+      },
+      "elapsed_seconds": 0.918894000002183,
+      "lost_positives": [
+        "bike-hire-positive",
+        "telemetry-buffer-positive",
+        "known-archive-paraphrase",
+        "known-attachment-paraphrase"
+      ],
+      "candidate_false_hits": [
+        "ceramic-storage-negative"
+      ],
+      "new_false_hits": [],
+      "baseline_misses": [
+        "theatre-seat-positive"
+      ],
+      "known_red_remaining": false,
+      "rejected": true
+    },
+    "source-view-75": {
+      "CE_pairs": 41,
+      "embeddings": 0,
+      "providers": 0,
+      "subject_calls": 0
+    },
+    "sentence-support-76": {
+      "error": null,
+      "cost": {
+        "embedding_items": 60,
+        "CE_pairs": 78,
+        "providers": 0,
+        "subjects": 0
+      },
+      "elapsed_seconds": 0.9477374000707641,
+      "lost_positives": [
+        "map-refresh-positive",
+        "gallery-key-positive",
+        "reading-room-positive"
+      ],
+      "new_false_hits": [],
+      "known_red_remaining": false,
+      "baseline_false_hits": [
+        "textile-return-negative",
+        "reading-room-negative",
+        "known-login-negative"
+      ],
+      "candidate_false_hits": [
+        "textile-return-negative",
+        "reading-room-negative"
+      ],
+      "baseline_positive_misses": [
+        "annotation-size-positive"
+      ],
+      "rejected": true
+    },
+    "full-literal-77": {
+      "error": null,
+      "cost": {
+        "embedding_items": 60,
+        "CE_pairs": 40,
+        "providers": 0,
+        "subjects": 0
+      },
+      "elapsed_seconds": 0.8405066999839619,
+      "lost_positives": [],
+      "new_false_hits": [],
+      "garden_false_hit_remaining": false,
+      "baseline_positive_misses": [
+        "camera-cell-positive"
+      ],
+      "baseline_false_hits": [
+        "library-locker-negative",
+        "poster-storage-negative",
+        "reservation-expiry-negative",
+        "control-garden-access-wrong-attribute",
+        "control-known-deletion-negative"
+      ],
+      "candidate_false_hits": [
+        "library-locker-negative",
+        "poster-storage-negative",
+        "reservation-expiry-negative",
+        "control-known-deletion-negative"
+      ],
+      "rejected": false
+    }
+  },
+  "store_reconciliation": "Six paired actual Store fixtures, no lost sufficient answers/new hits. Garden changes answer/ask to miss. Native saved offline answer retained in syntheticfile, not fullR25 replay.",
+  "full_verification": {
+    "commit": "pending committed source",
+    "tests_passed": 424,
+    "tests_failed": 1,
+    "tests_skipped": 1,
+    "pytest_seconds": 94.834,
+    "pytest_exit_code": 1,
+    "ruff_passed": true,
+    "ruff_exit_code": 0,
+    "diff_check_passed": true,
+    "platform": "Windows-11-10.0.26200-SP0",
+    "known_failure": "Unchanged explanatory session-expiry/deletion-permission false hit; no waiver."
+  },
+  "review": {
+    "verdict": "pass_with_documentation_correction",
+    "conclusion": "No actionable runtime or benchmark-contract defect found in this bounded patch review. Retained evidence shows no new sufficient-answer loss or unsafe fallback; universal recall and safety are not established. One inaccurate diagnostic qualification must be corrected in the published account while preserving its original artifact.",
+    "findings": [
+      {
+        "severity": "low",
+        "action_required": true,
+        "file": "work/full-literal-77/store-results.json",
+        "related_file": "work/full-literal-77/store_reconcile.py",
+        "topic": "inaccurate_garden_qualification",
+        "detail": "The generic qualification says Garden authored-answer rejection is not total no-hit and source fallback can expose text. The recorded Garden candidate answer and ask both have hit=false; ask reason is no_relevant_trail. The new Garden regression also asserts both misses. Correct the final account to say this observed Garden case is rejected through fallback, while broader fallback safety is not established. Preserve the original result and script error as history."
+      },
+      {
+        "severity": "info",
+        "action_required": false,
+        "topic": "patch_semantics",
+        "detail": "The default local_term_support rule remains mathematically equivalent to the old strict-majority rule, including empty queries. Only nonexact, nonprocedural find_answer candidates switch to complete=True. This requires all existing normalized query terms in the same existing two-sentence window to bypass the unchanged positive-answer-logit greater than saved-question guard. Exact/procedural paths, 4000-character boundary, CE inputs for answer scoring, dense eligibility, relevance threshold, and ordering are unchanged. Additional question-control inference is possible; no performance gain follows from inspection. Complete stemmed-term coverage is not semantic proof."
+      },
+      {
+        "severity": "info",
+        "action_required": false,
+        "topic": "retained_outcomes",
+        "detail": "Twenty frozen diagnostic rows report no lost baseline-admitted positives and no new false hits. Garden changes from hit to miss. Camera positive was already missed; locker/poster/reservation and known deletion false hits remain. Six actual Store pairs agree: three sufficient answers (field-trip qualification, expiry, native offline saved-answer text) preserve content, evidence and sources; their candidate validated answers remain tainted. Known deletion and locker false hits remain. Garden does not fall back to a hit. This is bounded evidence, not proof against sufficient-answer losses in other inputs or multi-candidate cases."
+      },
+      {
+        "severity": "info",
+        "action_required": false,
+        "topic": "source_scope_proof_and_contract",
+        "detail": "The diff changes no source binding, fingerprints, namespace filtering, validation, age, taint, evidence construction or fallback rules. Fallback still uses the default lexical helper and the same permitted-source validation. Rejecting an authored answer can make that existing fallback newly reachable, so unchanged fallback code alone cannot prove universal safety. Three added regression cases meaningfully cover Garden rejection, qualified sufficient answers, namespace isolation and stale-source behavior. The retained focused run is 37 passed and the unchanged known expiry/deletion failure. No model, threshold, harness or strict-gate change appears in the patch; no benchmark benefit or contract relaxation is established or claimed."
+      }
+    ],
+    "limits": [
+      "Exactly eight substantive files inspected, with store.py limited to find_answer and fallback call sites. No expanded search, nested delegation, inference, tests, benchmarks, providers, subjects or autonomous follow-up.",
+      "Read-only review except this report. No independent re-execution or manifest/hash verification. Full-suite results and benchmark execution remain coordinator-owned and were not inspected.",
+      "The Store native-offline control stores the retained native answer text in synthetic policy.md; it does not reproduce the full native R25 repository/selection/subject scenario.",
+      "This is nonblind correctness and integrity review, not trial grading. Frozen twenty-row and six-Store-pair evidence cannot guarantee universal recall, false-hit absence or fallback safety.",
+      "Shared allowance baseline20%, latest reliable observation23%, stop25%; no separate allowance or usage measurement claimed. Stop after this pass and remain idle during timed measurements."
+    ],
+    "files": [
+      "src/colony/retrieval.py",
+      "src/colony/store.py",
+      "tests/test_full_literal_support.py",
+      "work/full-literal-77/inputs.json",
+      "work/full-literal-77/results.json",
+      "work/full-literal-77/store-results.json",
+      "work/full-literal-77/focused.txt",
+      "work/full-literal-77/store_reconcile.py"
+    ]
+  },
+  "usage": {
+    "allowance": 4,
+    "status": "Active continuation explicitly authorized; same allowance",
+    "baseline_weekly_used_percent": 20,
+    "stopping_threshold_weekly_used_percent": 25,
+    "additional_percentage_points": 5,
+    "weekly_window_minutes": 10080,
+    "resets_at": 1793382050,
+    "resets_utc": "2026-10-30 17:40:50 UTC",
+    "one_shared_budget_for_all_model_work": true,
+    "prior_allowances_costs_outcomes_preserved": true,
+    "previous_allowance_remainder_not_added": true,
+    "natural_reset_does_not_renew_allowance": true,
+    "no_reset_credits_accounts_or_api_billing": true,
+    "reporting_may_lag": true,
+    "last_observed_weekly_used_percent": 23,
+    "observed_increase_percentage_points": 3,
+    "started_utc": "2026-10-24T01:12:33.091174+00:00",
+    "last_observed_utc": "2026-10-24T02:16:20.585951+00:00",
+    "source_checkpoint": "55f1b54fb6cf7860aa4d51b6c552dbfed567c0ca",
+    "worker_limit_total": 2,
+    "worker_model": "gpt-6.1-sol",
+    "worker_reasoning": "high",
+    "workers_started": 2,
+    "active_benchmark": false,
+    "last_phase": "Full77 suite424pass1knownfail1skip; Sol review accepted narrow patch; preparing first comparison",
+    "worker_state": "Both existing SolHigh workers idle; two total workers retained; reviewer follow-up authorized after usage check"
+  },
+  "native_cost_new": 0,
+  "native_gross_50_through56": 15497907,
+  "all_previous_outcomes_preserved": true,
+  "current_source_eight_gates": "unmeasured: no inherited greens; known test failure remains",
+  "next": "Freshmain/freshdirs local57 first, full48native57 only if local qualifies and usage reliably permits; no identical-code retry."
+}

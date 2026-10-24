@@ -1,0 +1,61 @@
+{
+  "role": "Inspection of every retained failed-trial timing; no retries or exclusions",
+  "families": {
+    "changed-source": {
+      "main": 0.5109079999383539,
+      "feature": 0.5253308999817818
+    },
+    "deleted-source": {
+      "main": 0.48471620003692806,
+      "feature": 0.48691509990021586
+    },
+    "empty-memory": {
+      "main": 0.3201849000179209,
+      "feature": 0.08445680007571355
+    },
+    "exact-command": {
+      "main": 0.5374085000366904,
+      "feature": 0.3473732001148164
+    },
+    "exact-fact": {
+      "main": 0.5318733001477085,
+      "feature": 0.3276731000514701
+    },
+    "expired": {
+      "main": 0.4021267999196425,
+      "feature": 0.39879980008117855
+    },
+    "namespace-denied": {
+      "main": 0.21371389995329082,
+      "feature": 0.08408790011890233
+    },
+    "no-scopes": {
+      "main": 6.530008977279067e-05,
+      "feature": 7.000012556090951e-05
+    },
+    "no-source": {
+      "main": 0.4306919001392089,
+      "feature": 0.3497194000519812
+    },
+    "overview-is-not-procedure": {
+      "main": 0.28550959983840585,
+      "feature": 0.3348096000845544
+    },
+    "paraphrase": {
+      "main": 0.6219559000455774,
+      "feature": 0.7133521000505425
+    },
+    "source-only-fact": {
+      "main": 0.5110541000613011,
+      "feature": 0.8505900000454858
+    },
+    "unrelated": {
+      "main": 0.32369950000429526,
+      "feature": 0.34110900008818135
+    }
+  },
+  "median_seconds": {
+    "main": 0.04574120003962889,
+    "feature": 0.03595729998778552
+  }
+}

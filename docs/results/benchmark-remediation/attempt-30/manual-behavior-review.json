@@ -1,0 +1,10 @@
+{
+  "requested_facts_and_qualifications_correct": 4,
+  "protocol_and_actual_research_fingerprints_correct": 4,
+  "unnecessary_dependency_reads": 0,
+  "narration_of_lookup_or_storage": 0,
+  "citation_format_failures": {
+    "retry-steps": "#L1-L3 is unsupported by unchanged benchmark citation helper; retained as invalid, not fixture citation pass"
+  },
+  "role": "Not benchmark gate evidence; no paired prior output-token claim"
+}

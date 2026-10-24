@@ -1,0 +1,24 @@
+{
+  "qualifying_evidence": false,
+  "reason": "Unchanged analyzer rejected main/capture-2 push fingerprint without an actual external source read. Later memory is affected; no live performance gate is qualified.",
+  "partial_return": {
+    "task": "feature/mcp-2",
+    "requested": "Which tools does the MCP wrapper expose?",
+    "returned": "Saved connection configuration and README lines 65-72; omitted actual Tools paragraph",
+    "consequence": "Agent needed two new repository reads; returned-hit relevance labelled false. Final answer remains correct after research."
+  },
+  "raw_totals": {
+    "main": {
+      "sessions": 24,
+      "tokens": 1156714,
+      "seconds": 247.488,
+      "uncached_input_plus_output": 166890
+    },
+    "feature": {
+      "sessions": 24,
+      "tokens": 1087419,
+      "seconds": 213.313,
+      "uncached_input_plus_output": 126267
+    }
+  }
+}

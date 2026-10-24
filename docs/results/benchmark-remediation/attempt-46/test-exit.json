@@ -1,0 +1,5 @@
+{
+  "phase": "final_full_suite",
+  "command": "pytest -q --junitxml=docs/results/benchmark-remediation/attempt-46/full-tests.xml",
+  "exit_code": 0
+}

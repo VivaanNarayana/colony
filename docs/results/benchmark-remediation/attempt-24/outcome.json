@@ -1,0 +1,17 @@
+{
+  "status": "complete; 5/8; failed trial retained",
+  "source": "6031c44c2b3ed62de9ba8ecdee4a60eecadce859",
+  "all_answers_and_source_packets_reviewed": 48,
+  "both_arm_protocol_violations": 0,
+  "blocking_gates": [
+    "observed_live_tokens_improve",
+    "observed_uncached_input_plus_output_improve",
+    "observed_live_time_improves"
+  ],
+  "concrete_costs": [
+    "Feature scope-2 reads more dependencies than main; all calls retained.",
+    "Feature outage-3 native usage is higher despite one ask; no adjustment or dropping.",
+    "Validation context hint removes the observed extra file search."
+  ],
+  "public_replay_exit": 1
+}

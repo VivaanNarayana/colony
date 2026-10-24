@@ -1,0 +1,57 @@
+{
+  "kind": "Tests-only paraphrase repair; not a benchmark result",
+  "checkpoint": 44,
+  "source": "5b7ee4838618610f836e1de15b2edbc6d905b5a5",
+  "previous_source": "5a8e725ad1cadbbcf827ef5fbc3d483dafba3d28",
+  "test_phases": {
+    "red": {
+      "tests": 4,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "junit_seconds": 2.064
+    },
+    "focused": {
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 34,
+      "junit_seconds": 7.827
+    },
+    "full": {
+      "tests": 278,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "passed": 277,
+      "junit_seconds": 87.714
+    }
+  },
+  "full_suite_invocations": 1,
+  "local_benchmark_invocations": 0,
+  "native_sessions_started": 0,
+  "profiles_run": 0,
+  "analyzer_replays_run": 0,
+  "gate_statuses": {
+    "benchmarks/loaded_implementations_verified": "pending",
+    "benchmarks/tests_and_lint_pass": "success",
+    "benchmarks/local_lookup_improves": "pending",
+    "benchmarks/correctness_not_reduced": "pending",
+    "benchmarks/feature_follows_tool_protocol": "pending",
+    "benchmarks/observed_live_tokens_improve": "pending",
+    "benchmarks/observed_uncached_input_plus_output_improve": "pending",
+    "benchmarks/observed_live_time_improves": "pending"
+  },
+  "all_gates_passed": false,
+  "current_complete_eight_gate_result_available": false,
+  "last_local_benchmark": "Trial43 failed: main117/117,feature108/117; all9failures retained unchanged",
+  "last_complete_live_comparison": "Trial41:3/8 for its recorded source only",
+  "all_eight_original_contexts_required_and_blocking": true,
+  "all_failures_retained": true,
+  "draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "pause_after_publication": true
+}

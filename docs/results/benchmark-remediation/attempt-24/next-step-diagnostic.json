@@ -1,0 +1,48 @@
+{
+  "kind": "diagnostic only; no benchmark or source changes",
+  "views": {
+    "code": "```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```\n",
+    "author_intro_and_recipe": "Python 3.11\u20133.13 with SQLite extension support is required. Run from this checkout:\n\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```\n",
+    "post_configuration": "\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question \"How do I run the tests?\" --source pyproject.toml -- python -m pytest -q\n```",
+    "verification": "the old one. Per-host storage can grow, including validation history and interrupted-write\norphan blobs. The [GPT-6 Luna low regression benchmark](docs/results/luna-low/README.md)\nmeasured 7.9% net token savings with 24/24 correct answers in both arms; production\nsavings remain unproven, and task wall time was slower.\n\n## Verification and evaluation\n\n```sh"
+  },
+  "results": [
+    {
+      "question": "Start the local memory server.",
+      "scores": {
+        "code": -11.356493949890137,
+        "author_intro_and_recipe": -11.356086730957031,
+        "post_configuration": -11.45309829711914,
+        "verification": -11.391261100769043
+      }
+    },
+    {
+      "question": "How do I install the development dependencies?",
+      "scores": {
+        "code": -10.891704559326172,
+        "author_intro_and_recipe": -10.449418067932129,
+        "post_configuration": 4.5435357093811035,
+        "verification": -11.415401458740234
+      }
+    },
+    {
+      "question": "Run the test suite.",
+      "scores": {
+        "code": -11.411672592163086,
+        "author_intro_and_recipe": -10.979066848754883,
+        "post_configuration": -8.413206100463867,
+        "verification": -11.378795623779297
+      }
+    },
+    {
+      "question": "Rotate database credentials.",
+      "scores": {
+        "code": -11.351346015930176,
+        "author_intro_and_recipe": -11.270743370056152,
+        "post_configuration": -11.43565559387207,
+        "verification": -11.243523597717285
+      }
+    }
+  ],
+  "hint_property_candidate": "Rejected: existing independent bucket_access fixture defines bucket permissions without literal permissions. Choosing the final property noun would regress that fixture; no implementation or benchmark run."
+}

@@ -1,0 +1,72 @@
+{
+  "name": "main",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "~DEFAULT_BRANCH"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "required_reviewers": [],
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "require_extra_approval_for_unattributed_changes": true,
+        "allowed_merge_methods": [
+          "merge",
+          "squash",
+          "rebase"
+        ]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "required_status_checks": [
+          {
+            "context": "benchmarks/loaded_implementations_verified"
+          },
+          {
+            "context": "benchmarks/tests_and_lint_pass"
+          },
+          {
+            "context": "benchmarks/local_lookup_improves"
+          },
+          {
+            "context": "benchmarks/correctness_not_reduced"
+          },
+          {
+            "context": "benchmarks/feature_follows_tool_protocol"
+          },
+          {
+            "context": "benchmarks/observed_live_tokens_improve"
+          },
+          {
+            "context": "benchmarks/observed_uncached_input_plus_output_improve"
+          },
+          {
+            "context": "benchmarks/observed_live_time_improves"
+          }
+        ],
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false
+      }
+    }
+  ],
+  "bypass_actors": []
+}

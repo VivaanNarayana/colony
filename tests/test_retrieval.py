@@ -1,8 +1,11 @@
 import uuid
 
+import pytest
+import sqlite_vec
 from conftest import auth
 
 from colony.models import Trail
+from colony.retrieval import index_version, passage
 from colony.store import Store
 from colony.validation import snapshot
 
@@ -44,6 +47,66 @@ def test_semantic_paraphrase_and_wrong_topic_rejection(team):
     assert not ask(api, key, "How do I prune the container image cache?")["hit"]
 
 
+@pytest.mark.parametrize(
+    "question,content,expected",
+    [
+        (
+            "What is the backup encryption algorithm?",
+            "Database backups are retained for thirty-seven days.",
+            False,
+        ),
+        (
+            "What is the worker retry delay?",
+            "Worker audit logs rotate every week.",
+            False,
+        ),
+        (
+            "Which regions replicate ledger records?",
+            "Ledger records are signed with RSA.",
+            False,
+        ),
+        (
+            "What is the backup encryption algorithm?",
+            "Backup metadata is listed. A section boundary. Encryption is discussed elsewhere. "
+            "Another section boundary. Algorithm catalogue.",
+            False,
+        ),
+        (
+            "What is the backup retention period?",
+            "The backup retention period is thirty-seven days.",
+            True,
+        ),
+    ],
+)
+def test_saved_descriptions_need_fact_support_even_with_strong_topic_scores(
+    team, monkeypatch, question, content, expected
+):
+    import colony.store
+
+    app, api, repo, _, key = team
+    store = app.state.store
+    push(api, key, repo, "Operations reference", content)
+    vector = sqlite_vec.serialize_float32([1.0] + [0.0] * 383)
+    with store.connect() as db:
+        db.execute("UPDATE trail_vectors SET embedding=?", (vector,))
+        db.execute("UPDATE trail_questions SET embedding=?", (vector,))
+    ranked = []
+
+    def strong_rank(query, passages):
+        ranked.extend(passages)
+        return [20.0] * len(passages)
+
+    monkeypatch.setattr(colony.store, "rank", strong_rank)
+    result = store.find_answer(question, ["team"], 604800, 0.60, query_vector=vector)
+    assert result["hit"] == expected
+    # A literal match needs only its answer score. A semantic fallback also
+    # scores the saved question; uniformly high topic scores prove no answer.
+    answer = passage("Operations reference", content)
+    assert ranked == ([answer] if expected else [answer, "Operations reference"])
+    if expected:
+        assert result["content"] == content and result["status"] == "validated"
+
+
 def test_stale_high_ranked_candidate_cannot_hide_valid_alternative(team, monkeypatch):
     import colony.store
 
@@ -82,7 +145,7 @@ def test_existing_vector_index_is_rebuilt_without_losing_trails(team):
     assert result["id"] == trail and result["content"] == "Set TIMEOUT = 30"
     with migrated.connect() as db:
         assert db.execute("SELECT count(*) FROM trail_vectors").fetchone()[0] == 1
-        assert db.execute("SELECT value FROM settings").fetchone()[0].startswith("semantic-v7:")
+        assert db.execute("SELECT value FROM settings").fetchone()[0] == index_version()
 
 
 def test_stronger_positive_rerank_wins_over_higher_dense_question_match(team, monkeypatch):

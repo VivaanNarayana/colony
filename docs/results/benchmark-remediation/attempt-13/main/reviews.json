@@ -1,0 +1,243 @@
+{
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R01",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R03",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R04",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R07",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R09",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R10",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R11",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R13",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R15",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R17",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R27",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R28",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R31",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R32",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R33",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true,
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R35",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current read support assessed separately from saved answer. Both asks in main capture-2 supported facts; repeated lookup remains a protocol violation."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R37",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R39",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R41",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R42",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R43",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R44",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R45",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": false,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R47",
+    "note": "Core requested facts checked against frozen repository; citation targets checked. Current reads support requested facts on hits; misses require research."
+  }
+}

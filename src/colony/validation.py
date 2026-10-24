@@ -18,10 +18,20 @@ def repo_file(root: Path, ref: str) -> Path:
     return path
 
 
+def read_source(root: Path, ref: str) -> tuple[Path, bytes]:
+    path = repo_file(root, ref)
+    # The file may grow after the preliminary stat. Bound the actual read too;
+    # never validate a truncated prefix or allocate an unbounded source here.
+    with path.open("rb") as stream:
+        data = stream.read(MAX_SOURCE_BYTES + 1)
+    if len(data) > MAX_SOURCE_BYTES:
+        raise ValueError("Source is missing or exceeds 2 MB")
+    return path, data
+
+
 def snapshot(root: Path, ref: str) -> Source:
-    return Source(
-        ref=ref, content_hash=hashlib.sha256(repo_file(root, ref).read_bytes()).hexdigest()
-    )
+    _, data = read_source(root, ref)
+    return Source(ref=ref, content_hash=hashlib.sha256(data).hexdigest())
 
 
 def validate(root: Path, sources: list[Source]) -> tuple[str, list[dict]]:
@@ -33,8 +43,7 @@ def validate(root: Path, sources: list[Source]) -> tuple[str, list[dict]]:
         reason = "Only repository file evidence is supported in the MVP"
         if source.kind == "file":
             try:
-                path = repo_file(root, source.ref)
-                data = path.read_bytes()
+                path, data = read_source(root, source.ref)
                 result = (
                     "validated"
                     if hashlib.sha256(data).hexdigest() == source.content_hash

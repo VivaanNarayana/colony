@@ -1,0 +1,9 @@
+{
+  "tests_passed": 267,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 109.88,
+  "ruff_passed": true,
+  "diff_check_passed": true,
+  "scope": "Full suite; all audit/MCP/numerical-equivalence regressions plus descriptor-handoff output/freshness/secrets/qualification/multisource bounds and strict recorded native budgets; existing Windows symlink skip"
+}

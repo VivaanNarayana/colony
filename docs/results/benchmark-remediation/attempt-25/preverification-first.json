@@ -1,0 +1,10 @@
+{
+  "tests_passed": 213,
+  "tests_failed": 1,
+  "tests_skipped": 1,
+  "pytest_seconds": 68.42,
+  "ruff_passed": false,
+  "ruff_errors": 16,
+  "failure": "Existing test_session_guidance_scopes_reuse_and_research_to_available_facts requires the original no-extra-research sentence including merely. Restore that word, preserve test unchanged. Scratch reproduction runner also needs formatting; no product or benchmark thresholds changed.",
+  "independent_behavior_source_sha256": "2db38f2580e7202de404ca9286e7ae9dd224b8c117ac7f834f3bf1799cbaf8bb"
+}

@@ -1,0 +1,19 @@
+{
+  "role": "Operational idle-sleep prevention only; clocks/budgets/outcomes unchanged",
+  "started_utc": "2026-10-22T23:28:55.236577+00:00",
+  "request": "ES_CONTINUOUS | ES_SYSTEM_REQUIRED",
+  "persistent_power_configuration_changed": false,
+  "command": [
+    ".venv/Scripts/python.exe",
+    "-m",
+    "pytest",
+    "tests/test_semantic_evidence_support.py",
+    "-k",
+    "direct",
+    "-q",
+    "--junitxml=docs/results/benchmark-remediation/attempt-46/diagnostic2-tests.xml"
+  ],
+  "child_pid": 33244,
+  "ended_utc": "2026-10-22T23:29:05.216396+00:00",
+  "request_released": true
+}

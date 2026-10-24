@@ -1,0 +1,9 @@
+# Investigation 80: reject small policy deduplication
+
+Trial 58 remains 4/8; this study establishes no new passing gate. Duplicate MCP policy bytes are a deterministic cost mechanism, while effects on model compliance were unproved. A local runtime prototype removed repeated wording without changing schemas or returned packets. It saved only 229 bytes across initialization (1705 to 1670) and compact SDK tool metadata (3208 to 3014). This is not a measured token reduction or native improvement and does not explain the remaining gross-token excess. The coordinator rejected it as too small to justify a full comparison and restored the exact source bytes from 4e39df9. No native comparison was launched.
+
+Unchanged contract controls cover sufficient reuse, gaps, source qualifications, actual research saves, malformed proofs, explicit-false taint, conflicting receipts and encrypted retry. 54 isolated checks passed; two storage fixtures failed during model setup because the default cache lacked special_tokens_map.json. Those errors remain retained, and no success is claimed for them. No model/provider call or cache replacement was made. No behavioral test or benchmark contract changed.
+
+The archive preserves before/after SDK snapshots, exact diagnostic script and original test outputs. It is a reproduction of byte duplication and a rejected local proposal, not regression completion or native evidence. Same shared baseline 20%, last observed 23%, stop 25%; no new allowance. Both existing workers retain the same combined allowance.
+
+Publication errata for immutable trial 58 outcome.json: the field named cumulative_native50_through57_gross contains the total **through 58**, 20,411,150, as correctly stated by its README/raw totals. Its causal-limit sentence mentions patch 77; the current combined change also includes 79, and **neither change has an isolated native performance benefit established**. Original published evidence remains unchanged.

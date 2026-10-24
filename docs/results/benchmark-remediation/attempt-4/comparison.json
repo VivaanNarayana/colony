@@ -1,0 +1,8 @@
+{
+  "schema_version": 2,
+  "all_gates_passed": false,
+  "blocking_gates": [
+    "evidence_integrity"
+  ],
+  "integrity_error": "feature/outage-3.colony: push fingerprint does not match an actual source read"
+}

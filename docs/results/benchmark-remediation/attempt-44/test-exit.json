@@ -1,0 +1,11 @@
+{
+  "source": "5b7ee4838618610f836e1de15b2edbc6d905b5a5",
+  "pytest_exit_code": 0,
+  "wrapper_seconds": 94.6417407989502,
+  "full_suite_invocations": 1,
+  "benchmark_run": false,
+  "retained_earlier_test_invocations": [
+    "red:1pass3fail before runtime fix",
+    "focused:34pass after fix"
+  ]
+}

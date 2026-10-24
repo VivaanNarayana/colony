@@ -1,0 +1,23 @@
+{
+  "descriptive_only": true,
+  "not_a_gate_verdict": true,
+  "all_48_sessions_included": true,
+  "totals": {
+    "main": {
+      "tokens": 1143710,
+      "seconds": 243.653,
+      "tool_calls": 47,
+      "ask_calls": 24,
+      "uncached_input_plus_output": 145822,
+      "research_calls": 17
+    },
+    "feature": {
+      "tokens": 1345459,
+      "seconds": 245.38,
+      "tool_calls": 58,
+      "ask_calls": 24,
+      "uncached_input_plus_output": 186547,
+      "research_calls": 26
+    }
+  }
+}

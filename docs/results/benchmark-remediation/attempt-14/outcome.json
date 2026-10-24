@@ -1,0 +1,13 @@
+{
+  "stage": "local-gate",
+  "live_started": false,
+  "tests_passed": 153,
+  "quality_passed": true,
+  "lookup_improves": false,
+  "lookup_time_reduction": 0.0931679636774011,
+  "latency_reduction_95pct": [
+    -0.013959946443871996,
+    0.1918523907647639
+  ],
+  "decision": "Do not advance this candidate to live testing. Keep all gates blocking. Retain every local row; no identical-code retry. Next candidate adds a scoped-empty-store inference fast path."
+}

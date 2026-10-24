@@ -1,0 +1,11 @@
+{
+  "tests_passed": 139,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "ruff_passed": true,
+  "pytest_seconds": 58.89,
+  "platform": "Windows / Python 3.13.1",
+  "scope": "Full suite; existing Windows symlink skip",
+  "command": "python -m pytest -q; ruff check .; git diff --check",
+  "commit": "a997d98eef2b15d5fb309ac4de6ce1d5b2e918dc"
+}

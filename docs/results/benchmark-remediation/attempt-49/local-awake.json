@@ -1,0 +1,29 @@
+{
+  "role": "Operational idle-sleep prevention only; clocks/budgets/outcomes unchanged",
+  "started_utc": "2026-10-23T00:42:00.585925+00:00",
+  "request": "ES_CONTINUOUS | ES_SYSTEM_REQUIRED",
+  "persistent_power_configuration_changed": false,
+  "command": [
+    ".venv/Scripts/python.exe",
+    "scripts/benchmark_lookup.py",
+    "--baseline-ref",
+    "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+    "--feature-ref",
+    "e631f5b3d001e6ddf53286b1c60ff78af743c955",
+    "--runtime",
+    "../benchmark-remediation-local-49-runtime",
+    "--output",
+    "../benchmark-remediation-local-49-results",
+    "--name",
+    "lookup",
+    "--seed",
+    "20261021",
+    "--variants",
+    "3",
+    "--repetitions",
+    "3"
+  ],
+  "child_pid": 40808,
+  "ended_utc": "2026-10-23T00:42:24.627678+00:00",
+  "request_released": true
+}

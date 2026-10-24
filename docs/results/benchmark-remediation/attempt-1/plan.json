@@ -1,0 +1,41 @@
+{
+  "baseline_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "role": "public-development-remediation; not held-out confirmation",
+  "changes": [
+    "Do not rerank a sole exact answer or sole eligible excerpt; retain all source and age checks",
+    "Supply copy-ready repository-relative citations and explicit relative-link guidance"
+  ],
+  "local": {
+    "seed": 20261021,
+    "variants": 3,
+    "repetitions": 3,
+    "harness": "unchanged from PR 3 audit"
+  },
+  "live": {
+    "sessions": 48,
+    "revisions_per_trial": 1,
+    "scheduled_trials_for_this_revision": 1,
+    "max_native_tokens": 8000000,
+    "per_session_timeout_seconds": 240,
+    "task_set": "unchanged original 24 questions; frozen per protocol",
+    "model": "gpt-6-luna",
+    "reasoning_effort": "low",
+    "retries": 0
+  },
+  "gates": "All eight PR 3 gates remain mandatory, including interval lower bounds > 0 and 24/24 citation quality",
+  "stopping_rule": "Run local first. If local qualifies, finish all 48 live sessions; retain all failures. No best-of retries. A further attempt requires a concrete recorded fix and new revision.",
+  "src_sha256": {
+    "src/colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
+    "src/colony/cli.py": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae",
+    "src/colony/client.py": "5e1f9d5555763fddb8b8edcf943c4f8ce19a1356012714b559e1358d9f4a8634",
+    "src/colony/context.py": "6a8422fc4918ca01bb7dda369be5d570c1dd50b4557d0f59724cf29d7a91ed58",
+    "src/colony/mcp.py": "e2c4db2cdf14a4721472a3b0e9083d2d84ae29d9c8743253098474a363b746d6",
+    "src/colony/models.py": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a",
+    "src/colony/retrieval.py": "a1a5e52014abf23db81b07103ddf0dc0590a78af702322fc786e426ec63cda99",
+    "src/colony/security.py": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f",
+    "src/colony/server.py": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36",
+    "src/colony/store.py": "e327870bc49f8ee1edc682a758b796273f69220f93a43903db0e65f34f8cfc24",
+    "src/colony/validation.py": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac",
+    "src/colony/__init__.py": "07fa1670cc2b9e8776cf87c5297f6cc5ad8e68e65bfcf9a731e943803c1c9cdf"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "application_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "platform": "Windows / Python 3.13.1",
+  "tests_passed": 125,
+  "tests_skipped": 1,
+  "tests_failed": 0,
+  "skip_reason": "Existing Windows symlink permission skip",
+  "pytest_seconds": 49.7,
+  "ruff_passed": true,
+  "scope": "Local full suite; no hosted CI or paid provider sessions run",
+  "controls": [
+    "always miss and always validated rejected",
+    "bad source/hash/line/scope/status rejected",
+    "conflicting PYTHONPATH cannot mix complete source revisions",
+    "corrupt native sessions rejected, including under python -O",
+    "A/A smoke: 52 oracle passes, improvement false, expected exit 1",
+    "A/A expanded: 234 oracle passes, improvement false, expected exit 1",
+    "retained PR 2 native sessions: five blocking gates fail on reassessment"
+  ],
+  "model_snapshots_match_retained_report": true,
+  "packages": {
+    "fastembed": "0.7.4",
+    "onnxruntime": "1.24.4",
+    "numpy": "2.4.4",
+    "sqlite-vec": "0.1.9",
+    "mcp": "1.30.0"
+  },
+  "evaluator_sha256": {
+    "analyze_lookup_live.py": "3fbc7716020624f4dc6dc0cf5ffaec9c68433c29f4a1ce2378123c66f55df58a",
+    "benchmark_lookup.py": "701357766f616a368d0055287cb484d3ef2b78288e5defa98261ceb5d0e568a7",
+    "benchmark_statistics.py": "2615bb8acfc1f0aca764b76e5af39b02bf9920b2c2c51d02ef4db75c287dbdb6",
+    "lookup_workload.py": "e7d7433d8ea219f0d07eca343f73e64b7d3739e9c46f1135460bb33d1f47feb3",
+    "lookup_benchmark_worker.py": "4576981e3d20a684badafda9442c206d4e47fa4323281d01319fc90da314d451",
+    "benchmark_lookup_live.py": "1b40fb73ef394d1669e6942cc0ff02364a95e655dffaa347aa62e397d89eb3df"
+  }
+}

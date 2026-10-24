@@ -1,0 +1,57 @@
+{
+  "role": "Primary coordinator review of all48 shuffled answers/current packets and14 research/save traces; not independent blind review. Zero novel current excerpt byte sequences versus retained attempts24-49.",
+  "answers_reviewed": 48,
+  "novel_current_contexts": 0,
+  "core_facts_correct": {
+    "main": 24,
+    "feature": 24
+  },
+  "valid_citations": {
+    "main": 19,
+    "feature": 24
+  },
+  "incorrect_core_fact_review_ids": [],
+  "invalid_citation_review_ids": [
+    "R04",
+    "R31",
+    "R32",
+    "R37",
+    "R41"
+  ],
+  "relevant_packet_exceptions": [
+    {
+      "id": "R21",
+      "arm": "feature",
+      "task": "mcp-2",
+      "relevant": false,
+      "reason": "Validated receipt metadata at README96 lacks requested tool signatures; research required."
+    }
+  ],
+  "current_source_bytes_and_hashes_verified": true,
+  "source_searches_and_completed_reads_verified": true,
+  "proof_failures": [
+    {
+      "id": "R36",
+      "arm": "feature",
+      "task": "scope-3",
+      "attempts": 2,
+      "submitted_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be",
+      "actual_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36",
+      "outcome": "Both strict schema rejections retained; intervening new reread returned full actual hash; no proof repaired or retried by coordinator; final discloses save failure."
+    }
+  ],
+  "mcp2": "Four research calls then valid stored push; same insufficient initial metadata packet. Single sample does not isolate policy effect.",
+  "taint": {
+    "feature_stored": 7,
+    "feature_queued": 0,
+    "feature_all_true": true,
+    "main_stored": 6,
+    "main_queued": 4,
+    "main_all_true": true,
+    "limit": "No feature offline queue or explicit-false override in this run; unchanged enforcement regression tests cover them."
+  },
+  "supplemental_audit_correction": "Initial reused helper skipped push proof audit when receipt was non-JSON error text; rawtraceerrors initially empty. Added unconditional attempted-push check before payload handling. Both initial outputs and corrected failure audit retained. Historical evidence/harness/native traces unchanged.",
+  "rubric_unchanged": true,
+  "labels_frozen_before_analyzer": true,
+  "frozen_utc": "2026-10-23T03:05:12.732033+00:00"
+}

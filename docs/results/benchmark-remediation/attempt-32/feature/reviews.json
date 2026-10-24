@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "Manually reviewed requested facts, saved answer, current source text and actual research/push traces. Validated packets relevant. Citation resolves in frozen repository."
+  }
+}

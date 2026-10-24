@@ -1,0 +1,9 @@
+{
+  "verification_from": "../attempt-42/verification.json",
+  "tested_source": "f7066168c8023113291f8aac464286711ff69bf6",
+  "measured_source": "8fb06eed9524919bf86511d950cc03c10cd4ae0f",
+  "git_diff_src_scripts_tests_empty": true,
+  "new_test_invocations": 0,
+  "result": "268 passed,0 failed,1 existing Windows symlink skip; Ruff and whitespace passed",
+  "evidence_note": "The full suite ran once during checkpoint42. Its result is reused for identical application/scripts/tests; no tests were rerun for trial43."
+}

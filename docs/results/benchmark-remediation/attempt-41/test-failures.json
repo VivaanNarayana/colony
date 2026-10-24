@@ -1,0 +1,25 @@
+{
+  "count": 3,
+  "invocations": 1,
+  "reruns": 0,
+  "failures": [
+    {
+      "class": "tests.test_lookup_remediation",
+      "case": "test_source_answer_keeps_scope_and_unrelated_topic_guards[relay-unavailable-What happens when the relay is down?]",
+      "message": "assert not True",
+      "role": "Retained failing unrelated-topic hit assertion; no baseline test or causal attribution made."
+    },
+    {
+      "class": "tests.test_lookup_remediation",
+      "case": "test_source_answer_keeps_scope_and_unrelated_topic_guards[registry-offline-What happens during a registry outage?]",
+      "message": "assert not True",
+      "role": "Retained failing unrelated-topic hit assertion; no baseline test or causal attribution made."
+    },
+    {
+      "class": "tests.test_lookup_remediation",
+      "case": "test_source_answer_keeps_scope_and_unrelated_topic_guards[broker-down-What happens when the broker is unavailable?]",
+      "message": "assert not True",
+      "role": "Retained failing unrelated-topic hit assertion; no baseline test or causal attribution made."
+    }
+  ]
+}

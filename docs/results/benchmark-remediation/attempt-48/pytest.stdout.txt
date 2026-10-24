@@ -1,0 +1,14 @@
+{"wake_request_active": true, "child_pid": 47252}
+........................................................................ [ 23%]
+........................................................................ [ 47%]
+........................................................................ [ 71%]
+........................................................................ [ 95%]
+....s........                                                            [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:45
+  C:\Users\b3vel\Documents\Codex\2026-10-20\https-github-com-vivaannarayana-colony-https\work\colony\.venv\Lib\site-packages\starlette\testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: C:\Users\b3vel\Documents\Codex\2026-10-20\https-github-com-vivaannarayana-colony-https\work\colony\docs\results\benchmark-remediation\attempt-48\full-tests.xml -
+300 passed, 1 skipped, 1 warning in 85.47s (0:01:25)

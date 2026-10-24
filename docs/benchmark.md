@@ -1,5 +1,9 @@
 # Evaluation protocol
 
+See the [benchmark independence audit](benchmark-audit.md) before interpreting the
+historical optimization results. Passing development checks does not establish
+production savings or merge readiness.
+
 The included task set targets this public Colony repository: eight families, three
 overlapping phrasings each, 24 tasks. Pin a commit before running. Print JSONL with
 `python scripts/benchmark.py --tasks`. Questions include expected evidence paths and
@@ -98,19 +102,75 @@ Results still require relevance, correctness, citation and protocol review.
 This repeatedly observed suite is a regression check, and an observed wall-time
 or token win does not by itself establish statistically significant production
 savings. Use the separate provider-free `scripts/benchmark_lookup.py` for paired
-local latency and inference-work measurements on identical seeded memory.
+local latency, inference-work counts, and independent API-contract checks.
 
-Every feature-side protocol violation blocks merge-review readiness, including
-rejected over-budget attempts and duplicate asks. `merge_review_ready` requires
-every gate to pass. An earlier advisory interpretation was rejected by the user;
-historical artifacts retain that mistake, and it is superseded by this policy.
+Every protocol violation in either arm blocks the comparison, including rejected
+over-budget attempts, duplicate asks, and answers over the 130-word limit. All
+eight gates remain blocking. The analyzer no longer emits an automatic
+`merge_review_ready` or a partial performance-only pass. Historical reports retain
+their original fields; they are superseded by the audit, not silently rewritten.
 The shared research adapter reports its remaining call budget in every successful
 response, including empty searches, and explicitly directs the subject to finish
 when none remain. This feedback is identical in both arms; it changes neither the
 six-call limit nor the violation accounting, original outer prompts or task rubrics.
 Reads also return an exact `source` object with the same file hash for reuse in
 `push.sources`. The audit requires pushed hashes to match actual preceding reads
-and the frozen corpus, and preserves exact question punctuation in lookup checks.
+and the frozen corpus, hashes the returned source bytes independently, and
+preserves exact question punctuation and namespaces in both lookup and push checks.
 The source object follows the content and uses the push field names directly;
 duplicate `path`/`sha256` aliases are omitted. No model-provided hash is repaired
 or normalized, and incorrect attempts still fail the audit even after a retry.
+
+The quality gate requires every feature answer to meet the core-fact and citation
+rubrics, with no citation loss. Each gross-token, uncached-input-plus-output, and
+wall-time gate also requires the lower bound of its paired family bootstrap
+reduction interval to exceed zero. A point estimate alone cannot pass. These
+intervals describe this public suite; they do not correct repeated selection,
+make correlated paraphrases independent, or establish production generalization.
+Fresh live runs freeze task identities, questions and family assignments in the
+protocol before subject sessions. Integrity checks remain active under `python -O`;
+malformed evidence produces a retained failure report and a nonzero exit.
+
+## Isolated local contract benchmark
+
+```powershell
+python scripts/benchmark_lookup.py --baseline-ref <baseline-sha> --feature-ref <candidate-sha> --runtime <fresh-runtime> --output <results> --name lookup --seed 20261021 --variants 3 --repetitions 3
+```
+
+Both implementations are complete `git archive` exports loaded in separate Python
+processes. Their full source hashes and actual module paths are checked; an
+editable install or inherited `PYTHONPATH` cannot substitute current dependencies
+into baseline. Both use the same installed third-party environment and model
+configuration. Provision local models as described in the repository setup before
+running. Only committed application code is measured.
+
+The versioned workload generates source-backed facts and commands outside this
+repository's subject matter. It includes paraphrases, evidence-only answers,
+unrelated queries, empty memory, denied namespaces, absent scopes, changed/deleted
+sources, expired memory, missing sources, and an overview that cannot answer a
+procedure. The independent oracle checks required source facts, status, scope,
+current source hashes and excerpt line locations. Neither baseline agreement nor
+similarity scores establish correctness. Product scores and vectors are not mocked.
+
+The workload, harness fingerprints, revisions, seed and repetition count are
+written before importing application code. Model setup, pushing and warmup are
+excluded from measured asks. Task order is randomized reproducibly; paired arm
+order alternates, and workers do not perform timed work concurrently. Every
+observation and oracle error is flushed to JSONL. Existing run names cannot be
+overwritten. Initialization failures leave the plan and worker stderr for diagnosis.
+
+Exit 0 requires both arms to pass every oracle check, distinct application source,
+and a positive lower latency-interval bound. Exit 1 means a quality failure,
+inconclusive performance, or an A/A control; inspect the saved summary. An A/A run
+uses the same revision in both flags and must never qualify as an optimization.
+Inference-work counters are diagnostic, not substitute quality or speed gates.
+
+These public fixtures are development checks, not a hidden test set. They currently
+use small single-trail stores and warmed CPU inference, and do not establish large
+store scaling, concurrent-load behavior, cold-start cost or agent-level savings.
+Before making a new general performance claim, fix the revisions, sample size,
+run budget and stopping rule in advance; reserve externally authored repositories
+and questions from implementation tuning; and grade shuffled, arm-blinded answers
+and citations independently. Publish every scheduled trial and failed run. A
+failure becomes development feedback; selecting a later green run on the same
+questions is not independent confirmation.

@@ -1,0 +1,19 @@
+{
+  "status": "Rejected and reverted before native/full benchmark",
+  "isolated_model_screen": "Four supported snippets cross unchanged -5 cutoff; all six negative snippets stay below cutoff. Initial helper import formatting warning retained in exact executed archive; readable source formatted later without rerunning inference.",
+  "full_store_screen": {
+    "qualified_for_native": false,
+    "before_supported": 2,
+    "after_supported": 2
+  },
+  "reason": "Enclosing names attach to unrelated body paragraphs too, crowding candidate windows. No supported recovery in actual Store and checksum evidence disappears. Do not weaken cutoffs, expand candidate limits or select favorable probe subsets to force a pass.",
+  "full_tests": {
+    "passed": 272,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 69.15
+  },
+  "runtime_and_tests_reverted": true,
+  "no_native_or_full_trial": true,
+  "helper_preexecution_lint": "Source/store helper initial import and semicolon style findings were formatted before its only execution."
+}

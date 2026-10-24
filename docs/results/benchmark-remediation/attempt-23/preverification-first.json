@@ -1,0 +1,9 @@
+{
+  "tests_passed": 206,
+  "tests_failed": 1,
+  "tests_skipped": 1,
+  "pytest_seconds": 66.01,
+  "ruff_passed": true,
+  "failed_test": "test_named_field_cannot_rescue_a_declaration_outside_the_claim_window",
+  "cause": "Its unrelated historical paragraph was adjacent prose, now deliberately retained as potentially qualifying context. The test fixture now gives History a distinct heading so it still tests score-window exclusion, retaining its original assertions. Dedicated real-model tests cover preserving adjacent scope qualifications. No workload, gate, cutoff or score weight changed."
+}

@@ -1,0 +1,137 @@
+{
+  "kind": "Tests-only correctness and protocol checkpoint; not a benchmark result",
+  "checkpoint": 46,
+  "source": "c181654bcf3422075310386b85b78c9ae80babbd",
+  "previous_source": "65c9ea100efde39d216dc38f3dce941a14757ce0",
+  "tests": {
+    "tests": 286,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 285,
+    "seconds": 144.977
+  },
+  "test_phases": {
+    "diagnostic": {
+      "tests": 10,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 9,
+      "seconds": 5.491
+    },
+    "diagnostic2": {
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "seconds": 3.969
+    },
+    "focused": {
+      "tests": 113,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 110,
+      "seconds": 18.541
+    },
+    "focused2": {
+      "tests": 113,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 111,
+      "seconds": 13.192
+    },
+    "focused3": {
+      "tests": 113,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 112,
+      "seconds": 19.261
+    },
+    "focused4": {
+      "tests": 113,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 112,
+      "seconds": 19.676
+    },
+    "focused5": {
+      "tests": 116,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 112,
+      "seconds": 19.783
+    },
+    "focused6": {
+      "tests": 116,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 115,
+      "seconds": 18.748
+    },
+    "focused7": {
+      "tests": 111,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 111,
+      "seconds": 16.271
+    },
+    "full": {
+      "tests": 286,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "passed": 285,
+      "seconds": 144.977
+    },
+    "red-long": {
+      "tests": 7,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 4,
+      "seconds": 4.058
+    },
+    "red": {
+      "tests": 7,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 6,
+      "seconds": 2.951
+    }
+  },
+  "full_suite_invocations": 1,
+  "gate_statuses": {
+    "benchmarks/loaded_implementations_verified": "pending",
+    "benchmarks/tests_and_lint_pass": "success",
+    "benchmarks/local_lookup_improves": "pending",
+    "benchmarks/correctness_not_reduced": "pending",
+    "benchmarks/feature_follows_tool_protocol": "pending",
+    "benchmarks/observed_live_tokens_improve": "pending",
+    "benchmarks/observed_uncached_input_plus_output_improve": "pending",
+    "benchmarks/observed_live_time_improves": "pending"
+  },
+  "all_gates_passed": false,
+  "current_complete_eight_gate_result_available": false,
+  "last_live_trial": "45: evidence integrity rejected, with all original failures retained",
+  "last_complete_eight_gate_report": "41:3/8 for its own source only",
+  "all_eight_required_strict": true,
+  "bypass_actors": [],
+  "local_benchmarks": 0,
+  "native_sessions": 0,
+  "profiles": 0,
+  "analyzer_replays": 0,
+  "draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "pause_after_publication": true
+}

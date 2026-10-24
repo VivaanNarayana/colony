@@ -1,0 +1,9 @@
+{
+  "baselineUsedPercent": 5,
+  "stopUsedPercent": 13,
+  "allowancePercentagePoints": 8,
+  "windowDurationMins": 10080,
+  "resetsAt": 1793294233,
+  "observedAtUtc": "2026-10-23T01:32:06.5505537+00:00",
+  "note": "Shared account budget for coordinator, all workers and subjects. No reset renewal. Initial observation."
+}

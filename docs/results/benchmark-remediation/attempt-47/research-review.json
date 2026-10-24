@@ -1,0 +1,3261 @@
+[
+  {
+    "id": "R03",
+    "arm": "main",
+    "task": "scope-2",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "namespace permission"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "permissions"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "namespace"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 74,
+            "text": "Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`."
+          },
+          {
+            "path": "README.md",
+            "line": 140,
+            "text": "Namespace filtering precedes retrieval. Up to 12"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 92,
+            "text": "        namespaces = sorted(set(args.push + args.pull))"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 100,
+            "text": "                Scope(namespace=n, push=n in args.push, pull=n in args.pull) for n in namespaces"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 130,
+            "text": "        data[\"namespace\"] = args.ns"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 140,
+            "text": "            s.namespace == args.ns and s.push for s in client.keyfile.grant.scopes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 161,
+            "text": "            namespace=args.ns,"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 62,
+            "text": "        self, question: str, namespace: str | None = None, *, include_evidence_files: bool = False"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 65,
+            "text": "            payload = {\"question\": scrub(question), \"namespace\": namespace}"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 73,
+            "text": "        if not any(s.namespace == trail.namespace and s.push for s in self.keyfile.grant.scopes):"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 74,
+            "text": "            raise ValueError(\"Namespace push denied\")"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 40,
+            "text": "    def ask(question: str, namespace: str | None = None) -> list[TextContent]:"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 43,
+            "text": "        result = client.ask(question, namespace, include_evidence_files=evidence_files)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 58,
+            "text": "                \"namespace\","
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 116,
+            "text": "        namespace: str,"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 128,
+            "text": "                namespace=namespace,"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 11,
+            "text": "    namespace: str = Field(pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 41,
+            "text": "    namespace: str = Field(pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 51,
+            "text": "    namespace: str | None = Field(default=None, pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 61,
+            "text": "        if not any(s.namespace == trail.namespace and s.push for s in grant.scopes):"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 62,
+            "text": "            raise HTTPException(403, \"Namespace push denied\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 72,
+            "text": "        namespaces = [s.namespace for s in grant.scopes if s.pull]"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 73,
+            "text": "        if query.namespace is not None:"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 74,
+            "text": "            if query.namespace not in namespaces:"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 75,
+            "text": "                raise HTTPException(403, \"Namespace pull denied\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 76,
+            "text": "            namespaces = [query.namespace]"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 79,
+            "text": "            namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 37,
+            "text": " member_id TEXT NOT NULL, namespace TEXT NOT NULL, can_push INTEGER, can_pull INTEGER,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 38,
+            "text": " PRIMARY KEY(member_id, namespace));"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 40,
+            "text": " id TEXT PRIMARY KEY, namespace TEXT NOT NULL, question TEXT NOT NULL, content_ref TEXT NOT NULL,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 43,
+            "text": "CREATE INDEX IF NOT EXISTS trails_namespace ON trails(namespace);"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 154,
+            "text": "                [(grant.member_id, s.namespace, s.push, s.pull) for s in grant.scopes],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 176,
+            "text": "                    trail.namespace,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 213,
+            "text": "        namespaces: list[str],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 219,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 224,
+            "text": "            namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 230,
+            "text": "        if answer.get(\"status\") == \"validated\" or not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 235,
+            "text": "                namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 244,
+            "text": "        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 247,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 253,
+            "text": "        placeholders = \",\".join(\"?\" for _ in namespaces)"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 260,
+            "text": "                WHERE t.namespace IN ({placeholders}) AND t.created_at>=?"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 262,
+            "text": "                [query_vector, *namespaces, time.time() - max_age],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 268,
+            "text": "                key = (row[\"namespace\"], row[\"ref\"], row[\"content_hash\"], row[\"line\"])"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 368,
+            "text": "                    \"namespace\": row[\"namespace\"],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 394,
+            "text": "        namespaces: list[str],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 401,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 403,
+            "text": "        placeholders = \",\".join(\"?\" for _ in namespaces)"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 415,
+            "text": "                WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?\"\"\","
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 416,
+            "text": "                [vector, vector, vector, *namespaces, CANDIDATES],"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/server.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 2,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/server.py",
+          "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/security.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 1,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/security.py",
+          "content_hash": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How are namespace permissions checked?",
+          "content": "Namespace permissions come from signed grants. The server authenticates the Bearer keyfile, verifies its Ed25519 signature and expiration, then for push requires a matching scope with push=true; for ask it permits only scopes with pull=true and returns 403 if a requested namespace is outside those scopes. (src/colony/server.py; src/colony/security.py)",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/server.py",
+              "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"id\": \"fcbe7dc31d6d4529bb8b6326eeeb6f41\",\n  \"stored\": true,\n  \"duplicate\": false\n}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 5,
+    "new_file_reads": 2,
+    "pushes": 1,
+    "answer": "Namespace permissions are encoded in signed grants. The server verifies the Bearer keyfile\u2019s Ed25519 signature and expiry, then checks for a matching namespace scope: pushes require `push=true`, and asks are limited to scopes with `pull=true`. Requesting a namespace without pull access returns 403. ([server.py](src/colony/server.py), [security.py](src/colony/security.py))"
+  },
+  {
+    "id": "R06",
+    "arm": "feature",
+    "task": "outage-1",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "server down"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "server"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 6,
+            "text": "on the first server start (about 160 MB); provision them before disconnecting the host."
+          },
+          {
+            "path": "README.md",
+            "line": 20,
+            "text": "colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub"
+          },
+          {
+            "path": "README.md",
+            "line": 38,
+            "text": "with a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed"
+          },
+          {
+            "path": "README.md",
+            "line": 41,
+            "text": "when the server committed a push but its response was lost."
+          },
+          {
+            "path": "README.md",
+            "line": 46,
+            "text": "`push --source relative/path` records a local SHA-256; the server validates against its"
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 88,
+            "text": "the server; it is not complete secret or PII detection."
+          },
+          {
+            "path": "README.md",
+            "line": 102,
+            "text": "read by the server. `verification` separately reports matching file fingerprints and"
+          },
+          {
+            "path": "README.md",
+            "line": 129,
+            "text": "scrub themselves; server-side re-scrubbing is deferred. Questions and source metadata"
+          },
+          {
+            "path": "README.md",
+            "line": 157,
+            "text": "the server checkout. It never crawls uncited files or initializes memory from the repo."
+          },
+          {
+            "path": "README.md",
+            "line": 202,
+            "text": "on a disconnected host. Changing directories requires a server restart."
+          },
+          {
+            "path": "README.md",
+            "line": 212,
+            "text": "keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client"
+          },
+          {
+            "path": "README.md",
+            "line": 213,
+            "text": "allows HTTP only on loopback. Keep the issuer private key off the server where possible;"
+          },
+          {
+            "path": "README.md",
+            "line": 214,
+            "text": "the service needs only the public key. The server reads its checkout but never executes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 34,
+            "text": "    grant.add_argument(\"--server\", default=\"http://127.0.0.1:7331\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 96,
+            "text": "            server=args.server,"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 108,
+            "text": "        from colony.server import create_app"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 184,
+            "text": "            f\"Colony error: {type(exc).__name__}. Check configuration, scopes, and server availability.\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 18,
+            "text": "        self.url = self.keyfile.grant.server.rstrip(\"/\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 25,
+            "text": "        parsed = urlparse(grant.server)"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 38,
+            "text": "            raise ValueError(\"Server must use HTTPS, or loopback HTTP\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 39,
+            "text": "        # Verify server enrollment before persisting credentials. No redirects with bearer secrets."
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 41,
+            "text": "            grant.server.rstrip(\"/\") + \"/join\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 70,
+            "text": "            return {\"hit\": False, \"reason\": \"server_unavailable\"}"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 37,
+            "text": "    @server.tool("
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 114,
+            "text": "    @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 136,
+            "text": "    return server"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 19,
+            "text": "    server: str"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "README.md"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "README.md",
+          "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "What happens when the server is down?",
+          "content": "When the server is down, `ask` returns a miss. Pushes are scrubbed, encrypted, and queued locally; run `colony --home <agent-home> retry` to retry them explicitly. Retries are idempotent, including when a push committed but its response was lost. [README.md](README.md#L36)",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "README.md",
+              "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 3,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "When the server is down, `ask` returns a miss. Scrubbed pushes are encrypted and queued locally; run `colony --home <agent-home> retry` to retry them explicitly. Retries are idempotent, even if the server committed a push but its response was lost. ([README.md](README.md#L36))"
+  },
+  {
+    "id": "R08",
+    "arm": "feature",
+    "task": "serve-2",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "memory server"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "server"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 6,
+            "text": "on the first server start (about 160 MB); provision them before disconnecting the host."
+          },
+          {
+            "path": "README.md",
+            "line": 20,
+            "text": "colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub"
+          },
+          {
+            "path": "README.md",
+            "line": 38,
+            "text": "with a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed"
+          },
+          {
+            "path": "README.md",
+            "line": 41,
+            "text": "when the server committed a push but its response was lost."
+          },
+          {
+            "path": "README.md",
+            "line": 46,
+            "text": "`push --source relative/path` records a local SHA-256; the server validates against its"
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 88,
+            "text": "the server; it is not complete secret or PII detection."
+          },
+          {
+            "path": "README.md",
+            "line": 102,
+            "text": "read by the server. `verification` separately reports matching file fingerprints and"
+          },
+          {
+            "path": "README.md",
+            "line": 129,
+            "text": "scrub themselves; server-side re-scrubbing is deferred. Questions and source metadata"
+          },
+          {
+            "path": "README.md",
+            "line": 157,
+            "text": "the server checkout. It never crawls uncited files or initializes memory from the repo."
+          },
+          {
+            "path": "README.md",
+            "line": 202,
+            "text": "on a disconnected host. Changing directories requires a server restart."
+          },
+          {
+            "path": "README.md",
+            "line": 212,
+            "text": "keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client"
+          },
+          {
+            "path": "README.md",
+            "line": 213,
+            "text": "allows HTTP only on loopback. Keep the issuer private key off the server where possible;"
+          },
+          {
+            "path": "README.md",
+            "line": 214,
+            "text": "the service needs only the public key. The server reads its checkout but never executes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 34,
+            "text": "    grant.add_argument(\"--server\", default=\"http://127.0.0.1:7331\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 96,
+            "text": "            server=args.server,"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 108,
+            "text": "        from colony.server import create_app"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 184,
+            "text": "            f\"Colony error: {type(exc).__name__}. Check configuration, scopes, and server availability.\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 18,
+            "text": "        self.url = self.keyfile.grant.server.rstrip(\"/\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 25,
+            "text": "        parsed = urlparse(grant.server)"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 38,
+            "text": "            raise ValueError(\"Server must use HTTPS, or loopback HTTP\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 39,
+            "text": "        # Verify server enrollment before persisting credentials. No redirects with bearer secrets."
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 41,
+            "text": "            grant.server.rstrip(\"/\") + \"/join\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 70,
+            "text": "            return {\"hit\": False, \"reason\": \"server_unavailable\"}"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 37,
+            "text": "    @server.tool("
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 114,
+            "text": "    @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 136,
+            "text": "    return server"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 19,
+            "text": "    server: str"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "README.md"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "README.md",
+          "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "Start the local memory server.",
+          "content": "Start the local memory server from the repository checkout with: `colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub`. The README quick start first creates/activates a virtual environment, installs `.[dev]`, and runs `colony init` and `colony issue`. Source: README.md.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "README.md",
+              "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 3,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "From the repository checkout, run:\n\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```\n\nThe README quick start also shows creating and activating a virtual environment, installing `.[dev]`, then running `colony init` and `colony issue` first ([README.md](README.md#L10))."
+  },
+  {
+    "id": "R23",
+    "arm": "feature",
+    "task": "serve-3",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "serve"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 6,
+            "text": "on the first server start (about 160 MB); provision them before disconnecting the host."
+          },
+          {
+            "path": "README.md",
+            "line": 20,
+            "text": "colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub"
+          },
+          {
+            "path": "README.md",
+            "line": 38,
+            "text": "with a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed"
+          },
+          {
+            "path": "README.md",
+            "line": 41,
+            "text": "when the server committed a push but its response was lost."
+          },
+          {
+            "path": "README.md",
+            "line": 46,
+            "text": "`push --source relative/path` records a local SHA-256; the server validates against its"
+          },
+          {
+            "path": "README.md",
+            "line": 57,
+            "text": "  otherwise-matching trail (default age limit seven days, `serve --max-age` in seconds)."
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 88,
+            "text": "the server; it is not complete secret or PII detection."
+          },
+          {
+            "path": "README.md",
+            "line": 102,
+            "text": "read by the server. `verification` separately reports matching file fingerprints and"
+          },
+          {
+            "path": "README.md",
+            "line": 117,
+            "text": "exit code is preserved. Inputs, environment, and tool traces are not captured. Output is"
+          },
+          {
+            "path": "README.md",
+            "line": 129,
+            "text": "scrub themselves; server-side re-scrubbing is deferred. Questions and source metadata"
+          },
+          {
+            "path": "README.md",
+            "line": 157,
+            "text": "the server checkout. It never crawls uncited files or initializes memory from the repo."
+          },
+          {
+            "path": "README.md",
+            "line": 188,
+            "text": "This preserves differences between strong positive matches that sigmoid saturation lost."
+          },
+          {
+            "path": "README.md",
+            "line": 202,
+            "text": "on a disconnected host. Changing directories requires a server restart."
+          },
+          {
+            "path": "README.md",
+            "line": 212,
+            "text": "keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client"
+          },
+          {
+            "path": "README.md",
+            "line": 213,
+            "text": "allows HTTP only on loopback. Keep the issuer private key off the server where possible;"
+          },
+          {
+            "path": "README.md",
+            "line": 214,
+            "text": "the service needs only the public key. The server reads its checkout but never executes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 34,
+            "text": "    grant.add_argument(\"--server\", default=\"http://127.0.0.1:7331\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 45,
+            "text": "    serve = sub.add_parser(\"serve\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 46,
+            "text": "    serve.add_argument(\"--data\", type=Path, required=True)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 47,
+            "text": "    serve.add_argument(\"--repo\", type=Path, required=True)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 48,
+            "text": "    serve.add_argument(\"--issuer\", type=Path, required=True)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 49,
+            "text": "    serve.add_argument(\"--host\", default=\"127.0.0.1\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 50,
+            "text": "    serve.add_argument(\"--port\", type=int, default=7331)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 51,
+            "text": "    serve.add_argument(\"--max-age\", type=int, default=604800)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 96,
+            "text": "            server=args.server,"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 107,
+            "text": "    if args.command == \"serve\":"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 108,
+            "text": "        from colony.server import create_app"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 118,
+            "text": "        from colony.mcp import serve"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 120,
+            "text": "        serve(args.home, evidence_files=args.evidence_files)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 184,
+            "text": "            f\"Colony error: {type(exc).__name__}. Check configuration, scopes, and server availability.\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 18,
+            "text": "        self.url = self.keyfile.grant.server.rstrip(\"/\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 25,
+            "text": "        parsed = urlparse(grant.server)"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 38,
+            "text": "            raise ValueError(\"Server must use HTTPS, or loopback HTTP\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 39,
+            "text": "        # Verify server enrollment before persisting credentials. No redirects with bearer secrets."
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 41,
+            "text": "            grant.server.rstrip(\"/\") + \"/join\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 70,
+            "text": "            return {\"hit\": False, \"reason\": \"server_unavailable\"}"
+          },
+          {
+            "path": "src/colony/context.py",
+            "line": 24,
+            "text": "    # Preserve original line numbers even when replacing a private key block."
+          },
+          {
+            "path": "src/colony/context.py",
+            "line": 148,
+            "text": "            # over the full set first, and preserve original order for ties."
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 37,
+            "text": "    @server.tool("
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 114,
+            "text": "    @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 136,
+            "text": "    return server"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 139,
+            "text": "def serve(home: Path, *, evidence_files: bool = False):"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 19,
+            "text": "    server: str"
+          },
+          {
+            "path": "src/colony/retrieval.py",
+            "line": 58,
+            "text": "    # Preserve the question even when a large capture is truncated by the model tokenizer."
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/cli.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/cli.py",
+          "content_hash": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "Which serve flags are required?",
+          "content": "`colony serve` requires `--data`, `--repo`, and `--issuer`. The `--host`, `--port`, and `--max-age` flags are optional and have defaults. Source: src/colony/cli.py.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/cli.py",
+              "content_hash": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 2,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "`colony serve` requires `--data`, `--repo`, and `--issuer`. `--host`, `--port`, and `--max-age` are optional and have defaults. [src/colony/cli.py:45](src/colony/cli.py#L45)"
+  },
+  {
+    "id": "R26",
+    "arm": "feature",
+    "task": "stale-3",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "file changes"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "validation"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 78,
+            "text": "validation receipt and bounded, scrubbed excerpts from the matching current source files."
+          },
+          {
+            "path": "README.md",
+            "line": 91,
+            "text": "facts, contradictions, and unsafe instructions before reuse. Validation does not establish"
+          },
+          {
+            "path": "README.md",
+            "line": 108,
+            "text": "the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata."
+          },
+          {
+            "path": "README.md",
+            "line": 215,
+            "text": "validation commands or fetches submitted URLs. Request bodies are limited to 200 KB,"
+          },
+          {
+            "path": "README.md",
+            "line": 222,
+            "text": "the old one. Per-host storage can grow, including validation history and interrupted-write"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 18,
+            "text": "from colony.validation import snapshot"
+          },
+          {
+            "path": "src/colony/context.py",
+            "line": 10,
+            "text": "from colony.validation import repo_file"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 32,
+            "text": "        \"File validation does not certify saved-answer truth. Research missing facts, \""
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 51,
+            "text": "        # Keep the answer and validation receipt; avoid duplicating the same paths in checks."
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 6,
+            "text": "from fastapi.exceptions import RequestValidationError"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 23,
+            "text": "    @app.exception_handler(RequestValidationError)"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 24,
+            "text": "    async def invalid_request(request: Request, exc: RequestValidationError):"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 30,
+            "text": "from colony.validation import validate"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 47,
+            "text": "CREATE TABLE IF NOT EXISTS validations ("
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 361,
+            "text": "                    \"INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)\","
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 482,
+            "text": "                    \"INSERT INTO validations(trail_id,validator,result,checked_at) VALUES(?,?,?,?)\","
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/validation.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/validation.py",
+          "content_hash": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How are file changes detected during validation?",
+          "content": "Validation reads each file source\u2019s repository-relative file bytes, computes SHA-256, and compares it with the saved content_hash. A mismatch is stale (\u201cFile changed\u201d); matching fingerprints can still be marked stale if an expected snippet or Python symbol is absent. Missing/invalid evidence is stale, and overall status is stale if any check is stale. Source: [src/colony/validation.py](src/colony/validation.py).",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/validation.py",
+              "content_hash": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 3,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "Validation reads each file\u2019s bytes and compares their SHA-256 hash with the saved `content_hash`. A mismatch marks the source stale as \u201cFile changed.\u201d Even when the hashes match, validation can mark it stale if an expected snippet or Python symbol is missing. [src/colony/validation.py](src/colony/validation.py)"
+  },
+  {
+    "id": "R27",
+    "arm": "main",
+    "task": "serve-3",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "serve"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 6,
+            "text": "on the first server start (about 160 MB); provision them before disconnecting the host."
+          },
+          {
+            "path": "README.md",
+            "line": 20,
+            "text": "colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub"
+          },
+          {
+            "path": "README.md",
+            "line": 38,
+            "text": "with a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed"
+          },
+          {
+            "path": "README.md",
+            "line": 41,
+            "text": "when the server committed a push but its response was lost."
+          },
+          {
+            "path": "README.md",
+            "line": 46,
+            "text": "`push --source relative/path` records a local SHA-256; the server validates against its"
+          },
+          {
+            "path": "README.md",
+            "line": 57,
+            "text": "  otherwise-matching trail (default age limit seven days, `serve --max-age` in seconds)."
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 88,
+            "text": "the server; it is not complete secret or PII detection."
+          },
+          {
+            "path": "README.md",
+            "line": 102,
+            "text": "read by the server. `verification` separately reports matching file fingerprints and"
+          },
+          {
+            "path": "README.md",
+            "line": 117,
+            "text": "exit code is preserved. Inputs, environment, and tool traces are not captured. Output is"
+          },
+          {
+            "path": "README.md",
+            "line": 129,
+            "text": "scrub themselves; server-side re-scrubbing is deferred. Questions and source metadata"
+          },
+          {
+            "path": "README.md",
+            "line": 157,
+            "text": "the server checkout. It never crawls uncited files or initializes memory from the repo."
+          },
+          {
+            "path": "README.md",
+            "line": 188,
+            "text": "This preserves differences between strong positive matches that sigmoid saturation lost."
+          },
+          {
+            "path": "README.md",
+            "line": 202,
+            "text": "on a disconnected host. Changing directories requires a server restart."
+          },
+          {
+            "path": "README.md",
+            "line": 212,
+            "text": "keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client"
+          },
+          {
+            "path": "README.md",
+            "line": 213,
+            "text": "allows HTTP only on loopback. Keep the issuer private key off the server where possible;"
+          },
+          {
+            "path": "README.md",
+            "line": 214,
+            "text": "the service needs only the public key. The server reads its checkout but never executes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 34,
+            "text": "    grant.add_argument(\"--server\", default=\"http://127.0.0.1:7331\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 45,
+            "text": "    serve = sub.add_parser(\"serve\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 46,
+            "text": "    serve.add_argument(\"--data\", type=Path, required=True)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 47,
+            "text": "    serve.add_argument(\"--repo\", type=Path, required=True)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 48,
+            "text": "    serve.add_argument(\"--issuer\", type=Path, required=True)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 49,
+            "text": "    serve.add_argument(\"--host\", default=\"127.0.0.1\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 50,
+            "text": "    serve.add_argument(\"--port\", type=int, default=7331)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 51,
+            "text": "    serve.add_argument(\"--max-age\", type=int, default=604800)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 96,
+            "text": "            server=args.server,"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 107,
+            "text": "    if args.command == \"serve\":"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 108,
+            "text": "        from colony.server import create_app"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 118,
+            "text": "        from colony.mcp import serve"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 120,
+            "text": "        serve(args.home, evidence_files=args.evidence_files)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 184,
+            "text": "            f\"Colony error: {type(exc).__name__}. Check configuration, scopes, and server availability.\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 18,
+            "text": "        self.url = self.keyfile.grant.server.rstrip(\"/\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 25,
+            "text": "        parsed = urlparse(grant.server)"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 38,
+            "text": "            raise ValueError(\"Server must use HTTPS, or loopback HTTP\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 39,
+            "text": "        # Verify server enrollment before persisting credentials. No redirects with bearer secrets."
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 41,
+            "text": "            grant.server.rstrip(\"/\") + \"/join\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 70,
+            "text": "            return {\"hit\": False, \"reason\": \"server_unavailable\"}"
+          },
+          {
+            "path": "src/colony/context.py",
+            "line": 24,
+            "text": "    # Preserve original line numbers even when replacing a private key block."
+          },
+          {
+            "path": "src/colony/context.py",
+            "line": 148,
+            "text": "            # over the full set first, and preserve original order for ties."
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 37,
+            "text": "    @server.tool("
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 114,
+            "text": "    @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 136,
+            "text": "    return server"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 139,
+            "text": "def serve(home: Path, *, evidence_files: bool = False):"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 19,
+            "text": "    server: str"
+          },
+          {
+            "path": "src/colony/retrieval.py",
+            "line": 58,
+            "text": "    # Preserve the question even when a large capture is truncated by the model tokenizer."
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/cli.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/cli.py",
+          "content_hash": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "Which serve flags are required?",
+          "content": "The required `serve` flags are `--data`, `--repo`, and `--issuer`. `--host` (default 127.0.0.1), `--port` (default 7331), and `--max-age` (default 604800) are optional. Source: src/colony/cli.py.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/cli.py",
+              "content_hash": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"id\": \"da40da6273064d3cabf032c355b5aa10\",\n  \"stored\": false,\n  \"queued\": true\n}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 2,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "The required `serve` flags are `--data`, `--repo`, and `--issuer`. `--host`, `--port`, and `--max-age` are optional and have defaults. ([src/colony/cli.py](src/colony/cli.py))"
+  },
+  {
+    "id": "R28",
+    "arm": "main",
+    "task": "outage-1",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "server down"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "offline"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 198,
+            "text": "`COLONY_MODEL_CACHE` to choose a shared model cache. For fully offline provisioning, set"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 74,
+            "text": "    sub.add_parser(\"retry\", help=\"Retry encrypted, scrubbed offline pushes\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 39,
+            "text": "    # Client-generated IDs make offline retries idempotent."
+          },
+          {
+            "path": "src/colony/retrieval.py",
+            "line": 44,
+            "text": "    # Include tokenization as well as weights for explicitly provisioned offline snapshots."
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "unavailable"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "src/colony/client.py",
+            "line": 57,
+            "text": "            raise httpx.ConnectError(\"Colony unavailable\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 70,
+            "text": "            return {\"hit\": False, \"reason\": \"server_unavailable\"}"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 25,
+            "text": "        \"discover and try your configured research tools before reporting them unavailable.\""
+          },
+          {
+            "path": "src/colony/validation.py",
+            "line": 63,
+            "text": "                result, reason = \"stale\", f\"Evidence unavailable ({type(exc).__name__})\""
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/client.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 2,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/client.py",
+          "content_hash": "5e1f9d5555763fddb8b8edcf943c4f8ce19a1356012714b559e1358d9f4a8634"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "What happens when the server is down?",
+          "content": "When the server is unreachable, ask returns {hit:false, reason:\"server_unavailable\"}. A push queues the scrubbed trail in encrypted local storage and returns queued:true; retry sends queued trails once the server is available, stopping with pending:true if transport fails. (src/colony/client.py)",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/client.py",
+              "content_hash": "5e1f9d5555763fddb8b8edcf943c4f8ce19a1356012714b559e1358d9f4a8634"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"id\": \"77eafe0004da4650857ea2bfade949a8\",\n  \"stored\": true,\n  \"duplicate\": false\n}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 4,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "When the server is unreachable, `ask` returns `hit: false` with reason `server_unavailable`. `push` stores the scrubbed trail in an encrypted local queue and returns `queued: true`. `retry` sends queued trails when the server is available; if a transport error occurs, it stops and returns `pending: true`. [src/colony/client.py](src/colony/client.py)"
+  },
+  {
+    "id": "R29",
+    "arm": "feature",
+    "task": "mcp-1",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "MCP"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 65,
+            "text": "## Agent integration (MCP)"
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 75,
+            "text": "MCP evidence consists of `{ref, content_hash, kind?: \"file\"}`. Reuse hashes obtained during"
+          },
+          {
+            "path": "README.md",
+            "line": 79,
+            "text": "MCP uses focused excerpts by default. `mcp --evidence-files` includes complete small"
+          },
+          {
+            "path": "README.md",
+            "line": 84,
+            "text": "not agent policy or execution authorization. `mcp --compact` explicitly selects the default."
+          },
+          {
+            "path": "README.md",
+            "line": 86,
+            "text": "is requested. MCP caps authored-answer text at 4,000 characters with a truncation flag;"
+          },
+          {
+            "path": "README.md",
+            "line": 100,
+            "text": "The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,"
+          },
+          {
+            "path": "README.md",
+            "line": 110,
+            "text": "the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is"
+          },
+          {
+            "path": "README.md",
+            "line": 242,
+            "text": "and MCP stdio. See [the evaluation protocol](docs/benchmark.md) for a 24-task overlapping"
+          },
+          {
+            "path": "pyproject.toml",
+            "line": 15,
+            "text": "  \"mcp>=1.12,<2\","
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 75,
+            "text": "    mcp = sub.add_parser(\"mcp\", help=\"Run ask/push tools on MCP stdio\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 76,
+            "text": "    context = mcp.add_mutually_exclusive_group()"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 81,
+            "text": "    mcp.set_defaults(evidence_files=False)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 117,
+            "text": "    if args.command == \"mcp\":"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 118,
+            "text": "        from colony.mcp import serve"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 6,
+            "text": "from mcp.types import TextContent, ToolAnnotations"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 21,
+            "text": "def create_mcp(home: Path, *, evidence_files: bool = False):"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 140,
+            "text": "    create_mcp(home, evidence_files=evidence_files).run(transport=\"stdio\")"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "README.md"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "README.md",
+          "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How do I connect an agent through MCP?",
+          "content": "Add a stdio MCP server entry to the agent configuration: {\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}. Use an absolute executable path if colony is not on PATH and an absolute home path. The MCP tools are ask(question, namespace?) and push(namespace, question, content, sources?, tainted?). [README.md](README.md)",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "README.md",
+              "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 2,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "Add this stdio server entry to your agent\u2019s MCP configuration:\n\n```json\n{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}\n```\n\nUse an absolute executable path if `colony` isn\u2019t on `PATH`, and an absolute home path. The server provides `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)` tools. [README.md](README.md)\n\nSaved this answer to the `bench` namespace."
+  },
+  {
+    "id": "R36",
+    "arm": "feature",
+    "task": "scope-3",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "namespace"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 74,
+            "text": "Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`."
+          },
+          {
+            "path": "README.md",
+            "line": 140,
+            "text": "Namespace filtering precedes retrieval. Up to 12"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 92,
+            "text": "        namespaces = sorted(set(args.push + args.pull))"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 100,
+            "text": "                Scope(namespace=n, push=n in args.push, pull=n in args.pull) for n in namespaces"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 130,
+            "text": "        data[\"namespace\"] = args.ns"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 140,
+            "text": "            s.namespace == args.ns and s.push for s in client.keyfile.grant.scopes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 161,
+            "text": "            namespace=args.ns,"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 62,
+            "text": "        self, question: str, namespace: str | None = None, *, include_evidence_files: bool = False"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 65,
+            "text": "            payload = {\"question\": scrub(question), \"namespace\": namespace}"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 73,
+            "text": "        if not any(s.namespace == trail.namespace and s.push for s in self.keyfile.grant.scopes):"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 74,
+            "text": "            raise ValueError(\"Namespace push denied\")"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 40,
+            "text": "    def ask(question: str, namespace: str | None = None) -> list[TextContent]:"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 43,
+            "text": "        result = client.ask(question, namespace, include_evidence_files=evidence_files)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 58,
+            "text": "                \"namespace\","
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 116,
+            "text": "        namespace: str,"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 128,
+            "text": "                namespace=namespace,"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 11,
+            "text": "    namespace: str = Field(pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 41,
+            "text": "    namespace: str = Field(pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 51,
+            "text": "    namespace: str | None = Field(default=None, pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 61,
+            "text": "        if not any(s.namespace == trail.namespace and s.push for s in grant.scopes):"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 62,
+            "text": "            raise HTTPException(403, \"Namespace push denied\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 72,
+            "text": "        namespaces = [s.namespace for s in grant.scopes if s.pull]"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 73,
+            "text": "        if query.namespace is not None:"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 74,
+            "text": "            if query.namespace not in namespaces:"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 75,
+            "text": "                raise HTTPException(403, \"Namespace pull denied\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 76,
+            "text": "            namespaces = [query.namespace]"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 79,
+            "text": "            namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 37,
+            "text": " member_id TEXT NOT NULL, namespace TEXT NOT NULL, can_push INTEGER, can_pull INTEGER,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 38,
+            "text": " PRIMARY KEY(member_id, namespace));"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 40,
+            "text": " id TEXT PRIMARY KEY, namespace TEXT NOT NULL, question TEXT NOT NULL, content_ref TEXT NOT NULL,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 43,
+            "text": "CREATE INDEX IF NOT EXISTS trails_namespace ON trails(namespace);"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 154,
+            "text": "                [(grant.member_id, s.namespace, s.push, s.pull) for s in grant.scopes],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 176,
+            "text": "                    trail.namespace,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 213,
+            "text": "        namespaces: list[str],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 219,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 224,
+            "text": "            namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 230,
+            "text": "        if answer.get(\"status\") == \"validated\" or not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 235,
+            "text": "                namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 244,
+            "text": "        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 247,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 253,
+            "text": "        placeholders = \",\".join(\"?\" for _ in namespaces)"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 260,
+            "text": "                WHERE t.namespace IN ({placeholders}) AND t.created_at>=?"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 262,
+            "text": "                [query_vector, *namespaces, time.time() - max_age],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 268,
+            "text": "                key = (row[\"namespace\"], row[\"ref\"], row[\"content_hash\"], row[\"line\"])"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 368,
+            "text": "                    \"namespace\": row[\"namespace\"],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 394,
+            "text": "        namespaces: list[str],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 401,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 403,
+            "text": "        placeholders = \",\".join(\"?\" for _ in namespaces)"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 415,
+            "text": "                WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?\"\"\","
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 416,
+            "text": "                [vector, vector, vector, *namespaces, CANDIDATES],"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/server.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/server.py",
+          "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "Can an agent pull from an ungranted namespace?",
+          "content": "No. The /ask endpoint builds the allowed namespace list from grant scopes with pull=true. If a query specifies a namespace outside that list, it returns HTTP 403 (\"Namespace pull denied\"). Without a namespace specified, retrieval is limited to granted pull namespaces. Source: src/colony/server.py.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/server.py",
+              "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 2,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "No. Pull access is limited to namespaces with `pull=true` in the agent\u2019s grant. Requesting an ungranted namespace returns HTTP 403, \u201cNamespace pull denied.\u201d ([src/colony/server.py](src/colony/server.py))"
+  },
+  {
+    "id": "R37",
+    "arm": "main",
+    "task": "serve-2",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "memory server"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "server"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 6,
+            "text": "on the first server start (about 160 MB); provision them before disconnecting the host."
+          },
+          {
+            "path": "README.md",
+            "line": 20,
+            "text": "colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub"
+          },
+          {
+            "path": "README.md",
+            "line": 38,
+            "text": "with a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed"
+          },
+          {
+            "path": "README.md",
+            "line": 41,
+            "text": "when the server committed a push but its response was lost."
+          },
+          {
+            "path": "README.md",
+            "line": 46,
+            "text": "`push --source relative/path` records a local SHA-256; the server validates against its"
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 88,
+            "text": "the server; it is not complete secret or PII detection."
+          },
+          {
+            "path": "README.md",
+            "line": 102,
+            "text": "read by the server. `verification` separately reports matching file fingerprints and"
+          },
+          {
+            "path": "README.md",
+            "line": 129,
+            "text": "scrub themselves; server-side re-scrubbing is deferred. Questions and source metadata"
+          },
+          {
+            "path": "README.md",
+            "line": 157,
+            "text": "the server checkout. It never crawls uncited files or initializes memory from the repo."
+          },
+          {
+            "path": "README.md",
+            "line": 202,
+            "text": "on a disconnected host. Changing directories requires a server restart."
+          },
+          {
+            "path": "README.md",
+            "line": 212,
+            "text": "keyfiles with `--server https://your-host` and terminate TLS at a reverse proxy. The client"
+          },
+          {
+            "path": "README.md",
+            "line": 213,
+            "text": "allows HTTP only on loopback. Keep the issuer private key off the server where possible;"
+          },
+          {
+            "path": "README.md",
+            "line": 214,
+            "text": "the service needs only the public key. The server reads its checkout but never executes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 34,
+            "text": "    grant.add_argument(\"--server\", default=\"http://127.0.0.1:7331\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 96,
+            "text": "            server=args.server,"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 108,
+            "text": "        from colony.server import create_app"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 184,
+            "text": "            f\"Colony error: {type(exc).__name__}. Check configuration, scopes, and server availability.\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 18,
+            "text": "        self.url = self.keyfile.grant.server.rstrip(\"/\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 25,
+            "text": "        parsed = urlparse(grant.server)"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 38,
+            "text": "            raise ValueError(\"Server must use HTTPS, or loopback HTTP\")"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 39,
+            "text": "        # Verify server enrollment before persisting credentials. No redirects with bearer secrets."
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 41,
+            "text": "            grant.server.rstrip(\"/\") + \"/join\","
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 70,
+            "text": "            return {\"hit\": False, \"reason\": \"server_unavailable\"}"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 37,
+            "text": "    @server.tool("
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 114,
+            "text": "    @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 136,
+            "text": "    return server"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 19,
+            "text": "    server: str"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "README.md"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "README.md",
+          "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "Start the local memory server.",
+          "content": "From the repository checkout, start the local Colony memory server with `colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub` (README.md, Quick start). The README setup sequence first creates a Python 3.11\u20133.13 virtual environment, installs `-e '.[dev]'`, initializes `.colony/admin`, and issues an agent keyfile. Retrieval models download on first server start (~160 MB); provision them before disconnecting the host.",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "README.md",
+              "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"id\": \"36a46f8013ef414e966d692967754b64\",\n  \"stored\": false,\n  \"queued\": true\n}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 3,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "Start the local memory server from the repository checkout with:\n\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```\n\nThe README quick start first creates a virtual environment, installs `-e '.[dev]'`, initializes `.colony/admin`, and issues an agent keyfile. Models download on first server start (about 160 MB). Source: [README.md](README.md)."
+  },
+  {
+    "id": "R38",
+    "arm": "feature",
+    "task": "scope-2",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "namespace permission"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "permission"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "namespace"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 3,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 74,
+            "text": "Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`."
+          },
+          {
+            "path": "README.md",
+            "line": 140,
+            "text": "Namespace filtering precedes retrieval. Up to 12"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 92,
+            "text": "        namespaces = sorted(set(args.push + args.pull))"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 100,
+            "text": "                Scope(namespace=n, push=n in args.push, pull=n in args.pull) for n in namespaces"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 130,
+            "text": "        data[\"namespace\"] = args.ns"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 140,
+            "text": "            s.namespace == args.ns and s.push for s in client.keyfile.grant.scopes"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 161,
+            "text": "            namespace=args.ns,"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 62,
+            "text": "        self, question: str, namespace: str | None = None, *, include_evidence_files: bool = False"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 65,
+            "text": "            payload = {\"question\": scrub(question), \"namespace\": namespace}"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 73,
+            "text": "        if not any(s.namespace == trail.namespace and s.push for s in self.keyfile.grant.scopes):"
+          },
+          {
+            "path": "src/colony/client.py",
+            "line": 74,
+            "text": "            raise ValueError(\"Namespace push denied\")"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 40,
+            "text": "    def ask(question: str, namespace: str | None = None) -> list[TextContent]:"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 43,
+            "text": "        result = client.ask(question, namespace, include_evidence_files=evidence_files)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 58,
+            "text": "                \"namespace\","
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 116,
+            "text": "        namespace: str,"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 128,
+            "text": "                namespace=namespace,"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 11,
+            "text": "    namespace: str = Field(pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 41,
+            "text": "    namespace: str = Field(pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/models.py",
+            "line": 51,
+            "text": "    namespace: str | None = Field(default=None, pattern=r\"^[a-zA-Z0-9_.-]{1,80}$\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 61,
+            "text": "        if not any(s.namespace == trail.namespace and s.push for s in grant.scopes):"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 62,
+            "text": "            raise HTTPException(403, \"Namespace push denied\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 72,
+            "text": "        namespaces = [s.namespace for s in grant.scopes if s.pull]"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 73,
+            "text": "        if query.namespace is not None:"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 74,
+            "text": "            if query.namespace not in namespaces:"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 75,
+            "text": "                raise HTTPException(403, \"Namespace pull denied\")"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 76,
+            "text": "            namespaces = [query.namespace]"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 79,
+            "text": "            namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 37,
+            "text": " member_id TEXT NOT NULL, namespace TEXT NOT NULL, can_push INTEGER, can_pull INTEGER,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 38,
+            "text": " PRIMARY KEY(member_id, namespace));"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 40,
+            "text": " id TEXT PRIMARY KEY, namespace TEXT NOT NULL, question TEXT NOT NULL, content_ref TEXT NOT NULL,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 43,
+            "text": "CREATE INDEX IF NOT EXISTS trails_namespace ON trails(namespace);"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 154,
+            "text": "                [(grant.member_id, s.namespace, s.push, s.pull) for s in grant.scopes],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 176,
+            "text": "                    trail.namespace,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 213,
+            "text": "        namespaces: list[str],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 219,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 224,
+            "text": "            namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 230,
+            "text": "        if answer.get(\"status\") == \"validated\" or not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 235,
+            "text": "                namespaces,"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 244,
+            "text": "        self, question, namespaces, max_age, *, include_evidence_files=False, query_vector=None"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 247,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 253,
+            "text": "        placeholders = \",\".join(\"?\" for _ in namespaces)"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 260,
+            "text": "                WHERE t.namespace IN ({placeholders}) AND t.created_at>=?"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 262,
+            "text": "                [query_vector, *namespaces, time.time() - max_age],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 268,
+            "text": "                key = (row[\"namespace\"], row[\"ref\"], row[\"content_hash\"], row[\"line\"])"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 368,
+            "text": "                    \"namespace\": row[\"namespace\"],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 394,
+            "text": "        namespaces: list[str],"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 401,
+            "text": "        if not namespaces:"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 403,
+            "text": "        placeholders = \",\".join(\"?\" for _ in namespaces)"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 415,
+            "text": "                WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?\"\"\","
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 416,
+            "text": "                [vector, vector, vector, *namespaces, CANDIDATES],"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/server.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 2,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/server.py",
+          "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/security.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 1,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/security.py",
+          "content_hash": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How are namespace permissions checked?",
+          "content": "The server authenticates a Bearer keyfile, verifies its issuer signature and expiry, then checks the verified grant scopes. Push requires a scope with matching namespace and push=true (and separately enforces output-capture scope); ask allows only pull=true namespaces, returning 403 if a requested namespace is outside them. [src/colony/server.py](src/colony/server.py)",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/server.py",
+              "content_hash": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36"
+            }
+          ],
+          "tainted": false
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stored\":true,\"duplicate\":false}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 5,
+    "new_file_reads": 2,
+    "pushes": 1,
+    "answer": "The server validates the Bearer keyfile\u2019s signature and expiry, then checks the resulting grant scopes. Push requires a scope matching the trail\u2019s namespace with `push=true`; ask limits retrieval to namespaces with `pull=true` and returns 403 if a requested namespace lacks pull access. Output capture has an additional grant-level check. [src/colony/server.py](src/colony/server.py#L34)\n\nSaved this answer to the `bench` namespace."
+  },
+  {
+    "id": "R39",
+    "arm": "main",
+    "task": "mcp-1",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "MCP"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 65,
+            "text": "## Agent integration (MCP)"
+          },
+          {
+            "path": "README.md",
+            "line": 67,
+            "text": "Add this stdio server entry to your agent's MCP configuration. Use an absolute executable"
+          },
+          {
+            "path": "README.md",
+            "line": 71,
+            "text": "{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}"
+          },
+          {
+            "path": "README.md",
+            "line": 75,
+            "text": "MCP evidence consists of `{ref, content_hash, kind?: \"file\"}`. Reuse hashes obtained during"
+          },
+          {
+            "path": "README.md",
+            "line": 79,
+            "text": "MCP uses focused excerpts by default. `mcp --evidence-files` includes complete small"
+          },
+          {
+            "path": "README.md",
+            "line": 84,
+            "text": "not agent policy or execution authorization. `mcp --compact` explicitly selects the default."
+          },
+          {
+            "path": "README.md",
+            "line": 86,
+            "text": "is requested. MCP caps authored-answer text at 4,000 characters with a truncation flag;"
+          },
+          {
+            "path": "README.md",
+            "line": 100,
+            "text": "The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,"
+          },
+          {
+            "path": "README.md",
+            "line": 110,
+            "text": "the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is"
+          },
+          {
+            "path": "README.md",
+            "line": 242,
+            "text": "and MCP stdio. See [the evaluation protocol](docs/benchmark.md) for a 24-task overlapping"
+          },
+          {
+            "path": "pyproject.toml",
+            "line": 15,
+            "text": "  \"mcp>=1.12,<2\","
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 75,
+            "text": "    mcp = sub.add_parser(\"mcp\", help=\"Run ask/push tools on MCP stdio\")"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 76,
+            "text": "    context = mcp.add_mutually_exclusive_group()"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 81,
+            "text": "    mcp.set_defaults(evidence_files=False)"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 117,
+            "text": "    if args.command == \"mcp\":"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 118,
+            "text": "        from colony.mcp import serve"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 5,
+            "text": "from mcp.server.fastmcp import FastMCP"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 6,
+            "text": "from mcp.types import TextContent, ToolAnnotations"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 21,
+            "text": "def create_mcp(home: Path, *, evidence_files: bool = False):"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 35,
+            "text": "    server = FastMCP(\"Colony\", instructions=reuse_guidance + research_guidance)"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 140,
+            "text": "    create_mcp(home, evidence_files=evidence_files).run(transport=\"stdio\")"
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "README.md"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "README.md",
+          "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How do I connect an agent through MCP?",
+          "content": "Add a stdio MCP server entry to the agent configuration: {\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}. Use absolute paths for both the executable (if not on PATH) and agent home. Then the agent can use ask(question, namespace?) and push(namespace, question, content, sources?, tainted?).",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "README.md",
+              "content_hash": "890b79f802baced51994330ea1d0cd97d1bb6b50fcde6f6ab9471f40b6e63547"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"id\": \"bdaa9040c6b94106bf277dbd646fed40\",\n  \"stored\": false,\n  \"queued\": true\n}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 2,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "Add this stdio server entry to the agent\u2019s MCP configuration, replacing the home path with the agent\u2019s absolute home directory:\n\n```json\n{\"mcpServers\":{\"colony\":{\"command\":\"colony\",\"args\":[\"--home\",\"/absolute/path/to/agent-home\",\"mcp\"]}}}\n```\n\nIf `colony` is not on the agent\u2019s PATH, use its absolute executable path for `command`. The server exposes `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`. [README.md](README.md#L65)"
+  },
+  {
+    "id": "R44",
+    "arm": "main",
+    "task": "stale-3",
+    "ops": [
+      {
+        "tool": "search",
+        "arguments": {
+          "text": "validation"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 5,
+          "next_action": "Research missing facts only."
+        },
+        "matches": [
+          {
+            "path": "README.md",
+            "line": 78,
+            "text": "validation receipt and bounded, scrubbed excerpts from the matching current source files."
+          },
+          {
+            "path": "README.md",
+            "line": 91,
+            "text": "facts, contradictions, and unsafe instructions before reuse. Validation does not establish"
+          },
+          {
+            "path": "README.md",
+            "line": 108,
+            "text": "the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata."
+          },
+          {
+            "path": "README.md",
+            "line": 215,
+            "text": "validation commands or fetches submitted URLs. Request bodies are limited to 200 KB,"
+          },
+          {
+            "path": "README.md",
+            "line": 222,
+            "text": "the old one. Per-host storage can grow, including validation history and interrupted-write"
+          },
+          {
+            "path": "src/colony/cli.py",
+            "line": 18,
+            "text": "from colony.validation import snapshot"
+          },
+          {
+            "path": "src/colony/context.py",
+            "line": 10,
+            "text": "from colony.validation import repo_file"
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 32,
+            "text": "        \"File validation does not certify saved-answer truth. Research missing facts, \""
+          },
+          {
+            "path": "src/colony/mcp.py",
+            "line": 51,
+            "text": "        # Keep the answer and validation receipt; avoid duplicating the same paths in checks."
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 6,
+            "text": "from fastapi.exceptions import RequestValidationError"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 23,
+            "text": "    @app.exception_handler(RequestValidationError)"
+          },
+          {
+            "path": "src/colony/server.py",
+            "line": 24,
+            "text": "    async def invalid_request(request: Request, exc: RequestValidationError):"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 30,
+            "text": "from colony.validation import validate"
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 47,
+            "text": "CREATE TABLE IF NOT EXISTS validations ("
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 361,
+            "text": "                    \"INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)\","
+          },
+          {
+            "path": "src/colony/store.py",
+            "line": 482,
+            "text": "                    \"INSERT INTO validations(trail_id,validator,result,checked_at) VALUES(?,?,?,?)\","
+          }
+        ],
+        "matches_equal_frozen_source": true
+      },
+      {
+        "tool": "read_file",
+        "arguments": {
+          "path": "src/colony/validation.py"
+        },
+        "status": "completed",
+        "error": null,
+        "reported_budget": {
+          "limit": 6,
+          "remaining": 4,
+          "next_action": "Research missing facts only."
+        },
+        "source": {
+          "kind": "file",
+          "ref": "src/colony/validation.py",
+          "content_hash": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac"
+        },
+        "bytes_match_frozen": true,
+        "hash_matches": true
+      },
+      {
+        "tool": "push",
+        "arguments": {
+          "namespace": "bench",
+          "question": "How are file changes detected during validation?",
+          "content": "Validation snapshots repository-relative files by computing SHA-256 over their bytes. During validation it rereads the file and compares the current SHA-256 to the recorded content_hash; a mismatch yields stale with reason \u201cFile changed.\u201d Missing/invalid files are stale as evidence unavailable. [src/colony/validation.py]",
+          "sources": [
+            {
+              "kind": "file",
+              "ref": "src/colony/validation.py",
+              "content_hash": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac"
+            }
+          ]
+        },
+        "status": "completed",
+        "error": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"id\": \"51e2d58579b04cee996d1642ddcfe372\",\n  \"stored\": true,\n  \"duplicate\": false\n}"
+            }
+          ],
+          "structured_content": null
+        },
+        "sources_match_actual_new_reads": true
+      }
+    ],
+    "research_calls": 2,
+    "new_file_reads": 1,
+    "pushes": 1,
+    "answer": "Validation detects file changes by computing a SHA-256 fingerprint when the source is snapshotted, then rereading the file and comparing its current fingerprint with the recorded `content_hash`. A mismatch marks the source stale as \u201cFile changed.\u201d ([validation.py](src/colony/validation.py))"
+  }
+]

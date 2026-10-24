@@ -1,0 +1,778 @@
+{
+  "Start the local memory server.": [
+    {
+      "line": 12,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.211770057678223
+    },
+    {
+      "line": 12,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": 0.5808164477348328
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.34701156616211
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": 1.8836114406585693
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.096389770507812
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": 2.1886415481567383
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.379875183105469
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": 1.8942592144012451
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.35340690612793
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": 1.5192523002624512
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.422335624694824
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": 1.0915017127990723
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.05129623413086
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": 1.478510856628418
+    },
+    {
+      "line": 25,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.418861389160156
+    },
+    {
+      "line": 25,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": 0.024853909388184547
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.404492378234863
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": 1.4608821868896484
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.442046165466309
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": 1.2985529899597168
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": -11.390320777893066
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": 1.2676010131835938
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.427180290222168
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": 1.0108147859573364
+    },
+    {
+      "line": 229,
+      "kind": "full",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.461591720581055
+    },
+    {
+      "line": 229,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": 1.1675540208816528
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.426990509033203
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": 1.4331549406051636
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.442420959472656
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": 1.3266839981079102
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.458728790283203
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": 1.3019933700561523
+    }
+  ],
+  "Set up the development dependencies.": [
+    {
+      "line": 12,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.398408889770508
+    },
+    {
+      "line": 12,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.270027160644531
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.408584594726562
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.344149589538574
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.33867073059082
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.33542251586914
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.385416030883789
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.316030502319336
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.441503524780273
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.36345386505127
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.462553024291992
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.357364654541016
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.458548545837402
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.361584663391113
+    },
+    {
+      "line": 25,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": 0.5299953818321228
+    },
+    {
+      "line": 25,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -2.231861114501953
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.450894355773926
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.353018760681152
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.464193344116211
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.370492935180664
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": 1.9790751934051514
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": 1.5911571979522705
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.440290451049805
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.340288162231445
+    },
+    {
+      "line": 229,
+      "kind": "full",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.45903205871582
+    },
+    {
+      "line": 229,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.328548431396484
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.422271728515625
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.346790313720703
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.434685707092285
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.347064971923828
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.455626487731934
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.354890823364258
+    }
+  ],
+  "Which serve flags are required?": [
+    {
+      "line": 12,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.410013198852539
+    },
+    {
+      "line": 12,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -10.708930969238281
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.449082374572754
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.212814331054688
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.42061996459961
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.225984573364258
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.470658302307129
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.239986419677734
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.453605651855469
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.26005744934082
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.483744621276855
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.289417266845703
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -10.862363815307617
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -9.82615852355957
+    },
+    {
+      "line": 25,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.487597465515137
+    },
+    {
+      "line": 25,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.276976585388184
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.473106384277344
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.268394470214844
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.476892471313477
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.288595199584961
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": -11.486125946044922
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": -11.27407169342041
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.485572814941406
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.290190696716309
+    },
+    {
+      "line": 229,
+      "kind": "full",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.488584518432617
+    },
+    {
+      "line": 229,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.248115539550781
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.434640884399414
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.211589813232422
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.461991310119629
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.220649719238281
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.478682518005371
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.245986938476562
+    }
+  ],
+  "How can I rotate database credentials?": [
+    {
+      "line": 12,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.405766487121582
+    },
+    {
+      "line": 12,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n# Linux/macOS:\n. .venv/bin/activate\n# Windows PowerShell instead: .venv\\Scripts\\Activate.ps1\npython -m pip install -e '.[dev]'\ncolony init --dir .colony/admin\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.174233436584473
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.445119857788086
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m venv .venv\n```",
+      "logit": -11.256257057189941
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.375547409057617
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\n. .venv/bin/activate\n```",
+      "logit": -11.188220024108887
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.46571159362793
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\npython -m pip install -e '.[dev]'\n```",
+      "logit": -11.263924598693848
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.455246925354004
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony init --dir .colony/admin\n```",
+      "logit": -11.26698112487793
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.467555046081543
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json\n```",
+      "logit": -11.246514320373535
+    },
+    {
+      "line": 12,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.449699401855469
+    },
+    {
+      "line": 12,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.249307632446289
+    },
+    {
+      "line": 25,
+      "kind": "full",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.416011810302734
+    },
+    {
+      "line": 25,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.245805740356445
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.459735870361328
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub\n```",
+      "logit": -11.263842582702637
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.475996971130371
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml\n```",
+      "logit": -11.288549423217773
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": -11.446738243103027
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a ask \"How do I install the development dependencies?\" --ns team\n```",
+      "logit": -11.224316596984863
+    },
+    {
+      "line": 25,
+      "kind": "command",
+      "text": "Section: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.483297348022461
+    },
+    {
+      "line": 25,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Quick start\n```sh\ncolony --home .colony/agent-a run --capture outputs --ns team --question <question> --source pyproject.toml -- python -m pytest -q\n```",
+      "logit": -11.296736717224121
+    },
+    {
+      "line": 229,
+      "kind": "full",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.448125839233398
+    },
+    {
+      "line": 229,
+      "kind": "introduced-full",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\nruff check .\npython scripts/benchmark.py --tasks\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.24835205078125
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.419683456420898
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython -m pytest -q\n```",
+      "logit": -11.260287284851074
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.429936408996582
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --tasks\n```",
+      "logit": -11.266389846801758
+    },
+    {
+      "line": 229,
+      "kind": "command",
+      "text": "Section: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.452884674072266
+    },
+    {
+      "line": 229,
+      "kind": "introduced-command",
+      "text": "Section: Colony\nShared memory for one team's coding agents. Push a learned answer, ask before repeating\nresearch, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;\nno model API key, inference service, or telemetry required. Local retrieval models download\non the first server start (about 160 MB); provision them before disconnecting the host.\nSection: Colony > Verification and evaluation\n```sh\npython scripts/benchmark.py --results path/to/measurements.jsonl\n```",
+      "logit": -11.264472961425781
+    }
+  ]
+}

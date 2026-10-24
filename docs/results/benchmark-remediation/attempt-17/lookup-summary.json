@@ -1,0 +1,102 @@
+{
+  "schema_version": 2,
+  "evaluation_role": "public-development-contracts",
+  "baseline_commit": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "feature_commit": "b5b2afeaac996771e30f1567ad81ce9c35f4049e",
+  "seed": 20261021,
+  "repetitions": 3,
+  "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+  "harness_sha256": {
+    "benchmark_lookup.py": "701357766f616a368d0055287cb484d3ef2b78288e5defa98261ceb5d0e568a7",
+    "benchmark_statistics.py": "2615bb8acfc1f0aca764b76e5af39b02bf9920b2c2c51d02ef4db75c287dbdb6",
+    "lookup_workload.py": "e7d7433d8ea219f0d07eca343f73e64b7d3739e9c46f1135460bb33d1f47feb3",
+    "lookup_benchmark_worker.py": "4576981e3d20a684badafda9442c206d4e47fa4323281d01319fc90da314d451"
+  },
+  "modes": {
+    "main": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 2.98639680002816,
+      "query_embeddings": 108,
+      "reranker_calls": 99,
+      "reranked_passages": 99
+    },
+    "feature": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 2.3114064998808317,
+      "query_embeddings": 90,
+      "reranker_calls": 18,
+      "reranked_passages": 18
+    }
+  },
+  "same_implementation": false,
+  "implementation_isolated": true,
+  "loaded_implementations": {
+    "main": {
+      "source": "main-source/src",
+      "module_paths": {
+        "colony": "main-source/src/colony/__init__.py",
+        "colony.models": "main-source/src/colony/models.py",
+        "colony.retrieval": "main-source/src/colony/retrieval.py",
+        "colony.security": "main-source/src/colony/security.py",
+        "colony.validation": "main-source/src/colony/validation.py",
+        "colony.context": "main-source/src/colony/context.py",
+        "colony.store": "main-source/src/colony/store.py"
+      },
+      "source_sha256": {
+        "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
+        "colony/cli.py": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae",
+        "colony/client.py": "5e1f9d5555763fddb8b8edcf943c4f8ce19a1356012714b559e1358d9f4a8634",
+        "colony/context.py": "e8aeded90b8cee8d0d1659b4ecb3ae4112a5461cc6951f30ea4bcea484f19e5c",
+        "colony/mcp.py": "365f314d05efa6240a10b7ad93764968aee2989c45ab9d28298a35240e0c623f",
+        "colony/models.py": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a",
+        "colony/retrieval.py": "a1a5e52014abf23db81b07103ddf0dc0590a78af702322fc786e426ec63cda99",
+        "colony/security.py": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f",
+        "colony/server.py": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36",
+        "colony/store.py": "708f4d48c39dc02d130c4fdc96519c3298c9c919aaa3f2d588bebbe496232aed",
+        "colony/validation.py": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac",
+        "colony/__init__.py": "07fa1670cc2b9e8776cf87c5297f6cc5ad8e68e65bfcf9a731e943803c1c9cdf"
+      }
+    },
+    "feature": {
+      "source": "feature-source/src",
+      "module_paths": {
+        "colony": "feature-source/src/colony/__init__.py",
+        "colony.models": "feature-source/src/colony/models.py",
+        "colony.retrieval": "feature-source/src/colony/retrieval.py",
+        "colony.security": "feature-source/src/colony/security.py",
+        "colony.validation": "feature-source/src/colony/validation.py",
+        "colony.context": "feature-source/src/colony/context.py",
+        "colony.store": "feature-source/src/colony/store.py"
+      },
+      "source_sha256": {
+        "colony/capture.py": "dd5553b05ac7bce40ad945a3a7088185d6994d08126594516aab5f0414989b48",
+        "colony/cli.py": "88034d49a242fa7fba7fe202b8f275ab113654c22b3411af900b25d1c5a0c1ae",
+        "colony/client.py": "5e1f9d5555763fddb8b8edcf943c4f8ce19a1356012714b559e1358d9f4a8634",
+        "colony/context.py": "22eb3e49d82acfcc951c46af41ad18e6cc6cdc307f09490e5ed33540b90dcf8b",
+        "colony/mcp.py": "edc410a44738ce4807cff684f5d811dae396ad4779d300bce3d7e24eadfe77e1",
+        "colony/models.py": "260ae8115a29e32c1f8577c92ef95a094cf39f024a77464b12244e15e244f69a",
+        "colony/retrieval.py": "594a2ff074cba6ffb90b9ca15b2cfb018b1c0ce6209075865ada4120e7357973",
+        "colony/security.py": "97483e64c727999de9527f14c01bdfc51b9fc1ee5e5a83184e8e2d6a41d79c8f",
+        "colony/server.py": "35ddf149763227dcd443f3c9aee9bb2889a996be5aae47cf65604f6f19a60a36",
+        "colony/store.py": "ec4153702d4ec0d772137d495405c8098db0cd72686deb4900ddf083fadcfdcf",
+        "colony/validation.py": "718ccc9006287ab98591309859e1cf9179da177015f1a4b820c1d6a1f04f18ac",
+        "colony/__init__.py": "07fa1670cc2b9e8776cf87c5297f6cc5ad8e68e65bfcf9a731e943803c1c9cdf"
+      }
+    }
+  },
+  "quality_passed": true,
+  "lookup_improves": true,
+  "lookup_time_reduction": 0.22602163923459995,
+  "latency_reduction_95pct": [
+    0.11809239912108682,
+    0.34370930241594544
+  ],
+  "limitations": [
+    "Public development fixtures, not held-out production evidence.",
+    "Warm asks only; setup, push, cold start and concurrency are not timed.",
+    "Family bootstrap is descriptive; repeated runs are not independent confirmation."
+  ],
+  "public_export": "Import-proof host prefixes only are runtime-relative; measurements and hashes unchanged."
+}

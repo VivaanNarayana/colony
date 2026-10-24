@@ -1,0 +1,29 @@
+{
+  "status": "Rejected; strict published proof schema restored before a full benchmark",
+  "outcome": {
+    "mechanically_qualified": false,
+    "totals": {
+      "before": {
+        "native_input_tokens": 228101,
+        "native_output_tokens": 1412,
+        "native_cached_input_tokens": 189952,
+        "research_calls": 5
+      },
+      "after": {
+        "native_input_tokens": 227057,
+        "native_output_tokens": 1247,
+        "native_cached_input_tokens": 202496,
+        "research_calls": 5
+      }
+    },
+    "manual_review_still_required": true
+  },
+  "manual_review": "All8 answers/packets/research/push receipts reviewed. After partial-failover reads the new defining file but omits the mandatory save. Other source proofs and requested facts correct. No input saving in the equal-action single-hit control32898->32930; native schema representation is not established by SDK JSON byte counts. No gate waiver or retry.",
+  "focused_tests": {
+    "passed": 77,
+    "failed": 0
+  },
+  "strict_admission_regressions_retained_in_tests": true,
+  "runtime_reverted": true,
+  "no_full_benchmark": true
+}

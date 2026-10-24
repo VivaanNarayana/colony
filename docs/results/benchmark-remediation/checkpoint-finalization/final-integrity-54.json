@@ -1,0 +1,21 @@
+{
+  "head": "9cf60d34136d3dede5a929d581730ce44f7efb1a",
+  "public_manifest_entries": 52,
+  "manifest_git_blobs_verified": true,
+  "historical1through53_and_harness_unchanged": true,
+  "tested_source_still_identical": true,
+  "both_local_native_loaded_sources_match": true,
+  "required_checks": 8,
+  "strict": true,
+  "no_bypass": true,
+  "all_current_checks_conservatively_failure": true,
+  "complete_eight_gate_verdict": false,
+  "pr": {
+    "autoMergeRequest": null,
+    "headRefName": "feat/benchmark-independent-evaluation",
+    "headRefOid": "9cf60d34136d3dede5a929d581730ce44f7efb1a",
+    "isDraft": true,
+    "mergedAt": null,
+    "state": "OPEN"
+  }
+}

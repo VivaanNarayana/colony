@@ -16,13 +16,23 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
 RANK_REVISION = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"
-INDEX_VERSION = f"semantic-v7:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked"
+# Correct fence boundaries change source section labels, invalidating the index.
+# Migration rebuilds all three vector tables with the same embedding/ranking models.
+INDEX_VERSION = (
+    f"semantic-v10:{EMBED_MODEL}:section-aware-paragraphs-question-arguments-masked:matched-fences"
+)
 CANDIDATES = 12
 
 
 @lru_cache(maxsize=1)
 def models():
-    options = {"cache_dir": os.environ.get("COLONY_MODEL_CACHE"), "threads": 2}
+    # Embedding and ranking have separate pools. Bound their combined pressure
+    # on the short, interleaved query path as well as bulk-passage inference.
+    # Model inputs, batch-one execution and numerical outputs remain unchanged.
+    options = {
+        "cache_dir": os.environ.get("COLONY_MODEL_CACHE"),
+        "threads": min(4, os.cpu_count() or 1),
+    }
     return TextEmbedding(
         model_name=EMBED_MODEL,
         revision=EMBED_REVISION,
@@ -97,13 +107,25 @@ def rank(question: str, passages: list[str]) -> list[float]:
     if not passages:
         return []
     _, model = models()
-    return [float(score) for score in model.rerank(question, passages)]
+    # Cross-encoder batches also pad every pair to the longest passage. Source
+    # snippets vary substantially in length; avoid that work without changing
+    # the passage set, ordering, model or relevance thresholds.
+    # Identical pairs have identical batch-one model inputs. Compute them once
+    # within this invocation and scatter back, without caching text across calls.
+    unique = list(dict.fromkeys(passages))
+    scores = dict(
+        zip(unique, [float(s) for s in model.rerank(question, unique, batch_size=1)], strict=True)
+    )
+    return [scores[p] for p in passages]
 
 
 def embed_passages(texts: list[str]) -> list[bytes]:
     model, _ = models()
     return (
-        [sqlite_vec.serialize_float32(v.tolist()) for v in model.passage_embed(texts)]
+        # These bounded source paragraphs vary greatly in length. The ONNX
+        # encoder pads a batch to its longest input; individual inference avoids
+        # repeating that padding work and preserves both vectors and input order.
+        [sqlite_vec.serialize_float32(v.tolist()) for v in model.passage_embed(texts, batch_size=1)]
         if texts
         else []
     )
@@ -187,11 +209,12 @@ def keyword_coverage(question: str, passages: list[str]) -> list[float]:
     return [sum(weights[t] for t in query & doc) / total for doc in docs]
 
 
-def local_term_support(query: set[str], text: str) -> bool:
-    """Require most query terms within at most two neighboring sentences."""
+def local_term_support(query: set[str], text: str, *, complete: bool = False) -> bool:
+    """Check local word coverage; complete coverage can bypass semantic comparison."""
     sentences = re.split(r"(?<=[.!?])\s+", text)
-    return any(
-        len(query & terms(" ".join(sentences[i : i + 2]))) > len(query) / 2
+    required = len(query) if complete else len(query) // 2 + 1
+    return bool(query) and any(
+        len(query & terms(" ".join(sentences[i : i + 2]))) >= required
         for i in range(len(sentences))
     )
 

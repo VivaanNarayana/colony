@@ -1,0 +1,164 @@
+{
+  "kind": "Development checkpoint62; no native benchmark or new eight-gate verdict",
+  "runtime": "bf240ab0637d51732f803a56caa995a2d18d77ec",
+  "current_source_native_measured": false,
+  "latest_complete_comparison": "55:3/8 on8380724",
+  "current_checks": "Eight conservative failures; no inherited greens",
+  "repair": "Authorized identical-payload/producer duplicate may reconstruct incomplete bounded source index. Matching completion marker restores zero-source-read/no-inference/no-DML fastpath. Marker represents construction, never current freshness.",
+  "transaction_limits": "All vectors prepared before deletion; descriptor/vector/marker changes within savepoint. Optional inference/insertion failures preserve ACK while DB remains operational; DB rollback/release failure is not guaranteed recoverable.",
+  "tests": {
+    "before_prototype": "6failed7passed",
+    "prototype_first_after": "13passed",
+    "prototype_expanded": "20passed",
+    "prototype_full": "397passed1knownfailure1Windows skip",
+    "marker_focused": "34passed",
+    "final_full": "401passed1knownwrongattribute failure1Windows skip;403total",
+    "lint": "pass; both interim lint errors retained"
+  },
+  "review": {
+    "model": "GPT-6 Astra High",
+    "verdict": "No actionable blocker found",
+    "evidence": "Completion marker atomic with construction and repair savepoint; inference/partial insertion/marker failures preserve old view and ACK; migration rebuilds markers transactionally; marker consulted only for duplicate maintenance; current-byte query validation unchanged; legacy unknown inspected once; receipts/trail/taint/auth unchanged; type-only logging.",
+    "limits": "Unknown/incomplete retries can read/embed under writer lock. No arbitrary database/vector-corruption repair, startup/query sweep, semantic or native benefit established. Review preceded final full-suite result."
+  },
+  "first_prototype_cost": {
+    "kind": "Single paired descriptive mechanism observation; not native benchmark or statistical gate",
+    "workers_idle": true,
+    "input": {
+      "files": 8,
+      "each_bytes": 2000000,
+      "content_sha256": "be8889d3b8893c11d290b8dcf682164c326a90e6998f6bddb25d9a3a02daf666"
+    },
+    "before_commit": "89809f6e1fd09cb79b2c7e59baeda049bcddb4e0",
+    "before_store_sha256": "8fecebc743b8e6ae1092011ae6def4d208b5d248cf3b93e278c94e4d7f210d40",
+    "candidate_store_sha256": "01713305ffe073e0809cca7b2897ff5d13da4bf212cb84c9109f8f287f0092e0",
+    "results": [
+      {
+        "label": "before_repair",
+        "seconds": 0.004178000031970441,
+        "source_read_calls": 0,
+        "bytes_in_source_files_read": 0,
+        "receipt": {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "stored": true,
+          "duplicate": true
+        }
+      },
+      {
+        "label": "repair_without_completion_state",
+        "seconds": 0.9640748999663629,
+        "source_read_calls": 8,
+        "bytes_in_source_files_read": 16000000,
+        "receipt": {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "stored": true,
+          "duplicate": true
+        }
+      }
+    ],
+    "model_calls": 0,
+    "provider_calls": 0,
+    "stub_disclosure": "Deterministic vectors seed SQL only. Actual bounded source reads/hash/decode/redaction run unchanged; both timed duplicate paths make0model calls.",
+    "limits": "One warm-file-cache observation in fixed order, no CI/general latency claim. Private runtime/keys excluded from publication."
+  },
+  "completed_cost": {
+    "kind": "Single paired descriptive mechanism observation; not native benchmark or statistical gate",
+    "workers_idle": true,
+    "input": {
+      "files": 8,
+      "each_bytes": 2000000,
+      "content_sha256": "be8889d3b8893c11d290b8dcf682164c326a90e6998f6bddb25d9a3a02daf666"
+    },
+    "before_commit": "89809f6e1fd09cb79b2c7e59baeda049bcddb4e0",
+    "before_store_sha256": "8fecebc743b8e6ae1092011ae6def4d208b5d248cf3b93e278c94e4d7f210d40",
+    "candidate_store_sha256": "8f1a441c841415320f72dc4077d8ae4666bd22e2f3716ecadbbd901ef8840776",
+    "results": [
+      {
+        "label": "before_repair",
+        "seconds": 0.004210599989164621,
+        "source_read_calls": 0,
+        "bytes_in_source_files_read": 0,
+        "receipt": {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "stored": true,
+          "duplicate": true
+        }
+      },
+      {
+        "label": "repair_with_completion_state",
+        "seconds": 0.003524900006595999,
+        "source_read_calls": 0,
+        "bytes_in_source_files_read": 0,
+        "receipt": {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "stored": true,
+          "duplicate": true
+        }
+      }
+    ],
+    "model_calls": 0,
+    "provider_calls": 0,
+    "stub_disclosure": "Deterministic vectors seed SQL only. Actual bounded source reads/hash/decode/redaction run unchanged; both timed duplicate paths make0model calls.",
+    "limits": "One warm-file-cache observation in fixed order, no CI/general latency claim. Private runtime/keys excluded from publication."
+  },
+  "query_instruction": {
+    "verdict": "Rejected, all26eligibility decisions unchanged; knownred/C16 and4fresh false guard passes remain",
+    "fresh": 16,
+    "controls": 10,
+    "embedding_requests": 104,
+    "actual_embedding_calls": 77,
+    "cache_hits": 27,
+    "CE_pairs": 52,
+    "provider_calls": 0,
+    "cost_qualification": "Local diagnostic only; no native-gate claim or threshold/input retuning"
+  },
+  "anaphora_proposal": {
+    "status": "Rejected using retained evidence; no new inference or production edit",
+    "proposal": "Merge neighboring sentences when next begins with anaphora list, otherwise require a supported child unit in addition to existing full-answer eligibility",
+    "counterexample_source": "work/retrieval-50/parent-child-diagnostic.json",
+    "rows": [
+      {
+        "case": "viewer permissions",
+        "full": 5.228814,
+        "highest_child": -0.786336,
+        "control_bound": 0.198209
+      },
+      {
+        "case": "contributor release",
+        "full": 4.052802,
+        "highest_child": -4.941064,
+        "control_bound": 0
+      },
+      {
+        "case": "trainee schedule",
+        "full": 2.951719,
+        "highest_child": -0.649991,
+        "control_bound": 0
+      },
+      {
+        "case": "remote protocol",
+        "full": 2.118064,
+        "highest_child": -0.154459,
+        "control_bound": 0
+      }
+    ],
+    "reason": "These admitted supported compositions have no listed anaphoric sentence starter; proposed grouping leaves the already failing child units unchanged. No list retuning or model calls justified."
+  },
+  "native_runs_added": 0,
+  "native_gross_through55": 13077278,
+  "local_suite_inference_count": "Not instrumented; raw outputs retained; do not claim zero model work for the entire checkpoint",
+  "historical_evidence_costs_retained": true,
+  "models_harness_gates_proof_taint_scope_freshness_unchanged": true,
+  "usage": {
+    "allowance": 3,
+    "baseline_used": 16,
+    "latest_observed_used": 17,
+    "stop_used": 21,
+    "observed_points_consumed": 1,
+    "reset": 1793382050,
+    "all_workers_shared": true,
+    "reporting_may_lag": true
+  },
+  "next": "Bounded procedural-window diagnostic63, read-only production, fixed unchanged models. Known false hit, metadata/sufficient-answer misses, protocol/native performance unresolved.",
+  "at_utc": "2026-10-23T23:34:29.061413+00:00"
+}

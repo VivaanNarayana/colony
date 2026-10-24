@@ -1,0 +1,24 @@
+# Development checkpoint59: matched Markdown fences
+
+Runtime **89809f6e1fd09cb79b2c7e59baeda049bcddb4e0** corrects a concrete source-representation defect: a shorter or different delimiter inside a fenced example previously toggled the parser and turned example headings into real section labels and display boundaries. One shared scanner now tracks opener character/length, closing-line syntax and permitted indentation across all three consumers. These fence rules follow the [CommonMark specification](https://spec.commonmark.org/0.31.2/#fenced-code-blocks). The supported scanner handles top-level fences; it does not claim full list/blockquote container parsing. Original lines, selection rules, source reads, redaction, two-excerpt/2400-per-excerpt/2800-total limits and eight-file/96-chunk bounds remain unchanged. No prefix compaction or relevance boost was added.
+
+The representation version becomesv10 because corrected labels change embedded passage text. The existing migration rebuilds **all three vector tables**, not only source vectors. Model names/revisions, model files and embedding/ranking/scoring/guard functions remain unchanged; AST comparisons are recorded. Startup work can increase on migration, and the previously reproduced unavailable-source recovery gap remains. This patch does not add a scheduler or repair that gap.
+
+Before:9failed/4passed. After:45focusedpassed, including actual migration success and rollback; full382passed/1knownwrongattribute failure/1existingWindows skip. Ruff/whitespace pass. AstraHigh found no blocker. A model-free comparison of50retained trial55 repository files,1,588preferred packet/window comparisons, found **zero changed descriptors, packets or windows**. Therefore this correction provides no workload-specific reason for another native run or native-benefit claim. Latest complete [trial55](../attempt-55/README.md) remains3/8 on prior runtime8380724. Current source is unmeasured; all eight current-head checks conservatively fail rather than inherit old greens. No native56/59 ran.
+
+The worker's initial motivating README fixture was copied as decoded text, rather than retained original bytes; it contains a Windows encoding artifact. Its ASCII Tools line and line number were intact, but it is not an original-byte proof. Raw inputs/results remain unchanged. The separate corpus comparison reads the actual retained repository bytes, records their SHA256s, and independently establishes unchanged ordinary descriptors. The earlier mcp2 lexical/local-support exclusion is not explained by fences.
+
+Other bounded outcomes, all retained:
+
+|Phase|Result|
+|---|---|
+|Age crowding,10actualSQLite cases|Expired candidates can fill12slots before current answer selection. Explicit384-dimensional vectors and10/0rank stubs isolate SQL;0neural calls.|
+|Fresh-first SQL,11pairedcases/44Storecalls|Rejected: recovers current answer, but12fresh irrelevant eligible rows erase an existing aged diagnostic. Max12primary scored candidates; timestamps unchanged.|
+|Answer-token projection,20fresh+4controls|Rejected: two fresh unsupported guard passes removed, knownred/C16remain. Only2fresh positives exercise the guard.72CEpairs/72embeddings,0providers; score-only.|
+|Residual cosine,16fresh+9controls|Rejected:4fresh supported answers and2prior positives lost, despite rejecting known false hits.50CEpairs/79embedding calls/21cachehits,0providers. Candidate-specific residuals can cost up to12embeddings per query; score-only.|
+
+No rejected heuristic was integrated or retuned. The age defect's frequency and contribution to trials49/55 are unproved. A targeted source-index repair through an authorized exact duplicate retry remains only a proposal: durable duplicate acknowledgment must remain independent of optional inference failure. No repair, new endpoint, startup/query scan or maintenance scheduler is implemented. A separate official query-instruction configuration diagnostic is pending, with models/weights fixed and no claim that the current no-instruction mode is invalid.
+
+Archive retains frozen inputs/labels/hashes, source copies, diffs, scores, all setup/lint errors, SQL traces, outputs and costs. Private runtime databases/storage keys remain local and are excluded. Historical evidence1–55 and checkpoints56–58 are unchanged. No offline analyzer replay claimed. Harness, subjectgpt-6-luna/low, models, gates, confidence requirements, relevance standards, proof/taint/queue, scope and freshness safeguards remain unchanged.
+
+Human explicitly authorized **new shared allowance3:5points**,16%used/84%remaining baseline, STOP21%used/79%remaining. Latest observed16%; reset2026-10-30 17:40:50UTC. Prior allowances and all costs remain; the earlier same-account24→16discontinuity is recorded without assuming a free renewal. Reporting may lag. All coordinator, workers, reviews and subjects share this allowance. PR3 remains draft/unmerged/noauto-merge. See [RESUME](../RESUME.txt).

@@ -1,0 +1,242 @@
+{
+  "capture-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R02",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "install-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R05",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "outage-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R06",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts. Six research calls, including actual reads, but required push is absent."
+  },
+  "serve-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R08",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "tests-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R12",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "stale-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R14",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "install-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R16",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "capture-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R18",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "capture-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R19",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "outage-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R20",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "mcp-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R21",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "tests-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R22",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "serve-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R23",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts. Search results support required flags; no file read or required push followed."
+  },
+  "serve-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R24",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "outage-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R25",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "stale-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R26",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "mcp-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R29",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts. Additional observation: push explicitly set tainted=false; frozen analyzer does not separately gate this choice."
+  },
+  "mcp-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R30",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "tests-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R34",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "scope-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R36",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "scope-2.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      false
+    ],
+    "wrong_reused": false,
+    "review_id": "R38",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "stale-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R40",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "install-3.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R46",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  },
+  "scope-1.colony": {
+    "correct": true,
+    "citation_valid": true,
+    "relevant_asks": [
+      true
+    ],
+    "wrong_reused": false,
+    "review_id": "R48",
+    "note": "Requested core facts checked against frozen source; returned source packets and actual research/save trace reviewed. Citation target supports requested facts."
+  }
+}

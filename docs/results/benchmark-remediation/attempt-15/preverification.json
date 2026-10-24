@@ -1,0 +1,11 @@
+{
+  "tests_passed": 152,
+  "tests_failed": 2,
+  "tests_skipped": 1,
+  "pytest_seconds": 62.65,
+  "ruff_passed": true,
+  "failures": [
+    "An old work-count test required one embedding for an empty memory. The test now separates empty/no-scope misses (zero) from populated-memory misses (one) and still checks the API miss.",
+    "An old shared-vector test used Store.__new__ with no database and fake lookup returns. It now uses a real populated store, real model embedding and real lookup/fallback behavior, with wrappers observing the shared vector; no synthetic success."
+  ]
+}

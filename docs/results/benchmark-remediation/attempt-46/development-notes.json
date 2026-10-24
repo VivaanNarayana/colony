@@ -1,0 +1,11 @@
+{
+  "rejected": "Nonliteral source eligibility, raw-logit ordering and candidate backfill removed: unrelated encryption request falsely hit. Original descriptive lexical/local support guards and original 24+24 pools restored exactly.",
+  "fixture_corrections": [
+    "Short initial sections accidentally included definitions. Expanded source layout retained red failures.",
+    "New test initially required the fact in the first excerpt; corrected to require the fact in the complete evidence packet, with no fact removed.",
+    "Section-context test padding initially exceeded the existing 96-candidate index cap; changed to 40 longer paragraphs, preserving a long section within the existing cap.",
+    "Tool-description whitespace normalized in new string-contract test."
+  ],
+  "optional_global_format_check": "Nonrequired ruff format --check . diagnosed four pre-existing unformatted files: attempt-30/response-regressions.py, tests/test_mcp_receipt.py, tests/test_semantic_answer_support.py, tests/test_source_proof_lookup.py. Not modified; required Ruff lint and git diff checks separately recorded.",
+  "raw_failure_archive": "Publication diff check found trailing whitespace inside raw pytest failure bodies. All phase stdout/JUnit bytes were archived unchanged into test-phase-artifacts.zip with exact entry hashes; final passing outputs also remain loose. No whitespace exclusion or gate change."
+}

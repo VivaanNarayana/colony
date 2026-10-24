@@ -1,0 +1,114 @@
+{
+  "role": "Deterministic independent MCP SDK wire comparison; not native gate evidence",
+  "prior_source": "ee764bbc44a0a395b2ab32393efe74c8ef592a79",
+  "all_decoded_fields_equal": true,
+  "rows": [
+    {
+      "flags": {
+        "stored": true,
+        "duplicate": false
+      },
+      "before": {
+        "text": "{\n  \"stored\": true,\n  \"duplicate\": false\n}",
+        "text_utf8_bytes": 42,
+        "structured_copy": false,
+        "total_wire_utf8_bytes": 114,
+        "decoded": {
+          "stored": true,
+          "duplicate": false
+        }
+      },
+      "after": {
+        "text": "{\"stored\":true,\"duplicate\":false}",
+        "text_utf8_bytes": 33,
+        "structured_copy": false,
+        "total_wire_utf8_bytes": 102,
+        "decoded": {
+          "stored": true,
+          "duplicate": false
+        }
+      }
+    },
+    {
+      "flags": {
+        "stored": false,
+        "queued": true
+      },
+      "before": {
+        "text": "{\n  \"stored\": false,\n  \"queued\": true\n}",
+        "text_utf8_bytes": 39,
+        "structured_copy": false,
+        "total_wire_utf8_bytes": 111,
+        "decoded": {
+          "stored": false,
+          "queued": true
+        }
+      },
+      "after": {
+        "text": "{\"stored\":false,\"queued\":true}",
+        "text_utf8_bytes": 30,
+        "structured_copy": false,
+        "total_wire_utf8_bytes": 99,
+        "decoded": {
+          "stored": false,
+          "queued": true
+        }
+      }
+    },
+    {
+      "flags": {
+        "stored": false,
+        "queued": false,
+        "error": "Storage unavailable",
+        "warning": "\u533a\u57df: retain \"signed\" archives; retry later.",
+        "details": {
+          "next": [
+            null,
+            false,
+            17
+          ]
+        }
+      },
+      "before": {
+        "text": "{\n  \"id\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"stored\": false,\n  \"queued\": false,\n  \"error\": \"Storage unavailable\",\n  \"warning\": \"\u533a\u57df: retain \\\"signed\\\" archives; retry later.\",\n  \"details\": {\n    \"next\": [\n      null,\n      false,\n      17\n    ]\n  }\n}",
+        "text_utf8_bytes": 257,
+        "structured_copy": false,
+        "total_wire_utf8_bytes": 359,
+        "decoded": {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "stored": false,
+          "queued": false,
+          "error": "Storage unavailable",
+          "warning": "\u533a\u57df: retain \"signed\" archives; retry later.",
+          "details": {
+            "next": [
+              null,
+              false,
+              17
+            ]
+          }
+        }
+      },
+      "after": {
+        "text": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"stored\":false,\"queued\":false,\"error\":\"Storage unavailable\",\"warning\":\"\u533a\u57df: retain \\\"signed\\\" archives; retry later.\",\"details\":{\"next\":[null,false,17]}}",
+        "text_utf8_bytes": 197,
+        "structured_copy": false,
+        "total_wire_utf8_bytes": 286,
+        "decoded": {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "stored": false,
+          "queued": false,
+          "error": "Storage unavailable",
+          "warning": "\u533a\u57df: retain \"signed\" archives; retry later.",
+          "details": {
+            "next": [
+              null,
+              false,
+              17
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

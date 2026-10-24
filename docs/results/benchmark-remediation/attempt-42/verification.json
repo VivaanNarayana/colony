@@ -1,0 +1,19 @@
+{
+  "commit": "f7066168c8023113291f8aac464286711ff69bf6",
+  "tests_passed": 268,
+  "tests_failed": 0,
+  "tests_skipped": 1,
+  "pytest_seconds": 71.111,
+  "pytest_summary_seconds": 71.13,
+  "pytest_exit_code": 0,
+  "ruff_passed": true,
+  "ruff_exit_code": 0,
+  "diff_check_passed": true,
+  "diff_check_exit_code": 0,
+  "invocations": 1,
+  "new_regression_cases": 9,
+  "original_three_failures_now_pass_unchanged": true,
+  "scope": "Full test suite only; no local/native benchmark, model profile or analyzer replay.",
+  "platform": "Windows / Python 3.13.1",
+  "model_configuration": "Same provisioned SHA-verified offline embedding/reranker snapshots and existing four-thread/batch-one settings."
+}

@@ -1,0 +1,6 @@
+{
+  "model": "GPT-6 Astra High",
+  "verdict": "No other concrete numerical, causal, or privacy issue; correction required for label hash scope",
+  "correction": "Both raw archived review hashes match frozen-labels.json; both normalized public copies differ. Explicit scope and separate public hashes added without changing frozen hashes or labels.",
+  "claims_qualified": "Selected native review, not independent blind48; actual/stub distinctions; main false taint and six citation failures retained; no isolated causal benefit claim"
+}

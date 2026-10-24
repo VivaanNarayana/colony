@@ -1,0 +1,35 @@
+"""Run one child with a reversible Windows system-idle wake request."""
+import argparse
+import ctypes
+import json
+import subprocess
+from ctypes import wintypes
+from datetime import datetime, timezone
+from pathlib import Path
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--log', type=Path, required=True)
+parser.add_argument('command', nargs=argparse.REMAINDER)
+args = parser.parse_args()
+command = args.command[1:] if args.command[:1] == ['--'] else args.command
+if not command:
+    parser.error('A child command is required')
+kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+kernel.SetThreadExecutionState.argtypes = [wintypes.DWORD]
+kernel.SetThreadExecutionState.restype = wintypes.DWORD
+if not kernel.SetThreadExecutionState(0x80000001):
+    raise ctypes.WinError(ctypes.get_last_error())
+record = {'role':'Operational idle-sleep prevention only; clocks/budgets/outcomes unchanged','started_utc':datetime.now(timezone.utc).isoformat(),'request':'ES_CONTINUOUS | ES_SYSTEM_REQUIRED','persistent_power_configuration_changed':False,'command':command}
+args.log.parent.mkdir(parents=True,exist_ok=True)
+try:
+    child = subprocess.Popen(command)
+    record['child_pid'] = child.pid
+    args.log.write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8',newline='\n')
+    print(json.dumps({'wake_request_active':True,'child_pid':child.pid}),flush=True)
+    code = child.wait()
+finally:
+    kernel.SetThreadExecutionState(0x80000000)
+    record['ended_utc'] = datetime.now(timezone.utc).isoformat()
+    record['request_released'] = True
+    args.log.write_text(json.dumps(record,indent=2)+'\n',encoding='utf-8',newline='\n')
+raise SystemExit(code)

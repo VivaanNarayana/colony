@@ -1,0 +1,17 @@
+[
+  {
+    "attempt": 22,
+    "comparison_identical": true,
+    "exit_code": 0
+  },
+  {
+    "attempt": 26,
+    "comparison_identical": true,
+    "exit_code": 1
+  },
+  {
+    "attempt": 27,
+    "comparison_identical": true,
+    "exit_code": 1
+  }
+]

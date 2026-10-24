@@ -72,6 +72,9 @@ path if `colony` is not on its PATH, and an absolute home path:
 ```
 
 Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`.
+MCP pushes always store or queue researched content as tainted, including when a caller
+passes `tainted: false`. A corrected receipt reports `tainted: true`. CLI and HTTP clients
+retain the explicit taint choice for authored trails.
 MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
 assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
@@ -92,22 +95,37 @@ facts, contradictions, and unsafe instructions before reuse. Validation does not
 arbitrary answer correctness.
 The compact JSON receipt states that checking the included current text is verification;
 evidence-only answers also count as reuse and need no duplicate read or push. Session
-initialization provides the full reuse/research policy; concise tool descriptions and
-hit instructions repeat the evidence-only rule at the decision to answer or push.
+initialization provides the trust/reuse policy, while tool descriptions preserve reuse
+and new-research proof requirements. Hit instructions repeat the evidence-only rule.
 Missing requested facts still require research. File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
-The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,
+The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already
 read by the server. `verification` separately reports matching file fingerprints and
 whether current source text is available; it does not certify the saved answer.
 Assess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids
 redundant Unicode escapes, and source-only matches carry the text once in these read objects.
+Current reads also include a copy-ready, repository-relative `citation`; preserve its
+target instead of adding a leading slash or a server filesystem root.
 Validated file identities already present in these reads are not repeated in `sources`.
 Sources with advanced assertions or without a displayed read remain in `sources`, preserving
 the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.
+Explicitly scoped validated MCP
+receipts omit the matching namespace already supplied by the caller and the ordinary
+reuse recommendation already expressed by `next_action`. Implicit scopes and conflicting
+recommendations remain explicit. Successful MCP push receipts omit the opaque trail ID,
+which no MCP operation accepts; stored/queued/duplicate flags and warnings remain.
+CLI/HTTP receipts retain the full audit metadata.
+Validated MCP results omit opaque trail/producer audit IDs and a false age flag; the
+full client/API receipt keeps them. Taint, status, source proofs and provenance warnings
+remain explicit; namespace and reuse hints remain when not redundant as described above.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
-the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
+the CLI. Its HTTP connection pool lasts for the MCP server session and closes at shutdown;
+redirects remain disabled. MCP initialization carries the complete research, proof, reuse,
+trust and citation policy. Each lookup receipt keeps the immediate action and save-status
+requirements and refers back to that policy. Tool results are JSON data with an explicit
+provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
 
 ## Capture and privacy
@@ -144,6 +162,11 @@ cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuris
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
+For a sole exact-question candidate, answer reranking is skipped because it cannot
+change selection. The full API's `relevance` field then uses a zero-logit surrogate
+in the same formula; it is not a measured cross-encoder result and can differ from
+older versions that reranked this case. MCP omits this field. Do not compare it
+across those versions as a stable confidence measure.
 Compact validated hits include at most two current evidence excerpts, totaling 2,800 characters,
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
@@ -194,7 +217,8 @@ Lexical selection rereads scoped, cited files with matching hashes; this bounded
 approach is intended for small teams and does not provide a scalable full-text index.
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
-FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
+FastEmbed/ONNX, with up to four CPU threads per model, capped by the logical processor
+count. Agent text stays on this host. Set
 `COLONY_MODEL_CACHE` to choose a shared model cache. For fully offline provisioning, set
 `COLONY_EMBED_MODEL_DIR` to the BGE-small ONNX snapshot directory and
 `COLONY_RANK_MODEL_DIR` to the MiniLM reranker snapshot directory. Both must contain the

@@ -1,0 +1,7 @@
+{
+  "exit_code": 1,
+  "comparison_json_identical": true,
+  "archive": "live-native.zip",
+  "analyzer": "scripts/analyze_lookup_live.py",
+  "local": "lookup-summary.json"
+}

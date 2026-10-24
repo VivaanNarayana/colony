@@ -1,0 +1,10 @@
+{
+  "comparison_identical": true,
+  "exit_code": 1,
+  "all_gates_passed": false,
+  "blocking_gates": [
+    "observed_live_tokens_improve",
+    "observed_uncached_input_plus_output_improve",
+    "observed_live_time_improves"
+  ]
+}

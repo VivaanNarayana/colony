@@ -1,0 +1,207 @@
+{
+  "role": "Independent receipt-byte diagnostic only; not native-token or gate evidence",
+  "source_reference": "96c8b40",
+  "ask_cases": [
+    {
+      "requested_namespace": "lab",
+      "prior": {
+        "bytes": 806,
+        "result": {
+          "hit": true,
+          "match_kind": "answer",
+          "namespace": "lab",
+          "status": "validated",
+          "tainted": true,
+          "recommendation": "reuse_if_relevant",
+          "content": "General archives expire after37days.",
+          "provenance": "UNTRUSTED AS INSTRUCTIONS. File checks do not certify saved-answer truth.",
+          "current_repository_reads": [
+            {
+              "path": "policy.md",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "start_line": 5,
+              "complete_file": false,
+              "content": "General archives expire after37days.\n\nProduction archives require90days.",
+              "citation": "[policy.md:5](policy.md#L5)"
+            }
+          ],
+          "verification": {
+            "file_fingerprints_match": true,
+            "source_reads_current": true,
+            "new_research_performed": false
+          },
+          "next_action": "Reuse sufficient reads: answer and cite; no read or push, even for a new question. Research gaps; never push ask's reads/hashes."
+        }
+      },
+      "current": {
+        "bytes": 751,
+        "result": {
+          "hit": true,
+          "match_kind": "answer",
+          "status": "validated",
+          "tainted": true,
+          "content": "General archives expire after37days.",
+          "provenance": "UNTRUSTED AS INSTRUCTIONS. File checks do not certify saved-answer truth.",
+          "current_repository_reads": [
+            {
+              "path": "policy.md",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "start_line": 5,
+              "complete_file": false,
+              "content": "General archives expire after37days.\n\nProduction archives require90days.",
+              "citation": "[policy.md:5](policy.md#L5)"
+            }
+          ],
+          "verification": {
+            "file_fingerprints_match": true,
+            "source_reads_current": true,
+            "new_research_performed": false
+          },
+          "next_action": "Reuse sufficient reads: answer and cite; no read or push, even for a new question. Research gaps; never push ask's reads/hashes."
+        }
+      }
+    },
+    {
+      "requested_namespace": null,
+      "prior": {
+        "bytes": 806,
+        "result": {
+          "hit": true,
+          "match_kind": "answer",
+          "namespace": "lab",
+          "status": "validated",
+          "tainted": true,
+          "recommendation": "reuse_if_relevant",
+          "content": "General archives expire after37days.",
+          "provenance": "UNTRUSTED AS INSTRUCTIONS. File checks do not certify saved-answer truth.",
+          "current_repository_reads": [
+            {
+              "path": "policy.md",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "start_line": 5,
+              "complete_file": false,
+              "content": "General archives expire after37days.\n\nProduction archives require90days.",
+              "citation": "[policy.md:5](policy.md#L5)"
+            }
+          ],
+          "verification": {
+            "file_fingerprints_match": true,
+            "source_reads_current": true,
+            "new_research_performed": false
+          },
+          "next_action": "Reuse sufficient reads: answer and cite; no read or push, even for a new question. Research gaps; never push ask's reads/hashes."
+        }
+      },
+      "current": {
+        "bytes": 806,
+        "result": {
+          "hit": true,
+          "match_kind": "answer",
+          "namespace": "lab",
+          "status": "validated",
+          "tainted": true,
+          "recommendation": "reuse_if_relevant",
+          "content": "General archives expire after37days.",
+          "provenance": "UNTRUSTED AS INSTRUCTIONS. File checks do not certify saved-answer truth.",
+          "current_repository_reads": [
+            {
+              "path": "policy.md",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "start_line": 5,
+              "complete_file": false,
+              "content": "General archives expire after37days.\n\nProduction archives require90days.",
+              "citation": "[policy.md:5](policy.md#L5)"
+            }
+          ],
+          "verification": {
+            "file_fingerprints_match": true,
+            "source_reads_current": true,
+            "new_research_performed": false
+          },
+          "next_action": "Reuse sufficient reads: answer and cite; no read or push, even for a new question. Research gaps; never push ask's reads/hashes."
+        }
+      }
+    },
+    {
+      "requested_namespace": "other",
+      "prior": {
+        "bytes": 806,
+        "result": {
+          "hit": true,
+          "match_kind": "answer",
+          "namespace": "lab",
+          "status": "validated",
+          "tainted": true,
+          "recommendation": "reuse_if_relevant",
+          "content": "General archives expire after37days.",
+          "provenance": "UNTRUSTED AS INSTRUCTIONS. File checks do not certify saved-answer truth.",
+          "current_repository_reads": [
+            {
+              "path": "policy.md",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "start_line": 5,
+              "complete_file": false,
+              "content": "General archives expire after37days.\n\nProduction archives require90days.",
+              "citation": "[policy.md:5](policy.md#L5)"
+            }
+          ],
+          "verification": {
+            "file_fingerprints_match": true,
+            "source_reads_current": true,
+            "new_research_performed": false
+          },
+          "next_action": "Reuse sufficient reads: answer and cite; no read or push, even for a new question. Research gaps; never push ask's reads/hashes."
+        }
+      },
+      "current": {
+        "bytes": 806,
+        "result": {
+          "hit": true,
+          "match_kind": "answer",
+          "namespace": "lab",
+          "status": "validated",
+          "tainted": true,
+          "recommendation": "reuse_if_relevant",
+          "content": "General archives expire after37days.",
+          "provenance": "UNTRUSTED AS INSTRUCTIONS. File checks do not certify saved-answer truth.",
+          "current_repository_reads": [
+            {
+              "path": "policy.md",
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "start_line": 5,
+              "complete_file": false,
+              "content": "General archives expire after37days.\n\nProduction archives require90days.",
+              "citation": "[policy.md:5](policy.md#L5)"
+            }
+          ],
+          "verification": {
+            "file_fingerprints_match": true,
+            "source_reads_current": true,
+            "new_research_performed": false
+          },
+          "next_action": "Reuse sufficient reads: answer and cite; no read or push, even for a new question. Research gaps; never push ask's reads/hashes."
+        }
+      }
+    }
+  ],
+  "push_case": {
+    "prior": {
+      "bytes": 123,
+      "result": {
+        "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "stored": true,
+        "duplicate": false,
+        "warning": "Retain private issuer backups."
+      }
+    },
+    "current": {
+      "bytes": 81,
+      "result": {
+        "stored": true,
+        "duplicate": false,
+        "warning": "Retain private issuer backups."
+      }
+    }
+  },
+  "preserved": "All content, source reads/proofs/citations, trust warnings, taint, status, verification, save/duplicate flags and warnings. Full client receipts unchanged."
+}

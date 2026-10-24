@@ -1,0 +1,23 @@
+{
+  "status": "Rejected and reverted before full benchmark",
+  "outcome": {
+    "mechanically_qualified": false,
+    "totals": {
+      "before": {
+        "native_input_tokens": 274507,
+        "native_output_tokens": 1859,
+        "native_cached_input_tokens": 249472,
+        "research_calls": 8
+      },
+      "after": {
+        "native_input_tokens": 287198,
+        "native_output_tokens": 1908,
+        "native_cached_input_tokens": 255872,
+        "research_calls": 9
+      }
+    },
+    "manual_review_still_required": true
+  },
+  "manual_review": "All eight answers/packets/actual research/pushes reviewed. Facts, necessary dependencies, new fingerprints and citations preserved. Independent required files remain sequential; after dependency control adds a search and raises input. Native input274507->287198; research8->9, so candidate fails both predeclared criteria. Complete invalid-corpus setup failure is separately retained; none of its completed tasks were retried. No full benchmark or favorable-sampling retry.",
+  "reverted": true
+}

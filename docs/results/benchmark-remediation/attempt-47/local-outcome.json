@@ -1,0 +1,33 @@
+{
+  "modes": {
+    "main": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 4.91648240032373,
+      "query_embeddings": 108,
+      "reranker_calls": 99,
+      "reranked_passages": 99
+    },
+    "feature": {
+      "lookups": 117,
+      "oracle_passes": 117,
+      "seconds": 3.6745491996989585,
+      "query_embeddings": 90,
+      "reranker_calls": 27,
+      "reranked_passages": 27
+    }
+  },
+  "quality_passed": true,
+  "lookup_improves": true,
+  "lookup_time_reduction": 0.25260605032227823,
+  "latency_reduction_95pct": [
+    0.15696776846182547,
+    0.3651303028078098
+  ],
+  "exit_code": 0,
+  "raw_audit": {
+    "observations": 234,
+    "workload_sha256": "f4fe06b2d9dc8b9e71b276d13b808aab7da0e60856a276f2b9af2b8b59357325",
+    "raw_measurements_verified": true
+  }
+}

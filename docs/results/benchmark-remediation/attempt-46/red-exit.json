@@ -1,0 +1,5 @@
+{
+  "phase": "before_fix",
+  "exit_code": 1,
+  "command": "pytest tests/test_semantic_evidence_support.py -q"
+}

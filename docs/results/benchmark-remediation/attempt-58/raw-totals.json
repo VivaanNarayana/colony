@@ -1,0 +1,37 @@
+{
+  "all48_sessions_included": true,
+  "totals": {
+    "main": {
+      "protocol_violations": 1,
+      "correct": 24,
+      "valid_citations": 17,
+      "raw_hits": 18,
+      "relevant_hits": 18,
+      "research_free_correct": 18,
+      "tokens": 1192771,
+      "cached_input_tokens": 1031424,
+      "tool_calls": 50,
+      "research_calls": 21,
+      "ask_calls": 24,
+      "seconds": 256.673,
+      "tasks": 24,
+      "uncached_input_plus_output": 161347
+    },
+    "feature": {
+      "protocol_violations": 0,
+      "correct": 24,
+      "valid_citations": 23,
+      "raw_hits": 17,
+      "relevant_hits": 16,
+      "research_free_correct": 16,
+      "tokens": 1308541,
+      "cached_input_tokens": 1124352,
+      "tool_calls": 55,
+      "research_calls": 23,
+      "ask_calls": 24,
+      "seconds": 227.246,
+      "tasks": 24,
+      "uncached_input_plus_output": 184189
+    }
+  }
+}

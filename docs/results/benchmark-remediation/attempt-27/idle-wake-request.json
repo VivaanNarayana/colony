@@ -1,0 +1,9 @@
+{
+  "role": "Operational prevention of future idle sleep only; no clock adjustment or outcome exclusion",
+  "benchmark_pid": 89664,
+  "started_utc": "2026-10-22T03:57:50.070176+00:00",
+  "request": "ES_CONTINUOUS | ES_SYSTEM_REQUIRED; display sleep remains allowed",
+  "persistent_power_configuration_changed": false,
+  "ended_utc": "2026-10-22T04:02:38.375548+00:00",
+  "request_released": true
+}

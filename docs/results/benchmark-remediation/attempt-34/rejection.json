@@ -1,0 +1,32 @@
+{
+  "status": "Rejected and reverted before full local/live benchmark",
+  "outcome": {
+    "mechanically_qualified": false,
+    "totals": {
+      "before": {
+        "native_input_tokens": 191587,
+        "native_output_tokens": 1067,
+        "native_cached_input_tokens": 164736,
+        "research_calls": 3
+      },
+      "after": {
+        "native_input_tokens": 207149,
+        "native_output_tokens": 1159,
+        "native_cached_input_tokens": 187136,
+        "research_calls": 3
+      }
+    },
+    "manual_review_still_required": true
+  },
+  "manual_review": "All eight answers, current packets, actual reads and push receipts reviewed; requested facts, citations, required research paths, new fingerprints and saves correct. Native input before191587/after207149 fails the predeclared >=400 reduction requirement despite identical action counts. No favorable cache selection. First three paired inputs lower; partial-hit after costs16510 more and remains counted. No full trial or retry.",
+  "focused_tests": {
+    "passed": 59,
+    "failed": 0
+  },
+  "wire_bytes": {
+    "before": 2699,
+    "after": 2329
+  },
+  "schemas_annotations_shared_instructions_identical": true,
+  "candidate_reverted": true
+}

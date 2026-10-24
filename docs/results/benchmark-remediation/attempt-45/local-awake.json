@@ -1,0 +1,29 @@
+{
+  "role": "Operational idle-sleep prevention only; clocks/budgets/outcomes unchanged",
+  "started_utc": "2026-10-22T22:56:29.284621+00:00",
+  "request": "ES_CONTINUOUS | ES_SYSTEM_REQUIRED",
+  "persistent_power_configuration_changed": false,
+  "command": [
+    "C:\\Users\\b3vel\\Documents\\Codex\\2026-10-20\\https-github-com-vivaannarayana-colony-https\\work\\colony\\.venv\\Scripts\\python.exe",
+    "scripts/benchmark_lookup.py",
+    "--baseline-ref",
+    "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+    "--feature-ref",
+    "a4fcb7aaeb3f65b05cb5129d8942f105bb30fb6d",
+    "--runtime",
+    "../benchmark-remediation-local-45-runtime",
+    "--output",
+    "../benchmark-remediation-local-45-results",
+    "--name",
+    "lookup",
+    "--seed",
+    "20261021",
+    "--variants",
+    "3",
+    "--repetitions",
+    "3"
+  ],
+  "child_pid": 7500,
+  "ended_utc": "2026-10-22T22:56:53.258149+00:00",
+  "request_released": true
+}
