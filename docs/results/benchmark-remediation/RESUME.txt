@@ -1,3 +1,20 @@
+ACTIVE ALLOWANCE3 — POST-TRIAL56 CHECKPOINT68; TASK UNFINISHED.
+Baseline16%used, latest20%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
+One shared5points, observed+4; previouscostsretained/reportingmaylag.
+Read investigation68 README/outcome/archive and complete attempt56 evidence.
+Runtime75b4af3 measuredasfec2c119 unchanged; trial56=3/8, no newbenchmark.
+PASS loaded/local/time; FAIL tests/correctness/protocol/gross/uncached.
+Tests421pass1knownwrongattribute failure1skip; Ruffpass. Models/harness/gates unchanged.
+Unit67 structurallyrejected, citationfallbackunadopted, query-only68unadopted:
+R25selectspushbutcuts103beforequeuewrite105/queuedtrue106;46CEpairs/0providers.
+Extra independent12recordreview agrees; selectedtotal20/48, nonblind/postlabel.
+Alloutcomes/costs/labels/history retained; new pairedarithmetic no causalclaim.
+No approved nextpatch. Need generalanswerability/contextfix with qualifiers,
+negativecontrols/guards intact; no unsafecompaction or oracle-specificcitationban.
+Nextnative57 onlyaftermeaningfulreviewedruntimechange/freshmain/freshdirs;
+never retryidenticalruntime orresample. PRdraft/unmerged/noauto.
+Workers idle; no benchmark active. Continue only bounded work within remaining shared allowance; stop at21.
+
 ACTIVE ALLOWANCE3 — TRIAL56 COMPLETE, 3/8; TASK UNFINISHED.
 Baseline16%used, latest19%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5points; observed+3,2remain; priorcostsretained/reportingmaylag.

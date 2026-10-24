@@ -17,9 +17,9 @@
   "natural_reset_does_not_renew_allowance": true,
   "no_reset_credits_accounts_or_api_billing": true,
   "reporting_may_lag": true,
-  "last_observed_weekly_used_percent": 19,
-  "observed_increase_percentage_points": 3,
+  "last_observed_weekly_used_percent": 20,
+  "observed_increase_percentage_points": 4,
   "at_utc": "2026-10-23T22:49:26.471298+00:00",
-  "last_phase": "Trial56 completed48, labels reviewed/frozen, officialanalyzer once:3/8; publication",
-  "last_observed_utc": "2026-10-24T00:23:26.728819+00:00"
+  "last_phase": "Post-trial56 checkpoint68; no new runtime/benchmark; all proposals retained",
+  "last_observed_utc": "2026-10-24T00:44:49.917794+00:00"
 }
