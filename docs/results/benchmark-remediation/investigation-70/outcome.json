@@ -1,0 +1,77 @@
+{
+  "state": "Checkpoint requested by user; task unfinished; all workers idle; no benchmark active",
+  "latest_complete_comparison": "trial56:3/8; runtime fec2c119 equivalent to75b4af3",
+  "scope_audit69": "Eight preceding successful saves reconstructed from original receipts/task order, not finalDB; eight matching source references across five distinct files. Sufficient saved answer rejected by strict positivity despite beating question-only control; no source passage passes descriptive lexical/local guards.",
+  "scope_numbers": {
+    "question_cosine": 0.758034,
+    "answer_cosine": 0.735351,
+    "fused_relevance": 0.615623,
+    "answer_logit": -3.032512,
+    "question_control_logit": -9.416141,
+    "distinct_source_descriptors": 103
+  },
+  "scope_cost": {
+    "embeddings": 10,
+    "CE_pairs": 2,
+    "providers": 0
+  },
+  "scope_limits": "Not complete Store replay or isolated causal attribution of46435gross-token difference. No source-vector/tie-order/timestamp replay claimed; zero globally qualifying passages makes source candidate ordering immaterial.",
+  "review": {
+    "scope": "Bounded independent read-only diagnosis review; only this report written. No new inference, tests, subjects, provider calls or analyzer.",
+    "evidence": [
+      "work/scope-miss-audit-69/summary.json",
+      "work/scope-miss-audit-69/results.json",
+      "work/scope-miss-audit-69/historical-state.json",
+      "work/scope-miss-audit-69/audit.py",
+      "src/colony/store.py"
+    ],
+    "verdict": "No blocking inconsistency in the narrow mechanism diagnosis. It is not a complete Store replay and supplies no guard-change justification.",
+    "historical_state_hash_matches": true,
+    "preceding_successful_receipts": 8,
+    "preceding_attempts": 8,
+    "observed_namespaces": [
+      "bench"
+    ],
+    "source_reference_checks": 8,
+    "distinct_source_files": 5,
+    "reconstructed_descriptors": 103,
+    "findings": [
+      "The saved scope answer directly states that requested namespaces must belong to the granted pull list, otherwise403; this supplies the negated/ungranted-question fact.",
+      "Answer logit -3.032512 is above question control -9.416141 but below zero. Dense/question gates and fused .615623 pass; nonliteral descriptive admission still rejects at the strictly positive answer gate. In production the negative answer prevents even computing the question-only control; the diagnostic control score is explanatory extra work.",
+      "The reconstruction groups descriptors by namespace/ref/hash/line and computes IDF across the complete grouped candidate text pool before dense/sparse caps, matching store.py. All eight source-reference checks match; these are not eight distinct files.",
+      "With zero descriptors satisfying coverage>=.5 AND local support globally, selecting at most24dense+24sparse cannot produce a passing descriptive candidate. Exact source-vector ordering and ties therefore cannot rescue this reconstructed pool.",
+      "Frozen source_chunks supplies the original per-trail8-source/96-chunk bounds; this case has one source reference per prior push.103 deduplicated descriptors across multiple trails does not violate a per-trail96 cap."
+    ],
+    "limitations": [
+      "Receipt history and initial-empty-store metadata support reconstruction; actual generated IDs and created_at timestamps are not reproduced.",
+      "Audit assigns the target namespace while building keys; observed prior namespaces must all equal the target, as checked here. This is case-specific, not a general reconstruction rule.",
+      "One other saved question passes its cosine floor but its full answer admission is not replayed. Do not claim every possible answer branch has been independently reproduced.",
+      "No final database was consulted. Current frozen-byte hash agreement plus preceding successful receipts is the basis, not direct historical database-state inspection.",
+      "Gross-token differences remain association rather than isolated causal effect; no runtime change or future benchmark recommended."
+    ],
+    "retained_cost": {
+      "embeddings": 10,
+      "CE_pairs": 2,
+      "rank_calls": 2,
+      "providers": 0
+    },
+    "new_review_inference_calls": 0
+  },
+  "relevance_audit70": "Exact-singleton shortcut introduced b2fb0b7 substitutes zero logit in returned fullAPI relevance. Two explicit vector/rank-stub Store calls:0.7400 current vs0.8387 without shortcut; same answer/dense/sources/evidence; zero neural/provider work. Not full historical replay or demonstrated selection bug. MCP omits field; consumer dependence/native impact unknown.",
+  "change": "README documents surrogate/numeric compatibility tradeoff only; no runtime or test change",
+  "new_native_samples": 0,
+  "native_gross_50_51_53_54_55_56": 15497907,
+  "usage": {
+    "baseline_used": 16,
+    "latest_observed_used": 20,
+    "observed_points_consumed": 4,
+    "stop_used": 21,
+    "observed_points_remaining": 1,
+    "reset": 1793382050,
+    "shared": true,
+    "reporting_may_lag": true,
+    "threshold_observed": false
+  },
+  "next": "Read reliable usage first; original16\u219221 allowance remains. No approved safe runtime patch. Do not lower relevance safeguards based on this observed miss. Next native57 requires meaningful reviewed general runtime change and fresh main/fresh directories. No identical-code retry.",
+  "at_utc": "2026-10-24T00:54:36.370522+00:00"
+}

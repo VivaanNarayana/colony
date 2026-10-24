@@ -1,3 +1,28 @@
+CHECKPOINT70 — USER REQUESTED RESUME UPDATE; TASK UNFINISHED.
+Baseline16%used, latest20%, STOP21%; observed+4points,1remains; thresholdNOTobserved.
+Reset1793382050=2026-10-30 17:40:50UTC. Same shared5point allowance, no renewal.
+Reserve headroom for in-flight costs/reporting lag; read reliableusage before continuation.
+All three workers idle; no benchmark active. PR3draft/unmerged/noauto.
+Runtime75b4af31ee7556b931a387de6762014ac6f4b44a unchanged;
+measuredasfec2c119d2964e99e01cf00239caab02625b34bb, latestcomplete trial56=3/8.
+PASS loaded/local/time; FAIL tests/correctness/protocol/gross/uncached.
+Gross+12.08%; uncached-2.08%CIcrosses0; time-8.50%CI+3.15to+14.63%reduction.
+Core24/24both; citations19main/23feature; namedanchororaclefailure retained.
+Tests421pass1knownwrongattribute falsehit failure1Windows skip;Ruffpass.
+Read attempt56full evidence, investigation68, investigation70outcome/archive.
+67unit supplement structurallyrejected(parent/decorator qualifications omitted).
+68query-only improvesR25focusbutends103beforewrite105/queuedtrue106; no patch.
+69scope miss:8precedingstoredreceipts,8sourcerefs/5files; sufficientanswer
+logit-3.032512beatscontrol-9.416141butpositivityrejects;0/103sourceguards pass.
+10embeddings/2CEpairs/0providers; reconstructionNOTfullStore/nativecausalreplay.
+70exactsingleton relevance surrogate0.7400vs0.8387rankstub;selectionunchanged.
+2stubStorecalls/0neural/providers;READMEclarificationonly, no runtimepatch.
+Astrareview agrees with narrowdiagnosis/qualification. Alloutcomes/costs retained.
+No approved safe nextpatch. Do not relaxguards or banlegitimateanchors for oracle.
+Nextnative57 onlyaftermeaningfulgeneral reviewed runtimechange,freshmain/freshdirs.
+No identicalcoderetry/resampling. Models/harness/gates/proofs/taint/scope unchanged.
+At21stopallworkers/benchmark, preservepartialcosts, updatecheckpoint andpause.
+
 ACTIVE ALLOWANCE3 — POST-TRIAL56 CHECKPOINT68; TASK UNFINISHED.
 Baseline16%used, latest20%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5points, observed+4; previouscostsretained/reportingmaylag.

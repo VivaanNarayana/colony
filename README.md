@@ -162,6 +162,11 @@ cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuris
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
+For a sole exact-question candidate, answer reranking is skipped because it cannot
+change selection. The full API's `relevance` field then uses a zero-logit surrogate
+in the same formula; it is not a measured cross-encoder result and can differ from
+older versions that reranked this case. MCP omits this field. Do not compare it
+across those versions as a stable confidence measure.
 Compact validated hits include at most two current evidence excerpts, totaling 2,800 characters,
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
