@@ -209,11 +209,12 @@ def keyword_coverage(question: str, passages: list[str]) -> list[float]:
     return [sum(weights[t] for t in query & doc) / total for doc in docs]
 
 
-def local_term_support(query: set[str], text: str) -> bool:
-    """Require most query terms within at most two neighboring sentences."""
+def local_term_support(query: set[str], text: str, *, complete: bool = False) -> bool:
+    """Check local word coverage; complete coverage can bypass semantic comparison."""
     sentences = re.split(r"(?<=[.!?])\s+", text)
-    return any(
-        len(query & terms(" ".join(sentences[i : i + 2]))) > len(query) / 2
+    required = len(query) if complete else len(query) // 2 + 1
+    return bool(query) and any(
+        len(query & terms(" ".join(sentences[i : i + 2]))) >= required
         for i in range(len(sentences))
     )
 

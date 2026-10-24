@@ -1,3 +1,22 @@
+CHECKPOINT77 — GENERAL LEXICAL-BYPASS FIX; CURRENT RUNTIME UNMEASURED.
+Same allowance4 baseline20%used, latest23%, STOP25%; +3observedpoints,2remain; lagpossible.
+Reset2026-10-30 17:40:50UTC. Prior costs/outcomes preserved, no prior remainder added.
+Sourceparent6e0a4e1; thiscommit tightens descriptive partial-match semantic eligibility.
+Only complete local term coverage skips original positive answer>question control.
+Defaultsource majoritycheck/models/scores/thresholds/context/proofs/taint/scope/auth unchanged.
+Newtests before1fail2pass; after37pass1knownfail; full424pass1knownexpiry-deletionfail1skip.
+Ruff/diffpass. SolHighreview no blocker with retained prototype-qualification correction.
+Garden actualStore answer AND ask changehittrue tohitfalse; no lost sufficient controls.
+Offlineanswercontrol uses syntheticpolicy.md, notfullR25. Otherfalsehits/misses remain.
+73representation,74reverse,76sentence guards rejected;75metadata rankingdiagnosis retained.
+Read investigation77 README/outcome/archive. No native improvement or all8gate claim.
+Latestcomplete56=3/8 onoldruntime75b4af3; all8currentruntime gates conservativelyunmeasured/fail.
+Bothworkersidle,2totalused; no nesteddelegation. Freshmain fetched6fa6826 beforecomparison.
+Nextnative57 unused: freshlocal57 first, thenfull48onlyiflocalqualifies/budgetpermits.
+No identicalcoderetry; unchangedharness/config/models/oracles/budgets/eightstrictgates.
+At25 stopactivebenchmark/workers, preserveeverypartialcost/result, updatePR/RESUME andstopunfinished.
+PR3draft/unmerged/noauto. Nativegross50through56 remains15,497,907; no newnativeyet.
+
 CHECKPOINT72 — NO SAFE RUNTIME PATCH ESTABLISHED; TASK UNFINISHED.
 Fresh allowance4 baseline20%used, latest20%, STOP25%; observedincrease0points.
 ThresholdNOTobserved; reportingcoarse/lagged, actualcostnotzero. Reset2026-10-30 17:40:50UTC.

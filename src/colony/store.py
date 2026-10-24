@@ -606,7 +606,9 @@ class Store:
             ]
             rows = [row for row, _ in eligible]
             contents = [content for _, content in eligible]
-            # Literal overlap is sufficient support, not a veto on synonyms.
+            # Complete local word coverage can bypass semantic comparison.
+            # Partial overlap may only identify a shared subject or modal words;
+            # keep synonyms and other partial matches on the semantic path.
             # Only the bounded answer prefix is indexed, reranked and displayed
             # by MCP. Text outside it must not bypass the semantic support check.
             # For related descriptions without it, compare the actual answer
@@ -616,7 +618,7 @@ class Store:
                 for i, (row, content) in enumerate(eligible)
                 if not procedure
                 and row["question"].strip().casefold() != normalized_question
-                and not local_term_support(query_terms, content[:4000])
+                and not local_term_support(query_terms, content[:4000], complete=True)
             ]
             # Exact questions already bypass the relevance threshold. A sole
             # candidate cannot change ordering, so inference cannot change which
