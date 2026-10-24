@@ -5,7 +5,7 @@ import sqlite_vec
 from conftest import auth
 
 from colony.models import Trail
-from colony.retrieval import index_version
+from colony.retrieval import index_version, passage
 from colony.store import Store
 from colony.validation import snapshot
 
@@ -101,7 +101,8 @@ def test_saved_descriptions_need_fact_support_even_with_strong_topic_scores(
     assert result["hit"] == expected
     # A literal match needs only its answer score. A semantic fallback also
     # scores the saved question; uniformly high topic scores prove no answer.
-    assert ranked == ([content] if expected else [content, "Operations reference"])
+    answer = passage("Operations reference", content)
+    assert ranked == ([answer] if expected else [answer, "Operations reference"])
     if expected:
         assert result["content"] == content and result["status"] == "validated"
 

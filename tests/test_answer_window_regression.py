@@ -6,6 +6,7 @@ import pytest
 import sqlite_vec
 
 from colony.models import Trail
+from colony.retrieval import passage
 from colony.validation import snapshot
 
 QUESTION = "Does a login session permit deleting other users?"
@@ -98,4 +99,4 @@ def test_tail_overlap_does_not_bypass_nonpositive_scored_prefix(team, monkeypatc
     monkeypatch.setattr(colony.store, "rank", irrelevant_prefix)
     result = store.find_answer(QUESTION, ["team"], 604800, 0.60, query_vector=vector)
     assert not result["hit"]
-    assert ranked == [(PREFIX + "\n\n" + UNSUPPORTED)[:4000]]
+    assert ranked == [passage(SAVED_QUESTION, PREFIX + "\n\n" + UNSUPPORTED)]

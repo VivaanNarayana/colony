@@ -626,7 +626,18 @@ class Store:
             exact_singleton = (
                 len(rows) == 1 and rows[0]["question"].strip().casefold() == normalized_question
             )
-            scores = [0.0] if exact_singleton else rank(question, [c[:4000] for c in contents])
+            # The saved question supplies the answer's intended attribute, as
+            # it already does for the embedding. Keep that context when scoring
+            # the bounded answer; otherwise a related statement can match a
+            # different requested fact. Display and support guards stay below.
+            scores = (
+                [0.0]
+                if exact_singleton
+                else rank(
+                    question,
+                    [passage(row["question"], content) for row, content in eligible],
+                )
+            )
             # A nonpositive answer cannot satisfy the existing strictly positive
             # contrastive rule, whatever the question-only control would score.
             positive_support = [i for i in needs_semantic_support if scores[i] > 0]

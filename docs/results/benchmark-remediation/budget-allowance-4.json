@@ -16,13 +16,13 @@
   "last_observed_weekly_used_percent": 23,
   "observed_increase_percentage_points": 3,
   "started_utc": "2026-10-24T01:12:33.091174+00:00",
-  "last_observed_utc": "2026-10-24T02:33:41.639374+00:00",
+  "last_observed_utc": "2026-10-24T02:50:21.356464+00:00",
   "source_checkpoint": "55f1b54fb6cf7860aa4d51b6c552dbfed567c0ca",
   "worker_limit_total": 2,
   "worker_model": "gpt-6.1-sol",
   "worker_reasoning": "high",
   "workers_started": 2,
   "active_benchmark": false,
-  "last_phase": "Trial57 completed48; all labels frozen; official analyzer once3/8; publication preparation",
+  "last_phase": "Combined79fullsuite425passed1skip; reviewed; preparing native58",
   "worker_state": "Both existing SolHigh workers idle; two total workers retained; reviewer follow-up authorized after usage check"
 }

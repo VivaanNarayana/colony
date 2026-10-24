@@ -1,3 +1,21 @@
+CHECKPOINT79 — INTENT-AWARE ANSWER RERANKING; TESTS PASS, NATIVE UNMEASURED.
+Sameallowance4 baseline20%, latest23%, STOP25%; +3observedpoints; lagpossible.
+Reset2026-10-30 17:40:50UTC; allpriorcosts preserved, no remainderadded.
+Sourceparent8e3759b; combined77completelexicalbypass +unchanged73Question/Answer representation.
+Original73rejection remains; no representation/thresholdretuning. New79freshcontrols32total:
+20main0candidatefalsehits/lostpositives;12length retain1baselinemiss/2baselinefalsehits.
+Original expiry/deletion testnowpasses; full425passed1Windows skip, focused34pass; Ruffpass.
+Existing4testfiles updateinputlayout/diagnostics only; allbehaviorassertions/cases preserved.
+SolHigh boundedreview no actionabledefect withlimits. Both existingworkersidle;2total/no nested.
+Read investigation79 README/outcome/archive. 78additivecontextproposalrejected: no effective
+changes, native toolnamesnotfit1324+1692within2800; inheritedqualificationproblems retained.
+No currentnativebenefitclaim; no inheritedgreens. Latestcomplete57=3/8 onba77687.
+Nativegross50through57=17,909,838; no58sampleyet. Currenteightstatusesconservativelyunmeasured.
+Nextfreshlocal58 thenall48native58onlyiflocalqualifies/reliablebudgetpermits. Freshmain6fa6826
+fetched; unchangedharness/models/oracles/gates/confidence/budgets/taint/proofs/auth/scope/context.
+Neveridenticalcoderetry/resample. At25stopphases/workers/benchmark, retainpartialcosts,
+updatePR/RESUME andstopunfinished. PR3draft/unmerged/noauto.
+
 TRIAL57 COMPLETE — SAME3/8STRICTGATES; TASK UNFINISHED.
 Sameallowance4 baseline20%used, latest23%, STOP25%; +3observedpoints; lagpossible.
 Reset2026-10-30 17:40:50UTC. Allpriorcosts/outcomes/remainder separatelyretained.

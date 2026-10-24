@@ -6,7 +6,7 @@ import uuid
 import pytest
 
 from colony.models import Trail
-from colony.retrieval import local_term_support, rank, terms
+from colony.retrieval import local_term_support, passage, rank, terms
 from colony.validation import snapshot
 
 CASES = [
@@ -59,12 +59,14 @@ def test_sufficient_saved_wording_and_unsupported_attribute_control(
     diagnostic = {
         "wording": wording,
         "question": question,
-        "literal_support": local_term_support(terms(question), content),
-        "answer_and_control_scores": rank(question, [content, saved_question]),
+        "literal_support": local_term_support(terms(question), content, complete=True),
+        "answer_and_control_scores": rank(question, [passage(saved_question, content), saved_question]),
         "unsupported_attribute_question": unrelated,
-        "unsupported_attribute_literal_support": local_term_support(terms(unrelated), content),
+        "unsupported_attribute_literal_support": local_term_support(
+            terms(unrelated), content, complete=True
+        ),
         "unsupported_attribute_answer_and_control_scores": rank(
-            unrelated, [content, saved_question]
+            unrelated, [passage(saved_question, content), saved_question]
         ),
     }
     result = store.ask(question, ["team"], 604800, 0.60)

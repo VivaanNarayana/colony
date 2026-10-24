@@ -6,7 +6,7 @@ import pytest
 import sqlite_vec
 
 from colony.models import Trail
-from colony.retrieval import local_term_support, rank, terms
+from colony.retrieval import local_term_support, passage, rank, terms
 from colony.validation import snapshot
 
 
@@ -58,8 +58,8 @@ def test_descriptive_paraphrases_reuse_facts_without_accepting_different_attribu
     )
     # Retain semantic diagnostics on failure without recording performance.
     diagnostic = {
-        "literal_support": local_term_support(terms(question), content),
-        "answer_and_question_scores": rank(question, [content, saved_question]),
+        "literal_support": local_term_support(terms(question), content, complete=True),
+        "answer_and_question_scores": rank(question, [passage(saved_question, content), saved_question]),
     }
     result = store.ask(question, ["team"], 604800, 0.60)
     assert result["hit"], diagnostic
@@ -119,4 +119,5 @@ def test_nonliteral_answer_requires_positive_discriminating_semantic_support(
     monkeypatch.setattr(colony.store, "rank", controlled_rank)
     result = store.find_answer(question, ["team"], 604800, 0.60, query_vector=vector)
     assert result["hit"] == expected
-    assert ranked == ([content, saved_question] if answer_score > 0 else [content])
+    answer = passage(saved_question, content)
+    assert ranked == ([answer, saved_question] if answer_score > 0 else [answer])
