@@ -20,6 +20,6 @@
   "last_observed_weekly_used_percent": 19,
   "observed_increase_percentage_points": 3,
   "at_utc": "2026-10-23T22:49:26.471298+00:00",
-  "last_phase": "Checkpoint66: retry receipt fix tested/reviewed; procedure/packet/SQL outcomes preserved; no next approved core candidate",
-  "last_observed_utc": "2026-10-24T00:00:52.026450+00:00"
+  "last_phase": "Trial56 completed48, labels reviewed/frozen, officialanalyzer once:3/8; publication",
+  "last_observed_utc": "2026-10-24T00:23:26.728819+00:00"
 }

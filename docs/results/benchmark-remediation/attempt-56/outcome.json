@@ -1,0 +1,52 @@
+{
+  "trial": 56,
+  "source": "fec2c119d2964e99e01cf00239caab02625b34bb",
+  "identical_runtime_source_commit": "75b4af31ee7556b931a387de6762014ac6f4b44a",
+  "baseline": "6fa6826aa4c835001c0d2bc8f3bec838499e5b5d",
+  "all_gates_passed": false,
+  "current_complete_eight_gate_verdict_available": true,
+  "gates_passed": 3,
+  "gates_total": 8,
+  "gate_statuses": {
+    "benchmarks/loaded_implementations_verified": "success",
+    "benchmarks/tests_and_lint_pass": "failure",
+    "benchmarks/local_lookup_improves": "success",
+    "benchmarks/correctness_not_reduced": "failure",
+    "benchmarks/feature_follows_tool_protocol": "failure",
+    "benchmarks/observed_live_tokens_improve": "failure",
+    "benchmarks/observed_uncached_input_plus_output_improve": "failure",
+    "benchmarks/observed_live_time_improves": "success"
+  },
+  "blocking_gates": [
+    "tests_and_lint_pass",
+    "correctness_not_reduced",
+    "feature_follows_tool_protocol",
+    "observed_live_tokens_improve",
+    "observed_uncached_input_plus_output_improve"
+  ],
+  "official_analyzer_invocations": 1,
+  "local_invocations": 1,
+  "native_invocations": 1,
+  "native_sessions_completed": 48,
+  "native_gross_tokens": 2420629,
+  "cumulative_native50_through56_gross": 15497907,
+  "all_outcomes_costs_retained": true,
+  "benchmark_or_session_restarts": 0,
+  "proof_repair": false,
+  "tests_passed": 421,
+  "tests_failed": 1,
+  "tests_skipped": 1,
+  "ruff_passed": true,
+  "usage": {
+    "allowance": 3,
+    "baseline": 16,
+    "last_observed": 19,
+    "stop": 21,
+    "reset": 1793382050,
+    "shared": true,
+    "reporting_may_lag": true
+  },
+  "all_models_harness_and_gates_unchanged": true,
+  "causal_limit": "Combined runtime changes do not isolate causes; frozen corpus unchanged; wording/cache/sampling variability retained. No identical-runtime retry permitted.",
+  "published_utc": "2026-10-24T00:23:20.988634+00:00"
+}

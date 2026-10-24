@@ -1,3 +1,24 @@
+ACTIVE ALLOWANCE3 — TRIAL56 COMPLETE, 3/8; TASK UNFINISHED.
+Baseline16%used, latest19%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
+One shared5points; observed+3,2remain; priorcostsretained/reportingmaylag.
+Measured fec2c119d2964e99e01cf00239caab02625b34bb, runtimeequivalent75b4af3, freshmain6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
+Read attempt56 README/comparison/manual-review/research-review/tool-audit/outcome.
+One local+native48+officialanalysis, no retries/resampling/discards; allcostsretained.
+PASS loaded/local/liveTIME; FAIL tests/correctness/protocol/gross/uncached.
+Time8.50%lowerCI+3.15to+14.63; gross12.08%higher; uncached2.08%lowerCIcross0.
+Core24/24both; citations19main/23feature, R29namedanchorinvalid underunchangedoracle.
+MainR31twoasks;featureR25relevantcachedanswerthenread/push; sourceexcerptnotqueueproof.
+All15pushes/16hashesactualprecedingnewreads. MainR03explicitfalsetaintretained.
+Feature9stored/alltaintedtrue/0queue; main3storedreceipts3queued,DB6rows3queue.
+Nativegross2420629; cumulative50through56gross15497907. Exact pinnedproofs retained.
+Tests421pass1knownwrongattributefailure1skip;Ruffpass. Models/harness/gates unchanged.
+No isolated causalclaim: corpusfrozen6fa, generatedwording/sampling/cachevary.
+All1–55/checkpoints56–66immutable; PRdraft/unmerged/noauto. Workersidle/nobenchmarkactive.
+Next needs meaningfulnew runtimefix before anycomparison; no identicalcoderetry.
+Citationformat failure new; semanticfalsehit/metadata/wording/protocol/tokens unresolved.
+Continue onlywhile sharedbudgetpermits; stopworkers/benchmark at21, retainpartialcosts,
+updateexactcheckpoint andpause. No reset/credits/APIbilling/accountswitch bypass.
+
 ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT66; TASK UNFINISHED.
 Baseline16%used, latest19%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5point allowance; observed+3points,2remain. Priorcosts retained; lagpossible.
