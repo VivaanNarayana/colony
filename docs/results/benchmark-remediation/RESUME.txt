@@ -1,3 +1,24 @@
+TRIAL59 COMPLETE — 5/8STRICTGATES; PERFORMANCE STILL FAILS.
+Same allowance4 baseline20%, latest24%, STOP25%; +4observedpoints, lagpossible.
+Reset2026-10-30 17:40:50UTC; priorcosts/outcomes preserved, no remainderadded.
+Measured0606a51b712024fd517624243ac190ce54dc201a versusfreshmain6fa6826.
+Read attempt59 README/comparison/manual-review/research-review/tool-audit/outcome.
+PASS loaded/tests/local/correctness/both-armprotocol. FAIL gross/uncached/time.
+From58correctness/protocolturngreen; timebecomesred. Full433pass1Windows skip, Ruffpass.
+Local31.57%lowerpositiveCI; nativegross18.90%higher/uncached24.19%higherstrictlyworseCIs;
+time1.32%higherCIcrosses0. Core24both; citations16main24feature; protocol0both.
+Feature research28versusmain20; sameREADME96irrelevantmetadata persists.
+All14pushes/15proofsmatchactualnewreads; main3stored3queued/DB6rows3queue;
+feature8stored8rows0queue. Mainexplicitfalse stored0/queuedfalse retained; featureallTrue.
+No isolated81nativebenefit; local omittedfact recovery is narrower evidence.
+All48answers/48packets/14tracesreviewed,42contextsverified; coordinatornonblindgrading.
+Native59gross2,550,418; cumulative50through59=22,961,568;52native0/earliercostsretained.
+Both existingworkersidle, two total/no nested. No activebenchmark; wake released.
+Allmodels/harness/gates/budgets/taint/proofs/auth/scope/freshness/queue safeguards unchanged.
+Nextdistinctgeneralmechanism mustreduce unnecessaryresearch/overhead; no safecandidateapproved.
+No identical-code retry, per-sessionresampling, oraclechange or mainexemption.
+At25stopnewphases, preserve partialresults/costs, updateandstopunfinished. PR3draft/unmerged/noauto.
+
 CHECKPOINT81 — GENERAL OVERLAP FACT PRESERVATION; NATIVE UNMEASURED.
 Same allowance4 baseline20%, latest23%, STOP25%; reset2026-10-30 17:40:50UTC.
 Parent4e39df9; read investigations80/81 and retained trial58 (4/8).
