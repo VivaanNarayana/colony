@@ -1,3 +1,27 @@
+TRIAL57 COMPLETE — SAME3/8STRICTGATES; TASK UNFINISHED.
+Sameallowance4 baseline20%used, latest23%, STOP25%; +3observedpoints; lagpossible.
+Reset2026-10-30 17:40:50UTC. Allpriorcosts/outcomes/remainder separatelyretained.
+Measured ba77687804a7d7a49b182c75fc2e50995ef50e45, freshmain6fa6826aa4c835001c0d2bc8f3bec838499e5b5d; no runtimechangesaftermeasurement.
+Read attempt57 README/comparison/manual-review/research-review/tool-audit/outcome.
+Onefreshlocal234rows +complete48native+officialanalyzeronce, alloutcomesretained.
+PASS loaded/local/time; FAIL tests/correctness/protocol/gross/uncached; no gatechangesfrom56.
+Time11.98%lowerCI+3.42to+19.69; gross5.99%higherCIcross0; uncached32.35%higherCIworse.
+Core24main/23feature; citations19main/23feature. R21metadataanswer omitsask/push names,
+no missingfactresearch/save. FeatureR14two identicalsufficientasks. Mainprotocol0/feature2.
+R29realheadinganchorinvalid underunchangedoracle; helpermissingtargetdiagnosticmisleading.
+All13pushes/15hashesactualprecedingnewreads; main1stored/5queuedreceipts,DB6rows5queue;
+feature7stored/7rows0queue; allactual57taintsTrue. Historical56false-taintfindingretained.
+424pass1knownexpiry-deletionfailure1Windows skip; Ruffpass. Lexical77regressionfixedonly.
+No isolatednativebenefit: sourcecorpusfrozenmain, generatedwording/cache/samplingvary.
+Nativegross57=2,411,931; cumulative50through57=17,909,838;52native0/earliercostsretained.
+All48coordinatorreviewed/49packets/41sourcecontexts; selectedSolreview3recordsnonblindagrees.
+Bothworkersidle;2totalused, no nesteddelegation; no activebenchmark. PR3draft/unmerged/noauto.
+Next: distinct general sourcecontext/answer-supportfix forwrongmetadataanswer withgoverning
+qualifications/dependenciescontrols. No rejectedcandidateretuning/unsafecompaction/hints.
+Nextnative58 onlyaftermeaningfulreviewedruntimechange/tests, freshmain/freshdirectories;
+neverretryidenticalsource. Allmodels/harness/gates/oracles/budgets/taint/proofs/scopeunchanged.
+At25stopnewphases/workers/benchmark, preservepartialcosts, updatecheckpoint andstopunfinished.
+
 CHECKPOINT77 — GENERAL LEXICAL-BYPASS FIX; CURRENT RUNTIME UNMEASURED.
 Same allowance4 baseline20%used, latest23%, STOP25%; +3observedpoints,2remain; lagpossible.
 Reset2026-10-30 17:40:50UTC. Prior costs/outcomes preserved, no prior remainder added.
