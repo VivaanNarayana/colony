@@ -1,0 +1,10 @@
+{
+  "original_zip_hashes": {
+    "main/reviews.json": "c6288b8a2b5ffa6f590eed9b8efc429d44abdb71420f8ac46336b534c0a883d4",
+    "feature/reviews.json": "ee44103da0eae04c63002a027dd99ecf7fdbc125f62b28b97b053148c4eae657"
+  },
+  "public_LF_hashes": {
+    "main/reviews.json": "c6288b8a2b5ffa6f590eed9b8efc429d44abdb71420f8ac46336b534c0a883d4",
+    "feature/reviews.json": "ee44103da0eae04c63002a027dd99ecf7fdbc125f62b28b97b053148c4eae657"
+  }
+}

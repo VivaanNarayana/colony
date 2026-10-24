@@ -1,3 +1,27 @@
+TRIAL58 COMPLETE — 4/8STRICTGATES; TESTS NOW PASS, TASK UNFINISHED.
+Sameallowance4 baseline20%, latest23%, STOP25%; +3observedpoints; lagpossible.
+Reset2026-10-30 17:40:50UTC; priorcosts/outcomes preserved, no remainderadded.
+Measuredfdc917dd27e4e7880443eed5ad7e60a9b630cbdd versusfreshmain6fa6826.
+Read attempt58 README/comparison/manual-review/research-review/tool-audit/outcome.
+PASS loaded/tests/local/time; FAIL correctness/both-armprotocol/gross/uncached.
+Tests isonlychangedgatefrom57. Full425pass1Windows skip, focused34pass; Ruffpass.
+Originalexpiry/deletionregression fixed. Local117each/234verified,31.58%lowerpositiveCI.
+Native time11.46%lowerpositiveCI; gross9.71%higher/uncached14.16%higherCIs cross0.
+Core24both, citations17main23feature. FeatureR38malformedserver.py]linkinvalid; preserve.
+Featureprotocol0/main1: MainR37sixresearchops+7thbudgeterror, no push afternewread.
+No mainexemption, proofrepair, relabeling or resampling. Everyactualaskonce.
+FeatureR21initialREADME96metadata irrelevant; subsequentactualresearch/save fixesfinalanswer.
+All13pushes/15hashesactualnewreads; main3stored2queuedreceipts/DB5rows2queue;
+feature8stored8rows0queue; allactual58taintsTrue. Historicalfalse-taintfindingretained.
+Native58gross2,501,312; cumulative50through58=20,411,150;52native0/earliercostsretained.
+All48answers/48packets/14traces reviewed,41contextsverified; selectedSolreview3recordsagrees.
+Noisolatednative79benefitclaim: cumulativefeature/main, generatedwording/cache/samplingvary.
+Bothworkersidle,2total/no nested; no activebenchmark. PR3draft/unmerged/noauto.
+Nextdistinctgeneralfix: citationconstruction/source-support misses/tokenoverhead, preserve
+alloriginalgates/oracles/models/harness/budgets/taint/proofs/auth/scope/freshness.
+Nextnative59requiresmeaningfulreviewedruntimechange/tests/freshmain/freshdirs; noidenticalretry.
+At25stopnewphases/workers/benchmark, preservepartialcosts/results, updateandstopunfinished.
+
 CHECKPOINT79 — INTENT-AWARE ANSWER RERANKING; TESTS PASS, NATIVE UNMEASURED.
 Sameallowance4 baseline20%, latest23%, STOP25%; +3observedpoints; lagpossible.
 Reset2026-10-30 17:40:50UTC; allpriorcosts preserved, no remainderadded.
