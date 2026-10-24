@@ -1,3 +1,20 @@
+PAUSED AT EXPLICIT USER REQUEST — TRIAL59 COMPLETE5/8, UNFINISHED.
+Same allowance4 baseline20%, continuationfirst21%, ending24%, STOP25%; reset2026-10-30 17:40:50UTC.
+Observed+4pointsagainstallowance/+3thiscontinuation;25NOTobserved; lagpossible.
+Measuredsource0606a51b712024fd517624243ac190ce54dc201a; completeevidencepublication
+db4bd567718dae23e3571a14ca4afaa45bf31765. Exactpausecheckpoint is this containingcommit,
+recordedinPR3/finalchat; do not infer completion. Read pause-after-59/outcome+README.
+Latest59PASS loaded/tests/local/correctness/both-armprotocol; FAILgross/uncached/time.
+Full433pass1Windows skip/Ruffpass; native48sessions/2,550,418gross; cumulative50through59
+22,961,568gross,52native0/earliercostsseparate. Allcosts/outcomes/saves/failures retained.
+Bothworkerscompleted/idle, no activebenchmark/process; wake released. PR3draft/open/unmerged/noauto.
+No new investigation/implementation/delegation/benchmark after pause; preservationonly.
+Resumeonlywhenasked; read usage/reset FIRST and preserve same20–25 allowance.
+Read attempt59 README/comparison/manual-review/research-review/tool-audit, investigation81.
+No approved nextcandidate. Needdistinctgeneralfixfor28vs20researchcalls andtoken/timeexcess;
+metadatahitstillirrelevant; no isolated81performancebenefit. Noidenticalretry/resampling/oraclechange.
+All8strictgates/models/harness/budgets/guards/proofs/taint/auth/scope/freshness/queue unchanged.
+
 TRIAL59 COMPLETE — 5/8STRICTGATES; PERFORMANCE STILL FAILS.
 Same allowance4 baseline20%, latest24%, STOP25%; +4observedpoints, lagpossible.
 Reset2026-10-30 17:40:50UTC; priorcosts/outcomes preserved, no remainderadded.
