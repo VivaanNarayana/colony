@@ -25,7 +25,7 @@ Nextnative57 remainsunused: meaningfulreviewedruntimechange/tests first, freshma
 allunchanged8strictgates/ruleset25440133/models/harness/proofs/taint/auth/scope/freshness.
 PR3draft/unmerged/noauto. At25stopworkers/benchmark, retainpartialcosts, updateandstopunfinished.
 
-CHECKPOINT70 â€” USER REQUESTED RESUME UPDATE; TASK UNFINISHED.
+CHECKPOINT70 — USER REQUESTED RESUME UPDATE; TASK UNFINISHED.
 Baseline16%used, latest20%, STOP21%; observed+4points,1remains; thresholdNOTobserved.
 Reset1793382050=2026-10-30 17:40:50UTC. Same shared5point allowance, no renewal.
 Reserve headroom for in-flight costs/reporting lag; read reliableusage before continuation.
@@ -50,7 +50,7 @@ Nextnative57 onlyaftermeaningfulgeneral reviewed runtimechange,freshmain/freshdi
 No identicalcoderetry/resampling. Models/harness/gates/proofs/taint/scope unchanged.
 At21stopallworkers/benchmark, preservepartialcosts, updatecheckpoint andpause.
 
-ACTIVE ALLOWANCE3 â€” POST-TRIAL56 CHECKPOINT68; TASK UNFINISHED.
+ACTIVE ALLOWANCE3 — POST-TRIAL56 CHECKPOINT68; TASK UNFINISHED.
 Baseline16%used, latest20%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5points, observed+4; previouscostsretained/reportingmaylag.
 Read investigation68 README/outcome/archive and complete attempt56 evidence.
@@ -67,7 +67,7 @@ Nextnative57 onlyaftermeaningfulreviewedruntimechange/freshmain/freshdirs;
 never retryidenticalruntime orresample. PRdraft/unmerged/noauto.
 Workers idle; no benchmark active. Continue only bounded work within remaining shared allowance; stop at21.
 
-ACTIVE ALLOWANCE3 â€” TRIAL56 COMPLETE, 3/8; TASK UNFINISHED.
+ACTIVE ALLOWANCE3 — TRIAL56 COMPLETE, 3/8; TASK UNFINISHED.
 Baseline16%used, latest19%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5points; observed+3,2remain; priorcostsretained/reportingmaylag.
 Measured fec2c119d2964e99e01cf00239caab02625b34bb, runtimeequivalent75b4af3, freshmain6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
@@ -82,13 +82,13 @@ Feature9stored/alltaintedtrue/0queue; main3storedreceipts3queued,DB6rows3queue.
 Nativegross2420629; cumulative50through56gross15497907. Exact pinnedproofs retained.
 Tests421pass1knownwrongattributefailure1skip;Ruffpass. Models/harness/gates unchanged.
 No isolated causalclaim: corpusfrozen6fa, generatedwording/sampling/cachevary.
-All1â€“55/checkpoints56â€“66immutable; PRdraft/unmerged/noauto. Workersidle/nobenchmarkactive.
+All1–55/checkpoints56–66immutable; PRdraft/unmerged/noauto. Workersidle/nobenchmarkactive.
 Next needs meaningfulnew runtimefix before anycomparison; no identicalcoderetry.
 Citationformat failure new; semanticfalsehit/metadata/wording/protocol/tokens unresolved.
 Continue onlywhile sharedbudgetpermits; stopworkers/benchmark at21, retainpartialcosts,
 updateexactcheckpoint andpause. No reset/credits/APIbilling/accountswitch bypass.
 
-ACTIVE ALLOWANCE3 â€” DEVELOPMENT CHECKPOINT66; TASK UNFINISHED.
+ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT66; TASK UNFINISHED.
 Baseline16%used, latest19%, STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5point allowance; observed+3points,2remain. Priorcosts retained; lagpossible.
 Source 75b4af31ee7556b931a387de6762014ac6f4b44a; retry ACK must confirm exactID/storedtrue/noerror/noqueuedconflict.
@@ -99,14 +99,14 @@ AstraHigh no blocker; malformedJSONafterpartialsuccess covered. Nullfixturemista
 Read investigation-66 README/outcome/archive. Procedurewindow63 rejected(fullAPI/diagnostic
 loss); packet64 zero exact duplicates48packets; SQL66 mechanismreproduced but unadopted,
 syntheticrank precisionrisk explicitly NOT actualmodel evidence. FinalDBcounts7/10 only.
-All outcomes/errors/costs/history1â€“55/checkpoints56â€“62 retained. Models/harness/gates unchanged.
+All outcomes/errors/costs/history1–55/checkpoints56–62 retained. Models/harness/gates unchanged.
 Current runtimeunmeasured; all8checks conservativefailures; latestfull55=3/8 on8380724.
 Native56 unused. No safe approved nextcorecandidate; new causal evidence needed, no retuning.
 Continue bounded work onlywhile sharedbudget permits; reserveheadroom. No activebenchmark.
 PRdraft/unmerged/noauto. Atstopthreshold interruptworkers/benchmark, retainpartialcosts,
 updateexactcheckpoint andpauseunfinished. No credit/reset/APIbilling/accountswitch bypass.
 
-ACTIVE ALLOWANCE3 â€” DEVELOPMENT CHECKPOINT62; TASK UNFINISHED.
+ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT62; TASK UNFINISHED.
 Baseline16% used; latest17%; STOP21%; reset1793382050=2026-10-30 17:40:50UTC.
 One shared5point allowance; prior costs retained; check after phases/long work.
 Source bf240ab0637d51732f803a56caa995a2d18d77ec; targeted authorized duplicate index recovery with completion marker.
@@ -116,13 +116,13 @@ Tests401passed/1knownwrongattribute failure/1Windows skip;34focusedpassed; Ruffp
 AstraHigh no blocker. Prototype duplicate16MB reread regression retained; final0reads.
 Single descriptive timing observations, no CI/native benefit claim.
 Read investigation-62 README/outcome/archive; prefix61 ineffective, anaphora rejected.
-All errors/outcomes/costs1â€“55/checkpoints56â€“59 retained. Native56 remains unused.
+All errors/outcomes/costs1–55/checkpoints56–59 retained. Native56 remains unused.
 Current source unmeasured; all8current checks conservative failure; last55=3/8.
 Next bounded procedural-window63 diagnostic only; production read-only, fixed models.
 Known falsehit/sufficientwording/metadata/protocol/nativeperformance unresolved.
 PRdraft/unmerged/noauto. Stop workers/benchmark and pause atusage threshold; reserveheadroom.
 
-ACTIVE ALLOWANCE3 â€” DEVELOPMENT CHECKPOINT59; TASK UNFINISHED.
+ACTIVE ALLOWANCE3 — DEVELOPMENT CHECKPOINT59; TASK UNFINISHED.
 Explicit new5sharedpoints: baseline16%used/84%remaining, STOP21%used/79%remaining.
 Latestobserved16%; reset1793382050=2026-10-30 17:40:50UTC; checkusageafterphases.
 Read budget-allowance-3.json; allpriorcosts/allowancesretained; noresetrenewsbudget.
@@ -139,11 +139,11 @@ Targeted sourceindex repair via exactduplicateretry onlyproposal; noacknowledgme
 regression or automaticquery/startupscan accepted. Reconcilebeforeimplementation.
 No activebenchmark; currentruntimeunmeasured; all8currentchecks conservativefailures.
 Last complete55=3/8 on8380724; nextnative56unused. Neveridenticalcoderetry/resample.
-All1â€“55evidence/checkpoints56â€“58/harness/subject/gates/proof/taint/scope/freshness
+All1–55evidence/checkpoints56–58/harness/subject/gates/proof/taint/scope/freshness
 unchanged. PRdraft/unmerged/noauto. Continueboundedworkonlywhile sharedbudgetpermits.
 
-ACTIVE EXPLICIT FRESH ALLOWANCE3 â€” FIVE SHARED POINTS, ALL PRIOR COSTS RETAINED.
-Human: newallowance5%,84%remainingâ†’79%; same usage behavior rules.
+ACTIVE EXPLICIT FRESH ALLOWANCE3 — FIVE SHARED POINTS, ALL PRIOR COSTS RETAINED.
+Human: newallowance5%,84%remaining→79%; same usage behavior rules.
 Baseline16%used, STOP21%used. Reset1793382050=2026-10-30 17:40:50UTC.
 All coordinator/workers/subjects/reviews share this5point increase. Checkafterphases
 and longwork; reserveheadroom; atthreshold stopworkers/benchmark, retainpartialcosts,
@@ -153,8 +153,8 @@ Current sourcebde1af1, docs679eea5; measured8380724/trial55=3/8; modelsunchanged
 Next reconcile bounded age-candidate-crowding investigation before edits/tests;
 no fullbenchmark merely for source-byte fix. No benchmark active.
 
-ACTIVE AFTER EXPLICIT HUMAN CONTINUATION â€” SAME ALLOWANCE2, NO RENEWAL.
-Read budget-allowance-2.json active_segment. Original22â†’24 consumed2points retained.
+ACTIVE AFTER EXPLICIT HUMAN CONTINUATION — SAME ALLOWANCE2, NO RENEWAL.
+Read budget-allowance-2.json active_segment. Original22→24 consumed2points retained.
 Sameaccount twice nowreports16%, reset1793382050 (2026-10-30 17:40:50UTC), causeunknown.
 Newsegment baseline16%, STOP22%; atmost6remainingpoints shared by all modelwork.
 Do not use old30% threshold after discontinuity or grant another8points on reset.
@@ -163,7 +163,7 @@ Models/harness/gates unchanged. Preserve historical pause58 and all outcomes/cos
 Next bounded age-candidate-crowding investigation; reconcile before changes/tests;
 no full benchmark solely for existing source-byte cap fix. No benchmark active.
 
-PAUSED BY EXPLICIT USER REQUEST â€” ALL WORKERS STOPPED; TASK UNFINISHED.
+PAUSED BY EXPLICIT USER REQUEST — ALL WORKERS STOPPED; TASK UNFINISHED.
 Do not resume or run another benchmark without a new human instruction.
 User: pause your work and pause all subagents; update RESUME and PR; no benchmark.
 Fresh shared allowance2 baseline22%, endingobserved24%, +2points; STOP30%.
@@ -194,9 +194,9 @@ gross/uncached/time and source-index recovery. No external blocker demonstrated.
 No native56/57, no identical-runtime retry; next actual native trial56 remains unused.
 No measurement merely for source-resource fix; reconcile general meaningful change
 and review/tests before any later comparison authorized by human.
-All historical1â€“55/costs/manifests/harness and models unchanged; PRdraft/unmerged/noauto.
+All historical1–55/costs/manifests/harness and models unchanged; PRdraft/unmerged/noauto.
 
-ACTIVE ALLOWANCE2 â€” SOURCE BYTE-LIMIT FIX; DEVELOPMENT CHECKPOINT57.
+ACTIVE ALLOWANCE2 — SOURCE BYTE-LIMIT FIX; DEVELOPMENT CHECKPOINT57.
 User explicitly reaffirmed bounded exploration under unchanged models; no early pause.
 Baseline22%, latestobserved24%, STOP30%, reset1793294233; readusage after phases.
 Latest measured runtime8380724; latest complete55=3/8; current source patch unmeasured.
@@ -212,10 +212,10 @@ Current-head all8 conservativefailures; do not apply old runtime greens to new s
 No native56/57; next native56 unused; do not benchmark merely for source-resource fix.
 Retrieval worker checking source-index lifecycle (missing during indexing then restored),
 deterministic stub reproduction only; no approved patch, no actual native causal claim.
-No active benchmark; otherworkersidle. All history1â€“55/costs/manifests unchanged;
+No active benchmark; otherworkersidle. All history1–55/costs/manifests unchanged;
 allmodels/harness/gates/proof/taint/queue safeguards unchanged; PRdraft/unmerged/noauto.
 
-ACTIVE ALLOWANCE2 â€” DEVELOPMENT CHECKPOINT56; NO BENCHMARK56.
+ACTIVE ALLOWANCE2 — DEVELOPMENT CHECKPOINT56; NO BENCHMARK56.
 Baseline22%, latestobserved24%, STOP30%; reset1793294233. Readusagebeforework.
 Runtime8380724d8ed678b01cf2f76265ec441626574cec; latestfullcomparison55=3/8.
 Read investigation-56/README.md,outcome.json,diagnostics.zip; all6candidateprocedures
@@ -225,12 +225,12 @@ Sourcefreshnessfix retained; tests356pass/1knownfalsehitfailure/1Windows skip; R
 Unresolved: wrongattributehit, sufficientprosemisses, metadatafactselection, unnecessary
 research/save afterrelevance and all3nativeperformancegates. Models unchanged/noauxmodel.
 All3workersidle, noactivebenchmark. No external blocker currently demonstrated; Gitpush
-connectionreset resolved. All1â€“55evidence/manifests andcosts preserved; PRdraft/unmerged.
+connectionreset resolved. All1–55evidence/manifests andcosts preserved; PRdraft/unmerged.
 No safe next runtimeproposal identified by bounded audits; further work needs a distinct
 justified hypothesis, with preregistered controls before edits and new meaningfulruntime
 before any freshcomparison. Do not retune rejected controls, weaken gates or invent proofs.
 
-ACTIVE ALLOWANCE 2 â€” TRIAL55 PUBLISHED CHECKPOINT, TASK UNFINISHED.
+ACTIVE ALLOWANCE 2 — TRIAL55 PUBLISHED CHECKPOINT, TASK UNFINISHED.
 Explicit fresh budget baseline22%, latest observed23%, STOP30%; reset1793294233.
 Runtime8380724d8ed678b01cf2f76265ec441626574cec; main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
 Read attempt-55/README.md, comparison/manual-review/research-review/tool-audit/protocol-detail.
@@ -250,9 +250,9 @@ No identical-runtime retry. Token-window restriction rejected:7diagnostics show 
 displayedtail would be rejected and falseecho survivesfallback; no patch/measurement.
 One bounded separate no-answer control diagnostic pending under work/no-answer-control-56;
 no approved new production proposal. Checkusage afterphase; allworkersidleduring55.
-PR3 draft/unmerged/noauto-merge. Historical1â€“54 evidence/manifests/harness byte-unchanged.
+PR3 draft/unmerged/noauto-merge. Historical1–54 evidence/manifests/harness byte-unchanged.
 
-ACTIVE ALLOWANCE 2 â€” SOURCE-INTEGRITY PATCH PREPARATION.
+ACTIVE ALLOWANCE 2 — SOURCE-INTEGRITY PATCH PREPARATION.
 Explicit fresh budget: baseline 22%, latest observed 23%, STOP 30%; reset 1793294233.
 Current patch reproduces/fixes a later observed file change retaining validated status.
 Matching empty/binary sources stay valid. Candidate discovery remains tolerant; failed
@@ -261,9 +261,9 @@ No extra source reads, scores/models/policy/harness changes or native benefit cl
 Independent Astra review found no blocker. Final suite pending; known wrong-attribute
 red test remains. Next: final tests, commit meaningful runtime, fresh main, one new
 comparison 55 in fresh directories. Never retry identical runtime or reuse old greens.
-All historical outcomes 1â€“54 and prior costs retained. PR3 draft/unmerged/noauto-merge.
+All historical outcomes 1–54 and prior costs retained. PR3 draft/unmerged/noauto-merge.
 
-ACTIVE â€” EXPLICITLY AUTHORIZED FRESH ALLOWANCE2, October23,2026 Pacific.
+ACTIVE — EXPLICITLY AUTHORIZED FRESH ALLOWANCE2, October23,2026 Pacific.
 Human reply: Authorize fresh8points22%to30%. Baseline22%,STOP30%,reset1793294233.
 This separately authorized allowance supersedes the exhausted old13%cap for newwork;
 it does not erase prior costs/outcomes/accountgrowth. Read budget-allowance-2.json.
@@ -276,7 +276,7 @@ Nextreconcileretrieval/protocol/reviewer findings before edits/tests/newmeaningf
 comparison. No identical-code retries, gate/model/harness weakening ormainexemption.
 PR3 staysdraft/unmerged/noautomerge. Olderpausedcheckpointbelowretainedhistory.
 
-PAUSED CONSERVATIVELY FOR SHARED USAGE HEADROOM â€” TASK UNFINISHED.
+PAUSED CONSERVATIVELY FOR SHARED USAGE HEADROOM — TASK UNFINISHED.
 Startingweekly5%, lastobserved12%, increase7percentagepoints; hardstoppingthreshold13%.
 13%HASNOTYETBEENOBSERVED. One reportedpoint reserved for accountinglag/inflightcosts
 and finalreport; do not claim full8point allowanceconsumed or allgatespassed.
@@ -305,7 +305,7 @@ Any futurecomparisonneedsmeaningfulgeneralruntimechange, appropriatefinaltests/r
 freshmain, unchangedharness/model/budgets and actualnewreadproofs; neverretry54unchanged.
 PR3draft/unmerged/noautomerge; history1-54/manifestsimmutable. Earliercheckpointbelow.
 
-BUDGETED REMEDIATION â€” TRIAL54 INTEGRITY CHECKPOINT; NEAR STOPPING THRESHOLD.
+BUDGETED REMEDIATION — TRIAL54 INTEGRITY CHECKPOINT; NEAR STOPPING THRESHOLD.
 Baseline5%, latest12%, STOP13%; observed7points; reset1793294233. Readusagebeforeanywork.
 Allretrievalmodels unchanged. Subjects gpt-6-luna/low. PR3draft/unmerged/noautomerge.
 Runtime7f1cb1015ef18afde2f5e0b4be981bf35725a6cc;mainfresh6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
@@ -335,7 +335,7 @@ fixbeforefreshcomparison. Wrongattribute falsehit, wordingsensitivity/metadata a
 token/timegatesstillunresolved. Priorfailedheuristicsarenotapprovedfallbacks.
 Earliercheckpoints belowpreservedhistory. Noautomaticjob. Taskunfinished.
 
-ACTIVE BUDGETED REMEDIATION â€” TRIAL53 PUBLISHED CHECKPOINT.
+ACTIVE BUDGETED REMEDIATION — TRIAL53 PUBLISHED CHECKPOINT.
 Baseline5%, latest10%, STOP13%; observed5points consumed; reset1793294233.
 Read reliableusagebeforeanyphase. Allretrievalmodels unchanged, subjects gpt-6-luna/low.
 Runtime68fb205551c8f38148304adb5fa1bfd7fb22907c; mainfresh6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
@@ -362,7 +362,7 @@ All3workersused/no nesting,idleduringmeasurement;coordinatoralone commits/push/P
 Native50+51+53gross7725714;52native0,alldevelopmentcostsretainedinaccountobservations.
 PR3draft/unmerged/noautomerge. Taskunfinished/active,noautomation. Earlierhistorybelow.
 
-ACTIVE BUDGETED REMEDIATION â€” TRIAL52 INCOMPLETE STARTUP CHECKPOINT.
+ACTIVE BUDGETED REMEDIATION — TRIAL52 INCOMPLETE STARTUP CHECKPOINT.
 Baseline5%, latest7%, STOP13%; reset1793294233. Read reliable usage before furtherwork.
 All retrieval models remain unchanged. PR3draft/unmerged/noautomerge, all8strictrequired.
 Runtimee38923577f3baa10e558a5a89220bd3affcd340f; main6fa6826aa4c835001c0d2bc8f3bec838499e5b5d.
@@ -385,7 +385,7 @@ All3workersused/no nesting; coordinatoralone commits/push/PR/checks/fullbenchmar
 Tasknative50+51gross5088862;52native0. Allcostsretained; allowanceNOTrenewedonreset.
 Taskunfinished/active; no automation. Earliercheckpoints below preservedhistory.
 
-ACTIVE BUDGETED REMEDIATION â€” TRIAL51 PUBLISHED CHECKPOINT, October22,2026 Pacific.
+ACTIVE BUDGETED REMEDIATION — TRIAL51 PUBLISHED CHECKPOINT, October22,2026 Pacific.
 Task unfinished/active. Weekly baseline5%, latest7%, STOP13%; observed consumption2points.
 Combined allowance covers coordinator,all3workers,subjects/reviews; no newallowance/reset.
 Reset1793294233=2026-10-29 17:17:13UTC. Read usage before every further phase.
@@ -421,9 +421,9 @@ Do not remove/xfail the redtest, change models, relax gates or retry identicalru
 All3workers usedtotal,no nesting; coordinator alone commits/push/PR/checks/benchmarks.
 PR3 remainsdraft/unmerged/noautomerge. Task-native50+51gross5088862tokens, allcostsretained.
 
-EARLIER CHECKPOINTS BELOW â€” preserved history; this activecheckpoint takes precedence.
+EARLIER CHECKPOINTS BELOW — preserved history; this activecheckpoint takes precedence.
 
-ACTIVE BUDGETED REMEDIATION â€” TRIAL50 PUBLISHED CHECKPOINT, October22,2026 Pacific.
+ACTIVE BUDGETED REMEDIATION — TRIAL50 PUBLISHED CHECKPOINT, October22,2026 Pacific.
 The current explicit resume request supersedes the older documentation-only pause below.
 Task remains unfinished and active; no automatic job is scheduled. PR3 stays draft/unmerged.
 
@@ -461,7 +461,7 @@ in development.zip. Do not reinstate them or remove/xfail the red regression to 
 Trial50 mcp-2 nowresearches+saves, but its metadata packet is still irrelevant. Stale-2
 reuse changed with authored wording; do not call this a proven retrieval improvement.
 
-HISTORICAL PAUSE/HANDOFF BELOW â€” superseded only by current authorized budgeted work.
+HISTORICAL PAUSE/HANDOFF BELOW — superseded only by current authorized budgeted work.
 
 PAUSED: FUTURE SUBAGENT SETUP AND SHARED USAGE BUDGET RECORDED,
 October 22, 2026 (America/Los_Angeles).
@@ -1338,7 +1338,7 @@ Raw descriptive intervals positive but NOT qualifying gate evidence; see attempt
 Next trial requires a meaningful new runtime change and new plan, not rerunning
 this source to avoid a sampled main failure. PR remains draft/unmerged.
 
-COLONY PR #3 â€” POST-AUDIT REMEDIATION UNFINISHED
+COLONY PR #3 — POST-AUDIT REMEDIATION UNFINISHED
 
 Stay on feat/benchmark-independent-evaluation; draft/unmerged; no new feature,
 branch, agents, identical-source rerun, task retries, outcome exclusions or gate waivers.
