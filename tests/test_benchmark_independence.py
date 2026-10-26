@@ -72,6 +72,106 @@ def test_oracle_rejects_current_evidence_for_stale_or_expired_packets(tmp_path):
             assert assess(case, packet, tmp_path)
 
 
+@pytest.mark.parametrize("family", ["changed-source", "deleted-source", "expired", "no-source"])
+@pytest.mark.parametrize("namespace", ["finance", None])
+def test_scope_checks_apply_to_stale_and_unverified_hits(tmp_path, family, namespace):
+    from lookup_workload import assess, workload
+
+    case = next(c for c in workload(53, 1)["cases"] if c["family"] == family)
+    packet = {**case["expected"], "namespace": "ops"}
+    assert assess(case, packet, tmp_path) == []
+    packet["namespace"] = namespace
+    assert "hit namespace is outside requested scopes" in assess(case, packet, tmp_path)
+
+
+@pytest.mark.parametrize("corruption", ["missing", "hash", "escape", "absolute-escape"])
+def test_every_declared_source_must_validate_without_a_displayed_excerpt(tmp_path, corruption):
+    from lookup_workload import assess, workload
+
+    case = next(c for c in workload(53, 1)["cases"] if c["family"] == "exact-fact")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    packet = packet_for(case, repo)
+    extra = repo / "extra.md"
+    extra.write_bytes(b"Additional source.\n")
+    source = {"ref": "extra.md", "content_hash": hashlib.sha256(extra.read_bytes()).hexdigest()}
+    packet["sources"].append(source)
+    assert assess(case, packet, repo) == []
+    if corruption == "missing":
+        extra.unlink()
+    elif corruption == "hash":
+        source["content_hash"] = "0" * 64
+    else:
+        outside = tmp_path / "outside.md"
+        outside.write_bytes(extra.read_bytes())
+        source["ref"] = "../outside.md" if corruption == "escape" else str(outside)
+    assert assess(case, packet, repo)
+
+
+@pytest.mark.parametrize("forged_first", [False, True])
+def test_duplicate_source_refs_cannot_hide_a_forged_fingerprint(tmp_path, forged_first):
+    from lookup_workload import assess, workload
+
+    case = next(c for c in workload(53, 1)["cases"] if c["family"] == "exact-fact")
+    packet = packet_for(case, tmp_path)
+    forged = {**packet["sources"][0], "content_hash": "0" * 64}
+    packet["sources"].insert(0 if forged_first else 1, forged)
+    assert "source fingerprint does not match current bytes" in assess(case, packet, tmp_path)
+
+
+@pytest.mark.parametrize("name", ["lookup", "trial[1]"])
+@pytest.mark.parametrize("suffix", ["plan.json", "measurements.jsonl", "summary.json", "partial"])
+def test_run_preflight_preserves_existing_artifacts_for_literal_names(tmp_path, name, suffix):
+    from benchmark_lookup import require_fresh_run
+
+    runtime, output = tmp_path / "fresh-runtime", tmp_path / "results"
+    output.mkdir()
+    artifact = output / f"{name}-{suffix}"
+    artifact.write_bytes(b"Preserve original evidence.\n")
+    with pytest.raises(ValueError, match="retain previous attempts"):
+        require_fresh_run(runtime, output, name)
+    assert artifact.read_bytes() == b"Preserve original evidence.\n"
+    assert not runtime.exists()
+
+
+def test_run_preflight_allows_fresh_paths_and_unrelated_names(tmp_path):
+    from benchmark_lookup import require_fresh_run
+
+    runtime, output = tmp_path / "fresh-runtime", tmp_path / "results"
+    require_fresh_run(runtime, output, "trial[1]")
+    assert not runtime.exists() and not output.exists()
+    output.mkdir()
+    unrelated = output / "trial1-plan.json"
+    unrelated.write_bytes(b"A different run.\n")
+    require_fresh_run(runtime, output, "trial[1]")
+    assert unrelated.read_bytes() == b"A different run.\n"
+    assert not runtime.exists()
+
+
+def test_run_preflight_rejects_existing_runtime_and_matching_directories(tmp_path):
+    from benchmark_lookup import require_fresh_run
+
+    runtime, output = tmp_path / "runtime", tmp_path / "results"
+    runtime.mkdir()
+    with pytest.raises(ValueError, match="retain previous attempts"):
+        require_fresh_run(runtime, output, "lookup")
+    output.mkdir()
+    (output / "trial[1]-partial").mkdir()
+    with pytest.raises(ValueError, match="retain previous attempts"):
+        require_fresh_run(tmp_path / "fresh-runtime", output, "trial[1]")
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows paths are case-insensitive")
+def test_run_preflight_rejects_windows_case_aliases(tmp_path):
+    from benchmark_lookup import require_fresh_run
+
+    artifact = tmp_path / "TRIAL[1]-plan.json"
+    artifact.write_bytes(b"Preserve original evidence.\n")
+    with pytest.raises(ValueError, match="retain previous attempts"):
+        require_fresh_run(tmp_path / "fresh-runtime", tmp_path, "trial[1]")
+    assert artifact.read_bytes() == b"Preserve original evidence.\n"
+
+
 @pytest.mark.parametrize(
     "packet", [None, {}, {"hit": 0}, {"hit": True, "status": "validated", "evidence": None}]
 )

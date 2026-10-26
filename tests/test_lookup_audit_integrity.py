@@ -211,6 +211,36 @@ def test_optimized_python_cannot_disable_integrity_checks_and_failure_is_retaine
     assert report["integrity_error"] == "Expected 48 completed paired sessions"
 
 
+@pytest.mark.parametrize("arm", ["main", "feature"])
+@pytest.mark.parametrize("packet", [None, [], "error", 0, True])
+def test_nonobject_lookup_results_replace_stale_success_with_integrity_failure(
+    trial, monkeypatch, arm, packet
+):
+    import analyze_lookup_live as analyzer
+
+    path = trial / arm / "independent-0.colony.events.jsonl"
+    events = [json.loads(s) for s in path.read_text().splitlines()]
+    events[0]["item"]["result"]["content"][0]["text"] = json.dumps(packet)
+    write_jsonl(path, events)
+    rows_path = trial / arm / "raw-measurements.jsonl"
+    rows = [json.loads(s) for s in rows_path.read_text().splitlines()]
+    rows[0]["asks"] = [events[0]["item"]]
+    write_jsonl(rows_path, rows)
+    write_json(trial / "comparison.json", {"all_gates_passed": True})
+    monkeypatch.setattr(
+        sys, "argv", ["analyze", "--results", str(trial), "--local", str(trial / "local.json")]
+    )
+    with pytest.raises(SystemExit) as error:
+        analyzer.main()
+    assert error.value.code == 1
+    report = analyzer.read_json(trial / "comparison.json")
+    assert report["all_gates_passed"] is False
+    assert report["blocking_gates"] == ["evidence_integrity"]
+    assert report["integrity_error"] == (
+        f"{arm}/independent-0.colony: lookup result must be a JSON object"
+    )
+
+
 def test_overlong_answer_blocks_protocol_gate(trial):
     from analyze_lookup_live import compare, read_json
 

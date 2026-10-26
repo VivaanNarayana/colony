@@ -17,11 +17,12 @@ def require(condition, message):
         raise ValueError("Local raw evidence: " + message)
 
 
-def audit_local(summary, directory):
+def audit_local(summary, directory, *, name="lookup"):
     """Verify the frozen workload, every observation, and all derived gate fields."""
     require(directory is not None, "directory is required")
+    require(bool(name) and Path(name).name == name, "name must be a plain run name")
     directory = Path(directory)
-    plan = json.loads((directory / "lookup-plan.json").read_text(encoding="utf-8"))
+    plan = json.loads((directory / f"{name}-plan.json").read_text(encoding="utf-8"))
     for field in [
         "schema_version",
         "evaluation_role",
@@ -38,7 +39,7 @@ def audit_local(summary, directory):
         type(plan["repetitions"]) is int and plan["repetitions"] >= 2,
         "at least two repetitions required",
     )
-    spec_bytes = (directory / "lookup-workload.json").read_bytes()
+    spec_bytes = (directory / f"{name}-workload.json").read_bytes()
     require(
         hashlib.sha256(spec_bytes).hexdigest() == plan["workload_sha256"],
         "workload fingerprint differs",
@@ -50,7 +51,7 @@ def audit_local(summary, directory):
     require(len(cases) == len(spec["cases"]), "duplicate case identities")
     rows = [
         json.loads(s)
-        for s in (directory / "lookup-measurements.jsonl").read_text(encoding="utf-8").splitlines()
+        for s in (directory / f"{name}-measurements.jsonl").read_text(encoding="utf-8").splitlines()
     ]
     rng = random.Random(plan["seed"])
     expected_order = []

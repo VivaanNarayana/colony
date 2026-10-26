@@ -52,6 +52,15 @@ def harness_hashes():
     }
 
 
+def require_fresh_run(runtime, output, name):
+    prefix = os.path.normcase(name + "-")
+    if runtime.exists() or (
+        output.exists()
+        and any(os.path.normcase(path.name).startswith(prefix) for path in output.iterdir())
+    ):
+        raise ValueError("Use fresh runtime and output names; retain previous attempts")
+
+
 class Worker:
     def __init__(self, source, manifest, root, spec):
         self.log = root.with_suffix(".stderr.txt").open("w", encoding="utf-8")
@@ -139,8 +148,7 @@ def main():
     ):
         parser.error("Use at least two repetitions, one variant and a plain run name")
     repo, runtime, output = args.repo.resolve(), args.runtime.resolve(), args.output.resolve()
-    if runtime.exists() or any(output.glob(args.name + "-*")):
-        raise ValueError("Use fresh runtime and output names; retain previous attempts")
+    require_fresh_run(runtime, output, args.name)
     if git(repo, "status", "--porcelain", "--untracked-files=no", "--", "src").strip():
         raise ValueError("Commit application changes before benchmarking")
     runtime.mkdir(parents=True)

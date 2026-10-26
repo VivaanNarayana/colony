@@ -127,6 +127,8 @@ def _assess(case, packet, repo):
     for forbidden in expected.get("forbidden", []):
         if forbidden in rendered:
             errors.append("scoped data leaked into response")
+    if packet.get("hit") is True and packet.get("namespace") not in case["namespaces"]:
+        errors.append("hit namespace is outside requested scopes")
     evidence = packet.get("evidence", [])
     if packet.get("status") != "validated" and evidence:
         errors.append("nonvalidated result exposed current evidence")
@@ -137,9 +139,15 @@ def _assess(case, packet, repo):
     if packet.get("status") == "validated":
         if not packet.get("hit") or not evidence or not packet.get("sources"):
             errors.append("validated hit must include current source evidence")
-        if packet.get("namespace") not in case["namespaces"]:
-            errors.append("validated namespace is outside requested scopes")
-        hashes = {s["ref"]: s["content_hash"] for s in packet.get("sources", [])}
+        hashes = {}
+        for source in packet.get("sources", []):
+            path = (repo / source["ref"]).resolve()
+            if not path.is_relative_to(repo.resolve()) or not path.is_file():
+                errors.append("source path is missing or escapes repository")
+                continue
+            if source["content_hash"] != hashlib.sha256(path.read_bytes()).hexdigest():
+                errors.append("source fingerprint does not match current bytes")
+            hashes[source["ref"]] = source["content_hash"]
         for e in evidence:
             path = (repo / e["ref"]).resolve()
             if not path.is_relative_to(repo.resolve()) or not path.is_file():

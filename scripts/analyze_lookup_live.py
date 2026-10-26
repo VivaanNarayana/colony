@@ -78,7 +78,7 @@ def evaluate_gates(main, feature, local, verification, implementations_verified,
     }
 
 
-def compare(results, local, *, local_directory=None):
+def compare(results, local, *, local_directory=None, local_name="lookup"):
     protocol = read_json(results / "protocol.json")
     verification = read_json(results / "verification.json")
     require(
@@ -236,6 +236,10 @@ def compare(results, local, *, local_directory=None):
                 == "\n".join((i["text"] for i in items if i["type"] == "agent_message"))
             )
             packets = [json.loads(a["result"]["content"][0]["text"]) for a in asks]
+            require(
+                all(isinstance(packet, dict) for packet in packets),
+                f"{arm}/{name}: lookup result must be a JSON object",
+            )
             # Retain every attempted call and its cost. A duplicate observation
             # gives no additional data; a different question/result would make
             # this a different research budget and must not pass the audit.
@@ -416,7 +420,7 @@ def compare(results, local, *, local_directory=None):
             ),
             "Local improvement totals inconsistent",
         )
-        audit_local(local, local_directory)
+        audit_local(local, local_directory, name=local_name)
     # Verify the entire package, including transitive dependencies. Legacy hybrid
     # local runs remain readable but cannot satisfy the independent local gate.
     subprocess.run(
@@ -489,7 +493,19 @@ def main():
     parser.add_argument("--local", type=Path, required=True)
     args = parser.parse_args()
     try:
-        report = compare(args.results, read_json(args.local), local_directory=args.local.parent)
+        local = read_json(args.local)
+        require(isinstance(local, dict), "Local summary must be a JSON object")
+        local_name = "lookup"
+        if local.get("schema_version") == 2:
+            require(
+                args.local.name.endswith("-summary.json"),
+                "Local summary filename must end with -summary.json",
+            )
+            local_name = args.local.name.removesuffix("-summary.json")
+            require(bool(local_name), "Local summary must have a run name")
+        report = compare(
+            args.results, local, local_directory=args.local.parent, local_name=local_name
+        )
     except (
         ValueError,
         KeyError,
