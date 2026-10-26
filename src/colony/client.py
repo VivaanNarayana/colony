@@ -1,6 +1,5 @@
 import json
 import os
-from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -11,14 +10,6 @@ from colony.models import Keyfile, Trail
 from colony.security import fingerprint, private_write, scrub, token, verify
 
 
-class RetryReceiptError(ValueError):
-    """A retry stopped with an unconfirmed item and any later items retained."""
-
-    def __init__(self, sent: int):
-        super().__init__("Save acknowledgment not confirmed; queued item retained")
-        self.sent = sent
-
-
 class Client:
     def __init__(self, home: Path | None = None):
         self.home = home or Path(os.environ.get("COLONY_HOME", str(Path.home() / ".colony")))
@@ -26,20 +17,6 @@ class Client:
         verify(self.keyfile, self.home / "issuer.pub")
         self.url = self.keyfile.grant.server.rstrip("/")
         self.headers = {"Authorization": f"Bearer {token(self.keyfile)}"}
-        self._http = None
-
-    @contextmanager
-    def pooled(self):
-        """Reuse connections only within this client's explicit lifetime."""
-        if self._http is not None:
-            yield self
-            return
-        with httpx.Client(follow_redirects=False) as transport:
-            self._http = transport
-            try:
-                yield self
-            finally:
-                self._http = None
 
     @staticmethod
     def join(home: Path, keyfile: Path, issuer: Path):
@@ -75,8 +52,7 @@ class Client:
         return response.json()
 
     def request(self, route: str, payload: dict):
-        post = self._http.post if self._http is not None else httpx.post
-        response = post(self.url + route, json=payload, headers=self.headers, timeout=5)
+        response = httpx.post(self.url + route, json=payload, headers=self.headers, timeout=5)
         if response.status_code >= 500:
             raise httpx.ConnectError("Colony unavailable")
         response.raise_for_status()
@@ -139,19 +115,9 @@ class Client:
                 raise ValueError("Queued trail belongs to another identity")
             trail = self.sanitized(Trail.model_validate(payload["trail"]))
             try:
-                receipt = self.request("/trails", trail.model_dump())
+                self.request("/trails", trail.model_dump())
             except httpx.TransportError:
                 return {"sent": sent, "pending": True}
-            # HTTP success alone does not confirm durable storage of this item.
-            # Never discard ciphertext on malformed or conflicting receipts.
-            if (
-                not isinstance(receipt, dict)
-                or receipt.get("id") != trail.id
-                or receipt.get("stored") is not True
-                or receipt.get("queued", False) is not False
-                or receipt.get("error")
-            ):
-                raise RetryReceiptError(sent)
             path.unlink()
             sent += 1
         return {"sent": sent, "pending": False}

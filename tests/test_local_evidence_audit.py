@@ -12,7 +12,7 @@ import pytest
 def retained(tmp_path, monkeypatch):
     root = Path(__file__).parents[1]
     monkeypatch.syspath_prepend(str(root / "scripts"))
-    source = root / "docs/results/benchmark-remediation/attempt-22"
+    source = root / "tests/fixtures/benchmark-audit/trial-22"
     for name in ["lookup-plan.json", "lookup-workload.json", "lookup-measurements.jsonl"]:
         shutil.copyfile(source / name, tmp_path / name)
     summary = json.loads((source / "lookup-summary.json").read_text())

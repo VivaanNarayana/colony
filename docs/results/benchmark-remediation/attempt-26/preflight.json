@@ -1,9 +1,0 @@
-{
-  "tests_passed": 237,
-  "tests_failed": 0,
-  "tests_skipped": 1,
-  "pytest_seconds": 80.75,
-  "ruff_passed": true,
-  "diff_check_passed": true,
-  "scope": "Full suite; original audit regressions plus two-thread numerical equivalence and actual-success push receipts in both arms; existing Windows symlink skip"
-}

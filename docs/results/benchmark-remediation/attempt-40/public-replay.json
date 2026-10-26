@@ -1,8 +1,0 @@
-{
-  "exit_code": 1,
-  "comparison_json_exact": true,
-  "sessions": 48,
-  "raw_local_observations": 234,
-  "new_native_sessions_started": false,
-  "role": "Offline public archive replay only; not an identical-code benchmark retry."
-}

@@ -1,8 +1,0 @@
-{
-  "source": "f7066168c8023113291f8aac464286711ff69bf6",
-  "pytest_exit_code": 0,
-  "wrapper_seconds": 74.21882247924805,
-  "invocations": 1,
-  "benchmark_run": false,
-  "model_snapshots": "Same hash-verified provisioned models as prior trials; offline only"
-}

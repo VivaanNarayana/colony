@@ -1,7 +1,0 @@
-{"atUtc":"2026-10-23T01:48:15.5922492+00:00","phase":"post-investigation-and-rejected-candidates","usedPercent":5,"resetsAt":1793294233,"threshold":13}
-{"atUtc":"2026-10-23T02:30:10.3086109+00:00","phase":"after-full-tests-and-protocol-review","usedPercent":6,"resetsAt":1793294233,"threshold":13}
-{"atUtc":"2026-10-23T02:57:58.0481307+00:00","phase":"native-in-progress","usedPercent":6,"resetsAt":1793294233,"threshold":13}
-{"atUtc":"2026-10-23T03:21:14.8634208+00:00","phase":"after-phase51-tests-review-before-measurement","usedPercent":6,"resetsAt":1793294233,"threshold":13}
-{"atUtc":"2026-10-23T03:33:55.4427815+00:00","phase":"after-trial51-native-and-initial-review","usedPercent":7,"resetsAt":1793294233,"threshold":13}
-{"atUtc": "2026-10-23T04:13:45.055189+00:00", "phase": "post-phase52-implementation-and-independent-review", "usedPercent": 7, "resetsAt": 1793294233, "threshold": 13}
-{"atUtc": "2026-10-23T04:36:41.434404+00:00", "phase": "after-trial53-native-and-manual-review", "usedPercent": 10, "resetsAt": 1793294233, "threshold": 13}

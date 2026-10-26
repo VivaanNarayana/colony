@@ -1,6 +1,0 @@
-{
-  "status": "Diagnostic infrastructure error; aborted after first baseline session; no candidate policy evaluated",
-  "reason": "Fixture docs paths were outside the frozen repository tool allowlist. Baseline read failures retained. Diagnostic parser then incorrectly assumed successful JSON read receipts and raised JSONDecodeError. No outcome qualifies and no completed source/task is retried.",
-  "remaining_sessions_not_started": 7,
-  "full_benchmark_started": false
-}

@@ -1,7 +1,0 @@
-{
-  "role": "Connection-setup diagnostic only; not gate evidence. Existing frozen runtime database, SELECT 1 only; no model work.",
-  "connections": 100,
-  "total_seconds": 0.43308069999329746,
-  "mean_seconds": 0.0043308069999329745,
-  "avoided_connection": "One extra connection introduced by trial-15 preflight for each populated lookup; remove it by sharing the answer connection."
-}

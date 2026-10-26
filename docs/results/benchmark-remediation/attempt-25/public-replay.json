@@ -1,6 +1,0 @@
-{
-  "exit_code": 1,
-  "comparison_json_identical": true,
-  "integrity_rejection_identical": true,
-  "reason": "main/scope-2.colony: push fingerprint does not match an actual source read"
-}

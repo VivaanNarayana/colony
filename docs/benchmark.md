@@ -11,7 +11,8 @@ reviewer rubrics; withhold these answers/rubrics from the evaluated agents.
 
 1. Choose one agent/model/version and fix its prompt, tool budget, temperature, and
    repo commit. Set a hard provider spending cap before any live agent trial. This
-   repository neither launches paid models nor asks for their credentials.
+   live CLI runner uses an explicitly authorized existing login; its between-task
+   token stop is not a hard provider-dollar or in-flight token cap.
 2. Randomize task order once, reuse that order in both arms, and run each arm with
    fresh agent context per task. Baseline has no Colony access. The Colony arm starts
    with an empty server and can ask first, research on misses, then push learned trails.
@@ -174,3 +175,37 @@ and questions from implementation tuning; and grade shuffled, arm-blinded answer
 and citations independently. Publish every scheduled trial and failed run. A
 failure becomes development feedback; selecting a later green run on the same
 questions is not independent confirmation.
+
+
+## Scope and accounting limits of this change
+
+This PR validates realistic measurement and honest failure reporting. Product
+runtime optimization is separate. A valid benchmark may report that the tested
+implementation fails quality or performance requirements.
+
+No native runner is launched by evaluator self-tests. Provider-free validation uses
+synthetic retained-event fixtures, the unchanged genuine trial-22 local fixture,
+import-isolation probes and an A/A control. Every performance gate, workload,
+confidence requirement, prompt, model and budget remains unchanged.
+
+The local metric is warm lookup time, excluding setup, pushes, cold starts and
+concurrency. Native per-task process time covers CLI/MCP startup, model and tool
+work inside that process interval; shared server setup and orchestration outside
+it are not silently allocated to one arm. Native turn usage does not certify all
+account-billed activity or hidden startup requests, and exact request/tool costs
+cannot be reconstructed without additional diagnostics. Report these boundaries
+alongside results. The separate CLI/OTel investigations are not part of this PR.
+
+An incomplete native trial establishes no passing verdict. Retain its prompts,
+partial native events, errors and stderr. A failed session may lack a final usage
+record or task row; report that accounting as unknown rather than zero, and do
+not exclude the failure, resample a session or present a successful-only total.
+
+`scripts/live_benchmark.py` is the retained legacy Colony/no-Colony runner; do not
+assume it meets every updated strict auditing requirement. The strict
+`benchmark_lookup_live.py`/`analyze_lookup_live.py` pair compares two Colony
+implementations. Neither retrospective historical comparisons nor a standalone
+baseline establish a concurrent matched product-savings result.
+
+See [the independence audit](benchmark-audit.md) for the validity controls and
+[the evidence record](benchmark-evidence.md) for unchanged archived outcomes.

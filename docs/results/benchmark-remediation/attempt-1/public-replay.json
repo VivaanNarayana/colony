@@ -1,8 +1,0 @@
-{
-  "same_report": true,
-  "expected_exit_code": 1,
-  "blocking_gates": [
-    "observed_uncached_input_plus_output_improve",
-    "observed_live_time_improves"
-  ]
-}

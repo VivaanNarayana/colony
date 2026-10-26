@@ -1,6 +1,0 @@
-{
-  "initial_launch": "Stopped before creating runtime/results or any sessions: tracked diagnostic JSON files retained stale Git index stat after LF normalization",
-  "resolution": "Staging only those two files produced no staged content changes, a clean tracked tree and unchanged HEAD; both runtime/results paths were confirmed absent before launch",
-  "source_commit": "e14b0cbf6a3234cdf2e6bd869c2afd6fc01cd620",
-  "outcomes_retried_or_dropped": 0
-}

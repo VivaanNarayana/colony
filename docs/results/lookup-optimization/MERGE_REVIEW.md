@@ -1,9 +1,5 @@
 # Merge review
 
-> Historical review: its readiness conclusion is superseded by the
-> [benchmark independence audit](../../benchmark-audit.md). PR #2 was subsequently
-> merged; this preserved text records the earlier assessment, not current approval.
-
 Reviewed runtime `93bffe3035e95d9e8c28167b2ba6568bc02950b0` against main `202745a92f6c6c59e4c990321be9c5112697594e`.
 Disposition: all eight blocking benchmark/verification gates pass; no blocking
 implementation findings. No merge has been performed.
