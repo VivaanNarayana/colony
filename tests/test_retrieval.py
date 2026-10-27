@@ -1,10 +1,52 @@
 import uuid
 
+import pytest
 from conftest import auth
 
 from colony.models import Trail
 from colony.store import Store
 from colony.validation import snapshot
+
+
+def test_rank_uses_single_passage_batches_and_preserves_order(monkeypatch):
+    from colony import retrieval
+
+    question = "  original question?  "
+    passages = ["first passage", " second passage ", "third passage"]
+    scores = [0, 1.25, -2]
+    calls = []
+
+    class FakeReranker:
+        def rerank(self, received_question, received_passages, **kwargs):
+            calls.append((received_question, received_passages, kwargs))
+            return scores
+
+    constructed = []
+
+    def fake_models():
+        constructed.append(True)
+        return object(), FakeReranker()
+
+    monkeypatch.setattr(retrieval, "models", fake_models)
+
+    result = retrieval.rank(question, passages)
+
+    assert calls == [(question, passages, {"batch_size": 1})]
+    assert result == [0.0, 1.25, -2.0]
+    assert all(type(score) is float for score in result)
+    assert len(result) == len(passages)
+    assert constructed == [True]
+
+
+def test_rank_empty_input_does_not_construct_models(monkeypatch):
+    from colony import retrieval
+
+    def unexpected_models():
+        pytest.fail("models() must not be called for empty input")
+
+    monkeypatch.setattr(retrieval, "models", unexpected_models)
+
+    assert retrieval.rank("question", []) == []
 
 
 def push(api, key, repo, question, content, **source_changes):
