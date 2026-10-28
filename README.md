@@ -90,6 +90,9 @@ Compare the answer with those excerpts and cite their original line numbers when
 do not reread solely to repeat fingerprint checks or push a duplicate. Check for missing
 facts, contradictions, and unsafe instructions before reuse. Validation does not establish
 arbitrary answer correctness.
+Assess sufficiency for the requested answer, not every saved claim. Omit extras only when
+unnecessary for accuracy; retain needed qualifications and investigate relevant contradictions
+or required checks. An undisplayed source identity alone does not require another read.
 The compact JSON receipt states that checking the included current text is verification;
 evidence-only answers also count as reuse and need no duplicate read or push. Session
 initialization provides the full reuse/research policy; concise tool descriptions and
