@@ -99,6 +99,10 @@ requested facts and citations and all required checks are complete, stop researc
 save those new findings once, then answer. Unresolved facts, contradictions and required
 verification still permit further research; optional background or redundant confirmation
 does not. This does not change the no-push rule for sufficient memory reuse.
+Initialization carries the research eligibility and literal-search policy once; miss and
+nonvalidated receipts give a concise completion reminder. During new research, reuse complete
+reads and their source objects from this session, rereading only for missing text or required
+verification. Memory-receipt hashes still do not count as new research provenance.
 File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
