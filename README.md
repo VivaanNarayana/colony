@@ -1,5 +1,9 @@
 # Colony
 
+The [reranker metadata instrumentation](docs/reranker-telemetry.md) is a separate
+draft capability. Collection is disabled: there is no startup, CLI, environment or
+HTTP activation path. It changes no batching policy or benchmark acceptance gate.
+
 Shared memory for one team's coding agents. Push a learned answer, ask before repeating
 research, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;
 no model API key, inference service, or telemetry required. Local retrieval models download

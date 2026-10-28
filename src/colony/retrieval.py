@@ -12,6 +12,8 @@ import sqlite_vec
 from fastembed import TextEmbedding
 from fastembed.rerank.cross_encoder import TextCrossEncoder
 
+from colony.telemetry import observe_rank
+
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_REVISION = "aa8f8b060edb00e03bfdd08813a2949946c8ba55"
 RANK_MODEL = "Xenova/ms-marco-MiniLM-L-6-v2"
@@ -93,6 +95,7 @@ def embed(text: str, *, query: bool = False) -> bytes:
     return sqlite_vec.serialize_float32(next(vectors).tolist())
 
 
+@observe_rank
 def rank(question: str, passages: list[str]) -> list[float]:
     if not passages:
         return []

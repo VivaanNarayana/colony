@@ -27,6 +27,7 @@ from colony.retrieval import (
     terms,
 )
 from colony.security import fingerprint, private_write
+from colony.telemetry import observe_ask, staged_rank
 from colony.validation import validate
 
 SCHEMA = """
@@ -207,6 +208,7 @@ class Store:
                 )
         return {"id": trail.id, "stored": True, "duplicate": False}
 
+    @observe_ask
     def ask(
         self,
         question: str,
@@ -304,7 +306,7 @@ class Store:
             ]
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
-            scores = rank(question, [text for _, text in candidates])
+            scores = staged_rank("evidence", rank, question, [text for _, text in candidates])
             ordered = sorted(
                 [
                     (linked, evidence_score(1 - linked[0]["distance"], score, coverage))
@@ -437,7 +439,7 @@ class Store:
             ]
             rows = [row for row, _ in eligible]
             contents = [content for _, content in eligible]
-            scores = rank(question, [c[:4000] for c in contents])
+            scores = staged_rank("answer", rank, question, [c[:4000] for c in contents])
             # MS MARCO logits are not calibrated confidence: useful paraphrases can be negative.
             # Fuse their ordering signal with dense similarity instead of treating zero as truth.
             relevance_scores = [
