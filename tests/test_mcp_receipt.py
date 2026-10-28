@@ -315,6 +315,53 @@ def test_miss_keeps_research_available_without_claiming_current_reads(monkeypatc
     assert "verification" not in result and "next_action" not in result
 
 
+@pytest.mark.parametrize(
+    "packet",
+    [
+        {"hit": False, "reason": "no_relevant_trail"},
+        {"hit": False, "reason": "server_unavailable"},
+        {"hit": True, "status": "stale", "tainted": True, "content": "Untrusted saved claim."},
+        {"hit": True, "status": "unverified", "tainted": True, "content": "Untrusted saved claim."},
+    ],
+)
+def test_new_research_guidance_stops_only_after_support_and_required_checks(
+    monkeypatch, tmp_path, packet
+):
+    original = copy.deepcopy(packet)
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(ask=lambda *a, **kw: copy.deepcopy(packet))
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    result = json.loads(server._tool_manager.get_tool("ask").fn("Question?")[0].text)
+    guidance = result["research_guidance"]
+    assert guidance in server.instructions
+    assert "For necessary new research, stop when all requested facts and citations are supported" in guidance
+    assert "and required checks are complete" in guidance
+    assert "Continue only for unresolved requested facts, contradictions or required verification" in guidance
+    assert "not optional background or redundant confirmation" in guidance
+    assert "Save those new findings once with unchanged file-read source objects" in guidance
+    assert "then answer with repository-relative citations" in guidance
+    assert result["hit"] == packet["hit"]
+    if packet["hit"]:
+        assert all(result[k] == packet[k] for k in ("status", "tainted", "content"))
+    else:
+        assert result["reason"] == packet["reason"]
+    assert "current_repository_reads" not in result and "verification" not in result
+    assert packet == original
+
+
+def test_sufficient_reuse_does_not_request_saving_new_research(monkeypatch, tmp_path):
+    result = receipt(
+        monkeypatch, tmp_path,
+        [{"ref": "guide.md", "content_hash": "a" * 64}],
+        [{"ref": "guide.md", "line": 1, "text": "Requested facts already supplied."}],
+    )
+    assert "research_guidance" not in result
+    assert "no research or push" in result["next_action"]
+    assert "Evidence-only derivation is reuse" in result["next_action"]
+    assert "Save those new findings" not in result["next_action"]
+
+
 def test_push_schema_explains_new_research_proof_without_changing_constraints(monkeypatch, tmp_path):
     monkeypatch.setattr(colony.mcp, "Client", lambda home: None)
     tool = colony.mcp.create_mcp(tmp_path)._tool_manager.get_tool("push")

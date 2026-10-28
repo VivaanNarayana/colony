@@ -94,7 +94,12 @@ The compact JSON receipt states that checking the included current text is verif
 evidence-only answers also count as reuse and need no duplicate read or push. Session
 initialization provides the full reuse/research policy; concise tool descriptions and
 hit instructions repeat the evidence-only rule at the decision to answer or push.
-Missing requested facts still require research. File proofs, source text and the
+Missing requested facts still require research. After necessary new research supports the
+requested facts and citations and all required checks are complete, stop researching,
+save those new findings once, then answer. Unresolved facts, contradictions and required
+verification still permit further research; optional background or redundant confirmation
+does not. This does not change the no-push rule for sufficient memory reuse.
+File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
 The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `citation`, `start_line`,
