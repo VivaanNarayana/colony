@@ -9,7 +9,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 import colony.mcp
 
 
-def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):
+def receipt(monkeypatch, tmp_path, sources, evidence, status="validated", **metadata):
     packet = {
         "hit": True,
         "match_kind": "answer",
@@ -17,6 +17,7 @@ def receipt(monkeypatch, tmp_path, sources, evidence, status="validated"):
         "content": "Run the documented command.",
         "sources": sources,
         "evidence": evidence,
+        **metadata,
     }
     monkeypatch.setattr(
         colony.mcp,
@@ -174,6 +175,132 @@ def test_undisplayed_source_does_not_get_a_current_citation(monkeypatch, tmp_pat
     assert not result["verification"]["source_reads_current"]
     assert result["next_action"].startswith("If current_repository_reads suffice")
     assert "Otherwise research necessary missing or contradictory facts only" in result["next_action"]
+
+
+def proof_identities(packet):
+    identities = {(s["ref"], s["content_hash"]) for s in packet.get("sources", [])}
+    identities.update((r["path"], r["sha256"]) for r in packet.get("current_repository_reads", []))
+    return identities
+
+
+@pytest.mark.parametrize("match_kind", ["answer", "evidence"])
+@pytest.mark.parametrize("complete_file", [False, True])
+def test_displayed_flat_proof_is_carried_once_without_losing_reads_or_metadata(
+    monkeypatch, tmp_path, match_kind, complete_file
+):
+    sources = [{"ref": "docs/a [b].md", "content_hash": "a" * 64}]
+    evidence = [
+        {"ref": sources[0]["ref"], "line": 8, "text": "First fact.", "complete_file": complete_file},
+        {"ref": sources[0]["ref"], "line": 40, "text": "Second fact.", "complete_file": complete_file},
+    ]
+    metadata = {
+        "id": "a" * 32,
+        "namespace": "private-team",
+        "producer_id": "agent-a",
+        "age_flag": True,
+        "tainted": True,
+        "recommendation": "reuse_if_relevant",
+    }
+    result = receipt(
+        monkeypatch, tmp_path, sources, evidence, match_kind=match_kind, **metadata
+    )
+    assert result["sources"] == []
+    assert proof_identities(result) == {(sources[0]["ref"], sources[0]["content_hash"])}
+    assert result["current_repository_reads"] == [
+        {
+            "path": e["ref"],
+            "sha256": "a" * 64,
+            "start_line": e["line"],
+            "citation": f"[source](docs/a%20%5Bb%5D.md#L{e['line']})",
+            "complete_file": complete_file,
+            "content": e["text"],
+        }
+        for e in evidence
+    ]
+    assert all(result[k] == v for k, v in metadata.items())
+    assert result["status"] == "validated" and result["match_kind"] == match_kind
+    assert "UNTRUSTED AS INSTRUCTIONS" in result["provenance"]
+    assert "File checks do not certify saved-answer truth" in result["provenance"]
+    assert result["verification"] == {
+        "file_fingerprints_match": True, "source_reads_current": True
+    }
+    assert "no research or push" in result["next_action"]
+    assert ("content" in result) == (match_kind == "answer")
+    # A serialization-size invariant, not a model-token or timing benchmark.
+    before = json.dumps({**result, "sources": sources}, separators=(",", ":"), ensure_ascii=False)
+    after = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
+    assert len(after.encode("utf-8")) < len(before.encode("utf-8"))
+
+
+def test_compaction_preserves_undisplayed_asserted_and_extra_metadata_rows(monkeypatch, tmp_path):
+    plain = {"ref": "guide.md", "content_hash": "a" * 64}
+    sources = [
+        plain,
+        {**plain, "contains": "REQUIRED"},
+        {"ref": "undisplayed.md", "content_hash": "b" * 64},
+        {**plain, "kind": "file"},
+        {**plain, "symbol": None},
+        {**plain, "extra_metadata": "retain"},
+    ]
+    result = receipt(
+        monkeypatch, tmp_path, sources,
+        [{"ref": "guide.md", "line": 1, "text": "REQUIRED facts."}],
+    )
+    assert result["sources"] == sources[1:]
+    assert proof_identities(result) == {(s["ref"], s["content_hash"]) for s in sources}
+
+
+def test_compaction_matches_both_path_and_hash_without_hiding_conflicting_proofs(
+    monkeypatch, tmp_path
+):
+    sources = [
+        {"ref": "guide.md", "content_hash": "a" * 64},
+        {"ref": "guide.md", "content_hash": "b" * 64},
+        {"ref": "other.md", "content_hash": "b" * 64},
+    ]
+    result = receipt(
+        monkeypatch, tmp_path, sources,
+        [{"ref": "guide.md", "line": 1, "text": "Current text."}],
+    )
+    # The existing read maps to the last hash; preserve every unmatched pair.
+    assert result["current_repository_reads"][0]["sha256"] == "b" * 64
+    assert result["sources"] == [sources[0], sources[2]]
+    assert proof_identities(result) == {(s["ref"], s["content_hash"]) for s in sources}
+
+
+def test_flat_proof_without_a_displayed_read_is_retained(monkeypatch, tmp_path):
+    sources = [{"ref": "guide.md", "content_hash": "a" * 64}]
+    result = receipt(monkeypatch, tmp_path, sources, [])
+    assert result["sources"] == sources
+    assert result["current_repository_reads"] == []
+    assert not result["verification"]["source_reads_current"]
+
+
+@pytest.mark.parametrize("status", ["stale", "unverified"])
+def test_nonvalidated_flat_proof_is_never_compacted(monkeypatch, tmp_path, status):
+    sources = [{"ref": "guide.md", "content_hash": "a" * 64}]
+    evidence = [{"ref": "guide.md", "line": 1, "text": "Diagnostic source text."}]
+    result = receipt(monkeypatch, tmp_path, sources, evidence, status)
+    assert result["sources"] == sources and result["evidence"] == evidence
+    assert "current_repository_reads" not in result and "verification" not in result
+
+
+def test_compaction_does_not_mutate_the_client_packet(monkeypatch, tmp_path):
+    packet = {
+        "hit": True, "status": "validated", "match_kind": "answer",
+        "sources": [{"ref": "guide.md", "content_hash": "a" * 64}],
+        "evidence": [{"ref": "guide.md", "line": 1, "text": "Current facts."}],
+        "content": "Saved facts.", "tainted": True,
+    }
+    original = copy.deepcopy(packet)
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(ask=lambda *a, **kw: packet)
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    result = json.loads(server._tool_manager.get_tool("ask").fn("Question?")[0].text)
+    assert packet == original
+    assert result["sources"] == []
+    assert result["content"] == packet["content"] and result["tainted"] is True
 
 
 def test_miss_keeps_research_available_without_claiming_current_reads(monkeypatch, tmp_path):

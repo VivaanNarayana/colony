@@ -104,6 +104,16 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             response.pop("evidence", None)
             if result.get("match_kind") == "evidence":
                 response.pop("content", None)  # The read objects carry the text once.
+            # Displayed reads already carry these exact file identities. Keep
+            # assertions, unknown metadata and undisplayed proofs in sources.
+            read_proofs = {(r["path"], r["sha256"]) for r in response["current_repository_reads"]}
+            if "sources" in response:
+                response["sources"] = [
+                    source
+                    for source in response["sources"]
+                    if set(source) != {"ref", "content_hash"}
+                    or (source["ref"], source["content_hash"]) not in read_proofs
+                ]
             response["verification"] = {
                 "file_fingerprints_match": True,
                 "source_reads_current": bool(response["current_repository_reads"]),
