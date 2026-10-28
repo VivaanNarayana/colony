@@ -126,9 +126,9 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 "source_reads_current": bool(response["current_repository_reads"]),
             }
             response["next_action"] = (
-                "Assess requested facts, not all saved claims. Omit extras only when unnecessary for accuracy. "
-                "If current_repository_reads suffice and required checks are complete, answer now with their citations; "
-                "no research or push. Evidence-only derivation is reuse. "
+                "Checking supplied current_repository_reads is verification, not new research. "
+                "If sufficient and required checks are complete, answer with their citations; no research or push. "
+                "Evidence-only derivation is reuse. "
                 "Otherwise research needed gaps, relevant contradictions or required checks."
             )
         else:

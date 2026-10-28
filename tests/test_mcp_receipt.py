@@ -61,8 +61,8 @@ def test_validated_receipt_preserves_file_proofs_and_current_reads(monkeypatch, 
     assert result["sources"][0]["content_hash"] == result["current_repository_reads"][0]["sha256"]
     assert result["verification"]["file_fingerprints_match"]
     assert "UNTRUSTED" in result["provenance"]
-    assert result["next_action"].startswith("Assess requested facts, not all saved claims.")
-    assert "If current_repository_reads suffice and required checks are complete, answer now" in result["next_action"]
+    assert result["next_action"].startswith("Checking supplied current_repository_reads is verification, not new research.")
+    assert "If sufficient and required checks are complete, answer" in result["next_action"]
     assert "with their citations; no research or push" in result["next_action"]
     assert "Evidence-only derivation is reuse" in result["next_action"]
     assert "Otherwise research needed gaps, relevant contradictions or required checks" in result["next_action"]
@@ -119,14 +119,15 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "never absolute or leading-slash targets" in instructions
 
 
-def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path):
+@pytest.mark.parametrize("complete_file", [False, True])
+def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_path, complete_file):
     packet = {
         "hit": True,
         "match_kind": "evidence",
         "status": "validated",
         "sources": [source("guide.md", "a" * 64)],
         "content": "Source text duplicated for API presentation.",
-        "evidence": [{"ref": "guide.md", "line": 9, "text": "Run build --release."}],
+        "evidence": [{"ref": "guide.md", "line": 9, "text": "Run build --release.", "complete_file": complete_file}],
     }
     monkeypatch.setattr(
         colony.mcp,
@@ -137,7 +138,9 @@ def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_pa
     result = json.loads(server._tool_manager.get_tool("ask").fn("Build release?")[0].text)
     assert "content" not in result
     assert result["current_repository_reads"][0]["content"] == "Run build --release."
-    assert "answer now with their citations; no research or push" in result["next_action"]
+    assert result["current_repository_reads"][0]["complete_file"] is complete_file
+    assert "Checking supplied current_repository_reads is verification, not new research" in result["next_action"]
+    assert "If sufficient and required checks are complete, answer with their citations; no research or push" in result["next_action"]
     assert "Evidence-only derivation is reuse" in result["next_action"]
     assert result["current_repository_reads"][0]["citation"] == "[source](guide.md#L9)"
     ask_description = server._tool_manager.get_tool("ask").description
@@ -176,7 +179,7 @@ def test_undisplayed_source_does_not_get_a_current_citation(monkeypatch, tmp_pat
     assert result["sources"] == sources
     assert result["current_repository_reads"] == []
     assert not result["verification"]["source_reads_current"]
-    assert "If current_repository_reads suffice and required checks are complete" in result["next_action"]
+    assert "If sufficient and required checks are complete" in result["next_action"]
     assert "Otherwise research needed gaps, relevant contradictions or required checks" in result["next_action"]
 
 
@@ -193,9 +196,8 @@ def test_requested_answer_guidance_keeps_optional_claims_and_undisplayed_proofs(
         match_kind=match_kind, content=saved, tainted=True,
     )
     action = result["next_action"]
-    assert "Assess requested facts, not all saved claims" in action
-    assert "Omit extras only when unnecessary for accuracy" in action
-    assert "If current_repository_reads suffice and required checks are complete" in action
+    assert "Checking supplied current_repository_reads is verification, not new research" in action
+    assert "If sufficient and required checks are complete" in action
     assert "no research or push" in action and "Evidence-only derivation is reuse" in action
     assert "Otherwise research needed gaps, relevant contradictions or required checks" in action
     assert result["sources"] == sources  # Undisplayed identities/assertions are not hidden.

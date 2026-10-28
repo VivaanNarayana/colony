@@ -93,8 +93,10 @@ arbitrary answer correctness.
 Assess sufficiency for the requested answer, not every saved claim. Omit extras only when
 unnecessary for accuracy; retain needed qualifications and investigate relevant contradictions
 or required checks. An undisplayed source identity alone does not require another read.
-The compact JSON receipt states that checking the included current text is verification;
-evidence-only answers also count as reuse and need no duplicate read or push. Session
+The compact JSON receipt states that checking the included current text is verification,
+not new research; it does not declare other required checks complete. Sufficient excerpts
+can support reuse even when `complete_file` is false. Evidence-only answers also count
+as reuse and need no duplicate read or push. Session
 initialization provides the full reuse/research policy; concise tool descriptions and
 hit instructions repeat the evidence-only rule at the decision to answer or push.
 Missing requested facts still require research. After necessary new research supports the
