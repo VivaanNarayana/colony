@@ -45,8 +45,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         "file checks do not prove saved-answer truth. Assess the requested answer against validated "
         "current_repository_reads, not every saved claim. Omit extras only when unnecessary for accuracy; "
         "retain needed qualifications. Undisplayed sources alone do not require reads. "
-        "If sufficient and required checks are complete, answer now with supplied citations; no research "
-        "or push. Deriving/rephrasing from those reads is reuse. Cite every factual answer with "
+        "Cite every factual answer with "
         "repository-relative files. Copy supplied citations unchanged; after research use "
         "[source](path#L1) with actual file/line, never absolute or leading-slash targets. "
     )
@@ -128,7 +127,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             }
             response["next_action"] = (
                 "Checking supplied current_repository_reads is verification, not new research. "
-                "If sufficient and required checks are complete, answer with their citations; no research or push. "
+                "If sufficient and required checks are complete, answer with their citations; no further ask, research or push. "
                 "Evidence-only derivation is reuse. "
                 "Otherwise research needed gaps, relevant contradictions or required checks."
             )

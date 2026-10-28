@@ -104,9 +104,11 @@ or required checks. An undisplayed source identity alone does not require anothe
 The compact JSON receipt states that checking the included current text is verification,
 not new research; it does not declare other required checks complete. Sufficient excerpts
 can support reuse even when `complete_file` is false. Evidence-only answers also count
-as reuse and need no duplicate read or push. Session
-initialization provides the full reuse/research policy; concise tool descriptions and
-hit instructions repeat the evidence-only rule at the decision to answer or push.
+as reuse and need no duplicate read or push. Session initialization carries the ask-once,
+trust, requested-answer, citation and research rules. The ask description and validated
+hit action carry the conditional reuse/derivation rule. A sufficient hit explicitly says
+not to ask again, research or push for the current answer. New questions can still use
+`ask`; every actual call performs a fresh lookup rather than being cached or suppressed.
 Missing requested facts still require research. After necessary new research supports the
 requested facts and citations and all required checks are complete, stop researching,
 save those new findings once, then answer. Unresolved facts, contradictions and required
