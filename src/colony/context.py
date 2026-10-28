@@ -7,6 +7,7 @@ from pathlib import Path
 from colony.models import Source
 from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
+from colony.telemetry import staged_rank
 from colony.validation import repo_file
 
 
@@ -130,7 +131,7 @@ def excerpts(
         scores = [0.0] * len(candidates)
     else:
         if claims is None:
-            scores = rank(question, [c[2] for c in candidates])
+            scores = staged_rank("excerpt_plain", rank, question, [c[2] for c in candidates])
         else:
             query_coverage = keyword_coverage(question, [c[2] for c in candidates])
             # Concrete code/commands identify the claim better than background
@@ -149,7 +150,7 @@ def excerpts(
             floor = max(lexical, default=0) - 0.15
             eligible = [i for i, score in enumerate(lexical) if score + 0.1 >= floor - 1e-12]
             candidates = [candidates[i] for i in eligible]
-            scores = rank(question, [c[2] for c in candidates])
+            scores = staged_rank("excerpt_claims", rank, question, [c[2] for c in candidates])
             scores = [
                 lexical[i] + 0.5 * fused_score(0, s) for i, s in zip(eligible, scores, strict=True)
             ]
