@@ -402,9 +402,15 @@ def test_sufficient_reuse_does_not_request_saving_new_research(monkeypatch, tmp_
     assert "Save those new findings" not in result["next_action"]
 
 
-def test_push_schema_explains_new_research_proof_without_changing_constraints(monkeypatch, tmp_path):
+def test_push_schema_requires_sources_without_weakening_file_proofs(monkeypatch, tmp_path):
     monkeypatch.setattr(colony.mcp, "Client", lambda home: None)
     tool = colony.mcp.create_mcp(tmp_path)._tool_manager.get_tool("push")
+    assert "sources" in tool.parameters["required"]
+    sources = tool.parameters["properties"]["sources"]
+    assert sources["type"] == "array" and sources["minItems"] == 1
+    assert "anyOf" not in sources and "default" not in sources
+    assert "copied unchanged from new research reads" in sources["description"]
+    assert "never use memory-receipt hashes as new-read proof" in sources["description"]
     proof = tool.parameters["$defs"]["FileEvidence"]
     assert set(proof["properties"]) == {"kind", "ref", "content_hash"}
     assert set(proof["required"]) == {"ref", "content_hash"}
@@ -415,6 +421,25 @@ def test_push_schema_explains_new_research_proof_without_changing_constraints(mo
     assert "Never reconstruct or edit it" in digest["description"]
     assert "memory-receipt hash is not new research" in digest["description"]
     assert "source objects unchanged from new" in tool.description
+
+
+@pytest.mark.parametrize("source_arguments", [{}, {"sources": None}, {"sources": []}])
+def test_push_rejects_missing_null_or_empty_sources_before_client_call(
+    monkeypatch, tmp_path, source_arguments
+):
+    pushed = []
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(push=lambda trail: pushed.append(trail))
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    arguments = {
+        "namespace": "team", "question": "Question?", "content": "Unsupported save.",
+        **source_arguments,
+    }
+    before = copy.deepcopy(arguments)
+    with pytest.raises(ToolError, match="validation error"):
+        asyncio.run(server._tool_manager.call_tool("push", arguments))
+    assert arguments == before and pushed == []
 
 
 @pytest.mark.parametrize("digest", ["a" * 63, "a" * 65, "A" * 64, "z" * 64])
@@ -439,18 +464,28 @@ def test_push_rejects_malformed_hash_before_client_call(monkeypatch, tmp_path, d
     assert pushed == []
 
 
-def test_push_forwards_exact_new_research_source_without_rewriting(monkeypatch, tmp_path):
+@pytest.mark.parametrize("explicit_kind", [False, True])
+@pytest.mark.parametrize("source_count", [1, 2, 50])
+def test_push_forwards_exact_new_research_source_without_rewriting(
+    monkeypatch, tmp_path, explicit_kind, source_count
+):
     pushed = []
     monkeypatch.setattr(
         colony.mcp, "Client", lambda home: SimpleNamespace(push=lambda trail: pushed.append(trail))
     )
     server = colony.mcp.create_mcp(tmp_path)
-    proof = {"kind": "file", "ref": "docs/a [b].md", "content_hash": "0123456789abcdef" * 4}
+    proofs = [
+        {"ref": f"docs/a [b]{i}.md", "content_hash": "0123456789abcdef" * 4}
+        for i in range(source_count)
+    ]
+    if explicit_kind:
+        for proof in proofs:
+            proof["kind"] = "file"
     arguments = {
         "namespace": "team",
         "question": "  Original question?  ",
         "content": "Necessary new research.",
-        "sources": [proof.copy()],
+        "sources": copy.deepcopy(proofs),
         "tainted": True,
     }
     before = copy.deepcopy(arguments)
@@ -458,6 +493,27 @@ def test_push_forwards_exact_new_research_source_without_rewriting(monkeypatch, 
     assert arguments == before
     assert len(pushed) == 1
     trail = pushed[0]
-    assert trail.sources[0].model_dump(include={"kind", "ref", "content_hash"}) == proof
+    assert [s.model_dump(include={"kind", "ref", "content_hash"}) for s in trail.sources] == [
+        {"kind": "file", **proof} for proof in proofs
+    ]
     assert trail.question == arguments["question"] and trail.content == arguments["content"]
     assert trail.namespace == "team" and trail.tainted is True
+
+
+def test_push_retains_existing_source_count_limit_before_client_call(monkeypatch, tmp_path):
+    pushed = []
+    monkeypatch.setattr(
+        colony.mcp, "Client", lambda home: SimpleNamespace(push=lambda trail: pushed.append(trail))
+    )
+    server = colony.mcp.create_mcp(tmp_path)
+    with pytest.raises(ToolError, match="at most 50"):
+        asyncio.run(
+            server._tool_manager.call_tool(
+                "push",
+                {
+                    "namespace": "team", "question": "Question?", "content": "New research.",
+                    "sources": [{"ref": "guide.md", "content_hash": "a" * 64}] * 51,
+                },
+            )
+        )
+    assert pushed == []

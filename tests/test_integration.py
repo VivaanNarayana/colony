@@ -146,7 +146,14 @@ def test_real_cli_two_agents_capture_and_stale(running_team):
 
 @pytest.mark.parametrize("evidence_files", [False, True])
 def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
-    _, homes, repo, _ = running_team
+    cli, homes, repo, directory = running_team
+    # Generic CLI/HTTP storage still accepts source-less notes; MCP can retrieve them.
+    note = directory / "unverified-note.json"
+    note.write_text(
+        json.dumps({"question": "MCP test setup", "content": "Use the stdio transport"}),
+        encoding="utf-8",
+    )
+    assert json.loads(cli("--home", homes["a"], "push", note, "--ns", "team").stdout)["stored"]
 
     async def exercise():
         parameters = StdioServerParameters(
@@ -168,15 +175,20 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                 "content_hash",
                 "kind",
             }
-            pushed = await session.call_tool(
-                "push",
-                {
-                    "namespace": "team",
-                    "question": "MCP test setup",
-                    "content": "Use the stdio transport",
-                },
-            )
-            assert not pushed.isError
+            assert "sources" in push_schema["required"]
+            assert push_schema["properties"]["sources"]["minItems"] == 1
+            for source_arguments in ({}, {"sources": None}, {"sources": []}):
+                rejected = await session.call_tool(
+                    "push",
+                    {
+                        "namespace": "team",
+                        "question": "Unsupported MCP save",
+                        "content": "This must not be saved.",
+                        **source_arguments,
+                    },
+                )
+                assert rejected.isError
+                assert "sources" in rejected.content[0].text
             result = await session.call_tool("ask", {"question": "MCP test setup"})
             assert not result.isError
             data = json.loads(result.content[0].text)

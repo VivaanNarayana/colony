@@ -1,6 +1,7 @@
 import json
 import uuid
 from pathlib import Path
+from typing import Annotated
 from urllib.parse import quote
 
 from mcp.server.fastmcp import FastMCP
@@ -146,7 +147,16 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         namespace: str,
         question: str,
         content: str,
-        sources: list[FileEvidence] | None = None,
+        sources: Annotated[
+            list[FileEvidence],
+            Field(
+                min_length=1,
+                description=(
+                    "Required supporting file-source objects copied unchanged from new research "
+                    "reads; never use memory-receipt hashes as new-read proof."
+                ),
+            ),
+        ],
         tainted: bool = True,
     ) -> dict:
         """Save only necessary new research, never after sufficient reuse (including evidence-only
@@ -159,7 +169,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 namespace=namespace,
                 question=question,
                 content=content,
-                sources=[Source(**s.model_dump()) for s in sources or []],
+                sources=[Source(**s.model_dump()) for s in sources],
                 tainted=tainted,
             )
         )

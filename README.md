@@ -71,7 +71,15 @@ path if `colony` is not on its PATH, and an absolute home path:
 {"mcpServers":{"colony":{"command":"colony","args":["--home","/absolute/path/to/agent-home","mcp"]}}}
 ```
 
-Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`.
+Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources, tainted?)`.
+MCP `push` now requires a nonempty list of supporting file sources. Calls that omit
+`sources`, pass `null`, or pass `[]` return a validation error before storage or queue writes.
+This changes the previous optional-source MCP API: callers saving necessary new research
+must pass source objects copied unchanged from their new file reads. Source-less notes
+remain available through CLI JSON and HTTP, and MCP can still retrieve them as `unverified`.
+Checking source shape does not prove a new read occurred or certify answer correctness.
+Do not research merely to satisfy this requirement or save after sufficient memory reuse;
+rejected attempts remain protocol violations in evaluation.
 MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
 assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
