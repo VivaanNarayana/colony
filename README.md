@@ -104,18 +104,23 @@ or required checks. An undisplayed source identity alone does not require anothe
 The compact JSON receipt states that checking the included current text is verification,
 not new research; it does not declare other required checks complete. Sufficient excerpts
 can support reuse even when `complete_file` is false. Evidence-only answers also count
-as reuse and need no duplicate read or push. Session initialization carries the ask-once,
-trust, requested-answer, citation and research rules. The ask description and validated
-hit action carry the conditional reuse/derivation rule. A sufficient hit explicitly says
-not to ask again, research or push for the current answer. New questions can still use
+as reuse and need no duplicate read or push. Session initialization leads with the
+conditional workflow: ask once, then answer/cite without further calls when validated
+current reads suffice and required checks are complete; otherwise research necessary
+gaps, contradictions or checks. Saving new findings is conditional on that necessary
+research. Trust, requested-answer scope, needed qualifications, citations and research
+rules remain. The ask description and validated hit action also carry conditional
+reuse/derivation guidance. New questions can still use
 `ask`; every actual call performs a fresh lookup rather than being cached or suppressed.
 Missing requested facts still require research. After necessary new research supports the
 requested facts and citations and all required checks are complete, stop researching,
 save those new findings once, then answer. Unresolved facts, contradictions and required
 verification still permit further research; optional background or redundant confirmation
 does not. This does not change the no-push rule for sufficient memory reuse.
-Initialization carries the research eligibility and literal-search policy once; miss and
-nonvalidated receipts give a concise completion reminder. During new research, reuse complete
+Clients can prefix namespace instructions to each tool description, so the shared workflow
+is concise. Miss-specific discovery/completion advice stays in miss and nonvalidated receipts.
+Initialization retains research eligibility, literal search and reuse of complete session
+research reads, including after a validated but insufficient hit. During new research, reuse complete
 reads and their source objects from this session, rereading only for missing text or required
 verification. Memory-receipt hashes still do not count as new research provenance.
 File proofs, source text and the
