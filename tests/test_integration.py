@@ -146,7 +146,14 @@ def test_real_cli_two_agents_capture_and_stale(running_team):
 
 @pytest.mark.parametrize("evidence_files", [False, True])
 def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
-    _, homes, repo, _ = running_team
+    cli, homes, repo, directory = running_team
+    # Generic CLI/HTTP storage still accepts source-less notes; MCP can retrieve them.
+    note = directory / "unverified-note.json"
+    note.write_text(
+        json.dumps({"question": "MCP test setup", "content": "Use the stdio transport"}),
+        encoding="utf-8",
+    )
+    assert json.loads(cli("--home", homes["a"], "push", note, "--ns", "team").stdout)["stored"]
 
     async def exercise():
         parameters = StdioServerParameters(
@@ -159,24 +166,48 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             stdio_client(parameters) as (read, write),
             ClientSession(read, write) as session,
         ):
-            await session.initialize()
+            initialization = await session.initialize()
             tools = await session.list_tools()
             assert {t.name for t in tools.tools} == {"ask", "push"}
+            # Initialization and the actual catalog deliver the MCP-only workflow contract.
+            assert "Evidence-only derivation is reuse" in initialization.instructions
+            assert (
+                "Only after necessary research supports requested facts/citations"
+                in initialization.instructions
+            )
+            assert "no ask/research/push" in initialization.instructions
+            assert "reusable answers/current repository evidence" in next(
+                t.description for t in tools.tools if t.name == "ask"
+            )
             push_schema = next(t.inputSchema for t in tools.tools if t.name == "push")
             assert set(push_schema["$defs"]["FileEvidence"]["properties"]) == {
                 "ref",
                 "content_hash",
                 "kind",
             }
-            pushed = await session.call_tool(
-                "push",
-                {
-                    "namespace": "team",
-                    "question": "MCP test setup",
-                    "content": "Use the stdio transport",
-                },
+            assert "sources" in push_schema["required"]
+            assert "research_basis" not in push_schema["properties"]
+            assert "research_basis" not in push_schema["required"]
+            assert push_schema["properties"]["sources"]["minItems"] == 1
+            assert (
+                "copied unchanged from new research reads"
+                in push_schema["properties"]["sources"]["description"]
             )
-            assert not pushed.isError
+            hash_schema = push_schema["$defs"]["FileEvidence"]["properties"]["content_hash"]
+            assert "Never reconstruct or edit it" in hash_schema["description"]
+            assert "memory-receipt hash is not new research" in hash_schema["description"]
+            for source_arguments in ({}, {"sources": None}, {"sources": []}):
+                rejected = await session.call_tool(
+                    "push",
+                    {
+                        "namespace": "team",
+                        "question": "Unsupported MCP save",
+                        "content": "This must not be saved.",
+                        **source_arguments,
+                    },
+                )
+                assert rejected.isError
+                assert "sources" in rejected.content[0].text
             result = await session.call_tool("ask", {"question": "MCP test setup"})
             assert not result.isError
             data = json.loads(result.content[0].text)
@@ -202,14 +233,32 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                 },
             )
             assert not stored.isError
+            legacy = await session.call_tool(
+                "push",
+                {
+                    "namespace": "team", "question": "Legacy argument compatibility",
+                    "content": "Use stdio", "research_basis": "x" * 161,
+                    "sources": [{
+                        "ref": "settings.py",
+                        "content_hash": hashlib.sha256((repo / "settings.py").read_bytes()).hexdigest(),
+                    }],
+                },
+            )
+            assert not legacy.isError  # Unadvertised legacy argument is not a necessity check.
             validated = await session.call_tool("ask", {"question": "MCP evidence setup"})
             receipt = json.loads(validated.content[0].text)
             assert receipt["status"] == "validated"
             assert receipt["recommendation"] == "reuse_if_relevant"
-            assert receipt["sources"][0]["ref"] == "settings.py"
+            # Canonical lookup proofs remain visible alongside the read identities.
+            assert receipt["sources"] == [{
+                "ref": "settings.py",
+                "content_hash": hashlib.sha256((repo / "settings.py").read_bytes()).hexdigest(),
+            }]
             assert receipt["current_repository_reads"][0]["complete_file"] == evidence_files
             assert receipt["verification"]["file_fingerprints_match"]
             assert receipt["verification"]["source_reads_current"]
+            assert "If sufficient and required checks are complete" in receipt["next_action"]
+            assert "no further ask, research or push" in receipt["next_action"]
             assert "UNTRUSTED" in receipt["provenance"]
             assert "TIMEOUT" in receipt["current_repository_reads"][0]["content"]
             assert receipt["current_repository_reads"][0]["path"] == "settings.py"

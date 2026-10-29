@@ -2,7 +2,7 @@ import hashlib
 import json
 import sqlite3
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 import sqlite_vec
@@ -218,15 +218,27 @@ class Store:
     ):
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
-        query_vector = embed(question, query=True)
-        answer = self.find_answer(
-            question,
-            namespaces,
-            max_age,
-            threshold,
-            include_evidence_files=include_evidence_files,
-            query_vector=query_vector,
-        )
+        with self.connect() as db:
+            placeholders = ",".join("?" for _ in namespaces)
+            # Both retrieval paths join trails in these namespaces. A scoped
+            # empty store cannot answer, regardless of the query's embedding.
+            if db.execute(
+                f"SELECT 1 FROM trails WHERE namespace IN ({placeholders}) LIMIT 1",
+                namespaces,
+            ).fetchone() is None:
+                return {"hit": False, "reason": "no_relevant_trail"}
+            query_vector = embed(question, query=True)
+            answer = self.find_answer(
+                question,
+                namespaces,
+                max_age,
+                threshold,
+                include_evidence_files=include_evidence_files,
+                query_vector=query_vector,
+                _db=db,
+            )
+        # Commit answer validation writes before opening evidence's connection,
+        # as when find_answer owns its own connection.
         if answer.get("status") == "validated" or not namespaces:
             return answer
         return (
@@ -397,13 +409,15 @@ class Store:
         *,
         include_evidence_files: bool = False,
         query_vector: bytes | None = None,
+        _db: sqlite3.Connection | None = None,
     ):
         if not namespaces:
             return {"hit": False, "reason": "no_pull_scope"}
         placeholders = ",".join("?" for _ in namespaces)
         procedure = requires_procedure(question)
         normalized_question = question.strip().casefold()
-        with self.connect() as db:
+        # The caller owns a borrowed connection's transaction and lifetime.
+        with (self.connect() if _db is None else nullcontext(_db)) as db:
             vector = query_vector if query_vector is not None else embed(question, query=True)
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
             rows = db.execute(

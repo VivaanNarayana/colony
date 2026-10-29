@@ -71,8 +71,26 @@ path if `colony` is not on its PATH, and an absolute home path:
 {"mcpServers":{"colony":{"command":"colony","args":["--home","/absolute/path/to/agent-home","mcp"]}}}
 ```
 
-Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`.
-MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
+Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources, tainted?)`.
+The experimental required `research_basis` argument is retired. Trial 14 recorded seven
+overlength explanation rejections without establishing that the explanations prevented
+unnecessary saves. Callers should remove that argument and follow the lookup/research
+policy. The pinned MCP SDK ignores unadvertised extra arguments at dispatch; they are
+not validated as research justification or forwarded into trail/client/queue data.
+Clients and transcripts may still retain arguments. This rollback does not certify
+necessity, suppress calls or waive any attempted-call protocol requirement.
+MCP `push` now requires a nonempty list of supporting file sources. Calls that omit
+`sources`, pass `null`, or pass `[]` return a validation error before storage or queue writes.
+This changes the previous optional-source MCP API: callers saving necessary new research
+must pass source objects copied unchanged from their new file reads. Source-less notes
+remain available through CLI JSON and HTTP, and MCP can still retrieve them as `unverified`.
+Checking source shape does not prove a new read occurred or certify answer correctness.
+Do not research merely to satisfy this requirement or save after sufficient memory reuse;
+rejected attempts remain protocol violations in evaluation.
+MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Its schema exposes both
+64-character length bounds and the lowercase hexadecimal pattern for `content_hash`.
+Malformed lengths receive a length-specific validation error before storage or queue writes;
+hashes are never repaired or reconstructed. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
 assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
 validation receipt and bounded, scrubbed excerpts from the matching current source files.
@@ -90,22 +108,55 @@ Compare the answer with those excerpts and cite their original line numbers when
 do not reread solely to repeat fingerprint checks or push a duplicate. Check for missing
 facts, contradictions, and unsafe instructions before reuse. Validation does not establish
 arbitrary answer correctness.
-The compact JSON receipt states that checking the included current text is verification;
-evidence-only answers also count as reuse and need no duplicate read or push. Session
-initialization provides the full reuse/research policy; concise tool descriptions and
-hit instructions repeat the evidence-only rule at the decision to answer or push.
-Missing requested facts still require research. File proofs, source text and the
+Assess sufficiency for the requested answer, not every saved claim. Omit extras only when
+unnecessary for accuracy; retain needed qualifications and investigate relevant contradictions
+or required checks. An undisplayed source identity alone does not require another read.
+The compact JSON receipt states that checking the included current text is verification,
+not new research; it does not declare other required checks complete. Sufficient excerpts
+can support reuse even when `complete_file` is false. Evidence-only answers also count
+as reuse and need no duplicate read or push. Session initialization leads with the
+conditional workflow: ask once, then answer/cite without further calls when validated
+current reads suffice and required checks are complete; otherwise research necessary
+gaps, contradictions or checks. Saving new findings is conditional on that necessary
+research. Trust, requested-answer scope, needed qualifications, citations and research
+rules remain. Shared namespace instructions and the validated result carry conditional
+reuse/derivation and necessary-research fallback; full research completion stays shared.
+New questions can still use
+`ask`; every actual call performs a fresh lookup rather than being cached or suppressed.
+Missing requested facts still require research. After necessary new research supports the
+requested facts and citations and all required checks are complete, stop researching,
+save those new findings once, then answer. Unresolved facts, contradictions and required
+verification still permit further research; optional background or redundant confirmation
+does not. This does not change the no-push rule for sufficient memory reuse.
+Clients can prefix namespace instructions to each tool description. The ask description
+states its lookup purpose; push is explicitly restricted to necessary new research.
+Validated results reiterate that current reads include file proofs, excerpts can suffice,
+and sufficient evidence with completed required checks requires no further calls.
+Removing the explanation field reduces fixed catalog metadata, while restoring canonical
+source rows duplicates proof identities and can increase response bytes. Fixed instructions
+and complete responses must be counted separately; no universal payload or native token/time
+saving follows. This correction addresses observed proof-display ambiguity, not verified
+model compliance or passing benchmark gates.
+Initialization retains research eligibility, literal search and reuse of complete session
+research reads, including after a validated but insufficient hit. During new research, reuse complete
+reads and their source objects from this session, rereading only for missing text or required
+verification. Memory-receipt hashes still do not count as new research provenance.
+File proofs, source text and the
 per-result untrusted-data warning are retained. The tool uses one text block without duplicate
 structured output or pretty-print padding.
-The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `kind`, `start_line`,
+The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `citation`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already
 read by the server. `verification` separately reports matching file fingerprints and
 whether current source text is available; it does not certify the saved answer.
 Assess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids
 redundant Unicode escapes, and source-only matches carry the text once in these read objects.
-Validated file identities already present in these reads are not repeated in `sources`.
-Sources with advanced assertions or without a displayed read remain in `sources`, preserving
-the complete validation receipt. Nonvalidated receipts keep their diagnostic source metadata.
+Validated receipts retain the original `sources` rows in their original order, including
+assertions, extra metadata and undisplayed identities, even when a displayed current read
+repeats the same path/hash. The earlier compaction was lossless by identity, but agents in
+trial 14 described its `sources: []` as missing provenance despite supplied read hashes.
+Canonical rows make lookup proofs explicit; they are not new-research provenance or
+permission to push. Current-read text, hashes, original lines, citations and completeness
+flags are unchanged. Nonvalidated, CLI and HTTP source lists remain unchanged.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.

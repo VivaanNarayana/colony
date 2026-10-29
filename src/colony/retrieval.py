@@ -97,7 +97,7 @@ def rank(question: str, passages: list[str]) -> list[float]:
     if not passages:
         return []
     _, model = models()
-    return [float(score) for score in model.rerank(question, passages)]
+    return [float(score) for score in model.rerank(question, passages, batch_size=1)]
 
 
 def embed_passages(texts: list[str]) -> list[bytes]:

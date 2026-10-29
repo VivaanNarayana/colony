@@ -1,8 +1,76 @@
 import hashlib
 
+import pytest
+
 from colony.context import excerpts
 from colony.models import Source
 from colony.validation import snapshot
+
+
+@pytest.mark.parametrize("claims", [None, "Use the release command."])
+def test_single_excerpt_needs_no_model_score_and_keeps_scrubbing(tmp_path, monkeypatch, claims):
+    import colony.context
+
+    text = "Run `publish --signed`.\npassword='private-value'\n"
+    (tmp_path / "guide.md").write_text(text)
+    source = snapshot(tmp_path, "guide.md")
+
+    def unexpected_rank(*args):
+        pytest.fail("A lone excerpt cannot lose a relative-score comparison")
+
+    monkeypatch.setattr(colony.context, "rank", unexpected_rank)
+    assert excerpts(tmp_path, [source], "Publish the release", claims=claims) == [
+        {
+            "ref": "guide.md",
+            "line": 1,
+            "text": "Run `publish --signed`.\n[REDACTED]",
+            "complete_file": False,
+        }
+    ]
+
+
+def test_single_surviving_claim_candidate_needs_no_model_score(tmp_path, monkeypatch):
+    import colony.context
+
+    (tmp_path / "guide.md").write_text("release\naudit\nunrelated\n")
+    source = snapshot(tmp_path, "guide.md")
+    monkeypatch.setattr(
+        colony.context,
+        "source_chunks",
+        lambda *args: [("guide.md", 1, "release"), ("guide.md", 2, "audit")],
+    )
+    monkeypatch.setattr(
+        colony.context,
+        "keyword_coverage",
+        lambda query, passages: [0.0, 0.0] if query == "question" else [1.0, 0.0],
+    )
+    monkeypatch.setattr(
+        colony.context, "context_window", lambda ref, lines, line, span: (line, lines[line - 1])
+    )
+    monkeypatch.setattr(
+        colony.context, "rank", lambda *args: pytest.fail("Only one eligible paragraph remains")
+    )
+    assert excerpts(tmp_path, [source], "question", claims="claim")[0]["text"] == "release"
+
+
+def test_single_excerpt_rechecks_file_after_candidate_selection(tmp_path, monkeypatch):
+    import colony.context
+
+    path = tmp_path / "guide.md"
+    path.write_text("Run `publish --signed`.\n")
+    source = snapshot(tmp_path, "guide.md")
+    original_chunks = colony.context.source_chunks
+
+    def changed_after_selection(*args):
+        result = original_chunks(*args)
+        path.write_text("Replacement instructions.\n")
+        return result
+
+    monkeypatch.setattr(colony.context, "source_chunks", changed_after_selection)
+    monkeypatch.setattr(
+        colony.context, "rank", lambda *args: pytest.fail("A lone paragraph needs no ranking")
+    )
+    assert excerpts(tmp_path, [source], "Publish the release") == []
 
 
 def test_claim_bounds_skip_impossible_paragraphs_without_hiding_reranker_winner(
