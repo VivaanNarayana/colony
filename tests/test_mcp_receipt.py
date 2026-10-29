@@ -112,7 +112,6 @@ def test_session_guidance_scopes_reuse_and_research_to_available_facts(monkeypat
     assert "Evidence-only derivation is reuse. Otherwise research only necessary" in instructions
     assert instructions.index("no further ask, research or push") < instructions.index("Only after necessary research supports requested facts/citations")
     assert "no further ask, research or push" in instructions[:512]
-    assert "deriving an answer from the supplied source text is reuse" in server._tool_manager.get_tool("ask").description
     assert "file checks do not prove saved-answer truth" in instructions
     assert "Otherwise research only necessary gaps/nonvalidated facts, relevant contradictions or required verification" in instructions
     assert "skip optional background and redundant confirmation" in instructions
@@ -149,8 +148,7 @@ def test_evidence_only_hit_explains_derivation_needs_no_push(monkeypatch, tmp_pa
     assert "Evidence-only derivation is reuse" in result["next_action"]
     assert result["current_repository_reads"][0]["citation"] == "[source](guide.md#L9)"
     ask_description = server._tool_manager.get_tool("ask").description
-    assert "If current reads suffice, answer and cite without research" in ask_description
-    assert "deriving an answer from the supplied source text is reuse" in ask_description
+    assert "Ask once before research" in ask_description
     push_description = server._tool_manager.get_tool("push").description
     assert "never after sufficient reuse (including evidence-only" in push_description
     assert "rereads just to save" in push_description
@@ -481,7 +479,6 @@ def test_push_schema_requires_sources_without_weakening_file_proofs(monkeypatch,
     assert "exact 64-character lowercase SHA256" in digest["description"]
     assert "Never reconstruct or edit it" in digest["description"]
     assert "memory-receipt hash is not new research" in digest["description"]
-    assert "source objects unchanged from new" in tool.description
 
 
 @pytest.mark.parametrize("source_arguments", [{}, {"sources": None}, {"sources": []}])

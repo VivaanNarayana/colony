@@ -112,7 +112,7 @@ conditional workflow: ask once, then answer/cite without further calls when vali
 current reads suffice and required checks are complete; otherwise research necessary
 gaps, contradictions or checks. Saving new findings is conditional on that necessary
 research. Trust, requested-answer scope, needed qualifications, citations and research
-rules remain. The ask description and validated hit action also carry conditional
+rules remain. Namespace instructions and the validated hit action carry conditional
 reuse/derivation guidance. New questions can still use
 `ask`; every actual call performs a fresh lookup rather than being cached or suppressed.
 Missing requested facts still require research. After necessary new research supports the
@@ -121,7 +121,9 @@ save those new findings once, then answer. Unresolved facts, contradictions and 
 verification still permit further research; optional background or redundant confirmation
 does not. This does not change the no-push rule for sufficient memory reuse.
 Clients can prefix namespace instructions to each tool description, so the shared workflow
-is concise. Miss-specific discovery/completion advice stays in miss and nonvalidated receipts.
+is concise. Short tool descriptions avoid repeating reuse and proof rules: these remain in
+the namespace/validated receipt and source/hash field descriptions respectively.
+Miss-specific discovery/completion advice stays in miss and nonvalidated receipts.
 Initialization retains research eligibility, literal search and reuse of complete session
 research reads, including after a validated but insufficient hit. During new research, reuse complete
 reads and their source objects from this session, rereading only for missing text or required

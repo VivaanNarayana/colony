@@ -166,9 +166,18 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             stdio_client(parameters) as (read, write),
             ClientSession(read, write) as session,
         ):
-            await session.initialize()
+            initialization = await session.initialize()
             tools = await session.list_tools()
             assert {t.name for t in tools.tools} == {"ask", "push"}
+            # The client still receives policy/proof rules after description deduplication.
+            assert "Evidence-only derivation is reuse" in initialization.instructions
+            assert (
+                "Only after necessary research supports requested facts/citations"
+                in initialization.instructions
+            )
+            assert "never after sufficient reuse" in next(
+                t.description for t in tools.tools if t.name == "push"
+            )
             push_schema = next(t.inputSchema for t in tools.tools if t.name == "push")
             assert set(push_schema["$defs"]["FileEvidence"]["properties"]) == {
                 "ref",
@@ -177,6 +186,13 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             }
             assert "sources" in push_schema["required"]
             assert push_schema["properties"]["sources"]["minItems"] == 1
+            assert (
+                "copied unchanged from new research reads"
+                in push_schema["properties"]["sources"]["description"]
+            )
+            hash_schema = push_schema["$defs"]["FileEvidence"]["properties"]["content_hash"]
+            assert "Never reconstruct or edit it" in hash_schema["description"]
+            assert "memory-receipt hash is not new research" in hash_schema["description"]
             for source_arguments in ({}, {"sources": None}, {"sources": []}):
                 rejected = await session.call_tool(
                     "push",

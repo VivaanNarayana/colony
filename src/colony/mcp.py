@@ -61,8 +61,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False), structured_output=False
     )
     def ask(question: str, namespace: str | None = None) -> list[TextContent]:
-        """Ask once before research. If current reads suffice, answer and cite without research
-        or push; deriving an answer from the supplied source text is reuse."""
+        """Ask once before research."""
         result = client.ask(question, namespace, include_evidence_files=evidence_files)
         if not result.get("hit"):
             result["research_guidance"] = research_guidance
@@ -165,8 +164,7 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
         tainted: bool = True,
     ) -> dict:
         """Save only necessary new research, never after sufficient reuse (including evidence-only
-        derivation) or rereads just to save. Copy supporting source objects unchanged from new
-        file-read results; never reconstruct hashes or use memory-receipt hashes as new-read proof.
+        derivation) or rereads just to save.
         Client scrubs secrets; mark external content tainted."""
         return client.push(
             Trail(
