@@ -476,6 +476,7 @@ def test_push_schema_requires_sources_without_weakening_file_proofs(monkeypatch,
     assert set(proof["required"]) == {"ref", "content_hash"}
     assert proof["properties"]["kind"]["default"] == "file"
     digest = proof["properties"]["content_hash"]
+    assert digest["minLength"] == digest["maxLength"] == 64
     assert digest["pattern"] == r"^[a-f0-9]{64}$"
     assert "exact 64-character lowercase SHA256" in digest["description"]
     assert "Never reconstruct or edit it" in digest["description"]
@@ -502,26 +503,38 @@ def test_push_rejects_missing_null_or_empty_sources_before_client_call(
     assert arguments == before and pushed == []
 
 
-@pytest.mark.parametrize("digest", ["a" * 63, "a" * 65, "A" * 64, "z" * 64])
-def test_push_rejects_malformed_hash_before_client_call(monkeypatch, tmp_path, digest):
+@pytest.mark.parametrize("digest, expected_error", [
+    ("a" * 63, "at least 64 characters"),
+    ("a" * 65, "at most 64 characters"),
+    ("a" * 4096, "at most 64 characters"),
+    ("A" * 64, "string_pattern_mismatch"),
+    ("z" * 64, "string_pattern_mismatch"),
+    (None, "string_type"),
+    (64, "string_type"),
+    (["a" * 64], "string_type"),
+])
+def test_push_rejects_malformed_hash_before_client_call(
+    monkeypatch, tmp_path, digest, expected_error
+):
     pushed = []
     monkeypatch.setattr(
         colony.mcp, "Client", lambda home: SimpleNamespace(push=lambda trail: pushed.append(trail))
     )
     server = colony.mcp.create_mcp(tmp_path)
-    with pytest.raises(ToolError, match="validation error"):
-        asyncio.run(
-            server._tool_manager.call_tool(
-                "push",
-                {
-                    "namespace": "team",
-                    "question": "Question?",
-                    "content": "New research.",
-                    "sources": [{"kind": "file", "ref": "guide.md", "content_hash": digest}],
-                },
-            )
-        )
-    assert pushed == []
+    arguments = {
+        "namespace": "team",
+        "question": "Question?",
+        "content": "Unrelated research content must not enter the validation error.",
+        "sources": [{"kind": "file", "ref": "guide.md", "content_hash": digest}],
+    }
+    before = copy.deepcopy(arguments)
+    with pytest.raises(ToolError, match="validation error") as error:
+        asyncio.run(server._tool_manager.call_tool("push", arguments))
+    message = str(error.value)
+    assert expected_error in message
+    assert arguments["content"] not in message
+    assert "a" * 128 not in message
+    assert arguments == before and pushed == []
 
 
 @pytest.mark.parametrize("explicit_kind", [False, True])

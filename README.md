@@ -80,7 +80,10 @@ remain available through CLI JSON and HTTP, and MCP can still retrieve them as `
 Checking source shape does not prove a new read occurred or certify answer correctness.
 Do not research merely to satisfy this requirement or save after sufficient memory reuse;
 rejected attempts remain protocol violations in evaluation.
-MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
+MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Its schema exposes both
+64-character length bounds and the lowercase hexadecimal pattern for `content_hash`.
+Malformed lengths receive a length-specific validation error before storage or queue writes;
+hashes are never repaired or reconstructed. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
 assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
 validation receipt and bounded, scrubbed excerpts from the matching current source files.

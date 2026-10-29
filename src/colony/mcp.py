@@ -17,6 +17,8 @@ class FileEvidence(Model):
 
     ref: str = Field(min_length=1, max_length=1024)
     content_hash: str = Field(
+        min_length=64,
+        max_length=64,
         pattern=r"^[a-f0-9]{64}$",
         description=(
             "Copy the exact 64-character lowercase SHA256 from the new research file-read "
