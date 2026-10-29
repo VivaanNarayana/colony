@@ -110,23 +110,18 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
             response.pop("evidence", None)
             if result.get("match_kind") == "evidence":
                 response.pop("content", None)  # The read objects carry the text once.
-            # Displayed reads already carry these exact file identities. Keep
-            # assertions, unknown metadata and undisplayed proofs in sources.
-            read_proofs = {(r["path"], r["sha256"]) for r in response["current_repository_reads"]}
-            if "sources" in response:
-                response["sources"] = [
-                    source
-                    for source in response["sources"]
-                    if set(source) != {"ref", "content_hash"}
-                    or (source["ref"], source["content_hash"]) not in read_proofs
-                ]
+            # Keep canonical source rows as well as read hashes. An empty sources
+            # list can misleadingly suggest that the lookup has no file proofs.
             response["verification"] = {
                 "file_fingerprints_match": True,
                 "source_reads_current": bool(response["current_repository_reads"]),
             }
             response["next_action"] = (
-                "Checking current_repository_reads is verification, not new research. "
-                "If sufficient and required checks complete, answer/cite."
+                "Each supplied current read carries its file proof; excerpts can suffice. "
+                "Checking them is verification, not new research. "
+                "If sufficient and required checks are complete, answer/cite; "
+                "no further ask, research or push. Evidence-only derivation is reuse. "
+                "Otherwise research only needed gaps, contradictions or required checks."
             )
         else:
             response["research_guidance"] = research_guidance
@@ -153,24 +148,10 @@ def create_mcp(home: Path, *, evidence_files: bool = False):
                 ),
             ),
         ],
-        research_basis: Annotated[
-            str,
-            Field(
-                min_length=1,
-                max_length=160,
-                pattern=r"\S",
-                description=(
-                    "Initial lookup gap: miss/unusable evidence, missing requested fact, "
-                    "contradiction or required check. If validated lookup reads suffice and "
-                    "required checks complete, answer/cite; no ask/research/push."
-                ),
-            ),
-        ],
         tainted: bool = True,
     ) -> dict:
-        """Save necessary research once; never reread just to save.
+        """Save necessary new research once; never save sufficient lookup reuse or reread just to save.
         Client scrubs secrets; mark external content tainted."""
-        # research_basis is MCP control metadata, not trail content or a necessity proof.
         return client.push(
             Trail(
                 id=uuid.uuid4().hex,

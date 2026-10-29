@@ -186,12 +186,8 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                 "kind",
             }
             assert "sources" in push_schema["required"]
-            assert "research_basis" in push_schema["required"]
-            basis_schema = push_schema["properties"]["research_basis"]
-            assert basis_schema["minLength"] == 1 and basis_schema["maxLength"] == 160
-            assert basis_schema["pattern"] == r"\S"
-            assert "Initial lookup gap" in basis_schema["description"]
-            assert "no ask/research/push" in basis_schema["description"]
+            assert "research_basis" not in push_schema["properties"]
+            assert "research_basis" not in push_schema["required"]
             assert push_schema["properties"]["sources"]["minItems"] == 1
             assert (
                 "copied unchanged from new research reads"
@@ -200,17 +196,6 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             hash_schema = push_schema["$defs"]["FileEvidence"]["properties"]["content_hash"]
             assert "Never reconstruct or edit it" in hash_schema["description"]
             assert "memory-receipt hash is not new research" in hash_schema["description"]
-            for basis_arguments in ({}, {"research_basis": " \t"}, {"research_basis": "x" * 161}):
-                rejected = await session.call_tool(
-                    "push",
-                    {
-                        "namespace": "team", "question": "Rejected basis",
-                        "content": "This must not be saved.",
-                        "sources": [{"ref": "settings.py", "content_hash": "a" * 64}],
-                        **basis_arguments,
-                    },
-                )
-                assert rejected.isError and "research_basis" in rejected.content[0].text
             for source_arguments in ({}, {"sources": None}, {"sources": []}):
                 rejected = await session.call_tool(
                     "push",
@@ -218,7 +203,6 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                         "namespace": "team",
                         "question": "Unsupported MCP save",
                         "content": "This must not be saved.",
-                        "research_basis": "Initial lookup missed.",
                         **source_arguments,
                     },
                 )
@@ -238,7 +222,6 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                     "namespace": "team",
                     "question": "MCP evidence setup",
                     "content": "Use stdio",
-                    "research_basis": "Initial lookup did not supply the settings evidence.",
                     "sources": [
                         {
                             "ref": "settings.py",
@@ -250,15 +233,32 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                 },
             )
             assert not stored.isError
+            legacy = await session.call_tool(
+                "push",
+                {
+                    "namespace": "team", "question": "Legacy argument compatibility",
+                    "content": "Use stdio", "research_basis": "x" * 161,
+                    "sources": [{
+                        "ref": "settings.py",
+                        "content_hash": hashlib.sha256((repo / "settings.py").read_bytes()).hexdigest(),
+                    }],
+                },
+            )
+            assert not legacy.isError  # Unadvertised legacy argument is not a necessity check.
             validated = await session.call_tool("ask", {"question": "MCP evidence setup"})
             receipt = json.loads(validated.content[0].text)
             assert receipt["status"] == "validated"
             assert receipt["recommendation"] == "reuse_if_relevant"
-            # The flat proof is already carried by the displayed current read.
-            assert receipt["sources"] == []
+            # Canonical lookup proofs remain visible alongside the read identities.
+            assert receipt["sources"] == [{
+                "ref": "settings.py",
+                "content_hash": hashlib.sha256((repo / "settings.py").read_bytes()).hexdigest(),
+            }]
             assert receipt["current_repository_reads"][0]["complete_file"] == evidence_files
             assert receipt["verification"]["file_fingerprints_match"]
             assert receipt["verification"]["source_reads_current"]
+            assert "If sufficient and required checks are complete" in receipt["next_action"]
+            assert "no further ask, research or push" in receipt["next_action"]
             assert "UNTRUSTED" in receipt["provenance"]
             assert "TIMEOUT" in receipt["current_repository_reads"][0]["content"]
             assert receipt["current_repository_reads"][0]["path"] == "settings.py"
