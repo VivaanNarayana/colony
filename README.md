@@ -71,7 +71,20 @@ path if `colony` is not on its PATH, and an absolute home path:
 {"mcpServers":{"colony":{"command":"colony","args":["--home","/absolute/path/to/agent-home","mcp"]}}}
 ```
 
-Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources, tainted?)`.
+Tools: `ask(question, namespace?)` and
+`push(namespace, question, content, sources, research_basis, tainted?)`.
+MCP `push` requires `research_basis`: a nonblank string of at most 160 characters explaining
+the initial lookup gap (miss/unusable evidence, missing requested fact, relevant contradiction,
+or required verification). Existing MCP callers must supply this new required argument;
+omitted, blank, overlength or non-string values fail validation before storage or queue writes.
+Do not invent a basis or research merely to fill it. Sufficient initial validated lookup reads
+with required checks complete require answering/citing without another ask, research or push.
+A stale/unverified or insufficient lookup can still justify research and refreshing the same
+facts. The field does not require novel facts or verify necessity: even a generic explanation
+can pass shape validation. Every attempted call, including rejected calls, still counts.
+Colony consumes this control metadata at the MCP boundary without forwarding it into trail
+content, client payloads or queue data. MCP clients, transcripts and validation errors may
+retain arguments; do not put secrets in the explanation. CLI/HTTP APIs are unchanged.
 MCP `push` now requires a nonempty list of supporting file sources. Calls that omit
 `sources`, pass `null`, or pass `[]` return a validation error before storage or queue writes.
 This changes the previous optional-source MCP API: callers saving necessary new research
@@ -112,18 +125,24 @@ conditional workflow: ask once, then answer/cite without further calls when vali
 current reads suffice and required checks are complete; otherwise research necessary
 gaps, contradictions or checks. Saving new findings is conditional on that necessary
 research. Trust, requested-answer scope, needed qualifications, citations and research
-rules remain. Namespace instructions and the validated hit action carry conditional
-reuse/derivation guidance. New questions can still use
+rules remain. Shared namespace instructions carry the full conditional reuse/derivation and
+research-completion policy; the validated hit action retains its verification/sufficiency cue.
+New questions can still use
 `ask`; every actual call performs a fresh lookup rather than being cached or suppressed.
 Missing requested facts still require research. After necessary new research supports the
 requested facts and citations and all required checks are complete, stop researching,
 save those new findings once, then answer. Unresolved facts, contradictions and required
 verification still permit further research; optional background or redundant confirmation
 does not. This does not change the no-push rule for sufficient memory reuse.
-Clients can prefix namespace instructions to each tool description, so the shared workflow
-is concise. Short tool descriptions avoid repeating reuse and proof rules: these remain in
-the namespace/validated receipt and source/hash field descriptions respectively.
-Miss-specific discovery/completion advice stays in miss and nonvalidated receipts.
+Clients can prefix namespace instructions to each tool description. The ask description states
+its lookup purpose; the push basis field exposes the initial-gap decision before invocation.
+Duplicate response instructions are factored into shared policy; proof-copy rules remain in
+source/hash field descriptions. Only tool-discovery advice stays in miss/nonvalidated receipts.
+The fixed combined initialization, catalog and initial-ask instruction footprint is bounded
+against the preceding revision for validated, miss and nonvalidated paths. The catalog alone
+grows; discovery/push-only paths, errors/retries and variable basis text are outside that bound.
+Bytes do not establish native token/time savings or better model compliance. This workflow
+contract is an unproven behavioral hypothesis and does not establish any benchmark gate.
 Initialization retains research eligibility, literal search and reuse of complete session
 research reads, including after a validated but insufficient hit. During new research, reuse complete
 reads and their source objects from this session, rereading only for missing text or required

@@ -169,14 +169,15 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             initialization = await session.initialize()
             tools = await session.list_tools()
             assert {t.name for t in tools.tools} == {"ask", "push"}
-            # The client still receives policy/proof rules after description deduplication.
+            # Initialization and the actual catalog deliver the MCP-only workflow contract.
             assert "Evidence-only derivation is reuse" in initialization.instructions
             assert (
                 "Only after necessary research supports requested facts/citations"
                 in initialization.instructions
             )
-            assert "never after sufficient reuse" in next(
-                t.description for t in tools.tools if t.name == "push"
+            assert "no ask/research/push" in initialization.instructions
+            assert "reusable answers/current repository evidence" in next(
+                t.description for t in tools.tools if t.name == "ask"
             )
             push_schema = next(t.inputSchema for t in tools.tools if t.name == "push")
             assert set(push_schema["$defs"]["FileEvidence"]["properties"]) == {
@@ -185,6 +186,12 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                 "kind",
             }
             assert "sources" in push_schema["required"]
+            assert "research_basis" in push_schema["required"]
+            basis_schema = push_schema["properties"]["research_basis"]
+            assert basis_schema["minLength"] == 1 and basis_schema["maxLength"] == 160
+            assert basis_schema["pattern"] == r"\S"
+            assert "Initial lookup gap" in basis_schema["description"]
+            assert "no ask/research/push" in basis_schema["description"]
             assert push_schema["properties"]["sources"]["minItems"] == 1
             assert (
                 "copied unchanged from new research reads"
@@ -193,6 +200,17 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             hash_schema = push_schema["$defs"]["FileEvidence"]["properties"]["content_hash"]
             assert "Never reconstruct or edit it" in hash_schema["description"]
             assert "memory-receipt hash is not new research" in hash_schema["description"]
+            for basis_arguments in ({}, {"research_basis": " \t"}, {"research_basis": "x" * 161}):
+                rejected = await session.call_tool(
+                    "push",
+                    {
+                        "namespace": "team", "question": "Rejected basis",
+                        "content": "This must not be saved.",
+                        "sources": [{"ref": "settings.py", "content_hash": "a" * 64}],
+                        **basis_arguments,
+                    },
+                )
+                assert rejected.isError and "research_basis" in rejected.content[0].text
             for source_arguments in ({}, {"sources": None}, {"sources": []}):
                 rejected = await session.call_tool(
                     "push",
@@ -200,6 +218,7 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                         "namespace": "team",
                         "question": "Unsupported MCP save",
                         "content": "This must not be saved.",
+                        "research_basis": "Initial lookup missed.",
                         **source_arguments,
                     },
                 )
@@ -219,6 +238,7 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
                     "namespace": "team",
                     "question": "MCP evidence setup",
                     "content": "Use stdio",
+                    "research_basis": "Initial lookup did not supply the settings evidence.",
                     "sources": [
                         {
                             "ref": "settings.py",
