@@ -238,7 +238,9 @@ def _atomic(path: Path, content: bytes, mode: int | None, expected: bytes | None
         else:
             os.replace(temporary, path)
     finally:
-        if os.path.exists(temporary):
+        # Cleanup must not hide a published write from _apply's rollback accounting,
+        # or replace an earlier staging/publication error with a cleanup error.
+        with suppress(OSError):
             os.unlink(temporary)
 
 

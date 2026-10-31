@@ -358,6 +358,49 @@ def test_atomic_failure_rolls_back_without_overwriting_concurrent_edit(project, 
     assert (repo / ".codex/config.toml").read_bytes() == b"# concurrent edit\n"
 
 
+@pytest.mark.parametrize("fail_second_write", [False, True])
+def test_staging_cleanup_failure_keeps_publication_and_rollback_accounted(
+    project, monkeypatch, fail_second_write
+):
+    repo, home = project
+    real_unlink = setup.os.unlink
+    cleanup_failures = []
+
+    def deny_staging_cleanup(path, *args, **kwargs):
+        if os.path.basename(path).startswith(".colony-setup-"):
+            cleanup_failures.append(path)
+            raise PermissionError("simulated sharing violation")
+        return real_unlink(path, *args, **kwargs)
+
+    real_atomic = setup._atomic
+    writes = 0
+
+    def write(path, content, mode, expected):
+        nonlocal writes
+        writes += 1
+        if fail_second_write and writes == 2:
+            raise OSError("simulated second-file write failure")
+        return real_atomic(path, content, mode, expected)
+
+    monkeypatch.setattr(setup.os, "unlink", deny_staging_cleanup)
+    monkeypatch.setattr(setup, "_atomic", write)
+    if fail_second_write:
+        with pytest.raises(ValueError, match="rolled back"):
+            install(project)
+    else:
+        assert install(project)["changed"]
+
+    assert len(cleanup_failures) == (1 if fail_second_write else 2)
+    assert all(os.path.exists(path) for path in cleanup_failures)
+    status = setup.setup_codex(home, repo, "status")
+    assert status["installed"] == (not fail_second_write)
+    assert not status["partial"]
+    for path in (repo / ".codex/config.toml", repo / "AGENTS.md"):
+        assert path.exists() == (not fail_second_write)
+    if not fail_second_write:
+        assert not install(project)["changed"]
+
+
 def test_uninstall_failure_restores_removed_files(project, monkeypatch):
     repo, home = project
     install(project)

@@ -135,6 +135,8 @@ setup paths. Existing-file replacement is best effort against external edits: it
 snapshots immediately before replacement but does not lock editors. Avoid concurrent
 edits to these files during setup. If rollback is reported
 incomplete, preserve any `.colony-recovery-*` copies in the project for manual recovery.
+If staging-file cleanup is denied, `.colony-setup-*` files can remain with the permissions
+used for the destination. Cleanup failure does not hide completed writes from rollback.
 
 The generated stdio command uses the current Python interpreter, `-E -P -m colony.cli`, the
 absolute agent home and project paths, and one workflow namespace. Keep that interpreter
