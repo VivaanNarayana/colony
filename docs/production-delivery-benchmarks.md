@@ -1,4 +1,4 @@
-# Production delivery benchmark contract, version 1
+# Lightweight feature delivery and product-value evidence
 
 This benchmark-only addition runs over the restored **PR1 MVP**
 `202745a92f6c6c59e4c990321be9c5112697594e`. Application files under `src/colony/`
@@ -9,6 +9,93 @@ The contract identifier is `colony.production-delivery/1`. It does **not** repla
 publish, waive or reinterpret the eight historical required checks. GitHub rules
 are unchanged. Neither draft has an eight-gate acceptance or merge-readiness claim.
 An owner must separately review any future change to delivery policy.
+
+## Keep ordinary feature work small
+
+For routine features, run the product tests and lint, add a focused check for the
+changed behavior, and describe the intended result and any compatibility risk in
+the PR. Existing tests cover permissions, stale evidence, scrubbing, CLI/HTTP/MCP
+and offline retry. Use build/install or the local diagnostic below when the change
+affects those paths. Do not launch a live campaign for every edit.
+
+Token savings remain a primary product objective. At a release or when claiming
+better reuse, review a small matched **Colony versus no Colony** scorecard:
+
+| Core question | Data to retain |
+|---|---|
+| Does memory reduce model work? | Native input, cached input, output, gross and uncached tokens, including learning/push/retry/failure costs |
+| Are answers still useful and safe? | Independently reviewed correct and grounded tasks/workflows, failed attempts and unknown labels |
+| Does it save user time? | Recorded session durations; separately measured end-to-end time when available |
+
+A candidate-versus-MVP comparison answers a different question. Neither comparison
+requires pretending every feature strictly improves every metric. Correctness and
+the claimed behavior matter for delivery; token savings need real product evidence.
+These are proposed review practices, **not changed merge rules**. The existing eight
+checks remain required; this draft cannot unblock merges by bypassing them.
+
+## Small offline product-value scorecard
+
+`scripts/product_value.py` is a stdlib report reader, not another trial runner.
+It launches no agents, servers, providers or telemetry. Use it on separately
+authorized, retained trial evidence; tests use fake native events only.
+
+```sh
+python scripts/product_value.py --manifest <frozen-evidence.json> --logs <native-log-directory> --output <new-scorecard.json>
+```
+
+The version is `colony.product-value/1`. The one JSON manifest contains:
+
+* `contract`: that version, and `protocol`: `comparison` = `colony_vs_no_colony`,
+  exact `implementation`/`corpus` revisions, `model`, `client`, `effort`,
+  `instructions_sha256`, research `budget`, the intended `memory_difference`,
+  `rubric_sha256`, `reviewer` and `review_method` (disclose nonblind review).
+* `protocol.workflows`: unique `id` and ordered `tasks`, each with `id`, `question`
+  and `phase` (`learn` or `reuse`). Both arms complete the same scheduled tasks.
+  Include actual learning and a finite observed reuse horizon; do not amortize
+  costs over hypothetical future users. Fresh task contexts, identical research
+  budgets and explicit access to Colony are part of the collection design.
+  Learning precedes reuse; each arm follows the declared task order, with retries
+  contiguous within that task. A late retry cannot retroactively repair prior reuse.
+* `attempts`: every attempt in execution order, including learning, retries and
+  failures. Each has unique `id`, `workflow`, `task`, `mode` (`no_colony` or
+  `colony`), relative `events` path ending `.events.jsonl`, `events_sha256`,
+  `state` (`completed`/`failed`/`timeout`), measured `seconds` or null, externally
+  reviewed `correct`/`grounded` Booleans or null, and `answer_sha256`.
+
+Freeze the protocol before collection; freeze the complete inventory and quality
+reviews before scoring. The scorecard hashes this manifest and every native log.
+The fake-event fixture in `tests/production_delivery/test_product_value.py` gives
+a complete minimal example. Keep native logs and private answers outside Git.
+
+Supported native JSONL uses `turn.started`, `item.completed` agent messages and
+`turn.completed` with per-turn `input_tokens`, `cached_input_tokens`, `output_tokens`.
+Sum all completed turns, not just the last. Gross = input + output; uncached =
+input - cached input + output. Auxiliary usage is retained separately and never
+added twice. The answer digest is SHA-256 of completed agent-message texts joined
+with a single newline, UTF-8 encoded, with no trailing newline.
+
+All `.events.jsonl` files in the selected directory must be inventoried exactly
+once. Missing scheduled tasks, duplicate attempts/turn completions, changed hashes,
+invalid counts or review-answer mismatches reject the report. A failed/interrupted
+attempt or missing usage leaves complete totals and savings unknown, while known
+subtotals remain visible, including reported usage on failed turns. A partial usage
+object is incomplete; a malformed supplied count is rejected. Known derived token
+subtotals include only turns with all components needed for that formula, so they
+may not equal arithmetic on partial component subtotals. Missing quality is not
+success. The final attempt for
+each task determines its outcome; every earlier cost stays counted. Costs per
+grounded successful workflow include unsuccessful-attempt costs and are undefined
+with no successes or incomplete usage. Session sums are not workflow wall time.
+
+This deliberately small reader accepts at most 128 attempts, a 1 MiB manifest and
+64 MiB native logs, writes only a new report and never deletes input. It checks
+inventory/accounting consistency; it cannot attest collection honesty, source
+identity, externally supplied quality or historical model configuration. Retain
+the original runner's source/prompt/process evidence and review it with the report.
+Point reductions are descriptive: no confidence-supported product win, dollar
+savings, automatic readiness or legacy-gate verdict is produced. Cheap incorrect
+answers cannot establish product benefit. Historical MVP/feature trials cannot
+be relabeled Colony/no-Colony. No new live trial is authorized by adding this reader.
 
 ## Implemented coverage and boundaries
 
@@ -40,8 +127,8 @@ performance analysis. These public fixtures must not be called held-out producti
 Only start collection when a bounded local experiment is explicitly intended.
 The default comparison is fixed PR1 versus PR1, an A/A diagnostic. A candidate
 comparison uses the same fixed baseline and identical cases. **Colony versus no
-Colony is a separate, currently unimplemented live study**; these local results
-cannot answer whether enabling Colony helps a coding agent.
+Colony is a separate study**; the offline scorecard above implements its accounting,
+but these local operations cannot answer whether enabling Colony helps an agent.
 
 Commit the harness and set the existing provisioned model directories; there is
 no download fallback. Freeze pins all files in both model directories, implementation
@@ -140,7 +227,8 @@ contract, report that dependency; do not build another policy or publisher servi
 3. Colony versus no Colony for product value; a separate fixed-MVP/candidate study
    for later optimization. Identical model/version/effort, allowed research and
    explicit memory-access differences; independent stores/contexts and counterbalanced
-   order, all failed/invalid/inconclusive attempts retained.
+   order, all failed/invalid/inconclusive attempts retained. The offline accounting
+   reader is implemented; fresh collection and product benefit remain unestablished.
 4. Adequate repeats/scales and representative concurrency; percentile/uncertainty
    methods and meaningful regression margins fixed before confirmatory observations.
    Pilot tuning is not held-out confirmation; no unchanged retries until green.
