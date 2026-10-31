@@ -55,7 +55,8 @@ def test_preview_install_repeat_remove_without_home(project):
     assert server["command"] == sys.executable
     assert server["cwd"] == str(repo)
     assert server["args"] == [
-        "-I",
+        "-E",
+        "-P",
         "-m",
         "colony.cli",
         "--home",

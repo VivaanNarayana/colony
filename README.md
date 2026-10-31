@@ -136,12 +136,13 @@ snapshots immediately before replacement but does not lock editors. Avoid concur
 edits to these files during setup. If rollback is reported
 incomplete, preserve any `.colony-recovery-*` copies in the project for manual recovery.
 
-The generated stdio command uses the current Python interpreter, `-I -m colony.cli`, the
+The generated stdio command uses the current Python interpreter, `-E -P -m colony.cli`, the
 absolute agent home and project paths, and one workflow namespace. Keep that interpreter
 and home available; rerun setup after intentionally uninstalling if those paths change.
-Isolated Python mode prevents project-local modules and `PYTHONPATH` from shadowing the
-installed Colony package. Rerun setup to update a connection created before this isolation
-was added.
+The safe module path and ignored Python environment prevent project-local modules and
+`PYTHONPATH` from shadowing the installed Colony package while retaining normal user-site
+installations. Rerun setup to update a connection created before these launch options
+were added.
 Only path references go into project files, never bearer credentials or encryption keys.
 The namespace requires pull and push permission. Add `--read-only` during installation
 for a pull-only connection; this mode exposes `ask` without `push`.

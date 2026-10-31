@@ -376,7 +376,8 @@ def setup_codex(
         if not executable.is_file():
             raise ValueError("Python executable does not exist")
         arguments = [
-            "-I",
+            "-E",
+            "-P",
             "-m",
             "colony.cli",
             "--home",
