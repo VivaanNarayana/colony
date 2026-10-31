@@ -181,6 +181,8 @@ Only the harness repository is supported; alternate `--repo` clones are rejected
 before freezing or collection. Both pinned revisions must exist in its Git history.
 The collector and workers verify the frozen Python/platform/package environment;
 workers verify pinned model files before and after their operations.
+The MVP-then-candidate arm order is checked explicitly, including when JSON object
+keys are reordered without changing the canonical plan digest; changed order is rejected.
 
 ```sh
 python scripts/production_delivery.py freeze --candidate <commit> --output <new-plan.json>
@@ -203,6 +205,10 @@ The parent monitors the worker and stops on a ceiling; partial observations,
 stdout/stderr and the incomplete execution record remain. A ceiling is an
 operational safeguard, not a latency SLO or proof of adequate statistical power.
 No other project, global temp folder or existing trial is pruned to make room.
+Runtime byte accounting tolerates only enumerated descendants that disappear during
+the scan, using one metadata snapshot for file type and size. Missing roots, links,
+reparse points and other inspection errors still fail. Source/model/fixture/evidence
+manifests remain strict. Resource checks sample usage; they are not instantaneous caps.
 
 The `report` command audits an existing complete execution and refuses partial
 collections, modified source/fixture/harness bytes, duplicate/missing cases,

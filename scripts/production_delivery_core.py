@@ -12,6 +12,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import statistics
 import subprocess
 import sys
@@ -279,7 +280,7 @@ def validate_plan(plan):
     body = {k: v for k, v in plan.items() if k != "plan_sha256"}
     require(digest(body) == plan.get("plan_sha256"), "Plan bytes/configuration changed")
     require(plan["arms"]["mvp"]["revision"] == MVP, "Moved MVP baseline")
-    require(set(plan["arms"]) == {"mvp", "candidate"}, "Wrong comparison arms")
+    require(list(plan["arms"]) == ["mvp", "candidate"], "Wrong comparison arm order")
     require(
         type(plan["repetitions"]) is int and 1 <= plan["repetitions"] <= 100, "Invalid repetitions"
     )
@@ -300,7 +301,37 @@ def validate_plan(plan):
 
 
 def disk_bytes(root):
-    return sum(p.stat().st_size for p in files_under(root))
+    """Sample live runtime sizes; only vanished descendants may be skipped.
+
+    Source/evidence manifests deliberately retain the separate strict traversal.
+    """
+    root = Path(root)
+    require(not linked(root), "Linked root")
+    pending, total = [root], 0
+    while pending:
+        directory = pending.pop()
+        try:
+            require(not linked(directory), "Linked artifact")
+            entries = sorted(directory.iterdir())
+        except FileNotFoundError:
+            if directory == root:
+                raise
+            continue
+        for path in entries:
+            try:
+                info = path.lstat()
+            except FileNotFoundError:
+                continue
+            require(
+                not stat.S_ISLNK(info.st_mode)
+                and not (getattr(info, "st_file_attributes", 0) & 0x400),
+                "Linked artifact",
+            )
+            if stat.S_ISDIR(info.st_mode):
+                pending.append(path)
+            elif stat.S_ISREG(info.st_mode):
+                total += info.st_size
+    return total
 
 
 def check_budget(root, started, now, limits=LIMITS):
