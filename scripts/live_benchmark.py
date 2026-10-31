@@ -131,14 +131,7 @@ was reused. Memory ask/push calls are additional to the 6 Repository research ca
 """
 
 
-def run_subject(
-    task,
-    mode,
-    *,
-    implementation: Path | None = None,
-    max_research_calls=None,
-    repository_adapter: Path | None = None,
-):
+def run_subject(task, mode):
     name = f"{task['task_id']}.{mode}"
     prompt = COMMON + (COLONY if mode == "colony" else "") + "\nQuestion: " + task["question"]
     (OUT / f"{name}.prompt.txt").write_text(prompt)
@@ -180,17 +173,7 @@ def run_subject(
             "mcp_servers.repository.command=" + json.dumps(str(PYTHON)),
             "-c",
             "mcp_servers.repository.args="
-            + json.dumps(
-                [
-                    str(repository_adapter or ROOT / "scripts/benchmark_repo_mcp.py"),
-                    str(RUN / "repo"),
-                ]
-                + (
-                    ["--max-calls", str(max_research_calls)]
-                    if max_research_calls is not None
-                    else []
-                )
-            ),
+            + json.dumps([str(ROOT / "scripts/benchmark_repo_mcp.py"), str(RUN / "repo")]),
             "-c",
             'mcp_servers.repository.tools.read_file.approval_mode="approve"',
             "-c",
@@ -206,10 +189,7 @@ def run_subject(
                 "mcp_servers.colony.command=" + json.dumps(str(PYTHON)),
                 "-c",
                 "mcp_servers.colony.args="
-                + json.dumps(
-                    ([str(implementation)] if implementation else ["-m", "colony.cli"])
-                    + ["--home", str(RUN / "agent"), "mcp"]
-                ),
+                + json.dumps(["-m", "colony.cli", "--home", str(RUN / "agent"), "mcp"]),
             ]
         )
         args.extend(

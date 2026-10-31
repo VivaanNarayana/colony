@@ -129,9 +129,8 @@ def excerpts(
         )
         scores = [0.0] * len(candidates)
     else:
-        if claims is None:
-            scores = rank(question, [c[2] for c in candidates])
-        else:
+        scores = rank(question, [c[2] for c in candidates])
+        if claims is not None:
             query_coverage = keyword_coverage(question, [c[2] for c in candidates])
             # Concrete code/commands identify the claim better than background
             # prose such as model-download notes in the same saved answer.
@@ -139,19 +138,9 @@ def excerpts(
             claim_coverage = keyword_coverage(
                 "\n".join(code_claims) if code_claims else claims[:4000], [c[2] for c in candidates]
             )
-            lexical = [
-                0.2 * q + 0.7 * a for q, a in zip(query_coverage, claim_coverage, strict=True)
-            ]
-            # The existing reranker contribution lies between 0 and 0.1.
-            # A paragraph whose upper bound misses even the best lower bound's
-            # 0.15 selection window cannot appear in the response. Compute IDF
-            # over the full set first, and preserve original order for ties.
-            floor = max(lexical, default=0) - 0.15
-            eligible = [i for i, score in enumerate(lexical) if score + 0.1 >= floor - 1e-12]
-            candidates = [candidates[i] for i in eligible]
-            scores = rank(question, [c[2] for c in candidates])
             scores = [
-                lexical[i] + 0.5 * fused_score(0, s) for i, s in zip(eligible, scores, strict=True)
+                0.2 * q + 0.7 * a + 0.5 * fused_score(0, s)
+                for q, a, s in zip(query_coverage, claim_coverage, scores, strict=True)
             ]
     selected, occupied, cache, budget = [], [], {}, 2800
     best = max(scores, default=0)

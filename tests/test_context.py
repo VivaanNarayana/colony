@@ -5,67 +5,6 @@ from colony.models import Source
 from colony.validation import snapshot
 
 
-def test_claim_bounds_skip_impossible_paragraphs_without_hiding_reranker_winner(
-    tmp_path, monkeypatch
-):
-    import colony.context
-
-    (tmp_path / "guide.md").write_text("strong lexical\nnear lexical\nunrelated\n")
-    source = snapshot(tmp_path, "guide.md")
-    chunks = [
-        ("guide.md", i + 1, text)
-        for i, text in enumerate(["strong lexical", "near lexical", "unrelated"])
-    ]
-    monkeypatch.setattr(colony.context, "source_chunks", lambda *args: chunks)
-    monkeypatch.setattr(
-        colony.context,
-        "keyword_coverage",
-        lambda question, passages: [0.0] * 3 if question == "question" else [1.0, 0.95, 0.0],
-    )
-    monkeypatch.setattr(
-        colony.context, "context_window", lambda ref, lines, line, span: (line, lines[line - 1])
-    )
-    ranked = []
-
-    def rank(question, passages):
-        ranked.extend(passages)
-        return [30.0 if p == "near lexical" else -30.0 for p in passages]
-
-    monkeypatch.setattr(colony.context, "rank", rank)
-    result = excerpts(tmp_path, [source], "question", claims="claim")
-    assert ranked == ["strong lexical", "near lexical"]
-    assert result[0]["text"] == "near lexical"
-    assert result[1]["text"] == "strong lexical"
-
-
-def test_claim_bound_keeps_candidate_on_selection_boundary(tmp_path, monkeypatch):
-    import colony.context
-
-    (tmp_path / "guide.md").write_text("best\nboundary\n")
-    source = snapshot(tmp_path, "guide.md")
-    monkeypatch.setattr(
-        colony.context,
-        "source_chunks",
-        lambda *args: [("guide.md", 1, "best"), ("guide.md", 2, "boundary")],
-    )
-    # Bases are 0.7 and 0.45; the boundary's best possible score is exactly
-    # the best paragraph's lower bound minus the existing 0.15 window.
-    monkeypatch.setattr(
-        colony.context,
-        "keyword_coverage",
-        lambda question, passages: [0.0, 0.0] if question == "question" else [1.0, 0.45 / 0.7],
-    )
-    ranked = []
-
-    def rank(question, passages):
-        ranked.extend(passages)
-        return [0.0] * len(passages)
-
-    monkeypatch.setattr(colony.context, "rank", rank)
-    excerpts(tmp_path, [source], "question", claims="claim")
-    assert ranked == ["best", "boundary"]
-
-
 def test_only_matching_attached_evidence_is_returned_and_scrubbed(tmp_path):
     text = (
         "# Build\nUse build --release.\n"
