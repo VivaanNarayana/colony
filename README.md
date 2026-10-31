@@ -235,8 +235,9 @@ The existing read-only workflow connection continues to expose only `ask`; pull-
 inspect through the CLI or HTTP. The HTTP endpoints are `POST /memory/inspect`, `/memory/feedback`,
 `/memory/correct`, and `/memory/change`. Feedback and history notes are bounded to 1,000 characters,
 scrubbed, and encrypted at rest using the existing storage key. History inspection is bounded;
-feedback notes and saved content remain untrusted data. Existing question/source metadata
-storage and pattern-redaction limitations still apply.
+feedback notes and saved content remain untrusted data. Inspection marks question/source
+metadata when display truncation is necessary after redaction; original stored values remain
+unchanged. Existing question/source metadata storage and pattern-redaction limitations still apply.
 
 These new mutations are online-only and do not enter the offline push queue. A transport
 timeout has an **unknown outcome**, not a confirmed failure or successful queue. Keep the

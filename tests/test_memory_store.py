@@ -1,15 +1,32 @@
+import json
 import sqlite3
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
 
 import pytest
 import sqlite_vec
 
 import colony.context
 import colony.store
-from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
-from colony.models import Grant, MemoryChange, MemoryCorrection, MemoryFeedback, Scope, Trail
+from colony.client import Client
+from colony.memory import (
+    MemoryConflict,
+    MemoryForbidden,
+    MemoryInvalid,
+    MemoryNotFound,
+    sanitize_memory,
+)
+from colony.models import (
+    Grant,
+    MemoryChange,
+    MemoryCorrection,
+    MemoryFeedback,
+    Scope,
+    Source,
+    Trail,
+)
 from colony.store import Store
 from colony.validation import snapshot
 
@@ -196,6 +213,92 @@ def test_inspection_bounds_history_and_scrubs_unsanitized_legacy_content(memory_
     assert len(inspected["history"]) == 20
     assert inspected["history"][0]["operation_id"] == last.operation_id
     assert inspected["memory"]["feedback"]["helpful"] == 1
+
+
+def test_legacy_redaction_expansion_is_a_bounded_inspection_view_and_client_accepts(memory_team):
+    store, repo, owner, _ = memory_team
+    normal_source = snapshot(repo, "build.py")
+    legacy_source = Source(
+        kind="doc",
+        ref="token=a " * 128,
+        content_hash="0" * 64,
+        symbol="token=a " * 25,
+        contains="token=a " * 125,
+    )
+    legacy = Trail(
+        id=new_id(),
+        namespace="team",
+        question="token=a " * 250,
+        content="password=private-legacy-sentinel",
+        sources=[normal_source, legacy_source],
+    )
+    # Bypass client scrubbing, as valid historical direct HTTP pushes could do.
+    store.push(legacy, owner)
+    with store.connect() as db:
+        row_before = tuple(db.execute("SELECT * FROM trails WHERE id=?", (legacy.id,)).fetchone())
+        sources_before = [
+            tuple(row)
+            for row in db.execute("SELECT * FROM trail_sources WHERE trail_id=?", (legacy.id,))
+        ]
+    encrypted_before = (store.blobs / f"{legacy.id}.enc").read_bytes()
+    inspected = store.inspect_memory(legacy.id, "team", owner)
+    assert len(inspected["question"]) == 2000 and inspected["question_truncated"] is True
+    assert inspected["content"] == "[REDACTED]" and not inspected["content_truncated"]
+    assert inspected["sources"][0] == normal_source.model_dump()
+    expanded = inspected["sources"][1]
+    assert expanded["metadata_truncated"] is True
+    assert len(expanded["ref"]) == 1024
+    assert len(expanded["symbol"]) == 200
+    assert len(expanded["contains"]) == 1000
+    rendered = json.dumps(inspected)
+    assert "token=a" not in rendered and "private-legacy-sentinel" not in rendered
+    client = object.__new__(Client)
+    client.keyfile = SimpleNamespace(grant=owner)
+    client.request = lambda route, payload: inspected
+    assert client.memory_inspect(legacy.id, "team") == inspected
+    with store.connect() as db:
+        assert (
+            tuple(db.execute("SELECT * FROM trails WHERE id=?", (legacy.id,)).fetchone())
+            == row_before
+        )
+        assert [
+            tuple(row)
+            for row in db.execute("SELECT * FROM trail_sources WHERE trail_id=?", (legacy.id,))
+        ] == sources_before
+    assert (store.blobs / f"{legacy.id}.enc").read_bytes() == encrypted_before
+
+
+def test_normal_inspection_response_has_identical_fields_and_order(memory_team):
+    store, _, owner, trail = memory_team
+    expected = {
+        "id": trail.id,
+        "namespace": trail.namespace,
+        "producer_id": owner.member_id,
+        "question": trail.question,
+        "content": trail.content,
+        "content_truncated": False,
+        "sources": [source.model_dump() for source in trail.sources],
+        "memory": {
+            "state": "active",
+            "revision": 0,
+            "replacement_id": None,
+            "feedback": {"helpful": 0, "incorrect": 0, "outdated": 0},
+        },
+        "history": [],
+    }
+    assert json.dumps(store.inspect_memory(trail.id, "team", owner)) == json.dumps(expected)
+
+
+@pytest.mark.parametrize("field", ["question", "ref", "symbol", "contains"])
+def test_inspection_caps_never_truncate_mutation_inputs(memory_team, field):
+    _, repo, _, trail = memory_team
+    counts = {"question": 250, "ref": 128, "symbol": 25, "contains": 125}
+    updates = {field: "token=a " * counts[field]}
+    if field != "question":
+        updates = {"sources": [snapshot(repo, "build.py").model_copy(update=updates)]}
+    request = correction(trail, repo, **updates)
+    with pytest.raises(MemoryInvalid):
+        sanitize_memory(request)
 
 
 def test_retract_restore_revision_replay_restart_and_push_cannot_reactivate(memory_team):

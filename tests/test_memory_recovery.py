@@ -4,7 +4,9 @@ import sqlite3
 
 from cryptography.fernet import Fernet
 
-from colony.models import MemoryCorrection, Trail
+from colony.client import Client
+from colony.models import MemoryCorrection, Source, Trail
+from colony.security import private_write, token
 from colony.store import Store
 from colony.validation import snapshot
 
@@ -61,3 +63,38 @@ def test_preupgrade_database_blob_key_backup_roundtrip(team, tmp_path):
         "feedback": {"helpful": 0, "incorrect": 0, "outdated": 0},
     }
     assert upgraded.inspect_memory(original.id, "team", key.grant)["memory"]["state"] == "superseded"
+
+
+def test_raw_legacy_redaction_expansion_remains_inspectable(team, tmp_path, monkeypatch):
+    app, api, _, admin, key = team
+    original = Trail(
+        id="f" * 32, namespace="team", question="token=a " * 250, content="Historical answer",
+        sources=[Source(
+            kind="doc", ref="token=a " * 128, symbol="token=a " * 25,
+            contains="token=a " * 125, content_hash="a" * 64,
+        )],
+    )
+    headers = {"Authorization": f"Bearer {token(key)}"}
+    assert api.post("/trails", headers=headers, json=original.model_dump()).status_code == 200
+    home = tmp_path / "inspection-home"
+    private_write(home / "identity.json", key.model_dump_json().encode())
+    private_write(home / "issuer.pub", (admin / "issuer.pub").read_bytes())
+    client = Client(home)
+
+    def request(route, payload):
+        response = api.post(route, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()
+
+    monkeypatch.setattr(client, "request", request)
+    inspected = client.memory_inspect(original.id, "team")
+    assert inspected["question_truncated"] and len(inspected["question"]) == 2000
+    source = inspected["sources"][0]
+    assert source["metadata_truncated"]
+    assert len(source["ref"]) == 1024 and len(source["symbol"]) == 200
+    assert len(source["contains"]) == 1000
+    assert "token=a" not in str(inspected)
+    assert inspected["memory"]["state"] == "active"
+    with app.state.store.connect() as db:
+        assert db.execute("SELECT question FROM trails WHERE id=?", (original.id,)).fetchone()[0] == original.question
+        assert app.state.store.sources(db, original.id) == original.sources

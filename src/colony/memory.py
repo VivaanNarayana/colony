@@ -36,6 +36,20 @@ def scrub_source(source: Source) -> Source:
     return Source.model_validate(data)
 
 
+def source_inspection_view(source: Source) -> dict:
+    """Bound redacted legacy metadata for display without changing mutation validation."""
+    data = source.model_dump()
+    truncated = False
+    for key, maximum in (("ref", 1024), ("symbol", 200), ("contains", 1000)):
+        if data[key] is not None:
+            text = scrub(data[key])
+            truncated = truncated or len(text) > maximum
+            data[key] = text[:maximum]
+    if truncated:
+        data["metadata_truncated"] = True
+    return data
+
+
 def sanitize_memory(request: MemoryFeedback | MemoryCorrection | MemoryChange):
     try:
         data = request.model_dump()

@@ -18,7 +18,7 @@ from colony.memory import (
     operation_hash,
     replacement_id,
     sanitize_memory,
-    scrub_source,
+    source_inspection_view,
 )
 from colony.models import (
     Grant,
@@ -313,6 +313,7 @@ class Store:
     def inspect_memory(self, trail_id: str, namespace: str, grant: Grant):
         with self.connect() as db:
             row = self._memory_target(db, trail_id, namespace, grant)
+            question = scrub(row["question"])
             content = scrub(self.read_content(row["content_ref"]))
             history = []
             for event in db.execute(
@@ -325,17 +326,20 @@ class Store:
                 if item["verdict"] is None:
                     del item["verdict"]
                 history.append(item)
-            return {
+            result = {
                 "id": trail_id,
                 "namespace": namespace,
                 "producer_id": row["producer_id"],
-                "question": scrub(row["question"]),
+                "question": question[:2000],
                 "content": content[:4000],
                 "content_truncated": len(content) > 4000,
-                "sources": [scrub_source(s).model_dump() for s in self.sources(db, trail_id)],
+                "sources": [source_inspection_view(s) for s in self.sources(db, trail_id)],
                 "memory": self.memory_metadata(db, trail_id),
                 "history": history,
             }
+            if len(question) > 2000:
+                result["question_truncated"] = True
+            return result
 
     def _memory_replay(self, db, request, grant, kind):
         digest = operation_hash(request, grant, kind)
