@@ -6,7 +6,17 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from colony.models import Ask, Grant, Keyfile, Trail
+from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
+from colony.models import (
+    Ask,
+    Grant,
+    Keyfile,
+    MemoryChange,
+    MemoryCorrection,
+    MemoryFeedback,
+    MemoryInspect,
+    Trail,
+)
 from colony.security import verify
 from colony.store import Store
 
@@ -19,6 +29,19 @@ def create_app(
     store = Store(data, repo)
     app = FastAPI(title="Colony", version="0.1.0")
     app.state.store = store
+
+    async def memory_error(request: Request, exc: Exception):
+        failures = {
+            MemoryForbidden: (403, "Memory operation denied"),
+            MemoryNotFound: (404, "Memory not found"),
+            MemoryConflict: (409, "Memory operation conflict"),
+            MemoryInvalid: (422, "Invalid memory request"),
+        }
+        status, detail = failures[type(exc)]
+        return JSONResponse(status_code=status, content={"detail": detail})
+
+    for error_type in (MemoryForbidden, MemoryNotFound, MemoryConflict, MemoryInvalid):
+        app.add_exception_handler(error_type, memory_error)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request: Request, exc: RequestValidationError):
@@ -81,5 +104,21 @@ def create_app(
             threshold,
             include_evidence_files=query.include_evidence_files,
         )
+
+    @app.post("/memory/inspect")
+    def memory_inspect(query: MemoryInspect, grant: Annotated[Grant, Depends(member)]):
+        return store.inspect_memory(query.trail_id, query.namespace, grant)
+
+    @app.post("/memory/feedback")
+    def memory_feedback(query: MemoryFeedback, grant: Annotated[Grant, Depends(member)]):
+        return store.feedback_memory(query, grant)
+
+    @app.post("/memory/correct")
+    def memory_correct(query: MemoryCorrection, grant: Annotated[Grant, Depends(member)]):
+        return store.correct_memory(query, grant)
+
+    @app.post("/memory/change")
+    def memory_change(query: MemoryChange, grant: Annotated[Grant, Depends(member)]):
+        return store.change_memory(query, grant)
 
     return app

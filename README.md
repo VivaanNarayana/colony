@@ -188,6 +188,72 @@ Run one retry process after publishers finish. Extra lookup/guidance/publication
 may outweigh reuse savings on cold tasks; no token or time savings are claimed for this
 integration without a matched live evaluation.
 
+
+## Memory correction and feedback
+
+File fingerprints verify repository evidence, not the truth of a saved answer. Use explicit
+feedback and lifecycle operations when a memory is misleading. These operations preserve the
+original answer and its history; they do not overwrite it or turn an opinion into validation.
+
+```sh
+colony memory inspect TRAIL_ID --ns team
+colony memory feedback TRAIL_ID --ns team --verdict incorrect --note "The answer misreads the setting"
+colony memory correct TRAIL_ID replacement.json --ns team --expected-revision 0 --repo . --source settings.py
+colony memory retract TRAIL_ID --ns team --expected-revision 0 --note "No longer applicable"
+colony memory restore TRAIL_ID --ns team --expected-revision 1
+```
+
+Use the real ID returned by `ask` or `push`; put `--home /private/agent-home` before `memory`
+when using a nondefault home. Inspect the current revision before changing state. Correction
+and retraction above are alternative operations on an active memory, not a command sequence.
+A correction JSON file supplies `question`, `content`, and optional `sources`; `--source` adds
+actual repository file fingerprints, as with normal CLI publication. Corrected content is
+bounded to 4,000 characters and must cite current repository file evidence. MCP callers reuse
+fingerprints already obtained during research. Matching fingerprints still do not establish
+that the corrected prose is true.
+
+- Inspection requires pull permission. Feedback requires pull and push permission in that
+  namespace and can report `helpful`, `incorrect`, or `outdated` for another contributor's memory.
+- Only the original producer, identified by the issuer-signed member ID, can correct, retract,
+  or restore their memory, with both pull and push permission. Keep a valid credential with
+  that original member ID; a newly issued member ID does not inherit ownership. This version
+  has no moderator or cross-author acceptance role.
+- Feedback keeps each member's latest verdict plus bounded inspection history. Reports remain
+  unverified opinions: counts do not change ranking, evidence validation, or age. Flagged hits
+  include feedback metadata so the agent can check the answer against current source evidence.
+- Correction atomically creates a new answer and marks the original `superseded`. Retraction
+  marks an active answer `retracted`. Both are excluded from answer retrieval and source-evidence
+  fallback. Restore is explicit and applies only to a retracted answer; a superseded original
+  cannot be restored into competition with its replacement.
+- Lifecycle state and revision are separate from `validated`, `stale`, and `unverified` evidence
+  status. Revision checks reject conflicting simultaneous changes. Normal pushes, delayed push
+  retries, server restarts, and reindexing do not reactivate retired IDs or reset their age.
+
+MCP adds `memory_inspect`, `memory_feedback`, `memory_correct`, and `memory_change` for manual
+and writable workflow connections. Workflow namespace binding applies to every operation.
+The existing read-only workflow connection continues to expose only `ask`; pull-only users can
+inspect through the CLI or HTTP. The HTTP endpoints are `POST /memory/inspect`, `/memory/feedback`,
+`/memory/correct`, and `/memory/change`. Feedback and history notes are bounded to 1,000 characters,
+scrubbed, and encrypted at rest using the existing storage key. History inspection is bounded;
+feedback notes and saved content remain untrusted data. Existing question/source metadata
+storage and pattern-redaction limitations still apply.
+
+These new mutations are online-only and do not enter the offline push queue. A transport
+timeout has an **unknown outcome**, not a confirmed failure or successful queue. Keep the
+reported operation ID and replay the identical request with `--operation-id`, or inspect
+current state first. A replay acknowledges the original operation without applying it again;
+its `replayed` flag and current memory metadata distinguish it from a new state change.
+Changing a request while reusing an operation ID is a conflict. Existing encrypted push/retry
+behavior is unchanged.
+
+Before upgrading an existing server, stop it and back up its database, encrypted blobs, and
+`storage.key` together. Startup adds versioned lifecycle/feedback tables without changing old
+trail payloads or signed credentials. Test recovery on a copy first. Downgrading the binary
+alone is unsafe: older versions ignore lifecycle records and can return retired answers.
+Rollback requires the matching pre-upgrade database, blobs, and key with the old binary;
+in-place downgrade is unsupported. No token savings or improved answer correctness is claimed
+without measured, independently reviewed evidence.
+
 ## Capture and privacy
 
 `run` launches an explicitly provided command with `shell=False`, prints a capture notice,
