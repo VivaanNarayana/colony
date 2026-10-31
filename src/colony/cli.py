@@ -120,10 +120,74 @@ def parser():
             operation.add_argument("file", type=Path)
             operation.add_argument("--repo", type=Path, default=Path.cwd())
             operation.add_argument("--source", action="append", default=[])
+    usage = sub.add_parser(
+        "usage", help="Opt-in local usage metadata and self-reported assessments"
+    )
+    actions = usage.add_subparsers(dest="usage_action", required=True)
+    enable = actions.add_parser("enable")
+    enable.add_argument("--retention-days", type=int, default=30)
+    enable.add_argument("--max-events", type=int, default=10000)
+    for action in ("disable", "status", "purge"):
+        actions.add_parser(action)
+    review = actions.add_parser(
+        "review", help="Assess one observed lookup; not a truth certificate"
+    )
+    review.add_argument("event_id")
+    review.add_argument("--verdict", required=True, choices=("useful", "incorrect", "irrelevant"))
+    report = sub.add_parser("report", help="Local usage and explicitly imported matched evidence")
+    report.add_argument("--since", help="Inclusive UTC date or timestamp with timezone")
+    report.add_argument("--until", help="Exclusive UTC date or timestamp with timezone")
+    report.add_argument("--format", choices=("text", "json"), default="text")
+    report.add_argument("--output", type=Path, help="New output file; never overwrite")
+    compare = report.add_subparsers(dest="report_action").add_parser(
+        "compare", help="Read an explicit matched manifest/native-log inventory; no agent runs"
+    )
+    compare.add_argument("--manifest", type=Path, required=True)
+    compare.add_argument("--logs", type=Path, required=True)
+    compare.add_argument("--format", choices=("text", "json"), default=argparse.SUPPRESS)
+    compare.add_argument(
+        "--output", type=Path, default=argparse.SUPPRESS, help="New output file; never overwrite"
+    )
     return p
 
 
 def execute(args):
+    if args.command == "usage":
+        from colony.usage import UsageJournal
+
+        journal = UsageJournal(args.home)
+        if args.usage_action == "enable":
+            return journal.enable(retention_days=args.retention_days, max_events=args.max_events)
+        if args.usage_action == "review":
+            return journal.review(args.event_id, args.verdict)
+        return getattr(journal, args.usage_action)()
+    if args.command == "report":
+        from colony.usage_report import make_report, parse_time, render_text
+
+        if args.report_action == "compare":
+            from colony.product_value import comparison_report, render_comparison
+
+            if args.since is not None or args.until is not None:
+                raise ValueError("Comparison uses its complete frozen inventory")
+            result = comparison_report(args.manifest, args.logs)
+            text = render_comparison(result)
+        else:
+            result = make_report(
+                args.home,
+                since=parse_time(args.since) if args.since is not None else None,
+                until=parse_time(args.until) if args.until is not None else None,
+            )
+            text = render_text(result)
+        output = text if args.format == "text" else json.dumps(result, indent=2, allow_nan=False)
+        if args.output is not None:
+            from colony.report_io import checked_path
+
+            destination = checked_path(args.output)
+            destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            destination = checked_path(destination)
+            private_write(destination, (output.rstrip("\n") + "\n").encode())
+            return None
+        return text if args.format == "text" else result
     if args.command == "init":
         generate_keys(args.dir)
         return {"issuer_public_key": str(args.dir / "issuer.pub")}
@@ -276,7 +340,10 @@ def main():
         if isinstance(result, int):
             raise SystemExit(result)
         if result is not None:
-            print(json.dumps(result, indent=2))
+            if args.command == "report" and args.format == "text":
+                print(result)
+            else:
+                print(json.dumps(result, indent=2))
     except (ValueError, OSError, httpx.HTTPError) as exc:
         # Never echo exception text that could contain bearer credentials or request bodies.
         if args.command == "memory" and isinstance(

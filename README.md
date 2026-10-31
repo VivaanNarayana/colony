@@ -263,6 +263,84 @@ Rollback requires the matching pre-upgrade database, blobs, and key with the old
 in-place downgrade is unsupported. No token savings or improved answer correctness is claimed
 without measured, independently reviewed evidence.
 
+## Local usage and savings reports
+
+Usage collection is **off by default**. Opt in for one local client home; no server changes,
+provider calls, prompt changes or outbound analytics are involved. These commands also work
+before joining a server:
+
+```sh
+colony --home .colony/agent-a usage status
+colony --home .colony/agent-a usage enable --retention-days 30 --max-events 10000
+colony --home .colony/agent-a report
+colony --home .colony/agent-a report --since 2026-10-01 --until 2026-11-01 --format json --output usage.json
+colony --home .colony/agent-a usage disable
+```
+
+Once enabled, official CLI/MCP client calls record fixed outcome categories, timestamps,
+durations, random event IDs and private keyed logical-operation identifiers. Queued publication
+is distinct from confirmed acceptance; explicit retry attempts are counted individually and
+linked to the same publication. Memory-operation replays share an identifier when they use the
+same operation ID. No questions, answers, source paths, namespace names, identities, credentials
+or exception messages enter the journal. Existing responses and MCP tool schemas are unchanged.
+Direct HTTP users, other homes, disabled periods and calls lost to a process crash are outside
+this local view; counts describe retained observations, not a complete team history.
+
+The report separates answer hits, evidence-only hits, misses, stale/unverified results,
+outages and errors. A hit or a helpful-memory vote does not prove useful reuse or correctness.
+JSON reports include up to 50 recent lookup IDs for explicit local assessments:
+
+```sh
+colony --home .colony/agent-a report --format json
+colony --home .colony/agent-a usage review <lookup-event-id> --verdict useful
+```
+
+Verdicts are `useful`, `incorrect` or `irrelevant`. They apply to eligible observed hits,
+are self-reported, and do not change shared memory feedback, rankings or evidence validation.
+Reports show assessed/unassessed counts and denominators; selectively reviewed hits do not
+establish overall answer quality. Date bounds are inclusive `--since`, exclusive `--until`;
+dates mean UTC midnight, and timestamps require `Z` or an explicit timezone offset.
+Latency covers the client operation before its journal write, including failed operations;
+it excludes journal-write overhead and is not full workflow wall time. p95 requires at least
+20 observations. Enabled recording authenticates retained records and grows with journal size;
+collection adds local CPU/disk work even though it adds no model calls.
+
+Records are encrypted under a separate private key in `<home>/usage`, alongside a versioned
+SQLite journal. Limits are 1–365 retention days and 1–10,000 events; the database is capped at
+8 MiB, with a transient rollback journal potentially adding about another 8 MiB. Oldest events
+are evicted at capacity. Expired events are excluded from reads and removed on the next
+successful write or purge; retention is not a background deletion service. Reports expose
+retention/capacity removals and collection gaps. Short lock waits can drop observations under
+contention; fixed warnings and sticky health markers disclose failures while the original
+operation result/error is preserved. If the filesystem cannot retain a failure marker, health
+may be unknown. Symlink/reparse paths in the usage area and its ancestors are refused.
+
+`usage disable` keeps existing data available for reporting. `usage purge` explicitly deletes
+local events and their assessments, preserving settings and collection health history; it does
+not delete shared memories, queued pushes or imported source logs. Encryption protects a copied
+journal without its key, not a compromised account holding both files. File sizes/settings and
+report aggregates still reveal activity; secure deletion of historical copies is not promised.
+
+Token totals and savings remain **unknown** in an ordinary usage report. To import measured
+evidence, explicitly select a compatible frozen Colony/no-Colony manifest and native-log
+inventory using the existing `colony.product-value/1` format:
+
+```sh
+colony report compare --manifest frozen-evidence.json --logs native-logs --format json --output comparison.json
+```
+
+This reads only the selected supported logs locally and writes a metadata-only
+`colony.usage-comparison/1` summary. It does not search transcripts, retain their text, launch
+agents or accumulate duplicate imports. Input, cached input, output, gross and uncached tokens
+include learning, correction, retry and failure costs from that inventory. Missing or failed
+usage keeps complete totals/savings unknown while known subtotals remain visible. Compatible
+matched tasks, model/budget identities and externally supplied correctness/grounding reviews
+are required; hashes bind evidence, not its truth. Negative savings, unknown quality and citation
+gaps remain visible. No dollar savings, confidence-supported product benefit or production
+readiness is inferred. The historical `scripts/product_value.py` entry point and full scorecard
+format remain available; unlike the new summary, that explicit legacy output retains protocol
+text and must be handled accordingly. Historical trials are not current-version measurements.
+
 ## Capture and privacy
 
 `run` launches an explicitly provided command with `shell=False`, prints a capture notice,

@@ -1,8 +1,11 @@
 import json
 import os
 import re
+import sys
+import time
 import uuid
 from contextlib import suppress
+from functools import wraps
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -20,6 +23,112 @@ from colony.models import (
     Trail,
 )
 from colony.security import fingerprint, private_write, scrub, token, verify
+from colony.usage import UsageJournal
+
+
+def _usage_outcome(operation, result, error):
+    """Use only fixed classifications; never record payloads or exception messages."""
+    if error is not None:
+        if isinstance(error, MemoryForbidden) or (
+            isinstance(error, ValueError)
+            and error.args in (("Namespace push denied",), ("Output capture denied",))
+        ):
+            return "denied"
+        if isinstance(error, MemoryConflict):
+            return "conflict"
+        if isinstance(error, MemoryNotFound):
+            return "not_found"
+        if isinstance(error, MemoryUnavailable):
+            return "unavailable" if operation == "inspect" else "unknown"
+        if isinstance(error, httpx.HTTPStatusError):
+            return {
+                401: "denied",
+                403: "denied",
+                404: "not_found",
+                409: "conflict",
+                422: "invalid",
+            }.get(error.response.status_code, "error")
+        if isinstance(error, httpx.TransportError):
+            return "unavailable"
+        return "invalid" if isinstance(error, ValueError) else "error"
+    if not isinstance(result, dict):
+        return "unknown"
+    if operation == "lookup":
+        if result.get("reason") == "server_unavailable":
+            return "unavailable"
+        status = result.get("status")
+        if status is not None and not isinstance(status, str):
+            return "unknown"
+        if status in ("stale", "unverified"):
+            return status
+        if result.get("hit") is True:
+            match = result.get("match_kind")
+            if match not in (None, "answer", "evidence"):
+                return "unknown"
+            return "evidence" if match == "evidence" else "answer"
+        return "miss" if result.get("hit") is False else "unknown"
+    if operation in {"publish", "retry"}:
+        if result.get("queued") is True:
+            return "queued"
+        return "accepted" if result.get("stored") is True else "unknown"
+    return "accepted"
+
+
+def _observed(operation):
+    """Observe official client calls without changing their values or error behavior."""
+
+    def decorate(function):
+        @wraps(function)
+        def wrapped(self, *args, **kwargs):
+            started = time.perf_counter()
+            result, error = None, None
+            try:
+                result = function(self, *args, **kwargs)
+                return result
+            except Exception as exc:
+                error = exc
+                raise
+            finally:
+                elapsed = (time.perf_counter() - started) * 1000
+                try:
+                    observed_operation = operation
+                    logical_id = None
+                    if operation in {"publish", "retry"}:
+                        trail = args[0] if args else kwargs.get("trail")
+                        logical_id = "trail:" + trail.id if isinstance(trail, Trail) else None
+                    elif operation not in {"lookup", "inspect"}:
+                        if operation == "change":
+                            action = kwargs.get("action")
+                            if isinstance(action, str) and action in {"retract", "restore"}:
+                                observed_operation = action
+                        operation_id = kwargs.get("operation_id")
+                        if isinstance(result, dict):
+                            operation_id = result.get("operation_id", operation_id)
+                        if isinstance(error, MemoryUnavailable):
+                            operation_id = error.operation_id
+                        if isinstance(operation_id, str) and re.fullmatch(
+                            r"[a-f0-9]{32}", operation_id
+                        ):
+                            logical_id = "memory:" + operation_id
+                    self.usage.record(
+                        operation=observed_operation,
+                        outcome=_usage_outcome(observed_operation, result, error),
+                        duration_ms=elapsed,
+                        logical_id=logical_id or "request:" + uuid.uuid4().hex,
+                    )
+                except Exception:
+                    # Logging is optional and must not replace a product result/error.
+                    with suppress(Exception):
+                        self.usage.note_gap()
+                    with suppress(Exception):
+                        print(
+                            "Colony usage: collection failed; usage may be incomplete.",
+                            file=sys.stderr,
+                        )
+
+        return wrapped
+
+    return decorate
 
 
 def _memory_acknowledged(result, request: dict, *, mutation: bool) -> bool:
@@ -118,6 +227,7 @@ class Client:
         verify(self.keyfile, self.home / "issuer.pub")
         self.url = self.keyfile.grant.server.rstrip("/")
         self.headers = {"Authorization": f"Bearer {token(self.keyfile)}"}
+        self.usage = UsageJournal(self.home)
 
     @staticmethod
     def join(home: Path, keyfile: Path, issuer: Path):
@@ -159,6 +269,7 @@ class Client:
         response.raise_for_status()
         return response.json()
 
+    @_observed("lookup")
     def ask(
         self, question: str, namespace: str | None = None, *, include_evidence_files: bool = False
     ):
@@ -208,6 +319,7 @@ class Client:
             raise MemoryUnavailable(data.get("operation_id") if mutation else None) from None
         return result
 
+    @_observed("inspect")
     def memory_inspect(self, trail_id: str, namespace: str):
         return self._memory_request(
             "/memory/inspect",
@@ -216,6 +328,7 @@ class Client:
             mutation=False,
         )
 
+    @_observed("feedback")
     def memory_feedback(
         self,
         trail_id: str,
@@ -238,6 +351,7 @@ class Client:
             mutation=True,
         )
 
+    @_observed("correct")
     def memory_correct(
         self,
         trail_id: str,
@@ -266,6 +380,7 @@ class Client:
             mutation=True,
         )
 
+    @_observed("change")
     def memory_change(
         self,
         trail_id: str,
@@ -304,6 +419,7 @@ class Client:
                     source[field] = scrub(source[field])
         return Trail.model_validate(data)
 
+    @_observed("publish")
     def push(self, trail: Trail):
         trail = self.sanitized(trail)
         try:
@@ -334,6 +450,10 @@ class Client:
                 raise ValueError("Queued trail ID conflict") from None
             return {"id": trail.id, "stored": False, "queued": True}
 
+    @_observed("retry")
+    def _retry_request(self, trail: Trail):
+        return self.request("/trails", trail.model_dump())
+
     def retry(self):
         sent = 0
         for path in sorted((self.home / "queue").glob("*.enc")):
@@ -344,7 +464,7 @@ class Client:
                 raise ValueError("Queued trail belongs to another identity")
             trail = self.sanitized(Trail.model_validate(payload["trail"]))
             try:
-                self.request("/trails", trail.model_dump())
+                self._retry_request(trail)
             except httpx.TransportError:
                 return {"sent": sent, "pending": True}
             path.unlink()
