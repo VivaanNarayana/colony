@@ -1,5 +1,7 @@
 import hashlib
+import hmac
 import json
+import re
 import sqlite3
 import time
 from contextlib import contextmanager
@@ -9,7 +11,27 @@ import sqlite_vec
 from cryptography.fernet import Fernet
 
 from colony.context import excerpts, source_chunks
-from colony.models import Grant, Keyfile, Source, Trail
+from colony.memory import (
+    MemoryConflict,
+    MemoryForbidden,
+    MemoryInvalid,
+    MemoryNotFound,
+    derive_operation_mac_key,
+    operation_hash,
+    replacement_id,
+    sanitize_memory,
+    source_inspection_view,
+    wrap_operation_digest,
+)
+from colony.models import (
+    Grant,
+    Keyfile,
+    MemoryChange,
+    MemoryCorrection,
+    MemoryFeedback,
+    Source,
+    Trail,
+)
 from colony.retrieval import (
     CANDIDATES,
     embed,
@@ -24,7 +46,7 @@ from colony.retrieval import (
     rank,
     requires_procedure,
 )
-from colony.security import fingerprint, private_write
+from colony.security import fingerprint, private_write, scrub
 from colony.validation import validate
 
 SCHEMA = """
@@ -56,6 +78,27 @@ CREATE TABLE IF NOT EXISTS source_chunks (
 CREATE VIRTUAL TABLE IF NOT EXISTS source_vectors USING vec0(embedding float[384]);
 """
 
+MEMORY_SCHEMA_V1 = (
+    """CREATE TABLE IF NOT EXISTS memory_state_v1 (
+    trail_id TEXT PRIMARY KEY, state TEXT NOT NULL
+      CHECK(state IN ('active','retracted','superseded')),
+    revision INTEGER NOT NULL CHECK(revision>=0), replacement_id TEXT)""",
+    """CREATE TABLE IF NOT EXISTS memory_feedback_v1 (
+    trail_id TEXT NOT NULL, member_id TEXT NOT NULL,
+    verdict TEXT NOT NULL CHECK(verdict IN ('helpful','incorrect','outdated')),
+    note BLOB NOT NULL, updated_at REAL NOT NULL, PRIMARY KEY(trail_id,member_id))""",
+    """CREATE TABLE IF NOT EXISTS memory_history_v1 (
+    id INTEGER PRIMARY KEY, trail_id TEXT NOT NULL, action TEXT NOT NULL,
+    actor_id TEXT NOT NULL, created_at REAL NOT NULL, note BLOB NOT NULL,
+    operation_id TEXT NOT NULL, verdict TEXT)""",
+    """CREATE INDEX IF NOT EXISTS memory_history_trail_v1
+    ON memory_history_v1(trail_id,id DESC)""",
+    """CREATE TABLE IF NOT EXISTS memory_operations_v1 (
+    operation_id TEXT PRIMARY KEY, trail_id TEXT NOT NULL, namespace TEXT NOT NULL,
+    actor_id TEXT NOT NULL, request_hash TEXT NOT NULL, result_json TEXT NOT NULL,
+    created_at REAL NOT NULL)""",
+)
+
 
 class Store:
     def __init__(self, directory: Path, repo: Path):
@@ -68,10 +111,56 @@ class Store:
         key_path = directory / "storage.key"
         if not key_path.exists():
             private_write(key_path, Fernet.generate_key())
-        self.cipher = Fernet(key_path.read_bytes())
+        storage_key = key_path.read_bytes()
+        self.cipher = Fernet(storage_key)
+        self._operation_mac_key = derive_operation_mac_key(storage_key)
         with self.connect() as db:
             db.executescript(SCHEMA)
+            self.migrate_memory(db)
+        with self.connect() as db:
             self.reindex(db)
+
+    def migrate_memory(self, db):
+        """Atomically upgrade verifiers; never retain a plaintext-note digest oracle."""
+        db.execute("BEGIN IMMEDIATE")
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS memory_schema "
+            "(singleton INTEGER PRIMARY KEY CHECK(singleton=1), version INTEGER NOT NULL)"
+        )
+        version = db.execute("SELECT version FROM memory_schema WHERE singleton=1").fetchone()
+        if version is not None:
+            if version[0] == 2:
+                return
+            if version[0] != 1:
+                raise MemoryInvalid()
+            # The v1 canonical digest can be wrapped directly: old requests do not
+            # need to be reconstructed or their encrypted notes decrypted.
+            operations = db.execute(
+                "SELECT operation_id,request_hash FROM memory_operations_v1 ORDER BY operation_id"
+            ).fetchall()
+            wrapped = [
+                (
+                    wrap_operation_digest(row["request_hash"], key=self._operation_mac_key),
+                    row["operation_id"],
+                )
+                for row in operations
+            ]
+            db.executemany(
+                "UPDATE memory_operations_v1 SET request_hash=? WHERE operation_id=?", wrapped
+            )
+            db.execute("UPDATE memory_schema SET version=2 WHERE singleton=1")
+            return
+        for statement in MEMORY_SCHEMA_V1:
+            db.execute(statement)
+        if db.execute("SELECT 1 FROM memory_operations_v1 LIMIT 1").fetchone():
+            # Existing verifiers without version metadata cannot safely be identified
+            # as keyed or unkeyed. Refuse instead of accepting an unsafe fallback.
+            raise MemoryInvalid()
+        db.execute(
+            "INSERT OR IGNORE INTO memory_state_v1(trail_id,state,revision,replacement_id) "
+            "SELECT id,'active',0,NULL FROM trails"
+        )
+        db.execute("INSERT INTO memory_schema(singleton,version) VALUES (1,2)")
 
     def read_content(self, ref: str) -> str:
         return self.cipher.decrypt((self.blobs / ref).read_bytes()).decode()
@@ -83,7 +172,10 @@ class Store:
         active_version = index_version()
         if version is not None and version[0] == active_version:
             return
-        rows = db.execute("SELECT rowid,id,question,content_ref FROM trails").fetchall()
+        rows = db.execute(
+            "SELECT t.rowid,t.id,t.question,t.content_ref FROM trails t "
+            "JOIN memory_state_v1 m ON m.trail_id=t.id WHERE m.state='active'"
+        ).fetchall()
         vectors = [
             (r["rowid"], embed(passage(r["question"], self.read_content(r["content_ref"]))))
             for r in rows
@@ -153,57 +245,296 @@ class Store:
             )
 
     def push(self, trail: Trail, grant: Grant):
-        payload_hash = hashlib.sha256(trail.model_dump_json().encode()).hexdigest()
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            previous = db.execute("SELECT * FROM trails WHERE id=?", (trail.id,)).fetchone()
-            if previous:
-                if (
-                    previous["producer_id"] != grant.member_id
-                    or previous["payload_hash"] != payload_hash
-                ):
-                    raise ValueError("Trail ID already belongs to a different payload")
-                return {"id": trail.id, "stored": True, "duplicate": True}
-            ref = f"{trail.id}.enc"
-            # An orphan blob after an interrupted transaction is safe to overwrite.
-            (self.blobs / ref).write_bytes(self.cipher.encrypt(trail.content.encode()))
-            cursor = db.execute(
-                """INSERT INTO trails VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            return self._push(db, trail, grant)
+
+    def _push(self, db, trail: Trail, grant: Grant):
+        """Insert into the caller's transaction; duplicates never alter lifecycle state."""
+        payload_hash = hashlib.sha256(trail.model_dump_json().encode()).hexdigest()
+        previous = db.execute("SELECT * FROM trails WHERE id=?", (trail.id,)).fetchone()
+        if previous:
+            if (
+                previous["producer_id"] != grant.member_id
+                or previous["payload_hash"] != payload_hash
+            ):
+                raise ValueError("Trail ID already belongs to a different payload")
+            return {"id": trail.id, "stored": True, "duplicate": True}
+        ref = f"{trail.id}.enc"
+        # An orphan encrypted blob after an interrupted transaction can be overwritten.
+        (self.blobs / ref).write_bytes(self.cipher.encrypt(trail.content.encode()))
+        cursor = db.execute(
+            """INSERT INTO trails VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (
+                trail.id,
+                trail.namespace,
+                trail.question,
+                ref,
+                grant.member_id,
+                trail.tainted,
+                "unverified",
+                time.time(),
+                None,
+                payload_hash,
+            ),
+        )
+        db.execute("INSERT INTO memory_state_v1 VALUES (?,'active',0,NULL)", (trail.id,))
+        db.execute(
+            "INSERT INTO trail_vectors(rowid,embedding) VALUES (?,?)",
+            (cursor.lastrowid, embed(passage(trail.question, trail.content))),
+        )
+        db.execute(
+            "INSERT INTO trail_questions(rowid,embedding) VALUES (?,?)",
+            (cursor.lastrowid, embed(trail.question, query=True)),
+        )
+        db.executemany(
+            "INSERT INTO trail_sources VALUES (?,?,?,?,?,?)",
+            [
+                (trail.id, s.kind, s.ref, s.content_hash, s.symbol, s.contains)
+                for s in trail.sources
+            ],
+        )
+        self.index_sources(db, trail.id, trail.sources)
+        if trail.capture == "outputs":
+            db.execute(
+                "INSERT INTO captures(member_id,run_id,blob_ref,created_at) VALUES(?,?,?,?)",
+                (grant.member_id, trail.id, ref, time.time()),
+            )
+        return {"id": trail.id, "stored": True, "duplicate": False}
+
+    @staticmethod
+    def memory_metadata(db, trail_id):
+        row = db.execute(
+            "SELECT state,revision,replacement_id FROM memory_state_v1 WHERE trail_id=?",
+            (trail_id,),
+        ).fetchone()
+        if row is None:
+            raise MemoryInvalid()
+        feedback = {"helpful": 0, "incorrect": 0, "outdated": 0}
+        for rating in db.execute(
+            "SELECT verdict,count(*) AS total FROM memory_feedback_v1 "
+            "WHERE trail_id=? GROUP BY verdict",
+            (trail_id,),
+        ):
+            feedback[rating["verdict"]] = rating["total"]
+        return {**dict(row), "feedback": feedback}
+
+    @staticmethod
+    def _memory_target(db, trail_id, namespace, grant, *, mutate=False, owner=False):
+        if not isinstance(trail_id, str) or not re.fullmatch(r"[a-f0-9]{32}", trail_id):
+            raise MemoryNotFound()
+        if not any(s.namespace == namespace and s.pull for s in grant.scopes):
+            raise MemoryNotFound()
+        row = db.execute(
+            "SELECT * FROM trails WHERE id=? AND namespace=?", (trail_id, namespace)
+        ).fetchone()
+        if row is None:
+            raise MemoryNotFound()
+        if mutate and not any(s.namespace == namespace and s.push for s in grant.scopes):
+            raise MemoryForbidden()
+        if owner and row["producer_id"] != grant.member_id:
+            raise MemoryForbidden()
+        return row
+
+    def inspect_memory(self, trail_id: str, namespace: str, grant: Grant):
+        with self.connect() as db:
+            row = self._memory_target(db, trail_id, namespace, grant)
+            question = scrub(row["question"])
+            content = scrub(self.read_content(row["content_ref"]))
+            history = []
+            for event in db.execute(
+                "SELECT action,actor_id,created_at,note,operation_id,verdict "
+                "FROM memory_history_v1 WHERE trail_id=? ORDER BY id DESC LIMIT 20",
+                (trail_id,),
+            ):
+                item = dict(event)
+                item["note"] = scrub(self.cipher.decrypt(item["note"]).decode())
+                if item["verdict"] is None:
+                    del item["verdict"]
+                history.append(item)
+            result = {
+                "id": trail_id,
+                "namespace": namespace,
+                "producer_id": row["producer_id"],
+                "question": question[:2000],
+                "content": content[:4000],
+                "content_truncated": len(content) > 4000,
+                "sources": [source_inspection_view(s) for s in self.sources(db, trail_id)],
+                "memory": self.memory_metadata(db, trail_id),
+                "history": history,
+            }
+            if len(question) > 2000:
+                result["question_truncated"] = True
+            return result
+
+    def _memory_replay(self, db, request, grant, kind):
+        digest = operation_hash(request, grant, kind, key=self._operation_mac_key)
+        previous = db.execute(
+            "SELECT request_hash,result_json FROM memory_operations_v1 WHERE operation_id=?",
+            (request.operation_id,),
+        ).fetchone()
+        if previous is None:
+            return digest, None
+        verifier = previous["request_hash"]
+        if not isinstance(verifier, str) or not re.fullmatch(r"[a-f0-9]{64}", verifier):
+            raise MemoryInvalid()
+        if not hmac.compare_digest(verifier, digest):
+            raise MemoryConflict()
+        result = json.loads(previous["result_json"])
+        result["memory"] = self.memory_metadata(db, request.trail_id)
+        result["replayed"] = True
+        return digest, result
+
+    def _memory_audit(self, db, request, grant, kind):
+        db.execute(
+            "INSERT INTO memory_history_v1"
+            "(trail_id,action,actor_id,created_at,note,operation_id,verdict) VALUES (?,?,?,?,?,?,?)",
+            (
+                request.trail_id,
+                kind,
+                grant.member_id,
+                time.time(),
+                self.cipher.encrypt(scrub(request.note).encode()),
+                request.operation_id,
+                request.verdict if isinstance(request, MemoryFeedback) else None,
+            ),
+        )
+
+    def _memory_result(self, db, request, grant, digest, **extra):
+        result = {
+            "operation_id": request.operation_id,
+            "id": request.trail_id,
+            "memory": self.memory_metadata(db, request.trail_id),
+            "replayed": False,
+            **extra,
+        }
+        db.execute(
+            "INSERT INTO memory_operations_v1 VALUES (?,?,?,?,?,?,?)",
+            (
+                request.operation_id,
+                request.trail_id,
+                request.namespace,
+                grant.member_id,
+                digest,
+                json.dumps(result, separators=(",", ":")),
+                time.time(),
+            ),
+        )
+        return result
+
+    def _restore_memory_index(self, db, row):
+        """Explicit restoration rebuilds vectors a prior index migration may have removed."""
+        rowid = db.execute("SELECT rowid FROM trails WHERE id=?", (row["id"],)).fetchone()[0]
+        content = self.read_content(row["content_ref"])
+        for table, vector in (
+            ("trail_vectors", embed(passage(row["question"], content))),
+            ("trail_questions", embed(row["question"], query=True)),
+        ):
+            db.execute(f"DELETE FROM {table} WHERE rowid=?", (rowid,))
+            db.execute(f"INSERT INTO {table}(rowid,embedding) VALUES (?,?)", (rowid, vector))
+        chunks = db.execute(
+            "SELECT id FROM source_chunks WHERE trail_id=?", (row["id"],)
+        ).fetchall()
+        db.executemany("DELETE FROM source_vectors WHERE rowid=?", [(c[0],) for c in chunks])
+        db.execute("DELETE FROM source_chunks WHERE trail_id=?", (row["id"],))
+        self.index_sources(db, row["id"], self.sources(db, row["id"]))
+
+    def feedback_memory(self, request: MemoryFeedback, grant: Grant):
+        request = sanitize_memory(request)
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self._memory_target(db, request.trail_id, request.namespace, grant, mutate=True)
+            digest, replay = self._memory_replay(db, request, grant, "feedback")
+            if replay is not None:
+                return replay
+            db.execute(
+                "INSERT INTO memory_feedback_v1 VALUES (?,?,?,?,?) "
+                "ON CONFLICT(trail_id,member_id) DO UPDATE SET verdict=excluded.verdict,"
+                "note=excluded.note,updated_at=excluded.updated_at",
                 (
-                    trail.id,
-                    trail.namespace,
-                    trail.question,
-                    ref,
+                    request.trail_id,
                     grant.member_id,
-                    trail.tainted,
-                    "unverified",
+                    request.verdict,
+                    self.cipher.encrypt(request.note.encode()),
                     time.time(),
-                    None,
-                    payload_hash,
                 ),
             )
-            db.execute(
-                "INSERT INTO trail_vectors(rowid,embedding) VALUES (?,?)",
-                (cursor.lastrowid, embed(passage(trail.question, trail.content))),
+            self._memory_audit(db, request, grant, "feedback")
+            return self._memory_result(db, request, grant, digest, verdict=request.verdict)
+
+    def correct_memory(self, request: MemoryCorrection, grant: Grant):
+        request = sanitize_memory(request)
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self._memory_target(
+                db, request.trail_id, request.namespace, grant, mutate=True, owner=True
             )
-            db.execute(
-                "INSERT INTO trail_questions(rowid,embedding) VALUES (?,?)",
-                (cursor.lastrowid, embed(trail.question, query=True)),
+            digest, replay = self._memory_replay(db, request, grant, "correct")
+            if replay is not None:
+                return replay
+            memory = self.memory_metadata(db, request.trail_id)
+            if memory["state"] != "active" or memory["revision"] != request.expected_revision:
+                raise MemoryConflict()
+            if (
+                any(s.kind != "file" for s in request.sources)
+                or validate(self.repo, request.sources)[0] != "validated"
+            ):
+                raise MemoryInvalid()
+            new_id = replacement_id(request, grant)
+            if db.execute("SELECT 1 FROM trails WHERE id=?", (new_id,)).fetchone():
+                raise MemoryConflict()
+            self._push(
+                db,
+                Trail(
+                    id=new_id,
+                    namespace=request.namespace,
+                    question=request.question,
+                    content=request.content,
+                    sources=request.sources,
+                    tainted=True,
+                    capture="none",
+                ),
+                grant,
             )
-            db.executemany(
-                "INSERT INTO trail_sources VALUES (?,?,?,?,?,?)",
-                [
-                    (trail.id, s.kind, s.ref, s.content_hash, s.symbol, s.contains)
-                    for s in trail.sources
-                ],
+            # Indexing may be slow; refuse a changed checkout rather than commit stale evidence.
+            if validate(self.repo, request.sources)[0] != "validated":
+                raise MemoryInvalid()
+            updated = db.execute(
+                "UPDATE memory_state_v1 SET state='superseded',revision=revision+1,replacement_id=? "
+                "WHERE trail_id=? AND state='active' AND revision=?",
+                (new_id, request.trail_id, request.expected_revision),
             )
-            self.index_sources(db, trail.id, trail.sources)
-            if trail.capture == "outputs":
-                db.execute(
-                    "INSERT INTO captures(member_id,run_id,blob_ref,created_at) VALUES(?,?,?,?)",
-                    (grant.member_id, trail.id, ref, time.time()),
-                )
-        return {"id": trail.id, "stored": True, "duplicate": False}
+            if updated.rowcount != 1:
+                raise MemoryConflict()
+            self._memory_audit(db, request, grant, "correct")
+            return self._memory_result(db, request, grant, digest, replacement_id=new_id)
+
+    def change_memory(self, request: MemoryChange, grant: Grant):
+        request = sanitize_memory(request)
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = self._memory_target(
+                db, request.trail_id, request.namespace, grant, mutate=True, owner=True
+            )
+            digest, replay = self._memory_replay(db, request, grant, "change")
+            if replay is not None:
+                return replay
+            memory = self.memory_metadata(db, request.trail_id)
+            required = "active" if request.action == "retract" else "retracted"
+            if memory["state"] != required or memory["revision"] != request.expected_revision:
+                raise MemoryConflict()
+            if request.action == "restore":
+                self._restore_memory_index(db, row)
+            new_state = "retracted" if request.action == "retract" else "active"
+            updated = db.execute(
+                "UPDATE memory_state_v1 SET state=?,revision=revision+1 "
+                "WHERE trail_id=? AND state=? AND revision=?",
+                (new_state, request.trail_id, required, request.expected_revision),
+            )
+            if updated.rowcount != 1:
+                raise MemoryConflict()
+            self._memory_audit(db, request, grant, request.action)
+            return self._memory_result(db, request, grant, digest, action=request.action)
 
     def ask(
         self,
@@ -235,7 +566,8 @@ class Store:
                 vec_distance_cosine(v.embedding, ?) AS distance
                 FROM source_chunks c JOIN source_vectors v ON c.id=v.rowid
                 JOIN trails t ON c.trail_id=t.id
-                WHERE t.namespace IN ({placeholders}) AND t.created_at>=?
+                JOIN memory_state_v1 m ON m.trail_id=t.id
+                WHERE m.state='active' AND t.namespace IN ({placeholders}) AND t.created_at>=?
                 ORDER BY distance, t.created_at DESC""",
                 [embed(question, query=True), *namespaces, time.time() - max_age],
             ).fetchall()
@@ -288,12 +620,17 @@ class Store:
                 key=lambda item: item[1],
                 reverse=True,
             )
+            # A candidate can be retired during reranking. Serialize the final state
+            # check with lifecycle writes before validating/returning current evidence.
+            db.execute("BEGIN IMMEDIATE")
             checked = set()
             for linked, relevance in ordered:
                 for row in linked:
                     if row["id"] in checked:
                         continue
                     checked.add(row["id"])
+                    if self.memory_metadata(db, row["id"])["state"] != "active":
+                        continue
                     sources = self.sources(db, row["id"])
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
@@ -338,6 +675,7 @@ class Store:
                     "status": status,
                     "age_flag": False,
                     "tainted": bool(row["tainted"]),
+                    "memory": self.memory_metadata(db, row["id"]),
                     "score": round(1 - row["distance"], 4),
                     "relevance": round(relevance, 4),
                     "checks": checks,
@@ -376,7 +714,9 @@ class Store:
                 vec_distance_cosine(q.embedding, ?) AS question_distance
                 FROM trails t JOIN trail_vectors v ON t.rowid=v.rowid
                 JOIN trail_questions q ON t.rowid=q.rowid
-                WHERE t.namespace IN ({placeholders}) ORDER BY distance, t.created_at DESC LIMIT ?""",
+                JOIN memory_state_v1 m ON m.trail_id=t.id
+                WHERE m.state='active' AND t.namespace IN ({placeholders})
+                ORDER BY distance, t.created_at DESC LIMIT ?""",
                 [vector, vector, vector, *namespaces, CANDIDATES],
             ).fetchall()
             rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
@@ -414,8 +754,13 @@ class Store:
             ]
             if not candidates:
                 return {"hit": False, "reason": "no_relevant_trail"}
+            # Rank outside the write lock, but never return a candidate retired while
+            # rank was running. This also makes the attached metadata consistent.
+            db.execute("BEGIN IMMEDIATE")
             fallback = None
             for row, content, relevance, _ in candidates:
+                if self.memory_metadata(db, row["id"])["state"] != "active":
+                    continue
                 sources = [
                     Source(**dict(s))
                     for s in db.execute(
@@ -442,6 +787,8 @@ class Store:
                 if status == "validated":
                     break
             else:
+                if fallback is None:
+                    return {"hit": False, "reason": "no_relevant_trail"}
                 row, content, relevance, sources, status, checks, old = fallback
             return {
                 "hit": True,
@@ -453,6 +800,7 @@ class Store:
                 "status": status,
                 "age_flag": old,
                 "tainted": bool(row["tainted"]),
+                "memory": self.memory_metadata(db, row["id"]),
                 "score": round(1 - row["distance"], 4),
                 "relevance": round(relevance, 4),
                 "checks": checks,

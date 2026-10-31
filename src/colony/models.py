@@ -50,3 +50,30 @@ class Ask(Model):
     question: str = Field(min_length=1, max_length=2000)
     namespace: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
     include_evidence_files: bool = False
+
+
+class MemoryInspect(Model):
+    namespace: str = Field(pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
+    trail_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+
+
+class MemoryFeedback(MemoryInspect):
+    operation_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    verdict: Literal["helpful", "incorrect", "outdated"]
+    note: str = Field(default="", max_length=1000)
+
+
+class MemoryCorrection(MemoryInspect):
+    operation_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    expected_revision: int = Field(ge=0)
+    question: str = Field(min_length=1, max_length=2000)
+    content: str = Field(min_length=1, max_length=4000)
+    sources: list[Source] = Field(min_length=1, max_length=50)
+    note: str = Field(default="", max_length=1000)
+
+
+class MemoryChange(MemoryInspect):
+    operation_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    expected_revision: int = Field(ge=0)
+    action: Literal["retract", "restore"]
+    note: str = Field(default="", max_length=1000)

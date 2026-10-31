@@ -12,7 +12,8 @@ import httpx
 import uvicorn
 
 from colony.capture import scrubbed_tail
-from colony.client import Client
+from colony.client import Client, MemoryUnavailable
+from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import Grant, Scope, Trail
 from colony.security import generate_keys, issue, private_write
 from colony.validation import snapshot
@@ -98,6 +99,27 @@ def parser():
         command.add_argument("--repo", type=Path, required=True)
         if action == "uninstall":
             command.add_argument("--dry-run", action="store_true")
+    memory = sub.add_parser(
+        "memory", help="Explicit inspection, feedback, and authored corrections"
+    )
+    operations = memory.add_subparsers(dest="memory_action", required=True)
+    for action in ("inspect", "feedback", "correct", "retract", "restore"):
+        operation = operations.add_parser(action)
+        operation.add_argument("id")
+        operation.add_argument("--ns", required=True)
+        if action != "inspect":
+            operation.add_argument("--note", default="")
+            operation.add_argument("--operation-id")
+        if action == "feedback":
+            operation.add_argument(
+                "--verdict", required=True, help="helpful, incorrect, or outdated"
+            )
+        if action in {"correct", "retract", "restore"}:
+            operation.add_argument("--expected-revision", required=True)
+        if action == "correct":
+            operation.add_argument("file", type=Path)
+            operation.add_argument("--repo", type=Path, default=Path.cwd())
+            operation.add_argument("--source", action="append", default=[])
     return p
 
 
@@ -156,6 +178,47 @@ def execute(args):
             read_only=getattr(args, "read_only", False),
         )
     client = Client(args.home)
+    if args.command == "memory":
+        if args.memory_action == "inspect":
+            return client.memory_inspect(args.id, args.ns)
+        options = {"note": args.note, "operation_id": args.operation_id}
+        if args.memory_action == "feedback":
+            return client.memory_feedback(args.id, args.ns, verdict=args.verdict, **options)
+        try:
+            revision = int(args.expected_revision)
+        except (TypeError, ValueError):
+            raise MemoryInvalid() from None
+        if args.memory_action == "correct":
+            try:
+                data = json.loads(args.file.read_text(encoding="utf-8"))
+                if not isinstance(data, dict) or set(data) - {"question", "content", "sources"}:
+                    raise ValueError
+                sources = data.get("sources", [])
+                if not isinstance(sources, list):
+                    raise ValueError
+                sources = [
+                    *sources,
+                    *(snapshot(args.repo, ref).model_dump() for ref in args.source),
+                ]
+                question, content = data["question"], data["content"]
+            except (KeyError, TypeError, ValueError):
+                raise MemoryInvalid() from None
+            return client.memory_correct(
+                args.id,
+                args.ns,
+                expected_revision=revision,
+                question=question,
+                content=content,
+                sources=sources,
+                **options,
+            )
+        return client.memory_change(
+            args.id,
+            args.ns,
+            expected_revision=revision,
+            action=args.memory_action,
+            **options,
+        )
     if args.command == "ask":
         return client.ask(args.question, args.ns, include_evidence_files=args.evidence_files)
     if args.command == "retry":
@@ -216,7 +279,11 @@ def main():
             print(json.dumps(result, indent=2))
     except (ValueError, OSError, httpx.HTTPError) as exc:
         # Never echo exception text that could contain bearer credentials or request bodies.
-        if args.command == "setup" and isinstance(exc, ValueError):
+        if args.command == "memory" and isinstance(
+            exc, (MemoryUnavailable, MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound)
+        ):
+            print(f"Colony memory: {exc}", file=sys.stderr)
+        elif args.command == "setup" and isinstance(exc, ValueError):
             # Setup normalizes config/parser/identity failures to fixed, safe messages.
             print(f"Colony setup: {exc}", file=sys.stderr)
         else:

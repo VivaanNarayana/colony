@@ -25,7 +25,14 @@ WORKFLOW_GUIDANCE = (
     "transcripts, environment or tool traces. Keep findings within 4,000 characters. "
     "Exact duplicates do not refresh age; manual publication is required to reaffirm an identical "
     "aged finding. Continue the user's task if Colony is unavailable; queued pushes use explicit "
-    "colony retry. Do not run lookups for greetings, progress updates or every low-level tool call."
+    "colony retry. Feedback reports are unverified opinions, separate from file validation: "
+    "check flagged answers against current evidence. When the user explicitly requests a memory "
+    "correction or retraction, use the dedicated memory tools and the inspected lifecycle "
+    "revision; do not replace history with an unrelated push. Reuse source hashes already "
+    "obtained during research. A timed-out memory operation has an unknown outcome: retain "
+    "its operation ID for explicit replay or inspect current state before proceeding. Never "
+    "republish to restore a retired memory. Do not run lookups for greetings, progress updates "
+    "or every low-level tool call."
 )
 
 

@@ -165,7 +165,9 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
         ):
             await session.initialize()
             tools = await session.list_tools()
-            assert {t.name for t in tools.tools} == {"ask", "push"}
+            assert {t.name for t in tools.tools} == {
+                "ask", "push", "memory_inspect", "memory_feedback", "memory_correct", "memory_change"
+            }
             push_schema = next(t.inputSchema for t in tools.tools if t.name == "push")
             assert set(push_schema["$defs"]["FileEvidence"]["properties"]) == {
                 "ref",
