@@ -220,10 +220,9 @@ Deferred: SSO, revocation, multi-tenancy, public sharing, hosted deployment, adm
 docs/tests/web validators, automatic proxy integration,
 retention/GC, and background retries. Keyfiles expire; replacing a keyfile does not revoke
 the old one. Per-host storage can grow, including validation history and interrupted-write
-orphan blobs. Historical [GPT-6 Luna low regression measurements](docs/results/luna-low/README.md)
-predate the stricter [benchmark independence audit](docs/benchmark-audit.md).
-They do not establish current strict savings or production benefits; their original
-outcomes remain preserved.
+orphan blobs. The [GPT-6 Luna low regression benchmark](docs/results/luna-low/README.md)
+measured 7.9% net token savings with 24/24 correct answers in both arms; production
+savings remain unproven, and task wall time was slower.
 
 ## Verification and evaluation
 

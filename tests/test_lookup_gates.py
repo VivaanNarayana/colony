@@ -21,15 +21,7 @@ def test_one_regression_blocks_even_when_other_metrics_improve(monkeypatch, metr
     monkeypatch.syspath_prepend(str(Path(__file__).parents[1] / "scripts"))
     from analyze_lookup_live import evaluate_gates
 
-    main = {
-        "tokens": 100,
-        "uncached_input_plus_output": 100,
-        "seconds": 100,
-        "correct": 24,
-        "tasks": 24,
-        "valid_citations": 24,
-        "protocol_violations": 0,
-    }
+    main = {"tokens": 100, "uncached_input_plus_output": 100, "seconds": 100, "correct": 24}
     feature = {
         **main,
         "tokens": 90,
@@ -41,16 +33,9 @@ def test_one_regression_blocks_even_when_other_metrics_improve(monkeypatch, metr
     gates = evaluate_gates(
         main,
         feature,
-        {
-            "schema_version": 2,
-            "implementation_isolated": True,
-            "quality_passed": True,
-            "lookup_improves": True,
-            "same_implementation": False,
-        },
+        {"lookup_time_reduction": 0.7},
         {"tests_passed": 90, "tests_failed": 0, "ruff_passed": True},
         True,
-        {key: [0.01, 0.2] for key in ["tokens", "seconds", "uncached_input_plus_output"]},
     )
     assert len(gates) == 8
     assert [name for name, passed in gates.items() if not passed] == [gate]
@@ -68,7 +53,7 @@ def test_failed_analysis_retains_report_and_fails_command(monkeypatch, tmp_path)
         "all_gates_passed": False,
         "blocking_gates": ["observed_uncached_input_plus_output_improve"],
     }
-    monkeypatch.setattr(analyzer, "compare", lambda *args, **kwargs: report)
+    monkeypatch.setattr(analyzer, "compare", lambda *args: report)
     monkeypatch.setattr(sys, "argv", ["analyze", "--results", str(tmp_path), "--local", str(local)])
     with pytest.raises(SystemExit) as error:
         analyzer.main()
