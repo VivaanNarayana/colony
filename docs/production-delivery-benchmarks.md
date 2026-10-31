@@ -1,0 +1,157 @@
+# Production delivery benchmark contract, version 1
+
+This benchmark-only addition runs over the restored **PR1 MVP**
+`202745a92f6c6c59e4c990321be9c5112697594e`. Application files under `src/colony/`
+and `pyproject.toml` remain identical to that revision. The rollback itself is
+separate, on `revert/restore-pr1-mvp`; this branch is stacked on it.
+
+The contract identifier is `colony.production-delivery/1`. It does **not** replace,
+publish, waive or reinterpret the eight historical required checks. GitHub rules
+are unchanged. Neither draft has an eight-gate acceptance or merge-readiness claim.
+An owner must separately review any future change to delivery policy.
+
+## Implemented coverage and boundaries
+
+| Implemented component | What it establishes | What it does not establish |
+|---|---|---|
+| Six tasks across three synthetic configuration repositories | New source-derived development facts, separate from the old Colony setup questions | Real traffic distribution, held-out repositories or natural-language correctness |
+| Frozen Git source exports and fresh offline workers | Actual implementation hashes/module paths; independent disposable arm histories | Provider prompts or unobservable client billing |
+| Empty miss, sourced push, repeated hit, namespace isolation, changed-file fallback | Direct Store contracts against an independent JSON source oracle | Agent tool obedience or HTTP authentication (covered separately by product tests) |
+| Restart and SQLite backup API plus encrypted payload/key restoration | Recovery on disposable fixture state | Permission to open/migrate a user's real store |
+| 0/1/4/12 reranked passages, 64/512/4000-character inputs, duplicates/mixed lengths | Explicit passage counts and lengths, original order and finite score observations | Real usage frequencies, score equivalence or threshold quality from timing alone |
+| Fresh-process model loading, Store initialization, push/index, warm calls, 1/2/4 local clients | Local operation/process times, CPU and process lifetime peak RSS | Agent workflow time, network provisioning time or production capacity |
+| Raw observations, configuration hashes, complete-case replay and corruption tests | Missing/duplicate/altered evidence and inconsistent labels are rejected | Cryptographic attestation against a malicious host or reviewer |
+| Source/citation utilities accepting real Markdown heading anchors | Actual in-repository paths, hashes, supported line/heading coordinates | Proof that arbitrary prose is true merely because a citation exists |
+
+No result has been collected by introducing these commands. Provider-free tests
+exercise controls and fake observations; their durations are not benchmark data.
+The existing MVP suite separately covers real CLI, HTTP and MCP, signed permissions,
+secret scrubbing/capture, changed evidence and offline retry. Fresh build/install
+checks are reported in the PR; historical results are never inherited.
+
+The synthetic task oracle evaluates **structured JSON fixture facts** retrieved
+from authored trails. It checks the source independently, the exact field/type/value,
+fingerprints, taint and untrusted provenance. It cannot grade arbitrary model prose.
+Future live workflow evaluation needs independent fact/citation review, frozen before
+performance analysis. These public fixtures must not be called held-out production data.
+
+## Freeze and collect (not automatic checks)
+
+Only start collection when a bounded local experiment is explicitly intended.
+The default comparison is fixed PR1 versus PR1, an A/A diagnostic. A candidate
+comparison uses the same fixed baseline and identical cases. **Colony versus no
+Colony is a separate, currently unimplemented live study**; these local results
+cannot answer whether enabling Colony helps a coding agent.
+
+Commit the harness and set the existing provisioned model directories; there is
+no download fallback. Freeze pins all files in both model directories, implementation
+exports, fixtures, scripts, Python/platform/package metadata and case order:
+
+Only the harness repository is supported; alternate `--repo` clones are rejected
+before freezing or collection. Both pinned revisions must exist in its Git history.
+The collector and workers verify the frozen Python/platform/package environment;
+workers verify pinned model files before and after their operations.
+
+```sh
+python scripts/production_delivery.py freeze --candidate <commit> --output <new-plan.json>
+python scripts/production_delivery.py run-local --plan <new-plan.json> --output <new-private-output>
+```
+
+Required environment variables: `COLONY_EMBED_MODEL_DIR` and `COLONY_RANK_MODEL_DIR`,
+each pointing to an existing local ONNX snapshot. The worker sets Hugging Face and
+Transformers offline modes and blocks socket connections. It never invokes an agent,
+provider SDK, Codex executable, browser or billing endpoint.
+
+The output must be a **new** directory. There is no resume, overwrite, selective
+task retry or automatic cleanup. `PRIVATE-runtime/` contains disposable stores and
+encryption keys: do not publish or commit it. Source/fixture copies never point
+at a production database. The source archive and artifact traversal reject links.
+
+Limits are 600 seconds for the whole collection, 1 GiB of new artifacts/private
+runtime, at least 5 GiB remaining free space and at most four local clients.
+The parent monitors the worker and stops on a ceiling; partial observations,
+stdout/stderr and the incomplete execution record remain. A ceiling is an
+operational safeguard, not a latency SLO or proof of adequate statistical power.
+No other project, global temp folder or existing trial is pruned to make room.
+
+The `report` command audits an existing complete execution and refuses partial
+collections, modified source/fixture/harness bytes, duplicate/missing cases,
+changed questions/namespaces, invalid timings and labels inconsistent with raw
+source evidence. Existing summaries are never overwritten; an error is nonzero,
+not permission to reuse an earlier summary as a new verdict.
+
+```sh
+python scripts/production_delivery.py report --plan <plan.json> --output <private-output> --report-file <new-report.json>
+```
+
+Reported warm percentiles describe the **equal-weight synthetic task mixture**,
+not production traffic. Per-task warm distributions and each rank stratum are
+also retained. p95 is unavailable below 20 samples in a group and p99 below 100.
+Model loading, push/indexing, per-operation timing and complete worker
+wall time have separate boundaries. Peak RSS is the process lifetime high-water
+mark (or unavailable), not memory allocated by each individual request. Observer
+and resource-check overhead is present; this is a diagnostic, not a maximum
+throughput study. No confidence interval, optimization claim or automatic
+production-readiness verdict is emitted, even when one arm looks faster.
+This initial descriptive diagnostic always runs MVP before candidate. OS file-cache
+effects are uncontrolled; a future confirmatory comparison needs a frozen
+counterbalanced design before collecting observations.
+
+## Provider-free check commands
+
+```sh
+python -m pytest -q tests/production_delivery --confcutdir=tests/production_delivery
+python -m pytest -q
+ruff check .
+```
+
+The focused controls use fake source/observation/model data, not model-provider
+requests or measured performance samples. Full product checks may use pinned local
+ONNX models and loopback servers; no external model service is needed. Run tests
+with distinct disposable temporary directories and retain every failed attempt.
+
+## Prospective delivery proposal (not adopted)
+
+Preserve immutable legacy reports and source identities. A future owner-reviewed
+policy should separate:
+
+* Product delivery: correctness, security/scope/privacy, functional recovery,
+  build/install, reproducible evidence and agreed regression budgets.
+* An optimization claim: a prespecified primary user-relevant endpoint, meaningful
+  effect, representative workload and uncertainty analysis. A local latency
+  change need not reduce unrelated model token totals to be useful.
+* Evaluator delivery: independent oracles/corruption controls and A/A behavior.
+  Correctly reporting no supported win is a valid evaluator result.
+* Rollback: exact PR1 tree plus applicable functional/safety checks, openly
+  acknowledging loss of PR2's measured warm lookup optimization.
+
+This document configures no required status, threshold, rule or exception.
+Do not fabricate an old passing check or bypass protection to merge these drafts.
+If the existing approved publication route cannot represent a proposed future
+contract, report that dependency; do not build another policy or publisher service.
+
+## Release experiments still pending
+
+1. Representative public/licensed repositories, development versus repository-level
+   held-out task lineages, independently authored source rubrics and valid citations.
+2. Actual Agent A learning and independent Agent B reuse; misses, partial/irrelevant/
+   contradictory evidence, code changes and denied namespaces. Correct useful task
+   completion is essential; a fast refusal is not a successful task.
+3. Colony versus no Colony for product value; a separate fixed-MVP/candidate study
+   for later optimization. Identical model/version/effort, allowed research and
+   explicit memory-access differences; independent stores/contexts and counterbalanced
+   order, all failed/invalid/inconclusive attempts retained.
+4. Adequate repeats/scales and representative concurrency; percentile/uncertainty
+   methods and meaningful regression margins fixed before confirmatory observations.
+   Pilot tuning is not held-out confirmation; no unchanged retries until green.
+5. Model provisioning/download time, larger corpus scaling, real CLI/HTTP/MCP
+   workflow performance and supported OS/Python combinations. Untested platforms
+   remain unverified. No production telemetry is implemented or collected.
+6. Fresh explicit authorization for any live campaign, with revisions, client/model,
+   workload and enforceable session/token/time/disk/spending limits. Prior PR3-limit
+   exceptions are consumed. Between-session token stops are not hard dollar caps.
+   If complete usage or billing cannot be observed, report it unknown; gross and
+   uncached tokens are separate cost proxies, not measured dollar charges.
+
+PR4 remains paused, draft and unmerged. None of this resumes its implementation,
+client recovery, telemetry proposal or any hosting/merge-policy infrastructure.

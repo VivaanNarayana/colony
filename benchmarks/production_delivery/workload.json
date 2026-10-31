@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "role": "public-synthetic-development-controls",
+  "tasks": [
+    {"id": "api-timeout", "repository": "python-api", "source": "settings.json", "field": "timeout_seconds", "question": "What is the API request timeout in seconds?"},
+    {"id": "api-retries", "repository": "python-api", "source": "settings.json", "field": "retry_attempts", "question": "How many retry attempts does the API allow?"},
+    {"id": "worker-parallelism", "repository": "node-worker", "source": "settings.json", "field": "parallel_workers", "question": "How many worker processes run in parallel?"},
+    {"id": "worker-queue", "repository": "node-worker", "source": "settings.json", "field": "queue_name", "question": "Which queue does the worker consume?"},
+    {"id": "cache-ttl", "repository": "go-cache", "source": "settings.json", "field": "cache_ttl_seconds", "question": "What is the cache TTL in seconds?"},
+    {"id": "cache-capacity", "repository": "go-cache", "source": "settings.json", "field": "max_entries", "question": "How many entries can the cache store?"}
+  ]
+}
