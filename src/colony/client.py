@@ -1,5 +1,7 @@
 import json
 import os
+import uuid
+from contextlib import suppress
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -95,14 +97,20 @@ class Client:
                 json.dumps(payload).encode()
             )
             path = queue / f"{trail.id}.enc"
-            if path.exists():
-                previous = json.loads(
-                    Fernet((self.home / "queue.key").read_bytes()).decrypt(path.read_bytes())
-                )
-                if previous != payload:
-                    raise ValueError("Queued trail ID conflict") from None
-            else:
-                private_write(path, encrypted)
+            temporary = queue / f".{uuid.uuid4().hex}.tmp"
+            try:
+                private_write(temporary, encrypted)
+                with suppress(FileExistsError):
+                    # Publish complete ciphertext without replacing an existing envelope.
+                    # Same-directory hard links are atomic on supported local filesystems.
+                    os.link(temporary, path)
+            finally:
+                temporary.unlink(missing_ok=True)
+            previous = json.loads(
+                Fernet((self.home / "queue.key").read_bytes()).decrypt(path.read_bytes())
+            )
+            if previous != payload:
+                raise ValueError("Queued trail ID conflict") from None
             return {"id": trail.id, "stored": False, "queued": True}
 
     def retry(self):

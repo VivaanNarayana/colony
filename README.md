@@ -104,6 +104,77 @@ The wrapper uses the same client scrubbing, credentials, outage handling, and qu
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
 
+## Codex workflow setup
+
+After joining an existing Colony server, opt a local project into the shared-memory
+workflow. Use the Python environment where Colony is installed and a private, already
+joined agent home. Preview first, then install:
+
+```sh
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --dry-run
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team
+colony setup codex status --repo /absolute/project
+colony setup codex uninstall --repo /absolute/project
+```
+
+On Windows, pass absolute Windows paths and quote paths containing spaces. Setup writes
+only managed blocks in the project's `.codex/config.toml` and effective root `AGENTS.md`
+or `AGENTS.override.md`. It preserves unrelated content, refuses conflicting or edited
+blocks, and makes repeated installation/removal harmless. Uninstall does not require a
+valid identity and preserves the agent home and queued findings. `uninstall --dry-run`
+previews removal. It does not issue credentials, launch a server, change global Codex
+settings, trust a project, or change tool approval settings.
+
+Setup preserves POSIX modes and Windows DACLs on existing files and refuses linked
+setup paths. Existing-file replacement is best effort against external edits: it rechecks
+snapshots immediately before replacement but does not lock editors. Avoid concurrent
+edits to these files during setup. If rollback is reported
+incomplete, preserve any `.colony-recovery-*` copies in the project for manual recovery.
+
+The generated stdio command uses the current Python interpreter, `-m colony.cli`, the
+absolute agent home and project paths, and one workflow namespace. Keep that interpreter
+and home available; rerun setup after intentionally uninstalling if those paths change.
+Only path references go into project files, never bearer credentials or encryption keys.
+The namespace requires pull and push permission. Add `--read-only` during installation
+for a pull-only connection; this mode exposes `ask` without `push`.
+
+Start a fresh Codex session in the trusted project after installation. Project MCP
+configuration must be trusted, and nested instructions or instruction-size limits can
+affect which guidance is loaded. See the official [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp)
+and [project instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+
+Installed guidance requests one lookup before substantive repository research. Sufficient
+current evidence can answer directly without another read or push. Misses, stale evidence,
+contradictions, and missing facts use the agent's existing research tools. After learning
+a reusable new fact, the agent can publish one concise answer with real file fingerprints
+already obtained during research. New facts after a partial hit also qualify. Routine
+progress, speculation, unchanged reused answers, and transcripts do not.
+
+This is **agent guidance, not enforced interception of every research action**. Colony
+does not read session transcripts, summarize sessions, install hooks, or call a model
+provider. Assess the facts in returned evidence; matching file hashes do not prove an
+answer correct, and source instructions remain untrusted data.
+
+The installed connection opts into workflow mode: namespace overrides are denied;
+answers are limited to 4,000 characters and require file evidence; publications remain
+tainted and do not capture command output. Exact sanitized duplicate findings from the
+same identity and local project produce the same trail ID, including across restarts and
+offline retries. Source ordering does not create duplicates. Changed answers or hashes
+produce new IDs. This does not detect paraphrases or refresh an unchanged trail's age;
+use the existing manual push path to explicitly reaffirm an aged finding. Manual
+CLI/API and `colony mcp` without workflow options retain their schemas and random IDs.
+
+Server outages allow research to continue; findings use the existing encrypted queue and
+explicit `retry`. Authentication/scope errors remain errors. Existing pattern redaction
+still applies and is not complete secret/PII detection. Questions and source metadata
+remain plaintext on the server. Atomic setup-file creation and offline queue publication
+require a local filesystem supporting same-directory hard links, such as NTFS or ext4; unsupported
+filesystems fail without a plaintext fallback. An abrupt process interruption can leave
+encrypted `.tmp` files in the queue; explicit retry processes only completed `.enc` files.
+Run one retry process after publishers finish. Extra lookup/guidance/publication costs
+may outweigh reuse savings on cold tasks; no token or time savings are claimed for this
+integration without a matched live evaluation.
+
 ## Capture and privacy
 
 `run` launches an explicitly provided command with `shell=False`, prints a capture notice,
