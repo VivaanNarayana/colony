@@ -5,10 +5,12 @@ This benchmark-only addition runs over the restored **PR1 MVP**
 and `pyproject.toml` remain identical to that revision. The rollback itself is
 separate, on `revert/restore-pr1-mvp`; this branch is stacked on it.
 
-The contract identifier is `colony.production-delivery/1`. It does **not** replace,
-publish, waive or reinterpret the eight historical required checks. GitHub rules
-are unchanged. Neither draft has an eight-gate acceptance or merge-readiness claim.
-An owner must separately review any future change to delivery policy.
+The local diagnostic identifier is `colony.production-delivery/1`. The separately
+owner-authorized merge policy is `colony.delivery-policy/1`, defined below. It
+replaces the eight universal improvement requirements with three delivery checks.
+Historical eight-gate definitions, measurements, failures and statuses are preserved;
+none is relabeled as passing. A delivery pass does not establish token savings or
+production readiness. PR6 and PR7 remain draft and require later human merge authorization.
 
 ## Keep ordinary feature work small
 
@@ -30,8 +32,49 @@ better reuse, review a small matched **Colony versus no Colony** scorecard:
 A candidate-versus-MVP comparison answers a different question. Neither comparison
 requires pretending every feature strictly improves every metric. Correctness and
 the claimed behavior matter for delivery; token savings need real product evidence.
-These are proposed review practices, **not changed merge rules**. The existing eight
-checks remain required; this draft cannot unblock merges by bypassing them.
+These practices define the authorized delivery policy below. They do not permit
+unreviewed regressions or unsupported savings claims. No bypass permissions are added.
+
+## Required delivery checks
+
+| Required context | Evidence required before success |
+|---|---|
+| `delivery/tests_and_lint` | Applicable provider-free product/evaluator tests and lint pass on the exact committed sources. Retained certificates identify the tested revision and environment; any reuse must verify exact relevant bytes and disclose the original run. |
+| `delivery/scope_and_compatibility` | Changed behavior and compatibility reviewed. Rollback: exact PR1 tree plus build/install/import checks. Benchmark-only work: runtime/dependencies unchanged plus source-isolation, oracle and corruption controls. Ordinary features: focused behavior/security checks and build/state checks where affected. |
+| `delivery/token_evidence_review` | Token impact, claims and available evidence reviewed honestly. Review native gross/cached/uncached/output accounting and quality when applicable; retain learning, push, retry and failure costs. No unsupported improvement or production-benefit claim. |
+
+For **PR6**, the scope is an intentional exact-MVP rollback, not an optimization.
+Its retained functional/build checks may qualify; loss of PR2's observed warm-lookup
+improvement and unavailable current product-value measurements must be disclosed.
+For **PR7**, the scope is evaluator/delivery tooling with unchanged application
+bytes. Provider-free corruption and native-accounting controls qualify as evaluator
+evidence; fake events cannot qualify as measured product savings.
+
+Token savings remain a primary product objective. Every future feature review must
+state its expected token impact. Changes expected to materially affect token use,
+and releases or PRs claiming savings, need proportionate matched **Colony/no-Colony**
+evidence: identical tasks/model/budgets, independent correctness/grounding review,
+all learning/retry/failure usage, declared time boundaries and appropriate uncertainty
+for the claim. Use a fixed finite reuse horizon. If required evidence is missing,
+the token review stays pending or fails; it does not receive a synthetic pass.
+Changes that do not affect token behavior can justify that assessment with source
+review and focused checks. No automatic 48-session campaign is required for every PR,
+and each useful feature need not strictly improve every unrelated metric.
+
+The three contexts use the existing GitHub commit-status mechanism after exact
+head/base verification and a public PR evidence summary. Each successful context
+names what was checked, any retained-certificate reuse and unavailable coverage.
+Statuses are written by the existing authorized owner account; no new service,
+publisher, credential or GitHub App is installed. GitHub repository write access
+remains the trust boundary for status publication. New commits or base changes
+need evidence revalidation; checks cannot be copied onto another revision blindly.
+
+GitHub rules target base branches. The active ruleset covers `main` and the exact
+stacked base `revert/restore-pr1-mvp` with the three contexts, strict up-to-date
+checks, required PRs and the existing deletion/force-push protections. Bypass actors
+remain empty. Only PR6/PR7 receive initial delivery certifications. Other PRs receive
+no inherited approval; PR4 remains paused/draft and its historical failures stay intact.
+Delivery checks passing does not authorize readiness, auto-merge or merging either draft.
 
 ## Small offline product-value scorecard
 
@@ -197,10 +240,10 @@ requests or measured performance samples. Full product checks may use pinned loc
 ONNX models and loopback servers; no external model service is needed. Run tests
 with distinct disposable temporary directories and retain every failed attempt.
 
-## Prospective delivery proposal (not adopted)
+## Applying the delivery policy
 
-Preserve immutable legacy reports and source identities. A future owner-reviewed
-policy should separate:
+Preserve immutable legacy reports and source identities. Apply review requirements
+to the change and its claims:
 
 * Product delivery: correctness, security/scope/privacy, functional recovery,
   build/install, reproducible evidence and agreed regression budgets.
@@ -212,10 +255,11 @@ policy should separate:
 * Rollback: exact PR1 tree plus applicable functional/safety checks, openly
   acknowledging loss of PR2's measured warm lookup optimization.
 
-This document configures no required status, threshold, rule or exception.
-Do not fabricate an old passing check or bypass protection to merge these drafts.
-If the existing approved publication route cannot represent a proposed future
-contract, report that dependency; do not build another policy or publisher service.
+This document records the authorized policy; GitHub's ruleset is the enforcement
+configuration. The required contexts are delivery reviews with the semantics above,
+not renamed passing versions of failed legacy gates. Do not fabricate an old passing
+check or bypass protection. If the existing status route is unavailable, report the
+blocker; do not build another policy or publisher service.
 
 ## Release experiments still pending
 
