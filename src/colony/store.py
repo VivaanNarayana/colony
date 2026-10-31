@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import json
 import re
 import sqlite3
@@ -15,10 +16,12 @@ from colony.memory import (
     MemoryForbidden,
     MemoryInvalid,
     MemoryNotFound,
+    derive_operation_mac_key,
     operation_hash,
     replacement_id,
     sanitize_memory,
     source_inspection_view,
+    wrap_operation_digest,
 )
 from colony.models import (
     Grant,
@@ -108,16 +111,17 @@ class Store:
         key_path = directory / "storage.key"
         if not key_path.exists():
             private_write(key_path, Fernet.generate_key())
-        self.cipher = Fernet(key_path.read_bytes())
+        storage_key = key_path.read_bytes()
+        self.cipher = Fernet(storage_key)
+        self._operation_mac_key = derive_operation_mac_key(storage_key)
         with self.connect() as db:
             db.executescript(SCHEMA)
             self.migrate_memory(db)
         with self.connect() as db:
             self.reindex(db)
 
-    @staticmethod
-    def migrate_memory(db):
-        """One atomic additive migration; a future version must never be rewritten."""
+    def migrate_memory(self, db):
+        """Atomically upgrade verifiers; never retain a plaintext-note digest oracle."""
         db.execute("BEGIN IMMEDIATE")
         db.execute(
             "CREATE TABLE IF NOT EXISTS memory_schema "
@@ -125,16 +129,38 @@ class Store:
         )
         version = db.execute("SELECT version FROM memory_schema WHERE singleton=1").fetchone()
         if version is not None:
+            if version[0] == 2:
+                return
             if version[0] != 1:
                 raise MemoryInvalid()
+            # The v1 canonical digest can be wrapped directly: old requests do not
+            # need to be reconstructed or their encrypted notes decrypted.
+            operations = db.execute(
+                "SELECT operation_id,request_hash FROM memory_operations_v1 ORDER BY operation_id"
+            ).fetchall()
+            wrapped = [
+                (
+                    wrap_operation_digest(row["request_hash"], key=self._operation_mac_key),
+                    row["operation_id"],
+                )
+                for row in operations
+            ]
+            db.executemany(
+                "UPDATE memory_operations_v1 SET request_hash=? WHERE operation_id=?", wrapped
+            )
+            db.execute("UPDATE memory_schema SET version=2 WHERE singleton=1")
             return
         for statement in MEMORY_SCHEMA_V1:
             db.execute(statement)
+        if db.execute("SELECT 1 FROM memory_operations_v1 LIMIT 1").fetchone():
+            # Existing verifiers without version metadata cannot safely be identified
+            # as keyed or unkeyed. Refuse instead of accepting an unsafe fallback.
+            raise MemoryInvalid()
         db.execute(
             "INSERT OR IGNORE INTO memory_state_v1(trail_id,state,revision,replacement_id) "
             "SELECT id,'active',0,NULL FROM trails"
         )
-        db.execute("INSERT INTO memory_schema(singleton,version) VALUES (1,1)")
+        db.execute("INSERT INTO memory_schema(singleton,version) VALUES (1,2)")
 
     def read_content(self, ref: str) -> str:
         return self.cipher.decrypt((self.blobs / ref).read_bytes()).decode()
@@ -342,14 +368,17 @@ class Store:
             return result
 
     def _memory_replay(self, db, request, grant, kind):
-        digest = operation_hash(request, grant, kind)
+        digest = operation_hash(request, grant, kind, key=self._operation_mac_key)
         previous = db.execute(
             "SELECT request_hash,result_json FROM memory_operations_v1 WHERE operation_id=?",
             (request.operation_id,),
         ).fetchone()
         if previous is None:
             return digest, None
-        if previous["request_hash"] != digest:
+        verifier = previous["request_hash"]
+        if not isinstance(verifier, str) or not re.fullmatch(r"[a-f0-9]{64}", verifier):
+            raise MemoryInvalid()
+        if not hmac.compare_digest(verifier, digest):
             raise MemoryConflict()
         result = json.loads(previous["result_json"])
         result["memory"] = self.memory_metadata(db, request.trail_id)

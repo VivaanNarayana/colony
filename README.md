@@ -234,8 +234,16 @@ and writable workflow connections. Workflow namespace binding applies to every o
 The existing read-only workflow connection continues to expose only `ask`; pull-only users can
 inspect through the CLI or HTTP. The HTTP endpoints are `POST /memory/inspect`, `/memory/feedback`,
 `/memory/correct`, and `/memory/change`. Feedback and history notes are bounded to 1,000 characters,
-scrubbed, and encrypted at rest using the existing storage key. History inspection is bounded;
-feedback notes and saved content remain untrusted data. Inspection marks question/source
+scrubbed, and encrypted at rest using the existing storage key. History inspection is bounded.
+
+Replay/conflict fingerprints use domain-separated HMAC-SHA256 with a private key derived from
+`storage.key`; no unkeyed request digest is written for new operations. Schema version 2
+atomically key-wraps existing schema-1 replay digests without decrypting notes, changing
+operation IDs, or losing prior results. Historical schema-1 database files, free pages,
+WAL/journals, or backups may retain the old guessable verifiers: this upgrade changes live
+records and does not provide forensic erasure. Keep those historical files protected.
+
+Feedback notes and saved content remain untrusted data. Inspection marks question/source
 metadata when display truncation is necessary after redaction; original stored values remain
 unchanged. Existing question/source metadata storage and pattern-redaction limitations still apply.
 

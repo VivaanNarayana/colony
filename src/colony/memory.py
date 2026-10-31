@@ -1,7 +1,9 @@
 """Shared online memory-operation contracts; error strings never include user content."""
 
 import hashlib
+import hmac
 import json
+import re
 
 from colony.models import Grant, MemoryChange, MemoryCorrection, MemoryFeedback, Source
 from colony.security import scrub
@@ -63,11 +65,33 @@ def sanitize_memory(request: MemoryFeedback | MemoryCorrection | MemoryChange):
         raise MemoryInvalid() from None
 
 
-def operation_hash(request, grant: Grant, kind: str) -> str:
+def derive_operation_mac_key(storage_key: bytes) -> bytes:
+    """Separate operation verification from encryption using the existing private key."""
+    if not isinstance(storage_key, bytes) or len(storage_key) < 32:
+        raise MemoryInvalid()
+    return hmac.new(storage_key, b"colony.memory.operation-key/v1", hashlib.sha256).digest()
+
+
+def wrap_operation_digest(digest: str, *, key: bytes) -> str:
+    """Key-wrap a canonical digest, including a legacy verifier, without its request."""
+    if (
+        not isinstance(digest, str)
+        or not re.fullmatch(r"[a-f0-9]{64}", digest)
+        or not isinstance(key, bytes)
+        or len(key) < 32
+    ):
+        raise MemoryInvalid()
+    return hmac.new(
+        key, b"colony.memory.operation-request/v2\x00" + bytes.fromhex(digest), hashlib.sha256
+    ).hexdigest()
+
+
+def operation_hash(request, grant: Grant, kind: str, *, key: bytes) -> str:
     payload = {"kind": kind, "actor": grant.member_id, "request": request.model_dump()}
-    return hashlib.sha256(
+    digest = hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     ).hexdigest()
+    return wrap_operation_digest(digest, key=key)
 
 
 def replacement_id(request: MemoryCorrection, grant: Grant) -> str:

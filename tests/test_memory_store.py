@@ -1,8 +1,11 @@
+import hashlib
+import hmac
 import json
 import sqlite3
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -16,7 +19,10 @@ from colony.memory import (
     MemoryForbidden,
     MemoryInvalid,
     MemoryNotFound,
+    derive_operation_mac_key,
+    operation_hash,
     sanitize_memory,
+    wrap_operation_digest,
 )
 from colony.models import (
     Grant,
@@ -504,11 +510,11 @@ def test_additive_legacy_migration_idempotence_and_future_version_rejection(memo
     assert metadata(restarted, trail, owner)["state"] == "retracted"
     with restarted.connect() as db:
         assert db.execute("SELECT count(*) FROM memory_state_v1").fetchone()[0] == 1
-        db.execute("UPDATE memory_schema SET version=2")
+        db.execute("UPDATE memory_schema SET version=3")
     with pytest.raises(MemoryInvalid):
         Store(store.directory, repo)
     with sqlite3.connect(store.directory / "colony.db") as db:
-        assert db.execute("SELECT version FROM memory_schema").fetchone()[0] == 2
+        assert db.execute("SELECT version FROM memory_schema").fetchone()[0] == 3
         assert db.execute("SELECT state FROM memory_state_v1").fetchone()[0] == "retracted"
 
 
@@ -533,3 +539,250 @@ def test_migration_failure_is_atomic(memory_team, monkeypatch):
             "SELECT name FROM sqlite_master WHERE name LIKE 'memory_%'"
         ).fetchall()
         assert db.execute("SELECT id FROM trails").fetchone()[0] == trail.id
+
+
+def legacy_operation_digest(request, grant, kind):
+    """The old v1 algorithm, used only to reproduce/migrate historical verifiers."""
+    payload = {"kind": kind, "actor": grant.member_id, "request": request.model_dump()}
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    ).hexdigest()
+
+
+def install_v1_verifiers(store, operations, owner):
+    with store.connect() as db:
+        for request, kind in operations:
+            db.execute(
+                "UPDATE memory_operations_v1 SET request_hash=? WHERE operation_id=?",
+                (
+                    legacy_operation_digest(sanitize_memory(request), owner, kind),
+                    request.operation_id,
+                ),
+            )
+        db.execute("UPDATE memory_schema SET version=1")
+
+
+def operation_rows(store):
+    with store.connect() as db:
+        return [
+            dict(row)
+            for row in db.execute("SELECT * FROM memory_operations_v1 ORDER BY operation_id")
+        ]
+
+
+def test_database_only_pin_dictionary_no_longer_verifies_notes(memory_team):
+    store, _, owner, trail = memory_team
+    request = feedback(trail, "helpful", note="0427")
+    store.feedback_memory(request, owner)
+    with store.connect() as db:
+        row = db.execute(
+            "SELECT o.operation_id,o.trail_id,o.namespace,o.actor_id,o.request_hash,f.verdict,f.note "
+            "FROM memory_operations_v1 o JOIN memory_feedback_v1 f "
+            "ON f.trail_id=o.trail_id AND f.member_id=o.actor_id WHERE o.operation_id=?",
+            (request.operation_id,),
+        ).fetchone()
+        exported = "\n".join(db.iterdump())
+    assert store.cipher.decrypt(row["note"]).decode() == "0427"
+    raw_verifier = legacy_operation_digest(request, owner, "feedback")
+    old_matches, current_matches = [], []
+    # Every input to the old oracle except the PIN is available from the database.
+    # Exhaust its complete four-digit dictionary, without reading storage.key.
+    observed_actor = member(row["actor_id"])
+    for candidate in range(10000):
+        guessed = MemoryFeedback(
+            namespace=row["namespace"],
+            trail_id=row["trail_id"],
+            operation_id=row["operation_id"],
+            verdict=row["verdict"],
+            note=f"{candidate:04d}",
+        )
+        unkeyed = legacy_operation_digest(guessed, observed_actor, "feedback")
+        if unkeyed == raw_verifier:
+            old_matches.append(guessed.note)
+        if unkeyed == row["request_hash"]:
+            current_matches.append(guessed.note)
+    assert old_matches == ["0427"] and current_matches == []
+    assert raw_verifier not in exported
+    assert '"note":"0427"' not in exported
+    assert row["request_hash"] == operation_hash(
+        request,
+        owner,
+        "feedback",
+        key=derive_operation_mac_key((store.directory / "storage.key").read_bytes()),
+    )
+
+
+def test_operation_mac_is_required_deterministic_keyed_and_domain_separated(memory_team):
+    _, _, owner, trail = memory_team
+    request = feedback(trail, note="low-entropy private note")
+    storage_a, storage_b = b"a" * 44, b"b" * 44
+    key_a, key_b = derive_operation_mac_key(storage_a), derive_operation_mac_key(storage_b)
+    digest = legacy_operation_digest(request, owner, "feedback")
+    first = operation_hash(request, owner, "feedback", key=key_a)
+    assert len(key_a) == 32 and len(first) == 64
+    assert first == operation_hash(
+        request, owner, "feedback", key=derive_operation_mac_key(storage_a)
+    )
+    assert first == wrap_operation_digest(digest, key=key_a)
+    assert first != operation_hash(request, owner, "feedback", key=key_b)
+    assert first != digest
+    assert first != hmac.new(key_a, bytes.fromhex(digest), hashlib.sha256).hexdigest()
+    assert key_a != hmac.new(storage_a, b"another-domain", hashlib.sha256).digest()
+    with pytest.raises(TypeError):
+        operation_hash(request, owner, "feedback")
+    for invalid_key in (None, b"", b"short"):
+        with pytest.raises(MemoryInvalid):
+            operation_hash(request, owner, "feedback", key=invalid_key)
+
+
+def test_store_reads_key_once_and_restart_replays_keyed_operation(memory_team, monkeypatch):
+    store, repo, owner, trail = memory_team
+    original_read = Path.read_bytes
+    key_path = store.directory / "storage.key"
+    reads = []
+
+    def read(path):
+        if path == key_path:
+            reads.append(path)
+        return original_read(path)
+
+    monkeypatch.setattr(Path, "read_bytes", read)
+    restarted = Store(store.directory, repo)
+    request = change(trail, "retract", note="11")
+    first = restarted.change_memory(request, owner)
+    verifier = operation_rows(restarted)[0]["request_hash"]
+    assert reads == [key_path]
+    restarted.change_memory(change(trail, "restore", 1, note="12"), owner)
+    second_restart = Store(store.directory, repo)
+    replay = second_restart.change_memory(request, owner)
+    assert replay["replayed"] and replay["memory"]["state"] == "active"
+    assert replay["memory"]["revision"] == 2 and first["action"] == replay["action"]
+    assert reads == [key_path, key_path]
+    assert (
+        next(
+            row
+            for row in operation_rows(second_restart)
+            if row["operation_id"] == request.operation_id
+        )["request_hash"]
+        == verifier
+    )
+    with pytest.raises(MemoryConflict):
+        second_restart.change_memory(request.model_copy(update={"note": "13"}), owner)
+
+
+def test_v1_operation_migration_preserves_payload_history_results_and_replay(memory_team):
+    store, repo, owner, trail = memory_team
+    rating = feedback(trail, note="0042")
+    retract = change(trail, "retract", note="0142")
+    restore = change(trail, "restore", 1, note="0242")
+    corrected = correction(trail, repo, expected_revision=2, note="0342")
+    store.feedback_memory(rating, owner)
+    store.change_memory(retract, owner)
+    store.change_memory(restore, owner)
+    result = store.correct_memory(corrected, owner)
+    operations = [
+        (rating, "feedback"),
+        (retract, "change"),
+        (restore, "change"),
+        (corrected, "correct"),
+    ]
+    install_v1_verifiers(store, operations, owner)
+    before = operation_rows(store)
+    with store.connect() as db:
+        immutable = {
+            table: [tuple(row) for row in db.execute(f"SELECT * FROM {table}")]
+            for table in (
+                "trails",
+                "trail_sources",
+                "memory_state_v1",
+                "memory_history_v1",
+                "memory_feedback_v1",
+            )
+        }
+    upgraded = Store(store.directory, repo)
+    after = operation_rows(upgraded)
+    with upgraded.connect() as db:
+        assert db.execute("SELECT version FROM memory_schema").fetchone()[0] == 2
+        assert {
+            table: [tuple(row) for row in db.execute(f"SELECT * FROM {table}")]
+            for table in immutable
+        } == immutable
+        exported = "\n".join(db.iterdump())
+    key = derive_operation_mac_key((store.directory / "storage.key").read_bytes())
+    for old, new in zip(before, after, strict=True):
+        old = dict(old)
+        raw = old.pop("request_hash")
+        assert raw not in exported
+        new = dict(new)
+        assert new.pop("request_hash") == wrap_operation_digest(raw, key=key)
+        assert old == new  # Includes exact result JSON and original timestamps.
+    assert upgraded.feedback_memory(rating, owner)["replayed"]
+    assert upgraded.change_memory(retract, owner)["memory"]["state"] == "superseded"
+    assert upgraded.change_memory(restore, owner)["memory"]["state"] == "superseded"
+    assert upgraded.correct_memory(corrected, owner)["replacement_id"] == result["replacement_id"]
+    assert counts(upgraded) == (2, 2, 4, 4)
+    with pytest.raises(MemoryConflict):
+        upgraded.feedback_memory(rating.model_copy(update={"note": "0043"}), owner)
+    assert operation_rows(Store(store.directory, repo)) == after
+
+
+@pytest.mark.parametrize("invalid", ["invalid-digest", "a" * 63, "G" * 64, b"a" * 64])
+def test_invalid_v1_verifier_fails_closed_without_partial_upgrade(memory_team, invalid):
+    store, repo, owner, trail = memory_team
+    requests = [feedback(trail, note="0001"), feedback(trail, note="0002")]
+    for request in requests:
+        store.feedback_memory(request, owner)
+    install_v1_verifiers(store, [(request, "feedback") for request in requests], owner)
+    with store.connect() as db:
+        db.execute(
+            "UPDATE memory_operations_v1 SET request_hash=? WHERE operation_id=?",
+            (invalid, requests[1].operation_id),
+        )
+    before = operation_rows(store)
+    with pytest.raises(MemoryInvalid):
+        Store(store.directory, repo)
+    assert operation_rows(store) == before
+    with store.connect() as db:
+        assert db.execute("SELECT version FROM memory_schema").fetchone()[0] == 1
+
+
+def test_sql_failure_rolls_back_every_v1_verifier_and_version(memory_team):
+    store, repo, owner, trail = memory_team
+    requests = [
+        feedback(trail, note="1010").model_copy(update={"operation_id": str(i) * 32})
+        for i in (1, 2)
+    ]
+    for request in requests:
+        store.feedback_memory(request, owner)
+    install_v1_verifiers(store, [(request, "feedback") for request in requests], owner)
+    before = operation_rows(store)
+    with store.connect() as db:
+        db.execute(
+            "CREATE TRIGGER migration_abort BEFORE UPDATE OF request_hash ON memory_operations_v1 "
+            "WHEN NEW.operation_id='22222222222222222222222222222222' "
+            "BEGIN SELECT RAISE(ABORT,'simulated migration failure'); END"
+        )
+    with pytest.raises(sqlite3.IntegrityError):
+        Store(store.directory, repo)
+    assert operation_rows(store) == before
+    with store.connect() as db:
+        assert db.execute("SELECT version FROM memory_schema").fetchone()[0] == 1
+        db.execute("DROP TRIGGER migration_abort")
+    assert Store(store.directory, repo).feedback_memory(requests[0], owner)["replayed"]
+
+
+def test_unkeyed_fallback_is_never_accepted_or_inferred_without_version(memory_team):
+    store, repo, owner, trail = memory_team
+    request = feedback(trail, note="1234")
+    store.feedback_memory(request, owner)
+    with store.connect() as db:
+        db.execute(
+            "UPDATE memory_operations_v1 SET request_hash=? WHERE operation_id=?",
+            (legacy_operation_digest(request, owner, "feedback"), request.operation_id),
+        )
+    with pytest.raises(MemoryConflict):
+        store.feedback_memory(request, owner)
+    with store.connect() as db:
+        db.execute("DELETE FROM memory_schema")
+    with pytest.raises(MemoryInvalid):
+        Store(store.directory, repo)
