@@ -105,7 +105,9 @@ class Client:
                     # Same-directory hard links are atomic on supported local filesystems.
                     os.link(temporary, path)
             finally:
-                temporary.unlink(missing_ok=True)
+                # Staging cleanup must not hide a durable queue entry or the primary error.
+                with suppress(OSError):
+                    temporary.unlink(missing_ok=True)
             previous = json.loads(
                 Fernet((self.home / "queue.key").read_bytes()).decrypt(path.read_bytes())
             )

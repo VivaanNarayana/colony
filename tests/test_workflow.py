@@ -4,6 +4,7 @@ import json
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import httpx
 import pytest
@@ -302,6 +303,76 @@ def test_offline_queue_conflicts_and_unsupported_atomic_publish_fail_closed(iden
         client.push(other)
     assert (client.home / "queue" / f"{trail.id}.enc").read_bytes() == existing
     assert len(list((client.home / "queue").iterdir())) == 1
+
+
+@pytest.mark.parametrize("outcome", ["new", "duplicate", "conflict", "publication_error"])
+def test_queue_staging_cleanup_failure_preserves_result_and_retry(identity, monkeypatch, outcome):
+    client, repo, sources = identity
+    trail = Workflow(client, "team", repo).finding("password=sentinel", "c", sources)
+    queue = client.home / "queue"
+    envelope = queue / f"{trail.id}.enc"
+
+    def offline(*args, **kwargs):
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(httpx, "post", offline)
+    original = None
+    if outcome in {"duplicate", "conflict"}:
+        assert client.push(trail)["queued"]
+        original = envelope.read_bytes()
+    finding = trail.model_copy(update={"content": "changed"}) if outcome == "conflict" else trail
+    publication_error = OSError("publication unavailable")
+    if outcome == "publication_error":
+
+        def fail_publication(*args, **kwargs):
+            raise publication_error
+
+        monkeypatch.setattr("colony.client.os.link", fail_publication)
+
+    real_unlink = Path.unlink
+
+    def deny_staging_cleanup(path, *args, **kwargs):
+        if path.parent == queue and path.suffix == ".tmp":
+            raise PermissionError("staging cleanup denied")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", deny_staging_cleanup)
+    if outcome == "publication_error":
+        with pytest.raises(OSError) as error:
+            client.push(finding)
+        assert error.value is publication_error
+        assert not envelope.exists()
+    elif outcome == "conflict":
+        with pytest.raises(ValueError, match="Queued trail ID conflict"):
+            client.push(finding)
+    else:
+        assert client.push(finding) == {"id": trail.id, "stored": False, "queued": True}
+
+    staging = list(queue.glob("*.tmp"))
+    assert len(staging) == 1
+    assert b"sentinel" not in staging[0].read_bytes()
+    cipher = Fernet((client.home / "queue.key").read_bytes())
+    staged = json.loads(cipher.decrypt(staging[0].read_bytes()))
+    assert staged["trail"] == finding.model_dump()
+    if original is not None:
+        assert envelope.read_bytes() == original
+    if outcome != "publication_error":
+        saved = json.loads(cipher.decrypt(envelope.read_bytes()))
+        assert saved["trail"] == trail.model_dump()
+    if outcome in {"new", "duplicate"}:
+        sent = []
+
+        def online(url, *, json, **kwargs):
+            sent.append(json)
+            return httpx.Response(
+                200, json={"stored": True}, request=httpx.Request("POST", url)
+            )
+
+        monkeypatch.setattr(httpx, "post", online)
+        assert Client(client.home).retry() == {"sent": 1, "pending": False}
+        assert sent == [trail.model_dump()]
+        assert not envelope.exists()
+        assert staging[0].exists()  # Retry ignores incomplete/unacknowledged staging files.
 
 
 def test_real_store_duplicate_preserves_age_and_rejects_conflicting_id(team, tmp_path, monkeypatch):

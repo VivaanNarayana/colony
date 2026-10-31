@@ -180,8 +180,10 @@ explicit `retry`. Authentication/scope errors remain errors. Existing pattern re
 still applies and is not complete secret/PII detection. Questions and source metadata
 remain plaintext on the server. Atomic setup-file creation and offline queue publication
 require a local filesystem supporting same-directory hard links, such as NTFS or ext4; unsupported
-filesystems fail without a plaintext fallback. An abrupt process interruption can leave
-encrypted `.tmp` files in the queue; explicit retry processes only completed `.enc` files.
+filesystems fail without a plaintext fallback. Queue staging cleanup is best effort: denied
+cleanup or an abrupt interruption can leave encrypted `.tmp` files. Cleanup failure does not
+hide a queued finding, payload conflict, or publication error. Explicit retry processes only
+completed `.enc` files.
 Run one retry process after publishers finish. Extra lookup/guidance/publication costs
 may outweigh reuse savings on cold tasks; no token or time savings are claimed for this
 integration without a matched live evaluation.
