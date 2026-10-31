@@ -1,5 +1,0 @@
-{
-  "accepted": false,
-  "reason": "Original fail-fast runner stopped after main outage-1 attempted seven research calls (six requested). Both imports were verified. Nine completed sessions retained; no replacement tasks. Subsequent runner enforces the same delivered-data budget and records model failures across the full trial instead of restarting for baseline mistakes.",
-  "completed_sessions": 9
-}

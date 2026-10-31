@@ -1,7 +1,0 @@
-{
-  "accepted": false,
-  "reason": "Feature install-2 called ask twice after sufficient validated evidence; ask-once protocol violation. Runner stopped after 6 completed sessions. All native events, answers, prompts and usage retained; no replacement task within this trial.",
-  "implementation_commit": "9c271e2b4888185152c01b5017c5826aaade5807",
-  "completed_sessions": 6,
-  "additional_invalidity": "Also affected by the MCP child PYTHONPATH filtering discovered in the following run; no full-implementation comparison claim is made."
-}
