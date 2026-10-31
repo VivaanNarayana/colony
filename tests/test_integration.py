@@ -1,10 +1,14 @@
 import asyncio
+import hashlib
 import json
 import os
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
+import tomllib
+from contextlib import asynccontextmanager
 
 import httpx
 import pytest
@@ -220,3 +224,145 @@ def test_real_mcp_stdio_push_and_ask(running_team, evidence_files):
             assert "checks" not in receipt
 
     asyncio.run(asyncio.wait_for(exercise(), timeout=30))
+
+
+def test_codex_setup_two_agents_workflow_and_restart_dedup(running_team):
+    cli, homes, repo, directory = running_team
+    preview = json.loads(
+        cli(
+            "--home",
+            homes["a"],
+            "setup",
+            "codex",
+            "install",
+            "--repo",
+            repo,
+            "--ns",
+            "team",
+            "--dry-run",
+        ).stdout
+    )
+    assert not (repo / ".codex" / "config.toml").exists()
+    assert preview["changed"]
+    cli("--home", homes["a"], "setup", "codex", "install", "--repo", repo, "--ns", "team")
+    installed = json.loads(cli("setup", "codex", "status", "--repo", repo).stdout)
+    assert installed["installed"]
+
+    other_repo = directory / "repo-b"
+    other_repo.mkdir()
+    (other_repo / "settings.py").write_bytes((repo / "settings.py").read_bytes())
+    cli(
+        "--home",
+        homes["b"],
+        "setup",
+        "codex",
+        "install",
+        "--repo",
+        other_repo,
+        "--ns",
+        "team",
+        "--read-only",
+    )
+
+    @asynccontextmanager
+    async def connection(project):
+        config = tomllib.loads((project / ".codex" / "config.toml").read_text(encoding="utf-8"))
+        server = config["mcp_servers"]["colony"]
+        parameters = StdioServerParameters(
+            command=server["command"],
+            args=server["args"],
+            cwd=server["cwd"],
+            env=dict(os.environ),
+        )
+        async with (
+            stdio_client(parameters) as (read, write),
+            ClientSession(read, write) as session,
+        ):
+            await session.initialize()
+            yield session
+
+    def stored_rows():
+        with sqlite3.connect(directory / "data" / "colony.db") as db:
+            return db.execute("SELECT id, created_at FROM trails ORDER BY id").fetchall()
+
+    async def exercise():
+        question = "What is the build timeout setting?"
+        async with connection(repo) as agent_a:
+            missed = await agent_a.call_tool("ask", {"question": question})
+            assert not missed.isError and not json.loads(missed.content[0].text)["hit"]
+            # Simulate ordinary research, retaining its actual fingerprint for publication.
+            source = (repo / "settings.py").read_bytes()
+            assert b"TIMEOUT = 30" in source
+            finding = {
+                "question": question,
+                "content": "The build timeout is configured as TIMEOUT = 30 in settings.py.",
+                "sources": [
+                    {"ref": "settings.py", "content_hash": hashlib.sha256(source).hexdigest()}
+                ],
+            }
+            published = await agent_a.call_tool("push", finding)
+            assert not published.isError
+            first = json.loads(published.content[0].text)
+            assert first["stored"] and not first["duplicate"]
+            denied = await agent_a.call_tool("ask", {"question": question, "namespace": "private"})
+            assert denied.isError
+
+        rows = stored_rows()
+        assert len(rows) == 1
+        async with connection(repo) as restarted_a:
+            again = await restarted_a.call_tool("push", finding)
+            assert not again.isError
+            duplicate = json.loads(again.content[0].text)
+            assert duplicate["duplicate"] and duplicate["id"] == first["id"]
+            assert stored_rows() == rows  # Duplicate submission does not refresh age.
+
+        async with connection(other_repo) as agent_b:
+            assert {t.name for t in (await agent_b.list_tools()).tools} == {"ask"}
+            hit = await agent_b.call_tool("ask", {"question": question})
+            assert not hit.isError
+            receipt = json.loads(hit.content[0].text)
+            assert receipt["status"] == "validated" and receipt["tainted"]
+            assert "TIMEOUT = 30" in receipt["current_repository_reads"][0]["content"]
+            assert receipt["verification"]["source_reads_current"]
+            # A sufficient hit is answered from its source text; there is no publication.
+            assert stored_rows() == rows
+            (repo / "settings.py").write_text("TIMEOUT = 60\n")
+            stale = await agent_b.call_tool("ask", {"question": question})
+            assert not stale.isError
+            assert json.loads(stale.content[0].text)["status"] == "stale"
+
+    asyncio.run(asyncio.wait_for(exercise(), timeout=60))
+    cli("setup", "codex", "uninstall", "--repo", repo)
+    assert not json.loads(cli("setup", "codex", "status", "--repo", repo).stdout)["installed"]
+    assert (homes["a"] / "identity.json").exists()
+
+
+def test_setup_cli_errors_explain_conflict_without_echoing_configuration(tmp_path):
+    project = tmp_path / "project"
+    config = project / ".codex" / "config.toml"
+    config.parent.mkdir(parents=True)
+    secret = "private-config-sentinel"
+    original = f'password = "{secret}"\ninvalid !'.encode()
+    config.write_bytes(original)
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "colony.cli",
+            "setup",
+            "codex",
+            "install",
+            "--repo",
+            str(project),
+            "--ns",
+            "team",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "Invalid Codex TOML configuration" in result.stderr
+    assert secret not in result.stderr + result.stdout
+    assert config.read_bytes() == original and not (project / "AGENTS.md").exists()

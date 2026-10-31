@@ -79,6 +79,25 @@ def parser():
     )
     context.add_argument("--compact", dest="evidence_files", action="store_false")
     mcp.set_defaults(evidence_files=False)
+    mcp.add_argument("--workflow-namespace", help="Bind an opt-in workflow to one namespace")
+    mcp.add_argument("--workflow-repo", type=Path, help="Local project for workflow evidence")
+    mcp.add_argument(
+        "--workflow-read-only", action="store_true", help="Expose lookup only in workflow mode"
+    )
+    setup = sub.add_parser("setup", help="Configure a project to use Colony with a coding agent")
+    clients = setup.add_subparsers(dest="setup_client", required=True)
+    codex = clients.add_parser("codex", help="Manage project-scoped Codex MCP and guidance")
+    actions = codex.add_subparsers(dest="setup_action", required=True)
+    install = actions.add_parser("install", help="Install managed project configuration")
+    install.add_argument("--repo", type=Path, required=True)
+    install.add_argument("--ns", required=True)
+    install.add_argument("--dry-run", action="store_true")
+    install.add_argument("--read-only", action="store_true")
+    for action in ("status", "uninstall"):
+        command = actions.add_parser(action)
+        command.add_argument("--repo", type=Path, required=True)
+        if action == "uninstall":
+            command.add_argument("--dry-run", action="store_true")
     return p
 
 
@@ -117,8 +136,25 @@ def execute(args):
     if args.command == "mcp":
         from colony.mcp import serve
 
-        serve(args.home, evidence_files=args.evidence_files)
+        serve(
+            args.home,
+            evidence_files=args.evidence_files,
+            workflow_namespace=args.workflow_namespace,
+            workflow_repo=args.workflow_repo,
+            workflow_read_only=args.workflow_read_only,
+        )
         return None
+    if args.command == "setup":
+        from colony.setup import setup_codex
+
+        return setup_codex(
+            args.home,
+            args.repo,
+            args.setup_action,
+            namespace=getattr(args, "ns", None),
+            dry_run=getattr(args, "dry_run", False),
+            read_only=getattr(args, "read_only", False),
+        )
     client = Client(args.home)
     if args.command == "ask":
         return client.ask(args.question, args.ns, include_evidence_files=args.evidence_files)
@@ -180,10 +216,15 @@ def main():
             print(json.dumps(result, indent=2))
     except (ValueError, OSError, httpx.HTTPError) as exc:
         # Never echo exception text that could contain bearer credentials or request bodies.
-        print(
-            f"Colony error: {type(exc).__name__}. Check configuration, scopes, and server availability.",
-            file=sys.stderr,
-        )
+        if args.command == "setup" and isinstance(exc, ValueError):
+            # Setup normalizes config/parser/identity failures to fixed, safe messages.
+            print(f"Colony setup: {exc}", file=sys.stderr)
+        else:
+            print(
+                f"Colony error: {type(exc).__name__}. "
+                "Check configuration, scopes, and server availability.",
+                file=sys.stderr,
+            )
         raise SystemExit(1) from None
 
 
