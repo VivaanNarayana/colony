@@ -125,15 +125,23 @@ valid identity and preserves the agent home and queued findings. `uninstall --dr
 previews removal. It does not issue credentials, launch a server, change global Codex
 settings, trust a project, or change tool approval settings.
 
+Setup refuses settings that extend Colony's TOML table outside its managed block, since
+removing that block could otherwise assign those settings to another MCP server. Move
+or remove those extensions explicitly before reinstalling or uninstalling; unrelated
+tables and comments remain intact.
+
 Setup preserves POSIX modes and Windows DACLs on existing files and refuses linked
 setup paths. Existing-file replacement is best effort against external edits: it rechecks
 snapshots immediately before replacement but does not lock editors. Avoid concurrent
 edits to these files during setup. If rollback is reported
 incomplete, preserve any `.colony-recovery-*` copies in the project for manual recovery.
 
-The generated stdio command uses the current Python interpreter, `-m colony.cli`, the
+The generated stdio command uses the current Python interpreter, `-I -m colony.cli`, the
 absolute agent home and project paths, and one workflow namespace. Keep that interpreter
 and home available; rerun setup after intentionally uninstalling if those paths change.
+Isolated Python mode prevents project-local modules and `PYTHONPATH` from shadowing the
+installed Colony package. Rerun setup to update a connection created before this isolation
+was added.
 Only path references go into project files, never bearer credentials or encryption keys.
 The namespace requires pull and push permission. Add `--read-only` during installation
 for a pull-only connection; this mode exposes `ask` without `push`.

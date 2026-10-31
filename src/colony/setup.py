@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import math
 import os
 import re
 import stat
@@ -185,6 +186,37 @@ def _toml(data: bytes) -> dict:
         raise ValueError("Invalid Codex TOML configuration") from None
 
 
+def _toml_values(value):
+    # TOML accepts NaN; independent parses must compare equal for unchanged NaN values.
+    if isinstance(value, dict):
+        return {key: _toml_values(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_toml_values(item) for item in value]
+    return ("float", "nan") if isinstance(value, float) and math.isnan(value) else value
+
+
+def _unmanaged_config(data: bytes, remaining: bytes, managed: bool) -> dict:
+    document = _toml(data)
+    if not managed:
+        return document
+    try:
+        rest = _toml(remaining)
+    except ValueError:
+        # The full document was valid; splicing the block caused the parse failure.
+        raise ValueError("Colony MCP configuration extends outside the managed block") from None
+    servers = document.get("mcp_servers", {})
+    if not isinstance(servers, dict) or "colony" not in servers:
+        raise ValueError("Colony MCP configuration extends outside the managed block")
+    del servers["colony"]
+    # An empty parent table may have existed before installation or be implicit.
+    for config in (document, rest):
+        if config.get("mcp_servers") == {}:
+            del config["mcp_servers"]
+    if _toml_values(document) != _toml_values(rest):
+        raise ValueError("Colony MCP configuration extends outside the managed block")
+    return rest
+
+
 def _atomic(path: Path, content: bytes, mode: int | None, expected: bytes | None) -> None:
     """Recheck staged snapshots; existing-file OS replacement remains best effort against races."""
     fd, temporary = tempfile.mkstemp(prefix=".colony-setup-", dir=path.parent)
@@ -301,7 +333,9 @@ def setup_codex(
     paths = [config, *instructions]
     originals = {path: _read(path) for path in paths}
     parts = {path: _parts(originals[path] or b"", path != config) for path in paths}
-    _toml(originals[config] or b"")
+    # Comments do not end TOML tables. Removing a block must preserve every other
+    # value's semantic owner, not merely leave a syntactically valid document.
+    base = _unmanaged_config(originals[config] or b"", parts[config][0], bool(parts[config][1]))
     owned = [path for path in paths if parts[path][1]]
     instruction_owners = [path for path in instructions if path in owned]
     if len(instruction_owners) > 1:
@@ -334,7 +368,6 @@ def setup_codex(
             not read_only and not any(s.namespace == namespace and s.push for s in scopes)
         ):
             raise ValueError("Identity lacks required namespace permissions")
-        base = _toml(parts[config][0])
         servers = base.get("mcp_servers", {})
         if not isinstance(servers, dict) or "colony" in servers:
             raise ValueError("Unmanaged Colony MCP configuration conflicts with setup")
@@ -343,6 +376,7 @@ def setup_codex(
         if not executable.is_file():
             raise ValueError("Python executable does not exist")
         arguments = [
+            "-I",
             "-m",
             "colony.cli",
             "--home",

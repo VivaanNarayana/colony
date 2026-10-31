@@ -1,6 +1,7 @@
 import json
 import os
 import stat
+import subprocess
 import sys
 import time
 import tomllib
@@ -54,6 +55,7 @@ def test_preview_install_repeat_remove_without_home(project):
     assert server["command"] == sys.executable
     assert server["cwd"] == str(repo)
     assert server["args"] == [
+        "-I",
         "-m",
         "colony.cli",
         "--home",
@@ -147,6 +149,97 @@ def test_conflicts_preflight_without_changes(project, content):
     with pytest.raises(ValueError):
         install(project)
     assert tree(repo) == before
+
+
+@pytest.mark.parametrize(
+    "extension",
+    [
+        '\nenv = { COLONY_ONLY = "private-extension-sentinel" }\n',
+        "\nstartup_timeout_sec = 30\n",
+        '\n[mcp_servers.colony.env]\nCOLONY_ONLY = "private-extension-sentinel"\n',
+    ],
+)
+def test_external_colony_settings_refused_without_reparenting_or_secret_echo(project, extension):
+    repo, home = project
+    config = repo / ".codex/config.toml"
+    config.parent.mkdir()
+    config.write_text('[mcp_servers.other]\ncommand = "other-server"\n')
+    install(project)
+    with config.open("a", encoding="utf-8") as stream:
+        stream.write(extension)
+    before = tree(repo)
+    for action in ("status", "install", "uninstall"):
+        with pytest.raises(ValueError, match="outside the managed block") as error:
+            setup.setup_codex(home, repo, action, namespace="team")
+        assert "private-extension-sentinel" not in str(error.value)
+        assert tree(repo) == before
+    servers = tomllib.loads(config.read_text(encoding="utf-8"))["mcp_servers"]
+    assert "env" not in servers["other"]
+
+
+@pytest.mark.parametrize("with_nan", [False, True])
+def test_unrelated_toml_additions_keep_their_semantic_owners(project, with_nan):
+    repo, home = project
+    config = repo / ".codex/config.toml"
+    config.parent.mkdir()
+    original = '[mcp_servers.other]\ncommand = "other-server"\n'
+    if with_nan:
+        original += "custom_value = nan\n"
+    config.write_text(original)
+    install(project)
+    extension = '\n[mcp_servers.third]\ncommand = "third-server"\nenv = { THIRD = "value" }\n'
+    with config.open("a", encoding="utf-8") as stream:
+        stream.write(extension)
+    assert not install(project)["changed"]
+    setup.setup_codex(home, repo, "uninstall")
+    assert config.read_text() == original + extension
+    servers = tomllib.loads(config.read_text())["mcp_servers"]
+    assert "colony" not in servers and servers["third"]["env"] == {"THIRD": "value"}
+
+
+def test_valid_config_with_external_extension_reports_boundary_not_parse_error(project):
+    repo, home = project
+    config = repo / ".codex/config.toml"
+    config.parent.mkdir()
+    config.write_text('[mcp_servers.other]\ncommand = "other"\nenv = { OTHER = "value" }\n')
+    install(project)
+    with config.open("a", encoding="utf-8") as stream:
+        stream.write('\nenv = { COLONY_ONLY = "private-extension-sentinel" }\n')
+    assert "colony" in tomllib.loads(config.read_text())["mcp_servers"]
+    before = tree(repo)
+    with pytest.raises(ValueError, match="outside the managed block"):
+        setup.setup_codex(home, repo, "uninstall")
+    assert tree(repo) == before
+
+
+@pytest.mark.parametrize("shadow_kind", ["module", "package"])
+def test_generated_command_ignores_project_and_pythonpath_shadowing(project, tmp_path, shadow_kind):
+    repo, _ = project
+    marker = repo / "unexpected-project-code"
+    code = f"from pathlib import Path\nPath({str(marker)!r}).touch()\n"
+    if shadow_kind == "module":
+        (repo / "colony.py").write_text(code)
+    else:
+        package = repo / "colony"
+        package.mkdir()
+        (package / "__init__.py").write_text("")
+        (package / "cli.py").write_text(code)
+    injected = tmp_path / "pythonpath"
+    injected.mkdir()
+    (injected / "colony.py").write_text(code)
+    install(project)
+    server = tomllib.loads((repo / ".codex/config.toml").read_text())["mcp_servers"]["colony"]
+    result = subprocess.run(
+        [server["command"], *server["args"], "--help"],
+        cwd=server["cwd"],
+        env={**os.environ, "PYTHONPATH": str(injected)},
+        text=True,
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 0 and "--workflow-namespace" in result.stdout
+    assert not marker.exists()
 
 
 def test_modified_owned_block_refused_but_outside_edits_retained(project):
