@@ -23,6 +23,12 @@ CANDIDATES = 12
 @lru_cache(maxsize=1)
 def models():
     options = {"cache_dir": os.environ.get("COLONY_MODEL_CACHE"), "threads": 2}
+    if os.environ.get("COLONY_OFFLINE") == "1":
+        from colony.provision import model_environment
+
+        # Validate explicit snapshots before FastEmbed can attempt a cache/download fallback.
+        model_environment(None, offline=True)
+        options["local_files_only"] = True
     return TextEmbedding(
         model_name=EMBED_MODEL,
         revision=EMBED_REVISION,

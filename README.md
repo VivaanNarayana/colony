@@ -5,6 +5,111 @@ research, and check stored repository evidence on every pull. Self-hosted CLI + 
 no model API key, inference service, or telemetry required. Local retrieval models download
 on the first server start (about 160 MB); provision them before disconnecting the host.
 
+## Guided installation and onboarding
+
+Install a wheel into a dedicated Python environment. To build one from the selected
+checkout, run `python -m pip wheel --no-deps --wheel-dir dist .`, then
+`python -m pip install dist/colony_memory-0.1.0-py3-none-any.whl`. Installation resolves
+runtime dependencies; development extras are unnecessary. See [INSTALL.md](INSTALL.md)
+for fresh-environment commands and wheel/source-distribution verification.
+
+Choose **a new local team** or **an existing server**. All onboarding paths must be
+absolute, have an existing parent, and be outside the project holding shared evidence.
+Quote paths with spaces. On Windows use absolute Windows paths in these examples.
+
+For a new local team, preview and then prepare a dedicated private workspace:
+
+```sh
+colony onboard init --workspace /absolute/private/team --repo /absolute/project --ns team --dry-run
+colony onboard init --workspace /absolute/private/team --repo /absolute/project --ns team --configure-codex
+```
+
+The result includes copyable `commands.prepare_models`, `commands.serve_foreground`,
+and `commands.check_client`. Run model preparation explicitly, start the server command
+in a foreground terminal, then check the client from another terminal. No daemon is
+installed. Bootstrap creates a private issuer and two prepared homes: `agent-a` can
+publish/pull, while `agent-b` can pull only; both disable command-output capture.
+Prepared identities have not yet authenticated against a running server. The first
+authenticated request registers them through the existing server mechanism.
+
+`--configure-codex` installs the existing reversible project setup for agent A only.
+Use a fresh trusted Codex session to load it. Agent B can use CLI/manual read-only MCP;
+one project has one managed Colony connection. Without this flag, project files remain
+untouched. `--interactive` prompts for missing paths on a terminal; all options also
+work noninteractively. The issuer stays private to the team administrator.
+
+To join an existing server, obtain the signed invitation and issuer public key through
+separate trusted channels, then name the new private home explicitly:
+
+```sh
+colony onboard join --agent-home /absolute/private/agent-home --keyfile /absolute/invitation.json --issuer /absolute/trusted-issuer.pub --dry-run
+colony onboard join --agent-home /absolute/private/agent-home --keyfile /absolute/invitation.json --issuer /absolute/trusted-issuer.pub --repo /absolute/project --ns team --configure-codex
+```
+
+Add `--read-only` for a pull-only project connection. Enrollment validates the invitation
+locally and uses the existing server join operation only when applying. Reusing a complete
+matching home verifies it locally without claiming a fresh server handshake. Conflicting
+homes and unowned workspaces are refused. Dry runs create no directories or credentials,
+and do not contact the server. Optional project setup can fail after credentials are
+prepared/enrolled: the result then has `ok: false`, exits nonzero, and preserves credentials
+for retry rather than claiming remote membership was undone.
+
+Interrupted setup preserves owned sibling staging such as `.team.colony-bootstrap` or
+`.agent-home.colony-enrollment`. Rerun the same request to resume complete owned work;
+if an issuer or credential set is incomplete/conflicting, retain it and use a new explicit
+workspace/home. Receipts distinguish an initializing plan from completed prepared identities.
+Existing manual `init`, `issue`, `join`, `serve`, and setup/uninstall commands remain available.
+
+### Diagnostics and offline models
+
+```sh
+colony --home /absolute/private/agent-home doctor --repo /absolute/project --ns team
+colony --home /absolute/private/agent-home doctor --server https://colony.example --ns team --format json
+colony models fetch --dir /absolute/private/models
+colony models check --dir /absolute/private/models
+colony doctor --role server --models /absolute/private/models
+colony serve --repo /absolute/project --data /absolute/private/server-data --issuer /absolute/private/issuer.pub --models /absolute/private/models --offline
+```
+
+Doctor reports package metadata, Python/runtime capability, a temporary in-memory SQLite
+extension probe, local identity signature/expiry/scopes, selected project configuration,
+and selected model artifacts. It opens no persistent store, performs no migrations, creates
+no homes/queues, and downloads no models. Only an explicit `--server` makes a public health
+request, without a bearer credential or redirects. Public health does not verify authenticated
+namespace access, model execution, retrieval correctness, or Codex trust/loading.
+
+`models fetch` is the explicit network operation. It downloads the existing pinned model
+revisions (about 160 MB), verifies fixed byte sizes and SHA-256 hashes from the pinned upstream
+artifacts, and publishes readiness only after verification. Owned partial downloads can be
+retried; changed completed models and unowned destinations are refused. Separate unrelated
+models are preserved. `models check` is read-only and exits nonzero for incomplete/invalid
+models. Fetching models does not send questions, memories, credentials, or model-service calls.
+
+With `--offline`, startup requires verified local snapshots and disables hub/network download
+fallback. Supply `--models` or both `COLONY_EMBED_MODEL_DIR` and `COLONY_RANK_MODEL_DIR` pointing
+to the verified snapshots. Existing `serve` without the new flags retains its previous model
+loading behavior. Doctor checks artifacts without executing ONNX; use the demo to exercise
+the actual engine and transports on the target Python/platform.
+
+### First shared-memory hit
+
+```sh
+colony demo --workspace /absolute/private/new-demo --models /absolute/private/models --configure-codex --cleanup
+```
+
+The demo requires a new disposable directory. It creates a synthetic repository, private
+issuer, isolated server store, and two agent homes; publishes a real fingerprint-backed
+finding; reuses it through fresh CLI and read-only MCP clients; changes the source; and
+requires the original trail's stale receipt. It runs local ONNX inference with no model
+provider or paid agent sessions. The timeout is 90 seconds by default (10–300 allowed),
+with bounded process teardown afterward.
+
+The server is stopped before completion. Successful `--cleanup` removes only the known
+owned fixture layout; unexpected files or linked paths cause cleanup refusal. Without
+cleanup, or after a failure, the private workspace remains for inspection. Results contain
+fixed step statuses and no credential contents. A failed check exits nonzero. This fixture
+demonstrates transport/evidence behavior, not agent obedience or token/time savings.
+
 ## Quick start
 
 Python 3.11–3.13 with SQLite extension support is required. Run from this checkout:
