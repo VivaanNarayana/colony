@@ -782,3 +782,125 @@ def test_container_fence_relative_indented_marker_is_literal(
     assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[:6])
     assert items[0]["selected_end_line"] == 6
     assert "Unrelated prose" not in result["content"]
+
+
+def _boundary_result(tmp_path, text, line, maximum=4096):
+    from colony.context import excerpts, source_chunks
+    from colony.validation import snapshot
+
+    (tmp_path / "boundaries.md").write_text(text, encoding="utf-8")
+    sources = [snapshot(tmp_path, "boundaries.md")]
+    candidate = next(block for _, start, block in source_chunks(tmp_path, sources) if start == line)
+    items = excerpts(
+        tmp_path,
+        sources,
+        "Required deployment facts",
+        preferred=[("boundaries.md", line)],
+        adaptive=True,
+    )
+    return candidate, items, fit_response(response(*items), {"max_tokens": maximum})
+
+
+@pytest.mark.parametrize("indent", ["    ", "\t"])
+def test_indented_ordinary_paragraph_continuation_keeps_fact_after_selected_window_start(
+    tmp_path, indent
+):
+    lines = [f"Deployment procedure explanation {i}." for i in range(8)]
+    lines += [
+        indent + "Production deployment timeout is",
+        "TIMEOUT=9876; never use staging values.",
+    ]
+    lines += [f"Further deployment detail {i}." for i in range(10)]
+    text = "\n".join(lines) + "\n\nUnrelated next paragraph."
+    candidate, items, result = _boundary_result(tmp_path, text, 9)
+    assert "TIMEOUT=9876" in candidate
+    assert result["hit"] and result["evidence"][0]["text"] == "\n".join(lines)
+    assert "TIMEOUT=9876" in result["content"] and "Unrelated" not in result["content"]
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 20)
+
+
+@pytest.mark.parametrize("caption_lines,selected", [(1, 1), (16, 17)])
+def test_attached_caption_and_complete_interrupting_fence_stay_together(
+    tmp_path, caption_lines, selected
+):
+    caption = ["Do not use this production command:"] * caption_lines
+    code = [
+        "```sh",
+        "deploy --manifest=<(cat <<'JSON'",
+        "",
+        '{"verified":true}',
+        "JSON",
+        ") --production",
+        "```",
+    ]
+    required = "\n".join(caption + code)
+    _, items, result = _boundary_result(tmp_path, required + "\n\nUnrelated prose.", selected)
+    assert result["hit"] and result["evidence"][0]["text"] == required
+    assert result["evidence"][0]["text"].startswith("Do not use")
+    assert ") --production\n```" in result["content"]
+    assert items[0]["selected_end_line"] == caption_lines + len(code)
+    assert "Unrelated" not in result["content"]
+
+
+def test_paragraph_envelope_expands_across_two_adjacent_fences(tmp_path):
+    lines = [
+        "Compare commands:",
+        "```sh",
+        "deploy first",
+        "```",
+        "```sh",
+        "verify second",
+        "",
+        "REQUIRED_FACT=42",
+        "```",
+    ]
+    text = "\n".join(lines) + "\n\nUnrelated prose."
+    _, _, result = _boundary_result(tmp_path, text, 1)
+    assert result["hit"] and result["evidence"][0]["text"] == "\n".join(lines)
+    assert "REQUIRED_FACT=42" in result["content"] and "Unrelated" not in result["content"]
+
+
+def test_selected_window_at_fence_closer_keeps_immediately_following_paragraph_fact(tmp_path):
+    lines = ["```text", "Initial required command", ""]
+    lines += [f"literal code {i}" for i in range(8)]
+    lines += ["```", "REQUIRED_FACT=42"]
+    lines += [f"Further procedure detail {i}." for i in range(10)]
+    text = "\n".join(lines) + "\n\nUnrelated next paragraph."
+    candidate, _, result = _boundary_result(tmp_path, text, 12)
+    assert "REQUIRED_FACT=42" in candidate
+    assert result["hit"] and result["evidence"][0]["text"] == "\n".join(lines)
+    assert "REQUIRED_FACT=42" in result["content"] and "Unrelated" not in result["content"]
+
+
+def test_interrupted_paragraph_overflow_withholds_instead_of_returning_command_prefix(tmp_path):
+    text = (
+        "Deploy with this manifest:\n```sh\ndeploy --manifest=<(cat <<'JSON'\n\n"
+        + '{"required":"'
+        + "signed artifact " * 150
+        + '"}\nJSON\n) --production\n```'
+    )
+    _, _, result = _boundary_result(tmp_path, text, 1, maximum=900)
+    assert not result["hit"] and result["reason"] == "budget_limited"
+    assert "deploy --manifest" not in serialize_response(result)
+
+
+def test_paragraph_after_completed_fence_does_not_absorb_prior_unrelated_code(tmp_path):
+    lines = ["```sh", "old unrelated command", "```"]
+    paragraph = [f"Current procedure detail {i}." for i in range(20)]
+    _, items, result = _boundary_result(tmp_path, "\n".join(lines + paragraph), 9)
+    assert result["hit"] and result["evidence"][0]["text"] == "\n".join(paragraph)
+    assert items[0]["selected_line"] == 4 and "old unrelated" not in result["content"]
+
+
+def test_heading_without_blank_before_indented_code_keeps_all_commands(tmp_path):
+    text = "# Release\n    deploy first\n\n    verify last"
+    _, _, result = _boundary_result(tmp_path, text, 1)
+    assert result["hit"] and result["evidence"][0]["text"] == text
+
+
+def test_real_heading_after_indented_paragraph_continuation_is_not_hidden_as_code(tmp_path):
+    lines = [f"Ordinary explanation {i}." for i in range(8)]
+    lines += ["    paragraph continuation", "# Production", "", "TIMEOUT=9876"]
+    _, items, result = _boundary_result(tmp_path, "\n".join(lines), 12)
+    assert result["hit"] and result["evidence"][0]["text"] == "# Production\n\nTIMEOUT=9876"
+    assert items[0]["selected_line"] == 10

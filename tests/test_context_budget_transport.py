@@ -643,3 +643,165 @@ def test_http_capability_and_unavailable_counter_fail_closed(team, monkeypatch):
     )
     assert result.status_code == 422
     assert result.json() == {"detail": "Context budget encoding unavailable"}
+
+
+@pytest.mark.parametrize(
+    "case,encoding,small",
+    [
+        ("paragraph", "utf8_bytes", False),
+        ("paragraph", "utf8_bytes", True),
+        ("caption-fence", "utf8_bytes", False),
+        ("caption-fence", "utf8_bytes", True),
+        ("paragraph", "o200k_base", False),
+        ("caption-fence", "o200k_base", False),
+    ],
+)
+def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
+    caller, monkeypatch, case, encoding, small
+):
+    from colony import mcp
+    from colony.context import excerpts, source_chunks
+
+    if encoding == "o200k_base":
+        configured = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
+        if not configured:
+            pytest.skip("Explicit verified local tokenizer fixture unavailable")
+        pytest.importorskip("tiktoken")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", configured)
+    client, repo, _ = caller
+    if case == "paragraph":
+        lines = [f"Deployment observation {i}." for i in range(1, 21)]
+        lines[4] = "Deployment observation café 🐜."
+        lines[8] = "    Ordinary paragraph continuation."
+        lines[9] = "TIMEOUT=9876"
+        text, selected = "\n".join(lines), 9
+        maximum = 256 if small else 4096
+    else:
+        text = (
+            "Production café 🐜 command:\n```sh\n"
+            "deploy --manifest=<(cat <<'JSON'\n\n"
+            '{"verify_signature":true}\nJSON\n) --production\n```'
+        )
+        assert text.splitlines()[1] == "```sh" and len(text.splitlines()) == 8
+        selected, maximum = 1, 256 if small else 2048
+    ref = "candidate.md"
+    (repo / ref).write_bytes((text + "\n").encode("utf-8"))
+    template = repo.parent / "candidate-empty-git-template"
+    template.mkdir()
+    config = repo.parent / "candidate-empty-git-config"
+    config.write_bytes(b"")
+    environment = {
+        **os.environ,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": str(config),
+    }
+    # Only the disposable D fixture is changed; fixture commands remain data.
+    for arguments in [
+        ["init", "--template=" + str(template), "--initial-branch=main"],
+        ["add", "--", ref, "guide.md"],
+        [
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "-m",
+            "fixture",
+        ],
+    ]:
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "core.hooksPath=" + str(template),
+                "-c",
+                "core.attributesFile=" + str(config),
+                "-c",
+                "core.autocrlf=false",
+                "-c",
+                "commit.gpgSign=false",
+                "-C",
+                str(repo),
+                *arguments,
+            ],
+            env=environment,
+            check=True,
+            capture_output=True,
+            timeout=20,
+        )
+    source = snapshot(repo, ref)
+    origin = git_context.capture(repo, "project")
+    assert origin.state == "git" and origin.dirty is False
+    candidates = source_chunks(repo, [source])
+    chosen = next(
+        content for path, start, content in candidates if (path, start) == (ref, selected)
+    )
+    assert ("TIMEOUT=9876" if case == "paragraph" else "deploy --manifest") in chosen
+    items = excerpts(
+        repo, [source], "deployment configuration", preferred=[(ref, selected)], adaptive=True
+    )
+    budget = ContextBudget(max_tokens=maximum, encoding=encoding)
+
+    def request(route, payload):
+        if route == "/capabilities":
+            return capability(encoding)
+        assert route == "/ask"
+        return fit_response(
+            {
+                "hit": True,
+                "status": "validated",
+                "match_kind": "evidence",
+                "sources": [source.model_dump()],
+                "evidence": items,
+                "git": {"origin": origin.model_dump(), "request": payload["git_context"]},
+            },
+            budget,
+        )
+
+    monkeypatch.setattr(client, "request", request)
+    result = client.ask(
+        "deployment configuration",
+        "team",
+        repo=repo,
+        repository_id="project",
+        context_budget=budget,
+    )
+    monkeypatch.setattr(mcp, "Client", lambda home: client)
+    server = mcp.create_mcp(
+        client.home,
+        workflow_namespace="team",
+        workflow_repo=repo,
+        workflow_repository_id="project",
+        context_budget=budget,
+    )
+    rendered = asyncio.run(server.call_tool("ask", {"question": "deployment configuration"}))[
+        0
+    ].text
+    final = json.loads(rendered)
+    for packet in (result, final):
+        assert packet["context_budget"]["used"] == count_response(packet, budget) <= maximum
+        if small:
+            assert not packet["hit"] and packet["reason"] == "budget_limited"
+            assert "evidence" not in packet and "current_repository_reads" not in packet
+            continue
+        assert packet["hit"] and packet["status"] == "validated"
+        assert packet["git"]["compatibility"] == "matched"
+        assert packet["sources"][0]["content_hash"] == source.content_hash
+        reads = packet.get("evidence", packet.get("current_repository_reads"))
+        for read in reads:
+            start = read.get("line", read.get("start_line"))
+            content = read.get("text", read.get("content"))
+            end = start + content.count("\n")
+            assert content == "\n".join(text.splitlines()[start - 1 : end])
+            assert (read["selected_line"], read["selected_end_line"]) == (start, end)
+            assert not read["complete_file"]
+            if "sha256" in read:
+                assert read["path"] == ref and read["sha256"] == source.content_hash
+        combined = "\n".join(read.get("text", read.get("content")) for read in reads)
+        if case == "paragraph":
+            assert "TIMEOUT=9876" in combined
+            assert "\n".join(text.splitlines()[8:]) in combined
+        else:
+            assert combined == text  # Caption, complete command, and original fence.
+    assert rendered == serialize_response(final)
+    assert git_context.capture(repo, "project") == origin
