@@ -1,5 +1,7 @@
+import asyncio
 import json
 import os
+import subprocess
 import time
 
 import pytest
@@ -272,6 +274,128 @@ def test_adaptive_hint_cannot_cut_a_local_command_mid_line(caller):
     assert git_client._local_reads(repo, [source], [hint], False)[0]["text"] == "deploy"
     hint["selected_end_line"] = 2
     assert git_client._local_reads(repo, [source], [hint], False, adaptive=True) == []
+
+
+@pytest.mark.parametrize(
+    "ref,text,selected",
+    [
+        (
+            "profiles.md",
+            "# Production profile\n\nTIMEOUT=30\n\n# Development profile\n\nTIMEOUT=5",
+            [3, 7],
+        ),
+        (
+            "profiles.md",
+            "# Environment\n\n## Production\n\n### Retry\n\nTIMEOUT=30\n\n"
+            "## Development\n\n### Retry\n\nTIMEOUT=5",
+            [7, 13],
+        ),
+        (
+            "deploy.sh",
+            "deploy --manifest=<(cat <<'JSON'\n\n"
+            '{"verify_signature":true}\nJSON\n) --production',
+            [1],
+        ),
+        (
+            "deploy",
+            "#!/usr/bin/env -S bash -eu\n\n"
+            "deploy --manifest=<(cat <<'JSON'\n\n"
+            '{"verify_signature":true}\nJSON\n) --production',
+            [3],
+        ),
+    ],
+    ids=["profile-headings", "nested-headings", "heredoc", "shebang-heredoc"],
+)
+@pytest.mark.parametrize("maximum", [256, 4096])
+def test_required_source_context_survives_git_client_and_final_mcp(
+    caller, monkeypatch, ref, text, selected, maximum
+):
+    from colony import mcp
+    from colony.context import excerpts
+
+    client, repo, _ = caller
+    (repo / ref).write_bytes((text + "\n").encode())
+    # Only the disposable repository is initialized. Fixture commands are data.
+    for arguments in [
+        ["init", "-b", "main"],
+        ["add", "--", ref, "guide.md"],
+        [
+            "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+            "commit", "-m", "fixture",
+        ],
+    ]:
+        subprocess.run(["git", "-C", str(repo), *arguments], check=True, capture_output=True)
+    source = snapshot(repo, ref)
+    origin = git_context.capture(repo, "project")
+    assert origin.state == "git"
+    items = excerpts(
+        repo,
+        [source],
+        "configuration",
+        preferred=[(ref, line) for line in selected],
+        adaptive=True,
+    )
+    budget = ContextBudget(max_tokens=maximum)
+
+    def request(route, payload):
+        if route == "/capabilities":
+            return capability()
+        assert route == "/ask"
+        return fit_response(
+            {
+                "hit": True,
+                "status": "validated",
+                "match_kind": "evidence",
+                "sources": [source.model_dump()],
+                "evidence": items,
+                "git": {"origin": origin.model_dump(), "request": payload["git_context"]},
+            },
+            budget,
+        )
+
+    monkeypatch.setattr(client, "request", request)
+    result = client.ask(
+        "configuration", "team", repo=repo, repository_id="project", context_budget=budget
+    )
+    monkeypatch.setattr(mcp, "Client", lambda home: client)
+    server = mcp.create_mcp(
+        client.home,
+        workflow_namespace="team",
+        workflow_repo=repo,
+        workflow_repository_id="project",
+        context_budget=budget,
+    )
+    rendered = asyncio.run(server.call_tool("ask", {"question": "configuration"}))[0].text
+    final = json.loads(rendered)
+    for value in (result, final):
+        assert value["context_budget"]["used"] == count_response(value, budget) <= maximum
+        if maximum == 256:
+            assert not value["hit"] and value["reason"] == "budget_limited"
+            assert "evidence" not in value and "current_repository_reads" not in value
+            continue
+        assert value["hit"] and value["status"] == "validated"
+        assert value["git"]["compatibility"] == "matched"
+        reads = value.get("evidence", value.get("current_repository_reads"))
+        remaining = list(text.splitlines())
+        for read in reads:
+            start = read.get("line", read.get("start_line"))
+            content = read.get("text", read.get("content"))
+            assert content == "\n".join(remaining[start - 1 : start + content.count("\n")])
+            assert read["selected_line"] == start
+            assert read["selected_end_line"] == start + content.count("\n")
+            assert not read["complete_file"]
+            if "sha256" in read:
+                assert read["sha256"] == source.content_hash
+        # Retaining only unqualified values or an unfinished heredoc is insufficient.
+        combined = "\n".join(read.get("text", read.get("content")) for read in reads)
+        if ref.endswith(".md"):
+            # A blank separator between independent cited spans is optional.
+            assert [line for line in combined.splitlines() if line.strip()] == [
+                line for line in text.splitlines() if line.strip()
+            ]
+        else:
+            assert combined == text
+    assert rendered == serialize_response(final)
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
