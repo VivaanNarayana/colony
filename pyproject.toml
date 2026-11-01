@@ -26,6 +26,12 @@ colony = "colony.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/colony"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/colony", "/README.md", "/INSTALL.md", "/pyproject.toml", "/LICENSE",
+  "/tests", "/scripts", "/examples", "/docs",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
