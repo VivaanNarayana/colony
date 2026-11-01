@@ -2,6 +2,7 @@ import json
 import re
 import uuid
 from pathlib import Path
+from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
@@ -10,7 +11,7 @@ from pydantic import Field
 
 from colony.client import Client, MemoryUnavailable
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
-from colony.models import Model, Source, Trail
+from colony.models import ContextBudget, Model, Source, Trail
 from colony.workflow import WORKFLOW_GUIDANCE, configure_workflow
 
 MEMORY_TOOLS = {"memory_inspect", "memory_feedback", "memory_correct", "memory_change"}
@@ -21,6 +22,11 @@ class _MemorySafeMCP(FastMCP):
         try:
             return await super().call_tool(name, arguments)
         except Exception as exc:
+            if name == "ask" and getattr(self, "_adaptive_context_budget", False):
+                # FastMCP validation errors include rejected argument values.
+                raise ToolError(
+                    "Invalid adaptive lookup request or context budget unavailable"
+                ) from None
             if name not in MEMORY_TOOLS:
                 raise
             cause = exc.__cause__ if isinstance(exc, ToolError) else exc
@@ -57,7 +63,16 @@ def create_mcp(
     workflow_repo: Path | None = None,
     workflow_read_only: bool = False,
     workflow_repository_id: str | None = None,
+    context_budget: ContextBudget | None = None,
 ):
+    if context_budget is not None:
+        from colony.context_budget import count_response
+
+        try:
+            context_budget = ContextBudget.model_validate(context_budget)
+        except (TypeError, ValueError):
+            raise ValueError("Invalid context budget configuration") from None
+        count_response({}, context_budget)
     client = Client(home)
     workflow = configure_workflow(
         client,
@@ -81,11 +96,11 @@ def create_mcp(
         if workflow.read_only:
             instructions += " This connection is read-only; do not publish findings."
     server = _MemorySafeMCP("Colony", instructions=instructions)
+    server._adaptive_context_budget = context_budget is not None
 
-    @server.tool(
-        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False), structured_output=False
-    )
-    def ask(question: str, namespace: str | None = None) -> list[TextContent]:
+    def lookup(
+        question: str, namespace: str | None, budget: ContextBudget | None
+    ) -> list[TextContent]:
         """Reuse shared answers or current_repository_reads (current cited-file excerpts).
         Inspect their content
         to verify requested facts. When sufficient, answer and cite it directly, without
@@ -98,16 +113,17 @@ def create_mcp(
             if workflow and workflow.repository_id is not None
             else {}
         )
+        budget_options = {"context_budget": budget} if budget is not None else {}
         result = client.ask(
-            question, namespace, include_evidence_files=evidence_files, **git_options
+            question,
+            namespace,
+            include_evidence_files=evidence_files,
+            **git_options,
+            **budget_options,
         )
         if not result.get("hit"):
             result["research_guidance"] = research_guidance
-            return [
-                TextContent(
-                    type="text", text=json.dumps(result, separators=(",", ":"), ensure_ascii=False)
-                )
-            ]
+            return render(result, budget, question)
         # Keep the answer and validation receipt; avoid duplicating the same paths in checks.
         response = {
             k: result[k]
@@ -131,6 +147,8 @@ def create_mcp(
             )
             if k in result
         }
+        if budget is not None and "context_budget" in result:
+            response["context_budget"] = result["context_budget"]
         feedback = (result.get("memory") or {}).get("feedback", {})
         if any(isinstance(count, int) and count > 0 for count in feedback.values()):
             response["memory_warning"] = (
@@ -140,7 +158,7 @@ def create_mcp(
         if result.get("match_kind") == "evidence":
             # content already contains the source text and original path/line citations.
             response.pop("evidence", None)
-        elif len(response.get("content", "")) > 4000:
+        elif budget is None and len(response.get("content", "")) > 4000:
             response["content"] = response["content"][:4000]
             response["content_truncated"] = True
         if result.get("status") == "validated":
@@ -155,6 +173,11 @@ def create_mcp(
                     "start_line": e["line"],
                     "complete_file": e.get("complete_file", False),
                     "content": e["text"],
+                    **(
+                        {key: e[key] for key in ("selected_line", "selected_end_line") if key in e}
+                        if budget is not None
+                        else {}
+                    ),
                 }
                 for e in result.get("evidence", [])
             ]
@@ -175,11 +198,41 @@ def create_mcp(
             response["research_guidance"] = research_guidance
         if not response.get("complete_files"):
             response.pop("complete_files", None)
-        return [
-            TextContent(
-                type="text", text=json.dumps(response, separators=(",", ":"), ensure_ascii=False)
-            )
-        ]
+        return render(response, budget, question)
+
+    def render(response, budget, question):
+        if budget is not None:
+            from colony.context_budget import fit_response, serialize_response
+
+            response = fit_response(response, budget, question=question)
+            text = serialize_response(response)
+        else:
+            text = json.dumps(response, separators=(",", ":"), ensure_ascii=False)
+        return [TextContent(type="text", text=text)]
+
+    def ask(question: str, namespace: str | None = None) -> list[TextContent]:
+        return lookup(question, namespace, None)
+
+    ask.__doc__ = lookup.__doc__
+    if context_budget is not None:
+
+        def adaptive_ask(
+            question: str,
+            namespace: str | None = None,
+            max_context_tokens: Annotated[int, Field(strict=True, ge=256, le=8192)] | None = None,
+        ) -> list[TextContent]:
+            budget = context_budget
+            if max_context_tokens is not None:
+                budget = budget.model_copy(update={"max_tokens": max_context_tokens})
+            return lookup(question, namespace, budget)
+
+        adaptive_ask.__doc__ = lookup.__doc__
+        ask = adaptive_ask
+    server.tool(
+        name="ask",
+        annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
+        structured_output=False,
+    )(ask)
 
     def publish(
         namespace: str,
@@ -414,6 +467,7 @@ def serve(
     workflow_repo: Path | None = None,
     workflow_read_only: bool = False,
     workflow_repository_id: str | None = None,
+    context_budget: ContextBudget | None = None,
 ):
     create_mcp(
         home,
@@ -422,4 +476,5 @@ def serve(
         workflow_repo=workflow_repo,
         workflow_read_only=workflow_read_only,
         workflow_repository_id=workflow_repository_id,
+        **({"context_budget": context_budget} if context_budget is not None else {}),
     ).run(transport="stdio")

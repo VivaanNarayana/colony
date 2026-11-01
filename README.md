@@ -179,6 +179,80 @@ Git-aware mode adds bounded local reads, Git subprocesses, capability requests a
 tool receipts. It introduces no model-provider calls; its effect on research tokens and
 end-to-end time is unmeasured, and no savings claim is made.
 
+## Adaptive context budgets (experimental, opt-in)
+
+Adaptive mode packs the existing selected evidence into a bounded response. It keeps
+complete selected paragraphs or fenced command blocks, including separate sections of
+the same file. Compact mode omits optional surrounding section text even when more
+would fit. Explicit complete-file requests may restore a whole file when it fits.
+Retrieval models, ranking, permissions, source validation and Git compatibility rules
+are unchanged. There is no extra summarizer, automatic retry or model-provider call.
+
+```sh
+colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/project --repository-id project --context-budget 2048
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --repository-id project --context-budget 2048
+colony --home /absolute/private/agent-home mcp --workflow-namespace team --workflow-repo /absolute/project --context-budget 2048
+```
+
+`--context-budget` without a number selects 2048; explicit limits are integers from
+256 through 8192. Values such as 512, 1024 and 2048 are starting points to evaluate,
+not measured optimal profiles. The budget is a ceiling, not a target to fill.
+Without this option, legacy responses, setup defaults and tool schemas stay unchanged.
+Only adaptive MCP connections expose an optional `max_context_tokens` argument on
+`ask`, allowing an explicit larger or smaller request with the connection's encoding.
+
+The default `utf8_bytes` accounting counts UTF-8 bytes of the canonical JSON payload.
+It is labelled `utf8_bytes_estimate`, not an exact model-token count or a universal
+token bound. This conservative size-based mode works without an optional tokenizer.
+For exact counts under the declared `o200k_base` encoding, install `colony-memory[budgets]`
+and explicitly prepare the tokenizer on each server/client host that will count replies:
+
+- Obtain the [official o200k_base data](https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken)
+  outside request handling and keep it at an absolute local path.
+- Verify SHA-256 `446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d`.
+- Set `COLONY_CONTEXT_TOKENIZER` to that file and add `--context-encoding o200k_base`
+  alongside `--context-budget`. Server and client paths may differ; the verified data
+  and encoding must match. The optional package supports tiktoken 0.14.x.
+
+The runtime reads at most 8 MiB, verifies the hash and constructs the encoding locally.
+It never calls a downloading tokenizer loader. Missing, changed or unavailable requested
+encoding data fails explicitly; it does not silently switch to estimates. The encoding
+name is not inferred from an agent's model and does not establish provider billing counts.
+
+HTTP clients send optional `context_budget` in `/ask`, for example
+`{"max_tokens":2048,"encoding":"utf8_bytes"}`. Authenticated `/capabilities` advertises
+the version, available encodings and supported limits. New clients refuse unsupported
+servers without retrying an unbudgeted lookup. `/health` is unchanged.
+
+Every adaptive response includes a `context_budget` receipt with `version`, `encoding`,
+`max_tokens`, `used`, `measurement` and `limited`. `used` includes that receipt itself,
+the answer, evidence, hashes, citations and required provenance/warnings. It measures
+canonical compact JSON with UTF-8 text and sorted keys. Adaptive CLI prints exactly
+those UTF-8 bytes; adaptive HTTP and MCP use the same serialization. HTTP/JSON-RPC framing,
+agent prompts, tool definitions, reasoning, future calls and entire-conversation limits
+are outside this response budget. This is not a monetary or whole-workflow cost estimate.
+
+Selected evidence retains original source text, hashes and absolute line citations;
+`selected_line` and `selected_end_line` identify indivisible source blocks. Redaction
+happens before selection. Git-aware callers rebuild complete local lines from verified
+files and reapply the budget; MCP applies it again after its final response formatting.
+A whole file is labelled complete only when all its text is included.
+
+If a full authored answer cannot fit with its evidence, adaptive mode can return a
+validated evidence-only result rather than a cut-off answer or command. If required
+blocks or the minimal safe receipt cannot fit, it returns `hit: false` with
+`reason: "budget_limited"`. `limited: true` records omitted surrounding context or a
+withheld answer. Neither a fitting packet nor a false limited flag certifies answer
+sufficiency or truth; assess the facts and research gaps using normal tools. One
+caller's budget does not mark a memory stale or change its lifecycle for other callers.
+
+Adaptive mode remains experimental until a matched native-agent comparison establishes
+its workflow effect. Smaller serialized packets alone do not show lower total tokens:
+misses and additional research can offset reductions. Any savings claim must include
+learning, lookup, publication, retry and failure costs, with correctness and grounding
+reviewed on the same tasks. Provider-free tests and local tokenizer counts are response
+accounting evidence, not measured end-to-end agent savings.
+
 ## Quick start
 
 Python 3.11–3.13 with SQLite extension support is required. Run from this checkout:
