@@ -10,6 +10,9 @@ from colony.security import PATTERNS
 from colony.validation import repo_file
 
 _FENCE = re.compile(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,})")
+_HEADING_PREFIX = r"[ \t]*(?:(?:>[ \t]*|[-+*][ \t]+|[0-9]{1,9}[.)][ \t]+))*"
+_ATX_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(#{1,6})(?:[ \t]+|$)")
+_SETEXT_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(=+|-+)[ \t]*$")
 
 
 def _closes_fence(text, match, opening):
@@ -169,16 +172,22 @@ def _heading_start(lines, first):
             continue
         if opening is not None:
             continue
-        heading = re.match(r"^ {0,3}(#{1,6})(?:[ \t]+|$)", text)
+        heading = _ATX_HEADING.match(text)
         if heading:
-            level, line = len(heading[1]), index + 1
+            if heading[1]:
+                # List/quote/indented heading scope cannot be inferred safely
+                # without parsing containers. Keep its untouched source envelope.
+                return 1
+            level, line = len(heading[2]), index + 1
         elif (
             index > 0
             and lines[index - 1].strip()
             and not _FENCE.match(lines[index - 1])
-            and re.fullmatch(r" {0,3}(?:=+|-+)[ \t]*", text)
+            and (heading := _SETEXT_HEADING.match(text))
         ):
-            level, line = (1 if text.strip().startswith("=") else 2), index
+            if heading[1]:
+                return 1
+            level, line = (1 if heading[2].startswith("=") else 2), index
         else:
             continue
         stack = [(depth, start) for depth, start in stack if depth < level]
