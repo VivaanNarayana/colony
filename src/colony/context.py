@@ -144,28 +144,41 @@ def _paragraph_unit(lines, index):
 
 def _markdown_code_units(lines):
     """Yield original code spans; containers use conservative source envelopes."""
-    index, previous_end, container = 0, 0, False
+    index, container = 0, False
+    paragraph_start, paragraph_indented, continuation_context = None, False, None
     indented = re.compile(r"^(?: {4}| {0,3}\t)")
     while index < len(lines):
         text = lines[index]
-        if text.strip() and indented.match(text):
+        if not text.strip():
+            if paragraph_start is not None:
+                continuation_context = paragraph_start if paragraph_indented else None
+            paragraph_start, paragraph_indented = None, False
+            index += 1
+            continue
+        if indented.match(text):
+            if paragraph_start is not None:
+                # Indented code cannot interrupt an ordinary paragraph. Keep
+                # its following dedented facts in that same paragraph instead.
+                paragraph_indented = True
+                index += 1
+                continue
             start = index
             while index < len(lines) and (not lines[index].strip() or indented.match(lines[index])):
                 index += 1
             end = index
             while end > start and not lines[end - 1].strip():
                 end -= 1
-            context = start
-            if previous_end != start:
-                while context > previous_end and lines[context - 1].strip():
-                    context -= 1
+            # A preceding paragraph that already used indentation is retained
+            # conservatively when its continuation crosses a blank line.
+            context = continuation_context if continuation_context is not None else start
             yield start, end, context, container
-            previous_end = end
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
             continue
         if re.match(r"^[ \t]*(?:>|[-+*][ \t]+|[0-9]{1,9}[.)][ \t]+)", text):
             container = True
         if match := _FENCE.match(text):
             start = index
+            context = paragraph_start if paragraph_start is not None else start
             opening = (index, match[2][0], len(match[2]), match[1].count(">"))
             opening_prefix = match[1]
             index += 1
@@ -187,9 +200,15 @@ def _markdown_code_units(lines):
                         # transition, cannot certify a closing fence.
                         continue
                     break
-            yield start, index, start, False
-            previous_end = index
+            yield start, index, context, False
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
             continue
+        if _ATX_HEADING.match(text) or _SETEXT_HEADING.match(text):
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
+        else:
+            if paragraph_start is None:
+                paragraph_start = index
+            continuation_context = None
         index += 1
 
 
@@ -214,12 +233,26 @@ def _source_unit(ref, lines, line):
         return 1, len(lines)
     if Path(ref).suffix.lower() in {".md", ".markdown"}:
         index = min(line - 1, len(lines) - 1)
-        for start, end, context, container in _markdown_code_units(lines):
-            if start <= index < end:
-                # Without container parsing, retain all original scope rather
-                # than interpreting a nested code fragment as a complete unit.
-                return (1, len(lines)) if container else (context + 1, end)
-        return _paragraph_unit(lines, index)
+        units = list(_markdown_code_units(lines))
+        first, last = _paragraph_unit(lines, index)
+        first -= 1
+        # A completed code block ends the preceding paragraph even without a
+        # blank separator. Do not pull that unrelated block into a later read.
+        for _, end, _, _ in units:
+            if end <= index:
+                first = max(first, end)
+        while True:
+            previous = first, last
+            for start, end, context, container in units:
+                if start < last and end > first:
+                    # Source paragraphs may start before a fence or run through
+                    # its closer. Grow every partial overlap to the complete unit,
+                    # then repeat for any newly overlapping units or captions.
+                    if container:
+                        return 1, len(lines)
+                    first, last = min(first, context), max(last, end)
+            if previous == (first, last):
+                return first + 1, last
     return _selected_block(lines, line)
 
 
