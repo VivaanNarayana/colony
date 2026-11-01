@@ -51,12 +51,12 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
 def _local_reads(repo, sources, remote_evidence, whole_files):
     by_ref = {source.ref: source for source in sources}
     hints = remote_evidence if isinstance(remote_evidence, list) else []
-    selected, used, budget = [], set(), 24000 if whole_files else 4800
+    selected, occupied, budget = [], [], 24000 if whole_files else 4800
     for item in hints[:8]:
         if not isinstance(item, dict):
             continue
         ref, line = item.get("ref"), item.get("line")
-        if not isinstance(ref, str) or ref not in by_ref or ref in used:
+        if not isinstance(ref, str) or ref not in by_ref:
             continue
         if type(line) is not int or line < 1:
             continue
@@ -75,8 +75,13 @@ def _local_reads(repo, sources, remote_evidence, whole_files):
             text = "\n".join(lines[line - 1 :])[: len(hint)]
         if len(text) > budget:
             continue
+        end = start + text.count("\n")
+        # Separate sections of one file can supply different requested facts.
+        # Refuse overlapping reads, including duplicate complete-file hints.
+        if any(r == ref and start <= last and end >= first for r, first, last in occupied):
+            continue
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": complete})
-        used.add(ref)
+        occupied.append((ref, start, end))
         budget -= len(text)
         if len(selected) >= (4 if whole_files else 2):
             break

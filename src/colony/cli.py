@@ -15,7 +15,7 @@ import uvicorn
 from colony.capture import scrubbed_tail
 from colony.client import Client, MemoryUnavailable
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
-from colony.models import Grant, Scope, Trail
+from colony.models import GitContext, Grant, Scope, Trail
 from colony.provision import ModelPreparationError
 from colony.security import generate_keys, issue, private_write
 from colony.validation import snapshot
@@ -523,8 +523,16 @@ def execute(args):
         data.setdefault("sources", [])
         data["sources"].extend(snapshot(args.repo, ref).model_dump() for ref in args.source)
         if context is not None:
-            if data.get("git_context") is not None and data["git_context"] != context.model_dump():
-                raise ValueError("Git context differs from the current publication context")
+            try:
+                if (
+                    data.get("git_context") is not None
+                    and GitContext.model_validate(data["git_context"]) != context
+                ):
+                    raise ValueError()
+            except (TypeError, ValueError):
+                raise ValueError(
+                    "Git context differs from the current publication context"
+                ) from None
             data["git_context"] = context.model_dump()
         options = (
             {"repo": args.repo, "repository_id": args.repository_id}

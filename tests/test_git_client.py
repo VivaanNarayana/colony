@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import os
@@ -150,6 +151,101 @@ def test_local_markdown_section_retains_selected_fact_after_line_32(
         assert "SAVED ANSWER" not in json.dumps(result)
     else:
         assert result["content"] == "SAVED ANSWER"
+
+
+@pytest.mark.parametrize("other_branch", [False, True])
+@pytest.mark.parametrize("whole_files", [False, True])
+def test_distinct_selected_sections_in_one_file_survive_local_rebuild(
+    caller, monkeypatch, other_branch, whole_files
+):
+    from colony.context import excerpts, source_chunks
+
+    client, repo, context, _ = caller
+    text = (
+        "# Build timeout\n\nBUILD_TIMEOUT = 30\n\n"
+        "# Retry configuration\n\nRETRY_LIMIT = 5\n\n# Unrelated appendix\n\n"
+        + "background detail\n" * 1000
+    )
+    (repo / "guide.md").write_bytes(text.encode())
+    source = snapshot(repo, "guide.md")
+    preferred = [
+        (ref, line)
+        for ref, line, text in source_chunks(repo, [source])
+        if "BUILD_TIMEOUT = 30" in text or "RETRY_LIMIT = 5" in text
+    ]
+    hints = excerpts(
+        repo, [source], "Build timeout and retry limit", preferred=preferred, whole_files=whole_files
+    )
+    assert len(hints) == 2 and not any(hint["complete_file"] for hint in hints)
+    origin = context.model_copy(update={"branch": "feature"}) if other_branch else context
+    data = response(context, source, origin)
+    data["evidence"] = hints
+    transport(client, context, data, monkeypatch)
+
+    result = client.ask(
+        "Build timeout and retry limit",
+        "team",
+        repo=repo,
+        repository_id="project",
+        include_evidence_files=whole_files,
+    )
+
+    assert result["hit"] and result["status"] == "validated"
+    assert result["evidence"] == hints
+    assert "BUILD_TIMEOUT = 30" in result["evidence"][0]["text"]
+    assert "RETRY_LIMIT = 5" in result["evidence"][1]["text"]
+    if other_branch:
+        assert result["match_kind"] == "evidence"
+        assert "RETRY_LIMIT = 5" in result["content"]
+        assert "SAVED ANSWER" not in json.dumps(result)
+        from colony import mcp
+
+        monkeypatch.setattr(mcp, "Client", lambda home: client)
+        server = mcp.create_mcp(
+            client.home,
+            evidence_files=whole_files,
+            workflow_namespace="team",
+            workflow_repo=repo,
+            workflow_read_only=True,
+            workflow_repository_id="project",
+        )
+        receipt = json.loads(
+            asyncio.run(server.call_tool("ask", {"question": "Build timeout and retry limit"}))[0].text
+        )
+        reads = receipt["current_repository_reads"]
+        assert len(reads) == 2
+        assert "BUILD_TIMEOUT = 30" in reads[0]["content"]
+        assert "RETRY_LIMIT = 5" in reads[1]["content"]
+        assert "SAVED ANSWER" not in json.dumps(receipt)
+
+
+def test_overlapping_duplicate_hints_leave_room_for_a_distinct_section(caller):
+    _, repo, _, _ = caller
+    (repo / "guide.md").write_bytes(b"# Build\nTIMEOUT = 30\n\n# Retry\nRETRY_LIMIT = 5\n")
+    source = snapshot(repo, "guide.md")
+    first = {"ref": source.ref, "line": 1, "text": "X" * len("# Build\nTIMEOUT = 30")}
+    overlap = {"ref": source.ref, "line": 2, "text": "X" * len("TIMEOUT = 30")}
+    second = {"ref": source.ref, "line": 4, "text": "X" * len("# Retry\nRETRY_LIMIT = 5")}
+
+    reads = git_client._local_reads(repo, [source], [first, first, overlap, second], False)
+
+    assert [item["line"] for item in reads] == [1, 4]
+    assert "RETRY_LIMIT = 5" in reads[1]["text"]
+
+
+def test_duplicate_complete_files_do_not_consume_evidence_file_slots(caller):
+    _, repo, _, _ = caller
+    (repo / "retry.txt").write_bytes(b"RETRY_LIMIT = 5\n")
+    sources = [snapshot(repo, name) for name in ("settings.py", "retry.txt")]
+    hints = [
+        {"ref": source.ref, "line": 1, "text": "untrusted", "complete_file": True}
+        for source in sources
+    ]
+
+    reads = git_client._local_reads(repo, sources, [hints[0], hints[0], hints[1]], True)
+
+    assert len(reads) == 2 and all(item["complete_file"] for item in reads)
+    assert [item["text"] for item in reads] == ["TIMEOUT = 30", "RETRY_LIMIT = 5"]
 
 
 @pytest.mark.parametrize(
