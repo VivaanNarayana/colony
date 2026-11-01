@@ -9,6 +9,18 @@ from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
 from colony.validation import repo_file
 
+_FENCE = re.compile(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,})")
+
+
+def _closes_fence(text, match, opening):
+    return (
+        match[2][0] == opening[1]
+        and len(match[2]) >= opening[2]
+        and match[1].count(">") == opening[3]
+        and re.fullmatch(r"[ \t>]*", match[1])
+        and not text[match.end() :].strip()
+    )
+
 
 def source_lines(root: Path, source: Source) -> list[str]:
     if source.kind != "file":
@@ -102,18 +114,12 @@ def _selected_block(lines: list[str], line: int) -> tuple[int, int]:
     for i, text in enumerate(lines):
         # Conservatively retain fences nested in lists or blockquotes, including
         # indented continuation lines. The returned text remains untouched source.
-        match = re.match(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,})", text)
+        match = _FENCE.match(text)
         if match:
             prefix, marker = match[1], match[2]
             if opening is None:
                 opening = (i, marker[0], len(marker), prefix.count(">"))
-            elif (
-                marker[0] == opening[1]
-                and len(marker) >= opening[2]
-                and prefix.count(">") == opening[3]
-                and re.fullmatch(r"[ \t>]*", prefix)
-                and not text[match.end() :].strip()
-            ):
+            elif _closes_fence(text, match, opening):
                 if opening[0] <= index <= i:
                     return opening[0] + 1, i + 1
                 opening = None
@@ -129,24 +135,65 @@ def _selected_block(lines: list[str], line: int) -> tuple[int, int]:
     return low + 1, high
 
 
-def _adaptive_excerpt(ref, lines, line, whole_files):
-    first, last = _selected_block(lines, line)
+def _source_unit(ref, lines, line):
+    # Shell syntax can cross blank lines through heredocs, substitutions and
+    # compound commands. Without a parser, the complete script is the safe unit.
+    # Any shebang conservatively applies the same rule to unknown extensions.
+    if Path(ref).suffix.lower() in {
+        ".sh",
+        ".bash",
+        ".dash",
+        ".zsh",
+        ".ksh",
+        ".fish",
+        ".csh",
+        ".tcsh",
+        ".command",
+        ".ps1",
+        ".bat",
+        ".cmd",
+    } or lines[0].startswith("#!"):
+        return 1, len(lines)
+    return _selected_block(lines, line)
+
+
+def _heading_start(lines, first):
+    """Keep actual ancestor headings in one conservative, contiguous envelope."""
+    stack, opening = [], None
+    for index, text in enumerate(lines[:first]):
+        if match := _FENCE.match(text):
+            if opening is None:
+                opening = (index, match[2][0], len(match[2]), match[1].count(">"))
+            elif _closes_fence(text, match, opening):
+                opening = None
+            continue
+        if opening is not None:
+            continue
+        heading = re.match(r"^ {0,3}(#{1,6})(?:[ \t]+|$)", text)
+        if heading:
+            level, line = len(heading[1]), index + 1
+        elif (
+            index > 0
+            and lines[index - 1].strip()
+            and not _FENCE.match(lines[index - 1])
+            and re.fullmatch(r" {0,3}(?:=+|-+)[ \t]*", text)
+        ):
+            level, line = (1 if text.strip().startswith("=") else 2), index
+        else:
+            continue
+        stack = [(depth, start) for depth, start in stack if depth < level]
+        stack.append((level, line))
+    return stack[0][1] if stack else first
+
+
+def _adaptive_excerpt(ref, lines, unit, whole_files):
+    first, last = unit
+    if Path(ref).suffix.lower() in {".md", ".markdown"}:
+        first = _heading_start(lines, first)
     low, high = first, last
     complete = whole_files and len("\n".join(lines)) <= 16000
     if complete:
         low, high = 1, len(lines)
-    elif Path(ref).suffix.lower() in {".md", ".markdown"}:
-        # Optional context is a complete containing section, never a sliced line.
-        headings, fenced = [], False
-        for i, text in enumerate(lines):
-            if text.lstrip().startswith(("```", "~~~")):
-                fenced = not fenced
-            elif not fenced and re.match(r"^#{1,6} ", text):
-                headings.append(i + 1)
-        begin = max((i for i in headings if i <= first), default=1)
-        end = min((i - 1 for i in headings if i > last), default=len(lines))
-        if len("\n".join(lines[begin - 1 : end])) <= 2400:
-            low, high = begin, end
     return {
         "ref": ref,
         "line": low,
@@ -219,10 +266,12 @@ def excerpts(
         if len(selected) >= 2 or budget < 300:
             break
         if adaptive:
-            item = _adaptive_excerpt(ref, cache[ref], line, whole_files)
-            first, last = item["selected_line"], item["selected_end_line"]
+            # Count distinct original units before expanding or merging scopes;
+            # merging two envelopes must not make room for a third ranked unit.
+            first, last = _source_unit(ref, cache[ref], line)
             if any(r == ref and first <= b and last >= a for r, a, b in occupied):
                 continue
+            item = _adaptive_excerpt(ref, cache[ref], (first, last), whole_files)
             selected.append(item)
             occupied.append((ref, first, last))
             continue
@@ -244,6 +293,18 @@ def excerpts(
         budget -= len(text)
     if adaptive and len(selected) == 2 and selected[0]["ref"] == selected[1]["ref"]:
         a, b = selected
+        if (
+            a["selected_line"] <= b["selected_end_line"]
+            and b["selected_line"] <= a["selected_end_line"]
+        ):
+            # Both selected facts remain required, even when their ancestor
+            # envelopes overlap. Never discard the later ranked fact.
+            first = min(a["selected_line"], b["selected_line"])
+            last = max(a["selected_end_line"], b["selected_end_line"])
+            a.update(selected_line=first, selected_end_line=last)
+            if not a["complete_file"]:
+                a.update(line=first, text="\n".join(cache[a["ref"]][first - 1 : last]))
+            return [a]
         if a["line"] <= b["line"] + b["text"].count("\n") and b["line"] <= a["line"] + a[
             "text"
         ].count("\n"):

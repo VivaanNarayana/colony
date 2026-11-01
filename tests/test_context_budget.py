@@ -258,7 +258,7 @@ def test_adaptive_excerpts_keep_entire_fence_and_independent_same_file_facts(tmp
         adaptive=True,
     )
     assert len(items) == 2
-    assert items[0]["selected_line"] == 3 and items[0]["selected_end_line"] == 7
+    assert items[0]["selected_line"] == 1 and items[0]["selected_end_line"] == 7
     packed = fit_response(response(*items), {"max_tokens": 1200})
     assert "```sh\nship --signed release.tar\n\nverify release.tar\n```" in packed["content"]
     assert "TIMEOUT=9876" in packed["content"]
@@ -277,7 +277,7 @@ def test_adaptive_long_paragraph_is_not_cut_at_legacy_window(tmp_path):
         preferred=[("guide.md", 19)],
         adaptive=True,
     )
-    assert items[0]["selected_line"] == 3 and items[0]["selected_end_line"] == 42
+    assert items[0]["selected_line"] == 1 and items[0]["selected_end_line"] == 42
     assert "setting_39=39" in items[0]["text"]
 
 
@@ -313,8 +313,11 @@ def test_whole_file_expansion_cannot_hide_two_independent_cores(tmp_path):
         adaptive=True,
         whole_files=True,
     )
-    assert [(e["line"], e["text"]) for e in items] == [(3, "ship release.tar"), (5, "TIMEOUT=30")]
-    assert not any(e["complete_file"] for e in items)
+    assert [(e["line"], e["text"]) for e in items] == [
+        (1, "# Release\n\nship release.tar\n\nTIMEOUT=30")
+    ]
+    assert items[0]["complete_file"]
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 5)
 
 
 def test_fence_like_content_with_suffix_cannot_end_a_selected_code_block(tmp_path):
@@ -373,8 +376,8 @@ def test_container_fences_keep_every_command_and_original_closing(
     )
     result = fit_response(response(*items), {"max_tokens": 2048})
     assert result["hit"]
-    assert items[0]["selected_line"] == 3 and items[0]["selected_end_line"] == 7
-    assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[2:])
+    assert items[0]["selected_line"] == 1 and items[0]["selected_end_line"] == 7
+    assert result["evidence"][0]["text"] == text
     assert "verify release.tar" in result["content"] and result["content"].endswith(closing)
 
 
@@ -401,6 +404,158 @@ def test_answer_mcp_complete_file_list_tracks_actual_remaining_read():
     assert result["hit"] and result["content"] == "Saved answer"
     assert result["complete_files"] == []
     assert not result["current_repository_reads"][0]["complete_file"]
+
+
+def test_required_nested_headings_qualify_value_without_later_sibling(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "# Deployment\n\n## Production\n\n### Replicas\n\nCOUNT=9\n\n## Development\n\nCOUNT=1"
+    (tmp_path / "guide.md").write_text(text)
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "production count",
+        preferred=[("guide.md", 7)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert fitted["hit"]
+    assert fitted["evidence"][0]["text"] == "\n".join(text.splitlines()[:7])
+    assert fitted["evidence"][0]["selected_line"] == 1
+    assert "Development" not in fitted["content"] and "COUNT=1" not in fitted["content"]
+
+
+def test_overlapping_ancestor_envelopes_merge_both_selected_facts_not_third(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "# Deployment\n\n## Production\n\nCOUNT=9\n\n## Development\n\nCOUNT=1\n\n# Other\n\nUNSELECTED=77"
+    (tmp_path / "guide.md").write_text(text)
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "compare deployment counts",
+        preferred=[("guide.md", 5), ("guide.md", 9), ("guide.md", 13)],
+        adaptive=True,
+    )
+    assert len(items) == 1
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert fitted["hit"] and "Production\n\nCOUNT=9" in fitted["content"]
+    assert "Development\n\nCOUNT=1" in fitted["content"]
+    assert "UNSELECTED" not in fitted["content"]
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 9)
+
+
+def test_sibling_top_level_heading_scopes_remain_distinct(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    (tmp_path / "guide.md").write_text("# Production\n\nCOUNT=9\n\n# Development\n\nCOUNT=1")
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "deployment counts",
+        preferred=[("guide.md", 3), ("guide.md", 7)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert [e["text"] for e in fitted["evidence"]] == [
+        "# Production\n\nCOUNT=9",
+        "# Development\n\nCOUNT=1",
+    ]
+    assert [e["line"] for e in fitted["evidence"]] == [1, 5]
+
+
+def test_setext_ancestor_headings_are_required_source(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "Deployment\n==========\n\nProduction\n----------\n\nCOUNT=9"
+    (tmp_path / "guide.md").write_text(text)
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "production count",
+        preferred=[("guide.md", 7)],
+        adaptive=True,
+    )
+    assert fit_response(response(*items), {"max_tokens": 2048})["evidence"][0]["text"] == text
+
+
+def test_required_heading_envelope_overflow_withholds_bare_value(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "# Deployment\n\n" + "Applicability information. " * 100 + "\n\n## Production\n\nCOUNT=9"
+    (tmp_path / "guide.md").write_text(text)
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "production count",
+        preferred=[("guide.md", 7)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 900})
+    assert not fitted["hit"] and fitted["reason"] == "budget_limited"
+    assert "COUNT=9" not in serialize_response(fitted)
+
+
+@pytest.mark.parametrize(
+    "name,shebang",
+    [
+        ("deploy.sh", ""),
+        ("deploy", "#!/usr/bin/env -S bash\n\n"),
+        ("deploy.payload", "#!/bin/bash\n\n"),
+    ],
+)
+def test_blank_heredoc_process_substitution_and_trailing_flags_are_indivisible(
+    tmp_path, name, shebang
+):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = (
+        shebang
+        + 'deploy --manifest=<(cat <<\'JSON\'\n\n{"mode": "production"}\nJSON\n) --production\n\nverify --remote release'
+    )
+    (tmp_path / name).write_text(text)
+    line = 3 if shebang else 1
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, name)],
+        "deploy production",
+        preferred=[(name, line)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert fitted["hit"] and fitted["evidence"][0]["text"] == text
+    assert ") --production" in fitted["content"] and "verify --remote release" in fitted["content"]
+    assert not fitted["evidence"][0]["complete_file"]
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, len(text.splitlines()))
+
+
+def test_large_required_script_overflow_never_returns_partial_command(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = (
+        "deploy --manifest=<(cat <<'JSON'\n\n"
+        + '{"description":"'
+        + "signed artifact " * 100
+        + '"}\nJSON\n) --production'
+    )
+    (tmp_path / "deploy.sh").write_text(text)
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "deploy.sh")],
+        "deploy production",
+        preferred=[("deploy.sh", 1)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 900})
+    assert not fitted["hit"] and fitted["reason"] == "budget_limited"
+    assert "deploy --manifest" not in serialize_response(fitted)
 
 
 def test_verified_optional_o200k_fixture_counts_without_loader_or_network(monkeypatch):

@@ -183,7 +183,12 @@ end-to-end time is unmeasured, and no savings claim is made.
 
 Adaptive mode packs the existing selected evidence into a bounded response. It keeps
 complete selected paragraphs or fenced command blocks, including separate sections of
-the same file. Compact mode omits optional surrounding section text even when more
+the same file. Markdown blocks retain their heading ancestry as original source text;
+overlapping required spans are combined so separately selected facts remain present.
+Unfenced shell files and files with a shebang require their entire source, since blank
+lines alone cannot identify safe command boundaries. These conservative spans can
+increase response size or require a budget-limited miss. Compact mode omits optional
+surrounding section text even when more
 would fit. Explicit complete-file requests may restore a whole file when it fits.
 Retrieval models, ranking, permissions, source validation and Git compatibility rules
 are unchanged. There is no extra summarizer, automatic retry or model-provider call.
