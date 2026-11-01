@@ -41,7 +41,15 @@ def _canonical(value: dict) -> str:
 
 
 class Workflow:
-    def __init__(self, client: Client, namespace: str, repo: Path, *, read_only: bool = False):
+    def __init__(
+        self,
+        client: Client,
+        namespace: str,
+        repo: Path,
+        *,
+        read_only: bool = False,
+        repository_id: str | None = None,
+    ):
         if not re.fullmatch(r"[a-zA-Z0-9_.-]{1,80}", namespace):
             raise ValueError("Invalid workflow namespace")
         self.repo = repo.resolve()
@@ -55,6 +63,11 @@ class Workflow:
         self.client = client
         self.namespace = namespace
         self.read_only = read_only
+        self.repository_id = repository_id
+        if repository_id is not None:
+            from colony.models import GitContext
+
+            GitContext(repository_id=repository_id, state="unavailable")
 
     def bind_namespace(self, namespace: str | None) -> str:
         if namespace is not None and namespace != self.namespace:
@@ -92,9 +105,15 @@ class Workflow:
                 # Check confinement and existence without rereading just to fingerprint.
                 repo_file(self.repo, source.ref)
             except (OSError, ValueError):
-                raise ValueError("Workflow evidence must name an available repository file") from None
+                raise ValueError(
+                    "Workflow evidence must name an available repository file"
+                ) from None
         unique = {_canonical(s.model_dump()): s for s in trail.sources}
         trail.sources = [unique[key] for key in sorted(unique)]
+        if self.repository_id is not None:
+            from colony.git_context import capture
+
+            trail.git_context = capture(self.repo, self.repository_id)
         identity = {
             "version": "colony.workflow-finding/1",
             "producer": fingerprint(self.client.keyfile),
@@ -111,7 +130,14 @@ def configure_workflow(
     repo: Path | None,
     *,
     read_only: bool = False,
+    repository_id: str | None = None,
 ) -> Workflow | None:
-    if (namespace is None) != (repo is None) or (read_only and namespace is None):
+    if (namespace is None) != (repo is None) or (
+        (read_only or repository_id is not None) and namespace is None
+    ):
         raise ValueError("Workflow namespace and repository must be configured together")
-    return None if namespace is None else Workflow(client, namespace, repo, read_only=read_only)
+    return (
+        None
+        if namespace is None
+        else Workflow(client, namespace, repo, read_only=read_only, repository_id=repository_id)
+    )

@@ -94,6 +94,9 @@ def parser():
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=7331)
     serve.add_argument("--max-age", type=int, default=604800)
+    serve.add_argument(
+        "--repository-id", help="Explicit logical repository ID for Git-aware clients"
+    )
     serve.add_argument("--models", type=Path, help="Verified directory prepared by models fetch")
     serve.add_argument(
         "--offline", action="store_true", help="Require pinned local models; never download"
@@ -101,6 +104,8 @@ def parser():
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     ask.add_argument("--ns")
+    ask.add_argument("--repo", type=Path, default=Path.cwd())
+    ask.add_argument("--repository-id", help="Enable Git-aware lookup for this repository ID")
     ask.add_argument(
         "--evidence-files",
         action="store_true",
@@ -110,6 +115,7 @@ def parser():
     push.add_argument("file", type=Path)
     push.add_argument("--ns", required=True)
     push.add_argument("--repo", type=Path, default=Path.cwd())
+    push.add_argument("--repository-id", help="Record Git provenance for this repository ID")
     push.add_argument("--source", action="append", default=[])
     run = sub.add_parser(
         "run", help="Capture only command output; never trace inputs or tool calls"
@@ -118,6 +124,7 @@ def parser():
     run.add_argument("--ns", required=True)
     run.add_argument("--question", required=True)
     run.add_argument("--repo", type=Path, default=Path.cwd())
+    run.add_argument("--repository-id", help="Record Git provenance for this repository ID")
     run.add_argument("--source", action="append", default=[])
     run.add_argument("cmd", nargs=argparse.REMAINDER)
     sub.add_parser("retry", help="Retry encrypted, scrubbed offline pushes")
@@ -131,6 +138,9 @@ def parser():
     mcp.add_argument("--workflow-namespace", help="Bind an opt-in workflow to one namespace")
     mcp.add_argument("--workflow-repo", type=Path, help="Local project for workflow evidence")
     mcp.add_argument(
+        "--workflow-repository-id", help="Enable Git-aware workflow for a logical repository ID"
+    )
+    mcp.add_argument(
         "--workflow-read-only", action="store_true", help="Expose lookup only in workflow mode"
     )
     setup = sub.add_parser("setup", help="Configure a project to use Colony with a coding agent")
@@ -142,6 +152,7 @@ def parser():
     install.add_argument("--ns", required=True)
     install.add_argument("--dry-run", action="store_true")
     install.add_argument("--read-only", action="store_true")
+    install.add_argument("--repository-id", help="Enable Git-aware project workflow")
     for action in ("status", "uninstall"):
         command = actions.add_parser(action)
         command.add_argument("--repo", type=Path, required=True)
@@ -168,6 +179,7 @@ def parser():
             operation.add_argument("file", type=Path)
             operation.add_argument("--repo", type=Path, default=Path.cwd())
             operation.add_argument("--source", action="append", default=[])
+            operation.add_argument("--repository-id", help="Record correction Git provenance")
     usage = sub.add_parser(
         "usage", help="Opt-in local usage metadata and self-reported assessments"
     )
@@ -397,7 +409,13 @@ def execute(args):
             retrieval.index_version.cache_clear()
 
         uvicorn.run(
-            create_app(args.data, args.repo, args.issuer, max_age=args.max_age),
+            create_app(
+                args.data,
+                args.repo,
+                args.issuer,
+                max_age=args.max_age,
+                repository_id=args.repository_id,
+            ),
             host=args.host,
             port=args.port,
             access_log=False,
@@ -412,6 +430,7 @@ def execute(args):
             workflow_namespace=args.workflow_namespace,
             workflow_repo=args.workflow_repo,
             workflow_read_only=args.workflow_read_only,
+            workflow_repository_id=args.workflow_repository_id,
         )
         return None
     if args.command == "setup":
@@ -424,6 +443,7 @@ def execute(args):
             namespace=getattr(args, "ns", None),
             dry_run=getattr(args, "dry_run", False),
             read_only=getattr(args, "read_only", False),
+            repository_id=getattr(args, "repository_id", None),
         )
     client = Client(args.home)
     if args.command == "memory":
@@ -437,6 +457,11 @@ def execute(args):
         except (TypeError, ValueError):
             raise MemoryInvalid() from None
         if args.memory_action == "correct":
+            git_context = None
+            if args.repository_id is not None:
+                from colony.git_context import capture
+
+                git_context = capture(args.repo, args.repository_id)
             try:
                 data = json.loads(args.file.read_text(encoding="utf-8"))
                 if not isinstance(data, dict) or set(data) - {"question", "content", "sources"}:
@@ -451,6 +476,14 @@ def execute(args):
                 question, content = data["question"], data["content"]
             except (KeyError, TypeError, ValueError):
                 raise MemoryInvalid() from None
+            if git_context is not None:
+                from colony.git_client import checked_sources
+                from colony.models import Source
+
+                checked_sources(args.repo, [Source.model_validate(source) for source in sources])
+                if capture(args.repo, args.repository_id) != git_context:
+                    raise MemoryInvalid()
+                options["git_context"] = git_context
             return client.memory_correct(
                 args.id,
                 args.ns,
@@ -468,17 +501,43 @@ def execute(args):
             **options,
         )
     if args.command == "ask":
-        return client.ask(args.question, args.ns, include_evidence_files=args.evidence_files)
+        options = (
+            {"repo": args.repo, "repository_id": args.repository_id}
+            if args.repository_id is not None
+            else {}
+        )
+        return client.ask(
+            args.question, args.ns, include_evidence_files=args.evidence_files, **options
+        )
     if args.command == "retry":
         return client.retry()
     if args.command == "push":
+        context = None
+        if args.repository_id is not None:
+            from colony.git_context import capture
+
+            context = capture(args.repo, args.repository_id)
         data = json.loads(args.file.read_text(encoding="utf-8"))
         data.setdefault("id", uuid.uuid4().hex)
         data["namespace"] = args.ns
         data.setdefault("sources", [])
         data["sources"].extend(snapshot(args.repo, ref).model_dump() for ref in args.source)
-        return client.push(Trail.model_validate(data))
+        if context is not None:
+            if data.get("git_context") is not None and data["git_context"] != context.model_dump():
+                raise ValueError("Git context differs from the current publication context")
+            data["git_context"] = context.model_dump()
+        options = (
+            {"repo": args.repo, "repository_id": args.repository_id}
+            if args.repository_id is not None
+            else {}
+        )
+        return client.push(Trail.model_validate(data), **options)
     if args.command == "run":
+        context = None
+        if args.repository_id is not None:
+            from colony.git_context import capture
+
+            context = capture(args.repo, args.repository_id)
         cmd = args.cmd[1:] if args.cmd[:1] == ["--"] else args.cmd
         if not cmd:
             raise ValueError("Provide a command after --")
@@ -511,8 +570,14 @@ def execute(args):
             sources=sources,
             capture="outputs",
             tainted=True,
+            git_context=context,
         )
-        result = client.push(trail)
+        options = (
+            {"repo": args.repo, "repository_id": args.repository_id}
+            if args.repository_id is not None
+            else {}
+        )
+        result = client.push(trail, **options)
         print(json.dumps({**result, "exit_code": process.returncode}))
         return process.returncode
 

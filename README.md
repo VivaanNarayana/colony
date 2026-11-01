@@ -110,6 +110,75 @@ cleanup, or after a failure, the private workspace remains for inspection. Resul
 fixed step statuses and no credential contents. A failed check exits nonzero. This fixture
 demonstrates transport/evidence behavior, not agent obedience or token/time savings.
 
+## Git branch and commit awareness
+
+Git-aware mode is opt-in. Assign the same explicit, nonsensitive repository ID to
+the server and each trusted checkout of that project. Namespaces and signed grants
+still control access; Git metadata is producer-reported provenance, never an
+authorization or answer-correctness certificate. Repository identity is not inferred
+from remote URLs, branch names, or absolute filesystem paths.
+
+```sh
+colony serve --repo /absolute/server-project --data /absolute/private/data --issuer /absolute/private/issuer.pub --repository-id project --offline
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/caller-project --ns team --repository-id project
+colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/caller-project --repository-id project
+colony --home /absolute/private/agent-home push finding.json --ns team --repo /absolute/caller-project --repository-id project --source settings.py
+```
+
+Use absolute Windows paths on Windows. The managed project connection forwards
+`--workflow-repository-id project` with its existing workflow repository/namespace;
+that option can also be supplied to a manually configured `colony mcp` connection.
+Without the new ID options, existing CLI, MCP, setup and server behavior remains
+unchanged. Use `--repository-id` with `run` or `memory correct` to record their
+publication/correction provenance too. Git-aware requests require a server advertising
+the same ID and protocol through authenticated `/capabilities`; older/disabled servers
+produce an explicit unsupported lookup result or publication failure, never a silent
+claim of Git protection. `/health` retains its original public contract.
+
+For each Git-aware operation, Colony reads the local commit, branch or detached-HEAD
+state, and dirty/untracked state. The collector has a three-second total deadline and
+64 KiB aggregate output ceiling. It disables filesystem monitors, external clean/process
+filters, optional index writes and lazy object fetching; it never fetches or switches
+branches. Gitlinks/submodules, unborn/bare repositories, unsupported Git commands,
+missing Git, oversized output, and inconsistent snapshots are conservatively unavailable.
+Custom filters can conservatively make a worktree appear dirty. Known credential-shaped
+branch names are unavailable, and sensitive-shaped repository IDs are refused without
+echoing their contents. No remote URL, Git configuration contents, or local absolute path
+is published in Git provenance.
+
+- Matching repository ID, branch and commit with clean worktrees is eligible for saved
+  answer reuse only if the existing file and lifecycle checks also pass.
+- A different branch/commit, dirty/unknown context, or legacy finding with unknown origin
+  withholds the saved answer. Current matching file evidence can still be returned.
+- A different logical repository is excluded from both answers and evidence. A Git mismatch
+  does not globally mark a memory stale for users on another branch.
+- Detached checkouts compare explicit commit identities. Non-Git directories retain file
+  validation with an explicit `not_applicable` Git receipt, without inventing a commit.
+
+The caller rechecks source fingerprints and rebuilds bounded, scrubbed excerpts from its
+own working tree without loading retrieval models. Server excerpts alone are not labeled
+current caller reads. If its context changes during lookup, or its files do not match,
+the client returns a safe miss. The server can use a different checkout; its independently
+observed Git state is recorded separately and never substitutes for the producer's origin.
+Git comparisons and file checks do not certify that an answer's claims are true.
+
+Provenance is stored encrypted in an additive `trail_git_provenance_v1` table and exposed
+through permission-checked memory inspection. Old records remain unknown; migration does
+not backfill guessed origins. Missing metadata preserves legacy payload bytes and duplicate
+IDs. Git-aware workflow findings include their context in their deterministic identity.
+Encrypted offline queues freeze the original context: `retry` never restamps a finding
+with the current branch. Corrections receive new origin metadata; restore preserves the
+original origin. Following an unknown correction outcome, replay the identical request,
+including its Git context, or inspect current state. Recollecting context after a branch
+switch is a different request and can correctly conflict with the original operation ID.
+The direct API accepts the frozen original `git_context` for an exact replay.
+
+Back up the database, blobs and storage key together before upgrading. Older binaries
+ignore Git provenance, so downgrading does not preserve Git-aware reuse protection.
+Git-aware mode adds bounded local reads, Git subprocesses, capability requests and compact
+tool receipts. It introduces no model-provider calls; its effect on research tokens and
+end-to-end time is unmeasured, and no savings claim is made.
+
 ## Quick start
 
 Python 3.11–3.13 with SQLite extension support is required. Run from this checkout:
