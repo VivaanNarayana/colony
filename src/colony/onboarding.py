@@ -102,6 +102,20 @@ def _repo(value: Path) -> Path:
 def _separate(home: Path, repo: Path) -> None:
     if home == repo or home.is_relative_to(repo) or repo.is_relative_to(home):
         raise ValueError("Onboarding credentials must be outside the project directory")
+    # Windows extended namespaces and 8.3 names can spell the same directory
+    # differently, even after resolve(). Compare existing directory identities;
+    # a new home has an existing parent, checked by _destination before this call.
+    try:
+        home.stat()
+    except FileNotFoundError:
+        home_exists = False
+    else:
+        home_exists = True
+    ancestors = (home, *home.parents) if home_exists else home.parents
+    if any(repo.samefile(parent) for parent in ancestors) or (
+        home_exists and any(home.samefile(parent) for parent in (repo, *repo.parents))
+    ):
+        raise ValueError("Onboarding credentials must be outside the project directory")
 
 
 def _stage(path: Path, kind: str) -> Path:
