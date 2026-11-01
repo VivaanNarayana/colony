@@ -1,12 +1,30 @@
 """Validate Git-aware receipts against the caller's files, without local inference."""
 
+import hashlib
+import re
 from pathlib import Path
 
-from colony.context import source_lines
 from colony.git_context import capture, compare
 from colony.models import GitContext, Source
-from colony.security import scrub
-from colony.validation import validate
+from colony.security import PATTERNS, scrub
+from colony.validation import repo_file, validate
+
+
+def _source_lines(root: Path, source: Source) -> list[str]:
+    # Keep the caller path independent of the server's native retrieval stack.
+    # Scrub the whole file before excerpting, preserving original line numbers.
+    if source.kind != "file":
+        return []
+    try:
+        data = repo_file(root, source.ref).read_bytes()
+        if hashlib.sha256(data).hexdigest() != source.content_hash:
+            return []
+        text = data.decode("utf-8")
+    except (OSError, ValueError, UnicodeError):
+        return []
+    for pattern in PATTERNS:
+        text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
+    return text.splitlines()
 
 
 def checked_sources(repo: Path, sources: list[Source]) -> None:
@@ -42,8 +60,7 @@ def _local_reads(repo, sources, remote_evidence, whole_files):
             continue
         if type(line) is not int or line < 1:
             continue
-        # source_lines verifies confinement and the actual bytes, and scrubs locally.
-        lines = source_lines(repo, by_ref[ref])
+        lines = _source_lines(repo, by_ref[ref])
         if not lines or line > len(lines):
             continue
         text = "\n".join(lines)

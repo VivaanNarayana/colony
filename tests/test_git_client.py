@@ -1,5 +1,8 @@
 import hashlib
 import json
+import os
+import subprocess
+import sys
 import time
 
 import httpx
@@ -297,3 +300,39 @@ def test_setup_cli_never_echoes_invalid_repository_id(caller, monkeypatch, capsy
     assert sentinel not in output.err and "input_value" not in output.err
     assert "nonsensitive repository identifier" in output.err
     assert not (repo / ".codex").exists()
+
+
+def test_cold_git_client_import_never_loads_native_retrieval_stack(tmp_path):
+    code = """
+import importlib.abc, sys
+blocked = ("numpy", "sqlite_vec", "fastembed", "onnxruntime", "colony.retrieval", "colony.context")
+class Guard(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if any(fullname == name or fullname.startswith(name + ".") for name in blocked):
+            raise AssertionError("Git-aware client imported a native retrieval dependency")
+sys.meta_path.insert(0, Guard())
+from colony.git_client import verify_lookup
+assert not any(name in sys.modules for name in blocked)
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-c", code],
+        cwd=tmp_path,
+        env=os.environ.copy(),
+        capture_output=True,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr.decode(errors="replace")
+
+
+def test_local_source_redaction_preserves_lines_and_rejects_changed_bytes(tmp_path):
+    source_file = tmp_path / "source.txt"
+    source_file.write_bytes(
+        b"before\n-----BEGIN PRIVATE KEY-----\nsynthetic-private\n"
+        b"-----END PRIVATE KEY-----\nafter\n"
+    )
+    source = snapshot(tmp_path, "source.txt")
+    lines = git_client._source_lines(tmp_path, source)
+    assert lines[0] == "before" and lines[4] == "after"
+    assert "synthetic-private" not in "\n".join(lines) and "[REDACTED]" in lines[1]
+    source_file.write_bytes(b"different")
+    assert git_client._source_lines(tmp_path, source) == []
