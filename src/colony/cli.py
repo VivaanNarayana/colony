@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -15,8 +16,51 @@ from colony.capture import scrubbed_tail
 from colony.client import Client, MemoryUnavailable
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import Grant, Scope, Trail
+from colony.provision import ModelPreparationError
 from colony.security import generate_keys, issue, private_write
 from colony.validation import snapshot
+
+
+class OnboardingInputError(ValueError):
+    """Fixed messages from command argument/prompt validation only."""
+
+
+def _onboarding_commands(result):
+    """Copyable commands contain path references, never credential contents."""
+
+    def command(*args):
+        words = [sys.executable, "-E", "-P", "-m", "colony.cli", *map(str, args)]
+        if os.name == "nt":
+            return "& " + " ".join("'" + word.replace("'", "''") + "'" for word in words)
+        return shlex.join(words)
+
+    home = result.get("homes", {}).get("a", result.get("home"))
+    commands = {}
+    if "serve_args" in result:
+        models = Path(result["workspace"]) / "models"
+        commands["prepare_models"] = command("models", "fetch", "--dir", models)
+        commands["serve_foreground"] = command(
+            *result["serve_args"], "--models", models, "--offline"
+        )
+    if home:
+        options = ["--home", home, "doctor", "--server", result["server"]]
+        if result.get("namespace"):
+            options.extend(["--ns", result["namespace"]])
+        if result.get("repo"):
+            options.extend(["--repo", result["repo"]])
+        commands["check_client"] = command(*options)
+    result["commands"] = commands
+    return result
+
+
+def _prompt_path(label):
+    try:
+        value = input(label + ": ").strip()
+    except (EOFError, KeyboardInterrupt):
+        raise OnboardingInputError("Onboarding input cancelled") from None
+    if not value:
+        raise OnboardingInputError("An absolute path is required")
+    return Path(value)
 
 
 def parser():
@@ -50,6 +94,10 @@ def parser():
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=7331)
     serve.add_argument("--max-age", type=int, default=604800)
+    serve.add_argument("--models", type=Path, help="Verified directory prepared by models fetch")
+    serve.add_argument(
+        "--offline", action="store_true", help="Require pinned local models; never download"
+    )
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     ask.add_argument("--ns")
@@ -148,10 +196,138 @@ def parser():
     compare.add_argument(
         "--output", type=Path, default=argparse.SUPPRESS, help="New output file; never overwrite"
     )
+    models = sub.add_parser(
+        "models", help="Explicit preparation and read-only checks of pinned models"
+    )
+    model_actions = models.add_subparsers(dest="model_action", required=True)
+    for action in ("check", "fetch"):
+        command = model_actions.add_parser(action)
+        command.add_argument("--dir", type=Path, required=True)
+    doctor = sub.add_parser(
+        "doctor", help="Read-only local checks and optional public server health"
+    )
+    doctor.add_argument("--role", choices=("client", "server"), default="client")
+    doctor.add_argument("--repo", type=Path)
+    doctor.add_argument("--models", type=Path)
+    doctor.add_argument("--server", help="Explicit public health check; sends no credential")
+    doctor.add_argument("--ns")
+    doctor.add_argument("--format", choices=("text", "json"), default="text")
+    onboarding = sub.add_parser("onboard", help="Prepare a local team or join an existing server")
+    paths = onboarding.add_subparsers(dest="onboard_action", required=True)
+    initialize = paths.add_parser("init", help="Prepare private local team credentials; no daemon")
+    initialize.add_argument("--workspace", type=Path)
+    initialize.add_argument("--repo", type=Path)
+    initialize.add_argument("--ns", default="team")
+    initialize.add_argument("--server", default="http://127.0.0.1:7331")
+    enrollment = paths.add_parser("join", help="Enroll with a separately trusted issuer public key")
+    enrollment.add_argument("--keyfile", type=Path)
+    enrollment.add_argument("--issuer", type=Path)
+    enrollment.add_argument(
+        "--agent-home", type=Path, help="Explicit private home (otherwise --home)"
+    )
+    enrollment.add_argument("--repo", type=Path)
+    enrollment.add_argument("--ns")
+    enrollment.add_argument("--read-only", action="store_true")
+    for command in (initialize, enrollment):
+        command.add_argument("--dry-run", action="store_true")
+        command.add_argument("--configure-codex", action="store_true")
+        command.add_argument(
+            "--interactive", action="store_true", help="Prompt for paths on a terminal"
+        )
+    demo = sub.add_parser(
+        "demo", help="Isolated two-identity CLI/HTTP/MCP demonstration; no model service"
+    )
+    demo.add_argument(
+        "--workspace", type=Path, required=True, help="New disposable directory; never reuse"
+    )
+    demo.add_argument("--models", type=Path)
+    demo.add_argument("--configure-codex", action="store_true")
+    demo.add_argument("--timeout", type=float, default=90)
+    demo.add_argument(
+        "--cleanup", action="store_true", help="Remove only owned successful demo files"
+    )
     return p
 
 
 def execute(args):
+    if args.command == "models":
+        from colony.provision import check_models, fetch_models
+
+        return (check_models if args.model_action == "check" else fetch_models)(args.dir)
+    if args.command == "doctor":
+        from colony.doctor import diagnose
+
+        return diagnose(
+            args.home,
+            role=args.role,
+            repo=args.repo,
+            models_dir=args.models,
+            server=args.server,
+            namespace=args.ns,
+        )
+    if args.command == "onboard":
+        from colony.onboarding import enroll, initialize
+
+        if args.interactive:
+            if not sys.stdin.isatty():
+                raise OnboardingInputError("Interactive onboarding requires a terminal")
+            if args.onboard_action == "init":
+                for field, label in (
+                    ("workspace", "New private workspace (absolute path)"),
+                    ("repo", "Existing project (absolute path)"),
+                ):
+                    if getattr(args, field) is None:
+                        setattr(args, field, _prompt_path(label))
+            else:
+                for field, label in (
+                    ("keyfile", "Signed keyfile (absolute path)"),
+                    ("issuer", "Separately trusted issuer public key (absolute path)"),
+                ):
+                    if getattr(args, field) is None:
+                        setattr(args, field, _prompt_path(label))
+                if args.agent_home is None:
+                    args.agent_home = _prompt_path("New private agent home (absolute path)")
+        if args.onboard_action == "init":
+            if args.workspace is None or args.repo is None:
+                raise OnboardingInputError("Provide --workspace and --repo, or use --interactive")
+            return _onboarding_commands(
+                initialize(
+                    args.workspace,
+                    args.repo,
+                    namespace=args.ns,
+                    server=args.server,
+                    dry_run=args.dry_run,
+                    configure_codex=args.configure_codex,
+                )
+            )
+        if args.keyfile is None or args.issuer is None:
+            raise OnboardingInputError("Provide --keyfile and --issuer, or use --interactive")
+        if args.agent_home is None:
+            raise OnboardingInputError(
+                "Provide --agent-home as an explicit absolute private directory"
+            )
+        return _onboarding_commands(
+            enroll(
+                args.agent_home,
+                args.keyfile,
+                args.issuer,
+                repo=args.repo,
+                namespace=args.ns,
+                read_only=args.read_only,
+                dry_run=args.dry_run,
+                configure_codex=args.configure_codex,
+            )
+        )
+    if args.command == "demo":
+        from colony.demo import run_demo
+
+        return run_demo(
+            args.workspace,
+            models_dir=args.models,
+            configure_codex=args.configure_codex,
+            timeout=args.timeout,
+            cleanup=args.cleanup,
+        )
     if args.command == "usage":
         from colony.usage import UsageJournal
 
@@ -211,6 +387,14 @@ def execute(args):
         return Client.join(args.home, args.keyfile, args.issuer)
     if args.command == "serve":
         from colony.server import create_app
+
+        if args.models is not None or args.offline:
+            from colony import retrieval
+            from colony.provision import model_environment
+
+            os.environ.update(model_environment(args.models, offline=args.offline))
+            retrieval.models.cache_clear()
+            retrieval.index_version.cache_clear()
 
         uvicorn.run(
             create_app(args.data, args.repo, args.issuer, max_age=args.max_age),
@@ -340,13 +524,24 @@ def main():
         if isinstance(result, int):
             raise SystemExit(result)
         if result is not None:
-            if args.command == "report" and args.format == "text":
+            if args.command == "doctor" and args.format == "text":
+                print("Colony doctor: " + ("checks passed" if result["ok"] else "needs attention"))
+                for check in result["checks"]:
+                    print(f"[{check['status']}] {check['name']}: {check['detail']}")
+            elif args.command == "report" and args.format == "text":
                 print(result)
             else:
                 print(json.dumps(result, indent=2))
+            if args.command in {"doctor", "onboard", "demo"} and not result["ok"]:
+                raise SystemExit(1)
+            if args.command == "models" and not result["ready"]:
+                raise SystemExit(1)
     except (ValueError, OSError, httpx.HTTPError) as exc:
         # Never echo exception text that could contain bearer credentials or request bodies.
-        if args.command == "memory" and isinstance(
+        if isinstance(exc, (OnboardingInputError, ModelPreparationError)):
+            # These types are generated only from fixed messages in the new paths.
+            print(f"Colony {args.command}: {exc}", file=sys.stderr)
+        elif args.command == "memory" and isinstance(
             exc, (MemoryUnavailable, MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound)
         ):
             print(f"Colony memory: {exc}", file=sys.stderr)
