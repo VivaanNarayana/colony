@@ -14,6 +14,7 @@ from cryptography.fernet import Fernet
 
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import (
+    GitContext,
     Keyfile,
     MemoryChange,
     MemoryCorrection,
@@ -269,15 +270,51 @@ class Client:
         response.raise_for_status()
         return response.json()
 
+    def _git_supported(self, context: GitContext):
+        try:
+            capability = self.request("/capabilities", {})["git_context"]
+            if capability["version"] != context.version or (
+                capability["repository_id"] != context.repository_id
+            ):
+                raise ValueError()
+        except (KeyError, TypeError, ValueError, httpx.HTTPStatusError):
+            raise ValueError(
+                "Server does not support the configured Git repository context"
+            ) from None
+
     @_observed("lookup")
     def ask(
-        self, question: str, namespace: str | None = None, *, include_evidence_files: bool = False
+        self,
+        question: str,
+        namespace: str | None = None,
+        *,
+        include_evidence_files: bool = False,
+        repo: Path | None = None,
+        repository_id: str | None = None,
     ):
+        context = None
+        if repository_id is not None:
+            from colony.git_context import capture
+
+            if repo is None:
+                raise ValueError("Git-aware lookup requires an explicit repository")
+            context = capture(repo, repository_id)
         try:
             payload = {"question": scrub(question), "namespace": namespace}
             if include_evidence_files:
                 payload["include_evidence_files"] = True
-            return self.request("/ask", payload)
+            if context is not None:
+                try:
+                    self._git_supported(context)
+                except ValueError:
+                    return {"hit": False, "reason": "git_context_unsupported"}
+                payload["git_context"] = context.model_dump()
+            result = self.request("/ask", payload)
+            if context is not None:
+                from colony.git_client import verify_lookup
+
+                return verify_lookup(result, repo, context, whole_files=include_evidence_files)
+            return result
         except httpx.TransportError:
             return {"hit": False, "reason": "server_unavailable"}
 
@@ -301,6 +338,8 @@ class Client:
         ):
             raise MemoryForbidden()
         try:
+            if isinstance(request, MemoryCorrection) and request.git_context is not None:
+                self._git_supported(request.git_context)
             result = self.request(route, data)
         except httpx.TransportError:
             raise MemoryUnavailable(data.get("operation_id") if mutation else None) from None
@@ -363,6 +402,7 @@ class Client:
         sources: list[Source],
         note: str = "",
         operation_id: str | None = None,
+        git_context: GitContext | None = None,
     ):
         return self._memory_request(
             "/memory/correct",
@@ -376,6 +416,7 @@ class Client:
                 "sources": sources,
                 "note": note,
                 "operation_id": uuid.uuid4().hex if operation_id is None else operation_id,
+                **({"git_context": git_context} if git_context is not None else {}),
             },
             mutation=True,
         )
@@ -420,9 +461,24 @@ class Client:
         return Trail.model_validate(data)
 
     @_observed("publish")
-    def push(self, trail: Trail):
+    def push(self, trail: Trail, *, repo: Path | None = None, repository_id: str | None = None):
+        if repository_id is not None:
+            from colony.git_client import checked_sources
+            from colony.git_context import capture
+
+            if repo is None:
+                raise ValueError("Git-aware publication requires an explicit repository")
+            context = capture(repo, repository_id)
+            if trail.git_context is not None and trail.git_context != context:
+                raise ValueError("Git context changed before publication")
+            checked_sources(repo, trail.sources)
+            if capture(repo, repository_id) != context:
+                raise ValueError("Git context changed before publication")
+            trail = trail.model_copy(update={"git_context": context})
         trail = self.sanitized(trail)
         try:
+            if trail.git_context is not None:
+                self._git_supported(trail.git_context)
             return self.request("/trails", trail.model_dump())
         except httpx.TransportError:
             queue = self.home / "queue"
@@ -452,6 +508,8 @@ class Client:
 
     @_observed("retry")
     def _retry_request(self, trail: Trail):
+        if trail.git_context is not None:
+            self._git_supported(trail.git_context)
         return self.request("/trails", trail.model_dump())
 
     def retry(self):

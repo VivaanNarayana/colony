@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import (
     Ask,
+    GitContext,
     Grant,
     Keyfile,
     MemoryChange,
@@ -22,11 +23,19 @@ from colony.store import Store
 
 
 def create_app(
-    data: Path, repo: Path, issuer: Path, *, max_age: int = 604800, threshold: float = 0.60
+    data: Path,
+    repo: Path,
+    issuer: Path,
+    *,
+    max_age: int = 604800,
+    threshold: float = 0.60,
+    repository_id: str | None = None,
 ) -> FastAPI:
     if not repo.is_dir() or not issuer.is_file():
         raise ValueError("Configure an existing repository and trusted issuer public key")
-    store = Store(data, repo)
+    if repository_id is not None:
+        GitContext(repository_id=repository_id, state="unavailable")
+    store = Store(data, repo, repository_id=repository_id)
     app = FastAPI(title="Colony", version="0.1.0")
     app.state.store = store
 
@@ -79,6 +88,11 @@ def create_app(
     def join(grant: Annotated[Grant, Depends(member)]):
         return {"member_id": grant.member_id, "scopes": [s.model_dump() for s in grant.scopes]}
 
+    @app.post("/capabilities")
+    def capabilities(grant: Annotated[Grant, Depends(member)]):
+        # Separate from /health, which retains its original public contract.
+        return {"git_context": {"version": "colony.git-context/1", "repository_id": repository_id}}
+
     @app.post("/trails")
     def push(trail: Trail, grant: Annotated[Grant, Depends(member)]):
         if not any(s.namespace == trail.namespace and s.push for s in grant.scopes):
@@ -103,6 +117,7 @@ def create_app(
             max_age,
             threshold,
             include_evidence_files=query.include_evidence_files,
+            git_context=query.git_context,
         )
 
     @app.post("/memory/inspect")

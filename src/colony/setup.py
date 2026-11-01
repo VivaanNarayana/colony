@@ -323,6 +323,7 @@ def setup_codex(
     namespace: str | None = None,
     dry_run: bool = False,
     read_only: bool = False,
+    repository_id: str | None = None,
 ) -> dict:
     """Preview/apply owned project config and guidance; status/removal need no identity."""
     if action not in {"install", "status", "uninstall"}:
@@ -358,6 +359,13 @@ def setup_codex(
         }
     outputs = dict(originals)
     if action == "install":
+        if repository_id is not None:
+            from colony.models import GitContext
+
+            try:
+                GitContext(repository_id=repository_id, state="unavailable")
+            except (TypeError, ValueError):
+                raise ValueError("A valid nonsensitive repository identifier is required") from None
         home = _safe_path(home)
         if not namespace or not re.fullmatch(r"[a-zA-Z0-9_.-]{1,80}", namespace):
             raise ValueError("A valid namespace is required")
@@ -392,6 +400,8 @@ def setup_codex(
         ]
         if read_only:
             arguments.append("--workflow-read-only")
+        if repository_id is not None:
+            arguments.extend(["--workflow-repository-id", repository_id])
         table = (
             "[mcp_servers.colony]\ncommand = "
             + json.dumps(str(executable), ensure_ascii=False)

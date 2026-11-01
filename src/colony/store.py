@@ -11,6 +11,8 @@ import sqlite_vec
 from cryptography.fernet import Fernet
 
 from colony.context import excerpts, source_chunks
+from colony.git_context import capture as capture_git_context
+from colony.git_context import compare as compare_git_context
 from colony.memory import (
     MemoryConflict,
     MemoryForbidden,
@@ -24,6 +26,7 @@ from colony.memory import (
     wrap_operation_digest,
 )
 from colony.models import (
+    GitContext,
     Grant,
     Keyfile,
     MemoryChange,
@@ -101,7 +104,13 @@ MEMORY_SCHEMA_V1 = (
 
 
 class Store:
-    def __init__(self, directory: Path, repo: Path):
+    def __init__(self, directory: Path, repo: Path, *, repository_id: str | None = None):
+        if repository_id is not None:
+            try:
+                GitContext(repository_id=repository_id, state="unavailable")
+            except (TypeError, ValueError):
+                raise ValueError("Invalid repository identity") from None
+        self.repository_id = repository_id
         # Load before accepting requests; cold downloads must not become ask/push timeouts.
         models()
         self.directory, self.repo = directory, repo
@@ -117,6 +126,11 @@ class Store:
         with self.connect() as db:
             db.executescript(SCHEMA)
             self.migrate_memory(db)
+            # Keep provenance additive: legacy trail rows and their hashes remain intact.
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS trail_git_provenance_v1 "
+                "(trail_id TEXT PRIMARY KEY, provenance BLOB NOT NULL)"
+            )
         with self.connect() as db:
             self.reindex(db)
 
@@ -164,6 +178,90 @@ class Store:
 
     def read_content(self, ref: str) -> str:
         return self.cipher.decrypt((self.blobs / ref).read_bytes()).decode()
+
+    def _save_git_provenance(self, db, trail: Trail):
+        observed = None
+        if self.repository_id is not None:
+            try:
+                observed = capture_git_context(self.repo, self.repository_id)
+            except Exception:
+                observed = GitContext(repository_id=self.repository_id, state="unavailable")
+        if trail.git_context is None and observed is None:
+            return
+        record = {
+            "version": "colony.git-provenance/1",
+            "origin": trail.git_context.model_dump() if trail.git_context else None,
+            "server_observed": observed.model_dump() if observed else None,
+        }
+        db.execute(
+            "INSERT INTO trail_git_provenance_v1 VALUES (?,?)",
+            (trail.id, self.cipher.encrypt(json.dumps(record, separators=(",", ":")).encode())),
+        )
+
+    def _git_provenance(self, db, trail_id):
+        row = db.execute(
+            "SELECT provenance FROM trail_git_provenance_v1 WHERE trail_id=?", (trail_id,)
+        ).fetchone()
+        if row is None:
+            return None, None, "legacy"
+        try:
+            record = json.loads(self.cipher.decrypt(row["provenance"]))
+            if (
+                not isinstance(record, dict)
+                or set(record) != {"version", "origin", "server_observed"}
+                or record["version"] != "colony.git-provenance/1"
+            ):
+                raise ValueError()
+            origin = (
+                GitContext.model_validate(record["origin"])
+                if record["origin"] is not None
+                else None
+            )
+            observed = (
+                GitContext.model_validate(record["server_observed"])
+                if record["server_observed"] is not None
+                else None
+            )
+            return origin, observed, None
+        except Exception:
+            # Unknown/corrupt metadata cannot establish compatibility or expose raw bytes.
+            return None, None, "unavailable"
+
+    def _git_receipt(self, db, trail_id, requested):
+        origin, observed, failure = self._git_provenance(db, trail_id)
+        return {
+            "origin": origin.model_dump() if origin else None,
+            "server_observed": observed.model_dump() if observed else None,
+            "request": requested.model_dump(),
+            "compatibility": failure or compare_git_context(origin, requested),
+        }
+
+    @staticmethod
+    def _git_request(context):
+        if context is None:
+            return None
+        try:
+            return GitContext.model_validate(context)
+        except (TypeError, ValueError):
+            raise ValueError("Invalid Git context") from None
+
+    def _git_miss(
+        self, requested, *, compatibility="unavailable", receipt=None, reason="git_context_mismatch"
+    ):
+        return {
+            "hit": False,
+            "reason": reason,
+            "git": receipt
+            or {
+                "origin": None,
+                "server_observed": None,
+                "request": requested.model_dump(),
+                "compatibility": compatibility,
+            },
+        }
+
+    def _git_bound(self, requested):
+        return self.repository_id is not None and requested.repository_id == self.repository_id
 
     def reindex(self, db):
         """Atomically migrate legacy hash vectors; never compare different embedding spaces."""
@@ -279,6 +377,7 @@ class Store:
             ),
         )
         db.execute("INSERT INTO memory_state_v1 VALUES (?,'active',0,NULL)", (trail.id,))
+        self._save_git_provenance(db, trail)
         db.execute(
             "INSERT INTO trail_vectors(rowid,embedding) VALUES (?,?)",
             (cursor.lastrowid, embed(passage(trail.question, trail.content))),
@@ -365,6 +464,14 @@ class Store:
             }
             if len(question) > 2000:
                 result["question_truncated"] = True
+            origin, observed, failure = self._git_provenance(db, trail_id)
+            if failure != "legacy":
+                result["git"] = {
+                    "origin": origin.model_dump() if origin else None,
+                    "server_observed": observed.model_dump() if observed else None,
+                }
+                if failure:
+                    result["git"]["compatibility"] = failure
             return result
 
     def _memory_replay(self, db, request, grant, kind):
@@ -493,6 +600,7 @@ class Store:
                     sources=request.sources,
                     tainted=True,
                     capture="none",
+                    git_context=request.git_context,
                 ),
                 grant,
             )
@@ -544,21 +652,42 @@ class Store:
         threshold: float,
         *,
         include_evidence_files: bool = False,
+        git_context: GitContext | None = None,
     ):
         answer = self.find_answer(
-            question, namespaces, max_age, threshold, include_evidence_files=include_evidence_files
+            question,
+            namespaces,
+            max_age,
+            threshold,
+            include_evidence_files=include_evidence_files,
+            git_context=git_context,
         )
         if answer.get("status") == "validated" or not namespaces:
             return answer
         return (
             self.find_evidence(
-                question, namespaces, max_age, include_evidence_files=include_evidence_files
+                question,
+                namespaces,
+                max_age,
+                include_evidence_files=include_evidence_files,
+                git_context=git_context,
             )
             or answer
         )
 
-    def find_evidence(self, question, namespaces, max_age, *, include_evidence_files=False):
+    def find_evidence(
+        self,
+        question,
+        namespaces,
+        max_age,
+        *,
+        include_evidence_files=False,
+        git_context: GitContext | None = None,
+    ):
         """Reuse previously cited sources, never index or search untouched repository files."""
+        requested = self._git_request(git_context)
+        if not namespaces or (requested is not None and not self._git_bound(requested)):
+            return None
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
             rows = db.execute(
@@ -574,6 +703,12 @@ class Store:
             cache, groups, candidates = {}, {}, []
             for row in rows:
                 if row["distance"] is None:
+                    continue
+                if requested is not None and (
+                    self._git_receipt(db, row["id"], requested)["compatibility"]
+                    == "repository_mismatch"
+                ):
+                    # Never let another logical repository influence evidence grouping/ranking.
                     continue
                 key = (row["namespace"], row["ref"], row["content_hash"], row["line"])
                 groups.setdefault(key, []).append(row)
@@ -631,6 +766,10 @@ class Store:
                     checked.add(row["id"])
                     if self.memory_metadata(db, row["id"])["state"] != "active":
                         continue
+                    if requested is not None:
+                        git_receipt = self._git_receipt(db, row["id"], requested)
+                        if git_receipt["compatibility"] == "repository_mismatch":
+                            continue
                     sources = self.sources(db, row["id"])
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
@@ -665,7 +804,7 @@ class Store:
                     "INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)",
                     (row["id"], "repo-evidence-v1", json.dumps(checks), now),
                 )
-                return {
+                result = {
                     "hit": True,
                     "match_kind": "evidence",
                     "id": row["id"],
@@ -691,6 +830,9 @@ class Store:
                     "evidence": evidence,
                     "complete_files": [e["ref"] for e in evidence if e.get("complete_file")],
                 }
+                if requested is not None:
+                    result["git"] = git_receipt
+                return result
         return None
 
     def find_answer(
@@ -701,14 +843,27 @@ class Store:
         threshold: float,
         *,
         include_evidence_files: bool = False,
+        git_context: GitContext | None = None,
     ):
+        requested = self._git_request(git_context)
         if not namespaces:
+            if requested is not None:
+                return self._git_miss(requested, reason="no_pull_scope")
             return {"hit": False, "reason": "no_pull_scope"}
+        if requested is not None and not self._git_bound(requested):
+            return self._git_miss(
+                requested,
+                compatibility="repository_mismatch" if self.repository_id else "unavailable",
+            )
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
             vector = embed(question, query=True)
             # Scope filtering precedes ranking, so private nearest neighbors cannot crowd out hits.
-            rows = db.execute(
+            limit = " LIMIT ?" if requested is None else ""
+            parameters = [vector, vector, vector, *namespaces]
+            if requested is None:
+                parameters.append(CANDIDATES)
+            ordered_rows = db.execute(
                 f"""SELECT t.*, min(vec_distance_cosine(v.embedding, ?),
                 vec_distance_cosine(q.embedding, ?)) AS distance,
                 vec_distance_cosine(q.embedding, ?) AS question_distance
@@ -716,9 +871,22 @@ class Store:
                 JOIN trail_questions q ON t.rowid=q.rowid
                 JOIN memory_state_v1 m ON m.trail_id=t.id
                 WHERE m.state='active' AND t.namespace IN ({placeholders})
-                ORDER BY distance, t.created_at DESC LIMIT ?""",
-                [vector, vector, vector, *namespaces, CANDIDATES],
-            ).fetchall()
+                ORDER BY distance, t.created_at DESC"""
+                + limit,
+                parameters,
+            )
+            denied = None
+            rows = []
+            for row in ordered_rows:
+                if requested is not None:
+                    receipt = self._git_receipt(db, row["id"], requested)
+                    if receipt["compatibility"] not in {"matched", "not_applicable"}:
+                        if denied is None:
+                            denied = receipt
+                        continue
+                rows.append(row)
+                if len(rows) == CANDIDATES:
+                    break
             rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
             contents = [self.read_content(r["content_ref"]) for r in rows]
             scores = rank(question, [c[:4000] for c in contents])
@@ -753,6 +921,12 @@ class Store:
                 )
             ]
             if not candidates:
+                if requested is not None:
+                    return self._git_miss(
+                        requested,
+                        receipt=denied,
+                        reason="git_context_mismatch" if denied else "no_relevant_trail",
+                    )
                 return {"hit": False, "reason": "no_relevant_trail"}
             # Rank outside the write lock, but never return a candidate retired while
             # rank was running. This also makes the attached metadata consistent.
@@ -761,6 +935,10 @@ class Store:
             for row, content, relevance, _ in candidates:
                 if self.memory_metadata(db, row["id"])["state"] != "active":
                     continue
+                if requested is not None:
+                    git_receipt = self._git_receipt(db, row["id"], requested)
+                    if git_receipt["compatibility"] not in {"matched", "not_applicable"}:
+                        continue
                 sources = [
                     Source(**dict(s))
                     for s in db.execute(
@@ -788,9 +966,11 @@ class Store:
                     break
             else:
                 if fallback is None:
+                    if requested is not None:
+                        return self._git_miss(requested, reason="no_relevant_trail")
                     return {"hit": False, "reason": "no_relevant_trail"}
                 row, content, relevance, sources, status, checks, old = fallback
-            return {
+            result = {
                 "hit": True,
                 "match_kind": "answer",
                 "id": row["id"],
@@ -816,3 +996,6 @@ class Store:
                 if status == "validated"
                 else [],
             }
+            if requested is not None:
+                result["git"] = self._git_receipt(db, row["id"], requested)
+            return result
