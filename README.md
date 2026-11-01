@@ -182,16 +182,17 @@ end-to-end time is unmeasured, and no savings claim is made.
 ## Adaptive context budgets (experimental, opt-in)
 
 Adaptive mode packs the existing selected evidence into a bounded response. It keeps
-complete selected paragraphs or fenced command blocks, including separate sections of
-the same file. Markdown blocks retain their heading ancestry as original source text;
+complete selected paragraphs and Markdown code blocks, including fenced and indented
+commands and separate sections of the same file. Markdown blocks retain their heading
+ancestry as original source text;
 overlapping required spans are combined so separately selected facts remain present.
 List or blockquote heading scopes conservatively retain the original source from the
 start of the file through the selected block.
 Unfenced shell files and files with a shebang require their entire source, since blank
 lines alone cannot identify safe command boundaries. These conservative spans can
 increase response size or require a budget-limited miss. Compact mode omits optional
-surrounding section text even when more
-would fit. Explicit complete-file requests may restore a whole file when it fits.
+surrounding section text even when more would fit. Explicit complete-file requests may
+restore a whole file when it fits.
 Retrieval models, ranking, permissions, source validation and Git compatibility rules
 are unchanged. There is no extra summarizer, automatic retry or model-provider call.
 
@@ -243,6 +244,8 @@ Selected evidence retains original source text, hashes and absolute line citatio
 `selected_line` and `selected_end_line` identify indivisible source blocks. Redaction
 happens before selection. Git-aware callers rebuild complete local lines from verified
 files and reapply the budget; MCP applies it again after its final response formatting.
+Trailing empty lines remain part of a selected span. If any required excerpt cannot be
+rebuilt, an adaptive Git-aware lookup withholds the hit instead of returning partial evidence.
 A whole file is labelled complete only when all its text is included.
 
 If a full authored answer cannot fit with its evidence, adaptive mode can return a

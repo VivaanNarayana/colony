@@ -68,18 +68,16 @@ def _local_reads(repo, sources, remote_evidence, whole_files, *, adaptive=False)
         start = 1 if complete else line
         if not complete:
             hint = item.get("text")
-            if (
-                not isinstance(hint, str)
-                or not hint
-                or (not adaptive and len(hint) > 2400)
-            ):
+            if not isinstance(hint, str) or not hint or (not adaptive and len(hint) > 2400):
                 continue
             # A short Markdown section may exceed 32 lines. Preserve its selected
             # span, using only the bounded hint length and verified local text.
             if adaptive:
                 # Budgeted source units are indivisible. A remote character count
                 # must never turn a verified local command into a partial command.
-                last_line = line + max(1, len(hint.splitlines())) - 1
+                # Excerpts use canonical '\n' separators. splitlines() would
+                # discard a represented trailing empty source line.
+                last_line = line + len(hint.split("\n")) - 1
                 if last_line > len(lines):
                     continue
                 text = "\n".join(lines[line - 1 : last_line])
@@ -96,9 +94,7 @@ def _local_reads(repo, sources, remote_evidence, whole_files, *, adaptive=False)
         if adaptive:
             first, last = item.get("selected_line"), item.get("selected_end_line")
             if first is not None or last is not None:
-                if not (
-                    type(first) is int and type(last) is int and start <= first <= last <= end
-                ):
+                if not (type(first) is int and type(last) is int and start <= first <= last <= end):
                     continue
                 read.update(selected_line=first, selected_end_line=last)
         selected.append(read)
@@ -144,13 +140,20 @@ def verify_lookup(
             raise ValueError()
         sources = [Source.model_validate(source) for source in raw_sources]
         checked_sources(repo, sources)
+        hints = result.get("evidence")
         evidence = _local_reads(
             repo,
             sources,
-            result.get("evidence"),
+            hints,
             whole_files,
             **({"adaptive": True} if context_budget is not None else {}),
         )
+        if context_budget is not None and (
+            not isinstance(hints, list) or len(evidence) != len(hints)
+        ):
+            # Every advertised adaptive core is required; a partial saved-answer
+            # hit must not survive one failed local span or source check.
+            raise ValueError()
         if not evidence or capture(repo, context.repository_id) != context:
             raise ValueError()
     except (KeyError, TypeError, ValueError, OSError):
