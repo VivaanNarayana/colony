@@ -904,3 +904,53 @@ def test_real_heading_after_indented_paragraph_continuation_is_not_hidden_as_cod
     _, items, result = _boundary_result(tmp_path, "\n".join(lines), 12)
     assert result["hit"] and result["evidence"][0]["text"] == "# Production\n\nTIMEOUT=9876"
     assert items[0]["selected_line"] == 10
+
+
+@pytest.mark.parametrize(
+    "caption,indent",
+    [
+        ("- Production deployment:", "    "),
+        ("1. Production deployment:", "    "),
+        ("- Deployment:\n  - Production:", "      "),
+    ],
+)
+def test_list_relative_fence_interrupt_requires_complete_original_file(tmp_path, caption, indent):
+    text = "\n".join(
+        [
+            caption,
+            indent + "```sh",
+            indent + "deploy --manifest=<(cat <<'JSON'",
+            "",
+            indent + '{"verify_signature":true}',
+            indent + "JSON",
+            indent + ") --production",
+            indent + "```",
+            "",
+            "Original terminal note.",
+        ]
+    )
+    candidate, items, result = _boundary_result(tmp_path, text, 1, maximum=2048)
+    assert "deploy --manifest" in candidate
+    assert result["hit"] and result["evidence"][0]["text"] == text
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, len(text.splitlines()))
+    assert not result["evidence"][0]["complete_file"]
+    assert ") --production" in result["content"] and "Original terminal note." in result["content"]
+    assert_accounted(result, {"max_tokens": 2048})
+
+
+def test_required_ambiguous_container_file_overflow_never_returns_command_prefix(tmp_path):
+    text = (
+        "- Production deployment:\n    ```sh\n    deploy first\n\n    verify last\n    ```"
+        "\n\nOriginal required context. " + "original context " * 150
+    )
+    _, _, result = _boundary_result(tmp_path, text, 1, maximum=900)
+    assert not result["hit"] and result["reason"] == "budget_limited"
+    assert "deploy first" not in serialize_response(result)
+    assert_accounted(result, {"max_tokens": 900})
+
+
+def test_indented_fence_like_prose_without_container_does_not_require_unrelated_file_tail(tmp_path):
+    paragraph = "Plain explanation.\n    ```literal example\nTIMEOUT=42"
+    _, _, result = _boundary_result(tmp_path, paragraph + "\n\nUnrelated tail.", 1)
+    assert result["hit"] and result["evidence"][0]["text"] == paragraph
+    assert "TIMEOUT=42" in result["content"] and "Unrelated tail" not in result["content"]

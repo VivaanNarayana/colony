@@ -157,6 +157,12 @@ def _markdown_code_units(lines):
             continue
         if indented.match(text):
             if paragraph_start is not None:
+                if container and _FENCE.match(text):
+                    # Raw indentation is relative to an unknown list/quote
+                    # container here. Never call a possible opening fence prose
+                    # and return its command prefix without the remaining body.
+                    yield paragraph_start, len(lines), paragraph_start, True
+                    return
                 # Indented code cannot interrupt an ordinary paragraph. Keep
                 # its following dedented facts in that same paragraph instead.
                 paragraph_indented = True

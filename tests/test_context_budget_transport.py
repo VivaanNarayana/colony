@@ -805,3 +805,121 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
             assert combined == text  # Caption, complete command, and original fence.
     assert rendered == serialize_response(final)
     assert git_context.capture(repo, "project") == origin
+
+
+@pytest.mark.parametrize("prefix", ["- ", "1. "], ids=["list", "ordered-list"])
+@pytest.mark.parametrize("maximum", [256, 2048])
+def test_list_relative_indented_fence_retains_complete_source_through_git_and_mcp(
+    caller, monkeypatch, prefix, maximum
+):
+    from colony import mcp
+    from colony.context import excerpts, source_chunks
+
+    client, repo, _ = caller
+    text = (
+        prefix + "Production café 🐜 deployment:\n"
+        "    ```sh\n    deploy --manifest=<(cat <<'JSON'\n\n"
+        '    {"verify_signature":true}\n    JSON\n    ) --production\n    ```'
+        "\n\nRelease procedure ends here."
+    )
+    ref = "list-release.md"
+    (repo / ref).write_bytes((text + "\n").encode("utf-8"))
+    template = repo.parent / "list-fence-empty-template"
+    template.mkdir()
+    config = repo.parent / "list-fence-empty-config"
+    config.write_bytes(b"")
+    environment = {**os.environ, "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": str(config)}
+    for arguments in [
+        ["init", "--template=" + str(template), "--initial-branch=main"],
+        ["add", "--", ref, "guide.md"],
+        [
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "-m",
+            "fixture",
+        ],
+    ]:
+        # Disposable D fixture only. No fixture shell command is executed.
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "core.hooksPath=" + str(template),
+                "-c",
+                "core.attributesFile=" + str(config),
+                "-c",
+                "core.autocrlf=false",
+                "-c",
+                "commit.gpgSign=false",
+                "-C",
+                str(repo),
+                *arguments,
+            ],
+            env=environment,
+            check=True,
+            capture_output=True,
+            timeout=20,
+        )
+    source = snapshot(repo, ref)
+    origin = git_context.capture(repo, "project")
+    assert origin.state == "git" and origin.dirty is False
+    selected = next(
+        block for path, line, block in source_chunks(repo, [source]) if (path, line) == (ref, 1)
+    )
+    assert "deploy --manifest" in selected
+    items = excerpts(repo, [source], "production deployment", preferred=[(ref, 1)], adaptive=True)
+    budget = ContextBudget(max_tokens=maximum)
+
+    def request(route, payload):
+        if route == "/capabilities":
+            return capability()
+        assert route == "/ask"
+        return fit_response(
+            {
+                "hit": True,
+                "status": "validated",
+                "match_kind": "evidence",
+                "sources": [source.model_dump()],
+                "evidence": items,
+                "git": {"origin": origin.model_dump(), "request": payload["git_context"]},
+            },
+            budget,
+        )
+
+    monkeypatch.setattr(client, "request", request)
+    result = client.ask(
+        "production deployment", "team", repo=repo, repository_id="project", context_budget=budget
+    )
+    monkeypatch.setattr(mcp, "Client", lambda home: client)
+    server = mcp.create_mcp(
+        client.home,
+        workflow_namespace="team",
+        workflow_repo=repo,
+        workflow_repository_id="project",
+        context_budget=budget,
+    )
+    rendered = asyncio.run(server.call_tool("ask", {"question": "production deployment"}))[0].text
+    final = json.loads(rendered)
+    for packet in (result, final):
+        assert packet["context_budget"]["used"] == count_response(packet, budget) <= maximum
+        if maximum == 256:
+            assert not packet["hit"] and packet["reason"] == "budget_limited"
+            assert "evidence" not in packet and "current_repository_reads" not in packet
+            continue
+        assert packet["hit"] and packet["status"] == "validated"
+        assert packet["git"]["compatibility"] == "matched"
+        assert packet["sources"][0]["content_hash"] == source.content_hash
+        reads = packet.get("evidence", packet.get("current_repository_reads"))
+        assert len(reads) == 1
+        read = reads[0]
+        assert read.get("text", read.get("content")) == text
+        assert read.get("line", read.get("start_line")) == 1
+        assert (read["selected_line"], read["selected_end_line"]) == (1, len(text.splitlines()))
+        assert not read["complete_file"]
+        if "sha256" in read:
+            assert read["sha256"] == source.content_hash and read["path"] == ref
+    assert rendered == serialize_response(final)
+    assert git_context.capture(repo, "project") == origin
