@@ -117,6 +117,72 @@ def test_client_withholds_full_answer_even_if_server_claims_match(
     assert result["git"]["compatibility"] == reason
 
 
+@pytest.mark.parametrize("other_branch", [False, True])
+def test_local_markdown_section_retains_selected_fact_after_line_32(
+    caller, monkeypatch, other_branch
+):
+    from colony.context import excerpts, source_chunks
+
+    client, repo, context, _ = caller
+    lines = ["# Build timeout configuration", ""] + [f"item {i:02d}" for i in range(1, 91)]
+    lines[86] = "BUILD_TIMEOUT = 9876"
+    (repo / "guide.md").write_bytes(("\n".join(lines) + "\n").encode())
+    source = snapshot(repo, "guide.md")
+    selected = next(
+        (ref, line) for ref, line, text in source_chunks(repo, [source]) if "9876" in text
+    )
+    hints = excerpts(repo, [source], "Build timeout configuration", preferred=[selected])
+    assert hints[0]["line"] == 1 and hints[0]["text"].count("\n") > 32
+    assert "BUILD_TIMEOUT = 9876" in hints[0]["text"]
+    origin = context.model_copy(update={"branch": "feature"}) if other_branch else context
+    data = response(context, source, origin)
+    data["evidence"] = hints
+    transport(client, context, data, monkeypatch)
+
+    result = client.ask("Build timeout configuration", "team", repo=repo, repository_id="project")
+
+    assert result["hit"] and result["status"] == "validated"
+    assert result["evidence"] == hints
+    assert "BUILD_TIMEOUT = 9876" in result["evidence"][0]["text"]
+    if other_branch:
+        assert result["match_kind"] == "evidence"
+        assert "BUILD_TIMEOUT = 9876" in result["content"]
+        assert "SAVED ANSWER" not in json.dumps(result)
+    else:
+        assert result["content"] == "SAVED ANSWER"
+
+
+@pytest.mark.parametrize(
+    "hint_text", [None, 5, "", "x" * 2401], ids=["missing", "not_text", "empty", "oversized"]
+)
+def test_unbounded_or_malformed_excerpt_hint_cannot_return_a_hit(
+    caller, monkeypatch, hint_text
+):
+    client, repo, context, source = caller
+    data = response(context, source)
+    data["evidence"][0]["text"] = hint_text
+    transport(client, context, data, monkeypatch)
+    result = client.ask("timeout?", "team", repo=repo, repository_id="project")
+    assert not result["hit"] and "content" not in result and "evidence" not in result
+
+
+def test_excerpt_span_is_rebuilt_locally_with_exact_unicode_character_bound(caller, monkeypatch):
+    client, repo, context, _ = caller
+    (repo / "guide.md").write_bytes("outside\nαβγ\nselected: 😀 done\nuncited tail\n".encode())
+    source = snapshot(repo, "guide.md")
+    data = response(context, source)
+    expected = "αβγ\nselected: 😀"
+    data["evidence"] = [{"ref": source.ref, "line": 2, "text": "X" * len(expected)}]
+    transport(client, context, data, monkeypatch)
+
+    result = client.ask("selected?", "team", repo=repo, repository_id="project")
+
+    assert result["evidence"] == [
+        {"ref": source.ref, "line": 2, "text": expected, "complete_file": False}
+    ]
+    assert "uncited tail" not in json.dumps(result)
+
+
 def test_different_repository_never_exposes_saved_answer_or_reads(caller, monkeypatch):
     client, repo, context, source = caller
     transport(

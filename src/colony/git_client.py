@@ -67,7 +67,12 @@ def _local_reads(repo, sources, remote_evidence, whole_files):
         complete = whole_files and item.get("complete_file") is True and len(text) <= 16000
         start = 1 if complete else line
         if not complete:
-            text = "\n".join(lines[line - 1 : line + 31])[:2400]
+            hint = item.get("text")
+            if not isinstance(hint, str) or not 1 <= len(hint) <= 2400:
+                continue
+            # A short Markdown section may exceed 32 lines. Preserve its selected
+            # span, using only the bounded hint length and verified local text.
+            text = "\n".join(lines[line - 1 :])[: len(hint)]
         if len(text) > budget:
             continue
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": complete})

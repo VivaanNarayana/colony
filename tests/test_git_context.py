@@ -245,6 +245,60 @@ def test_global_config_preserves_builtin_crlf_and_excludes_without_callbacks(
     assert (index.read_bytes(), index.stat().st_mtime_ns) == before
 
 
+@pytest.mark.parametrize("scope", ["local", "include", "global", "worktree"])
+@pytest.mark.parametrize("callback_kind", ["clean", "process"])
+def test_equals_filter_name_never_executes_or_rewrites_index(
+    repository, tmp_path, monkeypatch, scope, callback_kind
+):
+    marker = tmp_path / "filter-executed"
+    callback = tmp_path / "filter callback.py"
+    callback.write_text(
+        "import pathlib,sys\npathlib.Path("
+        + repr(str(marker))
+        + ").write_text('executed')\n"
+        + ("sys.stdout.write(sys.stdin.read())\n" if callback_kind == "clean" else "sys.exit(1)\n")
+    )
+    command = shlex.join([Path(sys.executable).as_posix(), callback.as_posix()])
+    driver = "driver=name"
+    (repository / ".gitattributes").write_text(f"fact.txt filter={driver}\n")
+    git(repository, "add", ".gitattributes")
+    git(repository, "commit", "-qm", "attributes")
+    key = f"filter.{driver}.{callback_kind}"
+    if scope == "local":
+        git(repository, "config", key, command)
+    elif scope == "include":
+        config = tmp_path / "included.config"
+        git(tmp_path, "config", "--file", config, key, command)
+        git(repository, "config", "include.path", config)
+    elif scope == "global":
+        home = tmp_path / "isolated user home"
+        home.mkdir()
+        xdg = home / "xdg"
+        xdg.mkdir()
+        git(tmp_path, "config", "--file", home / ".gitconfig", key, command)
+        monkeypatch.setenv("HOME", str(home))
+        monkeypatch.setenv("USERPROFILE", str(home))
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(xdg))
+    else:
+        git(repository, "config", "extensions.worktreeConfig", "true")
+        git(repository, "config", "--worktree", key, command)
+    assert (
+        git(repository, "check-attr", "filter", "--", "fact.txt")
+        .stdout.strip()
+        .endswith(b"filter: driver=name")
+    )
+    # Keep the size unchanged: Git must hash/clean the new bytes instead of
+    # detecting dirtiness from stat size alone and skipping the callback.
+    (repository / "fact.txt").write_text("TIMEOUT = 60\n")
+    index = repository / ".git/index"
+    before = index.read_bytes(), index.stat().st_mtime_ns
+    assert not marker.exists()
+    context = git_context.capture(repository, "project")
+    assert (index.read_bytes(), index.stat().st_mtime_ns) == before
+    assert not marker.exists()
+    assert context.state == "unavailable"
+
+
 @pytest.mark.parametrize("bound", ["keys", "bytes"])
 def test_large_filter_configuration_fails_closed_before_status(repository, monkeypatch, bound):
     with (repository / ".git/config").open("a") as config:

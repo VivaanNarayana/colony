@@ -137,8 +137,11 @@ class _Git:
                 continue
             key = raw.decode("utf-8")
             match = re.fullmatch(r"(filter\..+)\.(?:clean|process|required)", key)
+            # Git's -c key=value syntax splits at the first '='. A valid
+            # subsection containing it cannot be overridden safely this way.
             if (
                 not match
+                or "=" in match[1]
                 or len(key) > 256
                 or any(ord(char) < 32 or ord(char) == 127 for char in key)
             ):
