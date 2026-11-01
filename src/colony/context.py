@@ -130,12 +130,67 @@ def _selected_block(lines: list[str], line: int) -> tuple[int, int]:
             break
     if opening is not None and opening[0] <= index:
         return opening[0] + 1, len(lines)
+    return _paragraph_unit(lines, index)
+
+
+def _paragraph_unit(lines, index):
     low, high = index, index + 1
     while low > 0 and lines[low - 1].strip():
         low -= 1
     while high < len(lines) and lines[high].strip():
         high += 1
     return low + 1, high
+
+
+def _markdown_code_units(lines):
+    """Yield original code spans; containers use conservative source envelopes."""
+    index, previous_end, container = 0, 0, False
+    indented = re.compile(r"^(?: {4}| {0,3}\t)")
+    while index < len(lines):
+        text = lines[index]
+        if text.strip() and indented.match(text):
+            start = index
+            while index < len(lines) and (not lines[index].strip() or indented.match(lines[index])):
+                index += 1
+            end = index
+            while end > start and not lines[end - 1].strip():
+                end -= 1
+            context = start
+            if previous_end != start:
+                while context > previous_end and lines[context - 1].strip():
+                    context -= 1
+            yield start, end, context, container
+            previous_end = end
+            continue
+        if re.match(r"^[ \t]*(?:>|[-+*][ \t]+|[0-9]{1,9}[.)][ \t]+)", text):
+            container = True
+        if match := _FENCE.match(text):
+            start = index
+            opening = (index, match[2][0], len(match[2]), match[1].count(">"))
+            opening_prefix = match[1]
+            index += 1
+            while index < len(lines):
+                closing = _FENCE.match(lines[index])
+                index += 1
+                if closing and _closes_fence(lines[index - 1], closing, opening):
+                    if ">" in opening_prefix:
+                        tail = closing[1].rsplit(">", 1)[-1]
+                        # One space after a quote marker belongs to the quote.
+                        indentation = len(tail.expandtabs(4)) - int(tail.startswith(" "))
+                    else:
+                        baseline = (
+                            len(opening_prefix.expandtabs(4)) if opening_prefix.strip() else 0
+                        )
+                        indentation = len(closing[1].expandtabs(4)) - baseline
+                    if indentation >= 4 or indentation < 0:
+                        # Relative code indentation, or an uncertain container
+                        # transition, cannot certify a closing fence.
+                        continue
+                    break
+            yield start, index, start, False
+            previous_end = index
+            continue
+        index += 1
 
 
 def _source_unit(ref, lines, line):
@@ -157,20 +212,27 @@ def _source_unit(ref, lines, line):
         ".cmd",
     } or lines[0].startswith("#!"):
         return 1, len(lines)
+    if Path(ref).suffix.lower() in {".md", ".markdown"}:
+        index = min(line - 1, len(lines) - 1)
+        for start, end, context, container in _markdown_code_units(lines):
+            if start <= index < end:
+                # Without container parsing, retain all original scope rather
+                # than interpreting a nested code fragment as a complete unit.
+                return (1, len(lines)) if container else (context + 1, end)
+        return _paragraph_unit(lines, index)
     return _selected_block(lines, line)
 
 
 def _heading_start(lines, first):
     """Keep actual ancestor headings in one conservative, contiguous envelope."""
-    stack, opening = [], None
+    stack = []
+    units = iter(_markdown_code_units(lines))
+    unit = next(units, None)
     for index, text in enumerate(lines[:first]):
-        if match := _FENCE.match(text):
-            if opening is None:
-                opening = (index, match[2][0], len(match[2]), match[1].count(">"))
-            elif _closes_fence(text, match, opening):
-                opening = None
-            continue
-        if opening is not None:
+        while unit is not None and index >= unit[1]:
+            unit = next(units, None)
+        if unit is not None and unit[0] <= index < unit[1]:
+            # Fence-like text and headings inside indented code are literal.
             continue
         heading = _ATX_HEADING.match(text)
         if heading:

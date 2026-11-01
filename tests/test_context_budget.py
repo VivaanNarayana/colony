@@ -644,3 +644,141 @@ def test_verified_optional_o200k_fixture_counts_without_loader_or_network(monkey
     value = fit_response({"hit": False, "reason": "not found 雪"}, budget)
     assert value["context_budget"]["measurement"] == "encoding_tokens"
     assert value["context_budget"]["used"] == count_response(value, budget)
+
+
+def _indented_markdown_result(tmp_path, text, line, maximum=2048):
+    from colony.context import excerpts, source_chunks
+    from colony.validation import snapshot
+
+    (tmp_path / "indented.md").write_text(text, encoding="utf-8")
+    sources = [snapshot(tmp_path, "indented.md")]
+    assert ("indented.md", line) in {
+        (ref, start) for ref, start, _ in source_chunks(tmp_path, sources)
+    }
+    items = excerpts(
+        tmp_path, sources, "complete command", preferred=[("indented.md", line)], adaptive=True
+    )
+    return items, fit_response(response(*items), {"max_tokens": maximum})
+
+
+@pytest.mark.parametrize("indent", ["    ", "\t"])
+@pytest.mark.parametrize("line", [3, 5])
+def test_indented_markdown_retains_complete_block_from_beginning_or_middle(tmp_path, indent, line):
+    command = [
+        indent + "deploy --manifest=<(cat <<'JSON'",
+        "",
+        indent + '{"verify_signature":true}',
+        indent + "JSON",
+        indent + ") --production",
+    ]
+    text = "Introductory prose.\n\n" + "\n".join(command) + "\n\nUnrelated closing prose."
+    items, result = _indented_markdown_result(tmp_path, text, line)
+    assert result["hit"]
+    assert items[0]["selected_line"] == 3 and items[0]["selected_end_line"] == 7
+    assert result["evidence"][0]["text"] == "\n".join(command)
+    assert "Introductory" not in result["content"] and "Unrelated" not in result["content"]
+    assert not result["evidence"][0]["complete_file"]
+
+
+def test_indented_markdown_keeps_active_heading_but_excludes_next_section(tmp_path):
+    text = "Intro.\n\n# Release\n\n    deploy first\n\n    verify last\n\n# Other\n\nUnrelated."
+    items, result = _indented_markdown_result(tmp_path, text, 5)
+    assert result["hit"]
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (3, 7)
+    assert result["evidence"][0]["text"] == "# Release\n\n    deploy first\n\n    verify last"
+    assert "Intro." not in result["content"] and "Other" not in result["content"]
+
+
+def test_indented_fence_like_text_is_literal_and_does_not_swallow_later_heading(tmp_path):
+    text = "    deploy first\n\n    ```literal\n    verify last\n\n# Actual scope\n\nVALUE=30"
+    items, result = _indented_markdown_result(tmp_path, text, 3)
+    assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[:4])
+    assert "Actual scope" not in result["content"]
+    items, result = _indented_markdown_result(tmp_path, text, 8)
+    assert result["evidence"][0]["text"] == "# Actual scope\n\nVALUE=30"
+    assert items[0]["selected_line"] == 6
+
+
+def test_indented_code_inside_genuine_fence_keeps_the_enclosing_fence(tmp_path):
+    text = "```sh\n    deploy first\n\nverify last\n```\n\nUnrelated prose."
+    items, result = _indented_markdown_result(tmp_path, text, 4)
+    assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[:5])
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 5)
+
+
+def test_indented_paragraph_continuation_keeps_bounded_context_not_whole_document(tmp_path):
+    text = "Paragraph context.\n    first continuation\n\n    final continuation\n\nUnrelated paragraph."
+    items, result = _indented_markdown_result(tmp_path, text, 4)
+    assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[:4])
+    assert "Unrelated" not in result["content"]
+    assert items[0]["selected_line"] == 1
+
+
+def test_two_space_prose_is_not_a_whole_program(tmp_path):
+    text = "Paragraph context.\n  ordinary continuation\n\nSeparate paragraph."
+    _, result = _indented_markdown_result(tmp_path, text, 1)
+    assert result["evidence"][0]["text"] == "Paragraph context.\n  ordinary continuation"
+    assert "Separate" not in result["content"]
+
+
+def test_large_indented_markdown_block_withholds_instead_of_partial_command(tmp_path):
+    text = "    deploy first\n\n    " + "required configuration " * 100 + "\n    verify last"
+    _, result = _indented_markdown_result(tmp_path, text, 1, maximum=900)
+    assert not result["hit"] and result["reason"] == "budget_limited"
+    assert "deploy first" not in serialize_response(result)
+
+
+def test_indented_markdown_legacy_excerpt_still_retains_original_bytes(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "Intro.\n\n    deploy first\n\n    verify last\n\nClosing prose."
+    (tmp_path / "indented.md").write_text(text)
+    sources = [snapshot(tmp_path, "indented.md")]
+    options = {"preferred": [("indented.md", 3)]}
+    expected = [{"ref": "indented.md", "line": 1, "text": text, "complete_file": False}]
+    assert excerpts(tmp_path, sources, "complete command", **options) == expected
+    assert excerpts(tmp_path, sources, "complete command", adaptive=False, **options) == expected
+
+
+def test_indented_context_does_not_cross_a_preceding_genuine_fence(tmp_path):
+    text = "```sh\nold command\n```\nParagraph context.\n    deploy first\n\n    verify last"
+    items, result = _indented_markdown_result(tmp_path, text, 7)
+    assert (
+        result["evidence"][0]["text"] == "Paragraph context.\n    deploy first\n\n    verify last"
+    )
+    assert items[0]["selected_line"] == 4
+    assert "old command" not in result["content"]
+
+
+def test_genuine_markdown_fence_ignores_four_space_literal_closing_marker(tmp_path):
+    text = "```text\n    ```\n    literal data\n\nlast required line\n```\n\nUnrelated prose."
+    items, result = _indented_markdown_result(tmp_path, text, 1)
+    assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[:6])
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 6)
+
+
+@pytest.mark.parametrize(
+    "opening,literal,body,blank,last,closing",
+    [
+        ("- ```text", "      ```", "      literal data", "", "  last required line", "  ```"),
+        ("1. ```text", "       ```", "       literal data", "", "   last required line", "   ```"),
+        ("> ```text", ">     ```", ">     literal data", ">", "> last required line", "> ```"),
+        (
+            "- > ```text",
+            "  >     ```",
+            "  >     literal data",
+            "  >",
+            "  > last required line",
+            "  > ```",
+        ),
+    ],
+)
+def test_container_fence_relative_indented_marker_is_literal(
+    tmp_path, opening, literal, body, blank, last, closing
+):
+    text = "\n".join([opening, literal, body, blank, last, closing, "", "Unrelated prose."])
+    items, result = _indented_markdown_result(tmp_path, text, 1)
+    assert result["evidence"][0]["text"] == "\n".join(text.splitlines()[:6])
+    assert items[0]["selected_end_line"] == 6
+    assert "Unrelated prose" not in result["content"]

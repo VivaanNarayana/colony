@@ -292,20 +292,17 @@ def test_adaptive_hint_cannot_cut_a_local_command_mid_line(caller):
         ),
         (
             "profiles.md",
-            "- ## Production profile\n\n  TIMEOUT=30\n\n"
-            "- ## Development profile\n\n  TIMEOUT=5",
+            "- ## Production profile\n\n  TIMEOUT=30\n\n- ## Development profile\n\n  TIMEOUT=5",
             [3, 7],
         ),
         (
             "profiles.md",
-            "> ## Production profile\n>\n> TIMEOUT=30\n\n"
-            "> ## Development profile\n>\n> TIMEOUT=5",
+            "> ## Production profile\n>\n> TIMEOUT=30\n\n> ## Development profile\n>\n> TIMEOUT=5",
             [1, 5],
         ),
         (
             "deploy.sh",
-            "deploy --manifest=<(cat <<'JSON'\n\n"
-            '{"verify_signature":true}\nJSON\n) --production',
+            "deploy --manifest=<(cat <<'JSON'\n\n{\"verify_signature\":true}\nJSON\n) --production",
             [1],
         ),
         (
@@ -317,8 +314,12 @@ def test_adaptive_hint_cannot_cut_a_local_command_mid_line(caller):
         ),
     ],
     ids=[
-        "profile-headings", "nested-headings", "list-headings", "quoted-headings",
-        "heredoc", "shebang-heredoc",
+        "profile-headings",
+        "nested-headings",
+        "list-headings",
+        "quoted-headings",
+        "heredoc",
+        "shebang-heredoc",
     ],
 )
 @pytest.mark.parametrize("maximum", [256, 4096])
@@ -335,8 +336,13 @@ def test_required_source_context_survives_git_client_and_final_mcp(
         ["init", "-b", "main"],
         ["add", "--", ref, "guide.md"],
         [
-            "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
-            "commit", "-m", "fixture",
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "-m",
+            "fixture",
         ],
     ]:
         subprocess.run(["git", "-C", str(repo), *arguments], check=True, capture_output=True)
@@ -411,6 +417,157 @@ def test_required_source_context_survives_git_client_and_final_mcp(
         else:
             assert combined == text
     assert rendered == serialize_response(final)
+
+
+@pytest.mark.parametrize("line_ending", ["\n", "\r\n"], ids=["lf", "crlf"])
+@pytest.mark.parametrize("trailing_blanks", [0, 1, 3])
+@pytest.mark.parametrize("two_sources", [False, True], ids=["script", "script-and-guide"])
+def test_trailing_empty_script_lines_survive_actual_git_client_and_mcp(
+    caller, monkeypatch, line_ending, trailing_blanks, two_sources
+):
+    from colony import mcp
+    from colony.context import excerpts
+
+    client, repo, _ = caller
+    script = "#!/bin/bash\n\necho deployment-ready\n" + "\n" * trailing_blanks
+    guide = "# Verification\n\nVerify archive signature.\n"
+    (repo / "deploy.sh").write_bytes(script.replace("\n", line_ending).encode())
+    (repo / "guide.md").write_bytes(guide.replace("\n", line_ending).encode())
+    template = repo.parent / "empty-git-template"
+    template.mkdir()
+    # Only this disposable fixture is changed; fixture shell commands are never run.
+    for arguments in [
+        ["init", "--template=" + str(template), "-b", "main"],
+        ["config", "core.autocrlf", "false"],
+        ["add", "--", "deploy.sh", "guide.md"],
+        [
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "-m",
+            "fixture",
+        ],
+    ]:
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "core.hooksPath=" + str(template),
+                "-c",
+                "commit.gpgSign=false",
+                "-C",
+                str(repo),
+                *arguments,
+            ],
+            check=True,
+            capture_output=True,
+        )
+    refs = ["deploy.sh", "guide.md"] if two_sources else ["deploy.sh"]
+    sources = [snapshot(repo, ref) for ref in refs]
+    origin = git_context.capture(repo, "project")
+    assert origin.state == "git" and origin.dirty is False
+    items = excerpts(
+        repo,
+        sources,
+        "deployment and verification",
+        preferred=[(ref, 3) for ref in refs],
+        adaptive=True,
+    )
+    budget = ContextBudget(max_tokens=4096)
+
+    def request(route, payload):
+        if route == "/capabilities":
+            return capability()
+        assert route == "/ask"
+        return fit_response(
+            {
+                "hit": True,
+                "status": "validated",
+                "match_kind": "answer",
+                "content": "Echo deployment-ready and verify the archive signature."
+                if two_sources
+                else "Echo deployment-ready.",
+                "sources": [source.model_dump() for source in sources],
+                "evidence": items,
+                "git": {"origin": origin.model_dump(), "request": payload["git_context"]},
+            },
+            budget,
+        )
+
+    monkeypatch.setattr(client, "request", request)
+    result = client.ask(
+        "deployment", "team", repo=repo, repository_id="project", context_budget=budget
+    )
+    monkeypatch.setattr(mcp, "Client", lambda home: client)
+    server = mcp.create_mcp(
+        client.home,
+        workflow_namespace="team",
+        workflow_repo=repo,
+        workflow_repository_id="project",
+        context_budget=budget,
+    )
+    rendered = asyncio.run(server.call_tool("ask", {"question": "deployment"}))[0].text
+    final = json.loads(rendered)
+    expected = {"deploy.sh": "\n".join(script.splitlines())}
+    if two_sources:
+        expected["guide.md"] = "\n".join(guide.splitlines())
+    hashes = {source.ref: source.content_hash for source in sources}
+    for value in (result, final):
+        assert value["hit"] and value["match_kind"] == "answer"
+        assert value["git"]["compatibility"] == "matched"
+        reads = value.get("evidence", value.get("current_repository_reads"))
+        assert len(reads) == len(expected)
+        for read in reads:
+            ref = read.get("ref", read.get("path"))
+            assert read.get("text", read.get("content")) == expected[ref]
+            assert read.get("line", read.get("start_line")) == 1
+            assert read["selected_line"] == 1
+            assert read["selected_end_line"] == len(expected[ref].split("\n"))
+            assert not read["complete_file"]
+            if "sha256" in read:
+                assert read["sha256"] == hashes[ref]
+        assert {source["ref"]: source["content_hash"] for source in value["sources"]} == hashes
+        assert value["context_budget"]["used"] == count_response(value, budget) <= 4096
+    assert rendered == serialize_response(final)
+
+
+def test_adaptive_verification_withholds_answer_if_any_required_hint_is_rejected(caller):
+    _, repo, source = caller
+    context = git_context.capture(repo, "project")
+    result = {
+        "hit": True,
+        "status": "validated",
+        "match_kind": "answer",
+        "content": "Saved answer",
+        "sources": [source.model_dump()],
+        "git": {"origin": context.model_dump(), "request": context.model_dump()},
+        "evidence": [
+            {
+                "ref": source.ref,
+                "line": 1,
+                "text": "TIMEOUT = 30",
+                "complete_file": False,
+                "selected_line": 1,
+                "selected_end_line": 1,
+            },
+            {
+                "ref": source.ref,
+                "line": 999,
+                "text": "Missing required source unit",
+                "complete_file": False,
+                "selected_line": 999,
+                "selected_end_line": 999,
+            },
+        ],
+    }
+    adaptive = git_client.verify_lookup(result, repo, context, context_budget=ContextBudget())
+    assert not adaptive["hit"] and adaptive["reason"] == "git_local_evidence_not_verified"
+    assert "content" not in adaptive and "evidence" not in adaptive
+    # Legacy dedup/skip behavior remains unchanged when no budget was requested.
+    legacy = git_client.verify_lookup(result, repo, context)
+    assert legacy["hit"] and legacy["content"] == "Saved answer" and len(legacy["evidence"]) == 1
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
