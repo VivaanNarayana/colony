@@ -5,6 +5,7 @@ import os
 import stat
 import sys
 import uuid
+from contextlib import suppress
 from pathlib import Path
 
 from colony.security import private_write
@@ -77,13 +78,23 @@ def write_new(path: Path, content: bytes) -> None:
     temporary = path.parent / (".colony-write-" + uuid.uuid4().hex)
     try:
         private_write(temporary, content)
-        os.link(temporary, path)
+        # Rename consumes the staging name, so successful publication leaves one
+        # ordinary file even when a scanner subsequently denies deletion/sharing.
+        _publish_exclusive(temporary, path)
     finally:
-        temporary.unlink(missing_ok=True)
+        # Cleanup must not replace either a completed publication or its primary
+        # error. A failed rename can leave a private, single-link staging file.
+        with suppress(OSError):
+            temporary.unlink(missing_ok=True)
 
 
 def publish_directory(stage: Path, target: Path) -> None:
     """Rename exclusively, including on POSIX where ordinary rename replaces empty dirs."""
+    _publish_exclusive(stage, target)
+
+
+def _publish_exclusive(stage: Path, target: Path) -> None:
+    """Publish a file or directory without replacing any existing target."""
     safe_path(stage)
     safe_path(target)
     if os.name == "nt":
