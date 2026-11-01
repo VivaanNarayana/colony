@@ -1,7 +1,15 @@
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    model_serializer,
+    model_validator,
+)
 
 
 class Model(BaseModel):
@@ -13,7 +21,18 @@ class Model(BaseModel):
         # Absent provenance must preserve legacy payload hashes and queued retries.
         if data.get("git_context", False) is None:
             data.pop("git_context", None)
+        if data.get("context_budget", False) is None:
+            data.pop("context_budget", None)
         return data
+
+
+class ContextBudget(Model):
+    """Explicit response accounting; this does not identify an agent's billing model."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    version: Literal["colony.context-budget/1"] = "colony.context-budget/1"
+    max_tokens: StrictInt = Field(default=2048, ge=256, le=8192)
+    encoding: Literal["utf8_bytes", "o200k_base"] = "utf8_bytes"
 
 
 class GitContext(Model):
@@ -99,6 +118,7 @@ class Ask(Model):
     namespace: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
     include_evidence_files: bool = False
     git_context: GitContext | None = None
+    context_budget: ContextBudget | None = None
 
 
 class MemoryInspect(Model):

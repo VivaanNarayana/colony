@@ -19,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "ruff>=0.11,<1"]
+budgets = ["tiktoken>=0.14,<0.15"]
 
 [project.scripts]
 colony = "colony.cli:main"

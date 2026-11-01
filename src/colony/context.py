@@ -95,6 +95,68 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     return low + 1, "\n".join(lines[low:high])[:2400]
 
 
+def _selected_block(lines: list[str], line: int) -> tuple[int, int]:
+    """Recover the original paragraph, or the entire enclosing fenced block."""
+    index = min(line - 1, len(lines) - 1)
+    opening = None
+    for i, text in enumerate(lines):
+        # Conservatively retain fences nested in lists or blockquotes, including
+        # indented continuation lines. The returned text remains untouched source.
+        match = re.match(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,})", text)
+        if match:
+            prefix, marker = match[1], match[2]
+            if opening is None:
+                opening = (i, marker[0], len(marker), prefix.count(">"))
+            elif (
+                marker[0] == opening[1]
+                and len(marker) >= opening[2]
+                and prefix.count(">") == opening[3]
+                and re.fullmatch(r"[ \t>]*", prefix)
+                and not text[match.end() :].strip()
+            ):
+                if opening[0] <= index <= i:
+                    return opening[0] + 1, i + 1
+                opening = None
+        if i == index and opening is None:
+            break
+    if opening is not None and opening[0] <= index:
+        return opening[0] + 1, len(lines)
+    low, high = index, index + 1
+    while low > 0 and lines[low - 1].strip():
+        low -= 1
+    while high < len(lines) and lines[high].strip():
+        high += 1
+    return low + 1, high
+
+
+def _adaptive_excerpt(ref, lines, line, whole_files):
+    first, last = _selected_block(lines, line)
+    low, high = first, last
+    complete = whole_files and len("\n".join(lines)) <= 16000
+    if complete:
+        low, high = 1, len(lines)
+    elif Path(ref).suffix.lower() in {".md", ".markdown"}:
+        # Optional context is a complete containing section, never a sliced line.
+        headings, fenced = [], False
+        for i, text in enumerate(lines):
+            if text.lstrip().startswith(("```", "~~~")):
+                fenced = not fenced
+            elif not fenced and re.match(r"^#{1,6} ", text):
+                headings.append(i + 1)
+        begin = max((i for i in headings if i <= first), default=1)
+        end = min((i - 1 for i in headings if i > last), default=len(lines))
+        if len("\n".join(lines[begin - 1 : end])) <= 2400:
+            low, high = begin, end
+    return {
+        "ref": ref,
+        "line": low,
+        "text": "\n".join(lines[low - 1 : high]),
+        "complete_file": complete,
+        "selected_line": first,
+        "selected_end_line": last,
+    }
+
+
 def excerpts(
     root: Path,
     sources: list[Source],
@@ -103,9 +165,10 @@ def excerpts(
     preferred: list[tuple[str, int]] | None = None,
     claims: str | None = None,
     whole_files: bool = False,
+    adaptive: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
-    if whole_files and 1 <= len(unique) <= 4:
+    if not adaptive and whole_files and 1 <= len(unique) <= 4:
         files = []
         for source in unique.values():
             lines = source_lines(root, source)
@@ -155,6 +218,14 @@ def excerpts(
             continue
         if len(selected) >= 2 or budget < 300:
             break
+        if adaptive:
+            item = _adaptive_excerpt(ref, cache[ref], line, whole_files)
+            first, last = item["selected_line"], item["selected_end_line"]
+            if any(r == ref and first <= b and last >= a for r, a, b in occupied):
+                continue
+            selected.append(item)
+            occupied.append((ref, first, last))
+            continue
         start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
         limit = min(2400, budget)
         offset = len("\n".join(cache[ref][start - 1 : line - 1])) + int(line > start)
@@ -171,4 +242,18 @@ def excerpts(
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
         occupied.append((ref, start, end))
         budget -= len(text)
+    if adaptive and len(selected) == 2 and selected[0]["ref"] == selected[1]["ref"]:
+        a, b = selected
+        if a["line"] <= b["line"] + b["text"].count("\n") and b["line"] <= a["line"] + a[
+            "text"
+        ].count("\n"):
+            # Optional section/file expansion must not hide two independent cores
+            # behind one overlapping local read.
+            for item in selected:
+                first, last = item["selected_line"], item["selected_end_line"]
+                item.update(
+                    line=first,
+                    text="\n".join(cache[item["ref"]][first - 1 : last]),
+                    complete_file=False,
+                )
     return selected
