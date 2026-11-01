@@ -502,6 +502,73 @@ def test_required_heading_envelope_overflow_withholds_bare_value(tmp_path):
 
 
 @pytest.mark.parametrize(
+    "heading,body,blank,preferred",
+    [
+        ("- ## ", "  ", "", 3),
+        ("1. ## ", "   ", "", 3),
+        ("> ## ", "> ", ">", 1),
+        ("- > ## ", "  > ", "  >", 1),
+        ("- - ## ", "    ", "", 3),
+    ],
+)
+def test_container_heading_labels_remain_with_both_profile_values(
+    tmp_path, heading, body, blank, preferred
+):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "\n".join(
+        [
+            heading + "Production profile",
+            blank,
+            body + "TIMEOUT=30",
+            blank,
+            heading + "Development profile",
+            blank,
+            body + "TIMEOUT=5",
+        ]
+    )
+    (tmp_path / "guide.md").write_text(text)
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "Compare profile timeouts",
+        preferred=[("guide.md", preferred), ("guide.md", preferred + 4)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert fitted["hit"]
+    assert len(fitted["evidence"]) == 1 and fitted["evidence"][0]["text"] == text
+    assert fitted["evidence"][0]["line"] == 1
+    assert not fitted["evidence"][0]["complete_file"]
+    small = fit_response(response(*items), {"max_tokens": 256})
+    assert not small["hit"] and small["reason"] == "budget_limited"
+
+
+@pytest.mark.parametrize(
+    "prefix,body,blank", [("- ", "  ", ""), ("> ", "> ", ">"), ("- > ", "  > ", "  >")]
+)
+def test_container_setext_heading_is_retained_with_value(tmp_path, prefix, body, blank):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "\n".join(
+        [prefix + "Production profile", body + "------------------", blank, body + "TIMEOUT=30"]
+    )
+    (tmp_path / "guide.md").write_text(text)
+    preferred = 4 if not blank else 1
+    items = excerpts(
+        tmp_path,
+        [snapshot(tmp_path, "guide.md")],
+        "Production timeout",
+        preferred=[("guide.md", preferred)],
+        adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert fitted["hit"] and fitted["evidence"][0]["text"] == text
+
+
+@pytest.mark.parametrize(
     "name,shebang",
     [
         ("deploy.sh", ""),

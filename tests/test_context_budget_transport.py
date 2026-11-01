@@ -291,6 +291,18 @@ def test_adaptive_hint_cannot_cut_a_local_command_mid_line(caller):
             [7, 13],
         ),
         (
+            "profiles.md",
+            "- ## Production profile\n\n  TIMEOUT=30\n\n"
+            "- ## Development profile\n\n  TIMEOUT=5",
+            [3, 7],
+        ),
+        (
+            "profiles.md",
+            "> ## Production profile\n>\n> TIMEOUT=30\n\n"
+            "> ## Development profile\n>\n> TIMEOUT=5",
+            [1, 5],
+        ),
+        (
             "deploy.sh",
             "deploy --manifest=<(cat <<'JSON'\n\n"
             '{"verify_signature":true}\nJSON\n) --production',
@@ -304,7 +316,10 @@ def test_adaptive_hint_cannot_cut_a_local_command_mid_line(caller):
             [3],
         ),
     ],
-    ids=["profile-headings", "nested-headings", "heredoc", "shebang-heredoc"],
+    ids=[
+        "profile-headings", "nested-headings", "list-headings", "quoted-headings",
+        "heredoc", "shebang-heredoc",
+    ],
 )
 @pytest.mark.parametrize("maximum", [256, 4096])
 def test_required_source_context_survives_git_client_and_final_mcp(

@@ -185,6 +185,8 @@ Adaptive mode packs the existing selected evidence into a bounded response. It k
 complete selected paragraphs or fenced command blocks, including separate sections of
 the same file. Markdown blocks retain their heading ancestry as original source text;
 overlapping required spans are combined so separately selected facts remain present.
+List or blockquote heading scopes conservatively retain the original source from the
+start of the file through the selected block.
 Unfenced shell files and files with a shebang require their entire source, since blank
 lines alone cannot identify safe command boundaries. These conservative spans can
 increase response size or require a budget-limited miss. Compact mode omits optional
