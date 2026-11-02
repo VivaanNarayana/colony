@@ -188,8 +188,8 @@ ancestry as original source text;
 overlapping required spans are combined so separately selected facts remain present.
 Indented prose continuations remain with their paragraph. A selected passage that
 overlaps a code block retains the complete block, including its closing marker.
-Uncertain fences or thematic breaks inside containers use a conservative complete-file fallback.
-This includes one-to-three-space fences after list labels and blank lines, preserving profile scope;
+Uncertain container continuations, including ordinary paragraphs, fences and thematic breaks,
+use a conservative complete-file fallback. List labels remain attached across blank lines;
 large cited files can therefore produce a budget-limited miss.
 List or blockquote heading scopes conservatively retain the original source from the
 start of the file through the selected block.

@@ -187,6 +187,11 @@ def _markdown_code_units(lines):
             context = paragraph_start if paragraph_start is not None else index
             yield context, len(lines), context, True
             return
+        if container and paragraph_start is None and text.startswith((" ", "\t")):
+            # A blank-separated list continuation can be ordinary prose too.
+            # Without certifying its outer scope, keep the complete source.
+            yield index, len(lines), index, True
+            return
         if is_indented:
             if container and (_FENCE.match(text) or _THEMATIC_BREAK.fullmatch(text.lstrip(" \t"))):
                 # Container indentation is ambiguous even after a blank line.
