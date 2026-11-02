@@ -14,7 +14,11 @@ from pathlib import Path
 
 from colony.client import Client
 from colony.models import ContextBudget
-from colony.workflow import WORKFLOW_GUIDANCE
+from colony.workflow import (
+    ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE,
+    ADAPTIVE_WORKFLOW_GUIDANCE,
+    WORKFLOW_GUIDANCE,
+)
 
 _TAG = b"colony:setup"
 _WINDOWS = os.name == "nt"
@@ -436,7 +440,12 @@ def setup_codex(
         if instruction_owners and instruction_owners[0] != effective:
             raise ValueError("Instructions are shadowed; remove existing setup before reinstalling")
         mode = "read-only; never publish" if read_only else "publish new evidence-backed findings"
-        guidance = f"Colony workflow: namespace `{namespace}`; {mode}.\n\n{WORKFLOW_GUIDANCE}"
+        policy = WORKFLOW_GUIDANCE
+        if context_budget is not None:
+            policy = (
+                ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
+            )
+        guidance = f"Colony workflow: namespace `{namespace}`; {mode}.\n\n{policy}"
         if read_only:
             guidance += "\n\nThis connection is read-only. Do not call push or publish findings."
         outputs[effective] = _render(

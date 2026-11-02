@@ -403,3 +403,39 @@ def test_real_store_duplicate_preserves_age_and_rejects_conflicting_id(team, tmp
     assert answer["age_flag"] and answer["status"] == "unverified"
     with pytest.raises(httpx.HTTPStatusError):
         client.push(trail.model_copy(update={"content": "conflicting answer"}))
+
+
+@pytest.mark.parametrize("read_only", [False, True])
+def test_adaptive_mcp_and_setup_share_selective_policy(identity, read_only):
+    from colony.models import ContextBudget
+    from colony.setup import setup_codex
+    from colony.workflow import (
+        ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE,
+        ADAPTIVE_WORKFLOW_GUIDANCE,
+        WORKFLOW_GUIDANCE,
+    )
+
+    client, repo, _ = identity
+    budget = ContextBudget(max_tokens=1024)
+    server = create_mcp(
+        client.home,
+        workflow_namespace="team",
+        workflow_repo=repo,
+        workflow_read_only=read_only,
+        context_budget=budget,
+    )
+    setup_codex(
+        client.home,
+        repo,
+        "install",
+        namespace="team",
+        read_only=read_only,
+        context_budget=budget,
+    )
+    policy = ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
+    installed = (repo / "AGENTS.md").read_text(encoding="utf-8")
+    assert policy in server.instructions and policy in installed
+    assert WORKFLOW_GUIDANCE not in server.instructions and WORKFLOW_GUIDANCE not in installed
+    if read_only:
+        assert "after meaningful new research publish" not in server.instructions
+        assert "do not call push or publish findings" in server.instructions
