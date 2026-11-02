@@ -1128,3 +1128,58 @@ def test_root_aligned_paragraph_after_list_stays_bounded(tmp_path):
     text = "- Earlier item.\n\nRoot paragraph.\n\nUnrelated note."
     _, _, result = _boundary_result(tmp_path, text, 3)
     assert result["hit"] and result["evidence"][0]["text"] == "Root paragraph."
+
+
+@pytest.mark.parametrize(
+    "ref", [".bashrc", ".zshrc", ".envrc", ".profile", "config/.bash_profile", "etc/bash.bashrc"]
+)
+@pytest.mark.parametrize("selected", [1, 3])
+@pytest.mark.parametrize("maximum", [256, 2048])
+def test_shell_startup_files_keep_complete_heredoc_without_shebang(tmp_path, ref, selected, maximum):
+    from colony.context import excerpts, source_chunks
+    from colony.validation import snapshot
+
+    text = "export SERVICE_JSON=$(cat <<'JSON'\n\n{\"verify_signature\":true}\nJSON\n)\nexport TIMEOUT=30"
+    path = tmp_path / ref
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    sources = [snapshot(tmp_path, ref)]
+    candidate = next(c for _, line, c in source_chunks(tmp_path, sources) if line == selected)
+    assert ("export SERVICE_JSON" if selected == 1 else "verify_signature") in candidate
+    items = excerpts(tmp_path, sources, "service configuration", preferred=[(ref, selected)], adaptive=True)
+    assert items[0]["text"] == text
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 6)
+    fitted = fit_response(response(*items), {"max_tokens": maximum})
+    assert_accounted(fitted, {"max_tokens": maximum})
+    if maximum == 256:
+        assert not fitted["hit"] and fitted["reason"] == "budget_limited"
+    else:
+        assert fitted["hit"] and fitted["evidence"][0]["text"] == text
+        assert not fitted["evidence"][0]["complete_file"]
+
+
+def test_large_shell_dotfile_never_returns_partial_heredoc(tmp_path):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    text = "export SERVICE_JSON=$(cat <<'JSON'\n\n" + "original data " * 300 + "\nJSON\n)"
+    (tmp_path / ".bashrc").write_text(text, encoding="utf-8")
+    items = excerpts(
+        tmp_path, [snapshot(tmp_path, ".bashrc")], "service configuration",
+        preferred=[(".bashrc", 1)], adaptive=True,
+    )
+    fitted = fit_response(response(*items), {"max_tokens": 2048})
+    assert not fitted["hit"] and fitted["reason"] == "budget_limited"
+    assert_accounted(fitted, {"max_tokens": 2048})
+
+
+@pytest.mark.parametrize("ref", ["notes.txt", "notes.bashrc.md"])
+def test_non_shell_filename_does_not_require_unrelated_source(tmp_path, ref):
+    from colony.context import excerpts
+    from colony.validation import snapshot
+
+    (tmp_path / ref).write_text("TIMEOUT=30\n\nUnrelated note.", encoding="utf-8")
+    items = excerpts(
+        tmp_path, [snapshot(tmp_path, ref)], "timeout", preferred=[(ref, 1)], adaptive=True,
+    )
+    assert items[0]["text"] == "TIMEOUT=30"

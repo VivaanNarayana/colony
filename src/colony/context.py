@@ -16,6 +16,42 @@ _SETEXT_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(=+|-+)[ \t]*$")
 _THEMATIC_MARKERS = r"(?:(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})"
 _THEMATIC_BREAK = re.compile(r" {0,3}" + _THEMATIC_MARKERS)
 _CONTAINER_PREFIX = re.compile(_HEADING_PREFIX)
+_SHELL_STARTUP_FILES = {
+    ".bashrc",
+    ".bash_profile",
+    ".bash_login",
+    ".bash_logout",
+    ".bash_aliases",
+    ".bash_functions",
+    ".bash_completion",
+    "bash.bashrc",
+    "bashrc",
+    "bash_completion",
+    ".profile",
+    "profile",
+    ".zshenv",
+    ".zprofile",
+    ".zshrc",
+    ".zlogin",
+    ".zlogout",
+    "zshenv",
+    "zprofile",
+    "zshrc",
+    "zlogin",
+    "zlogout",
+    ".kshrc",
+    ".mkshrc",
+    "kshrc",
+    "mkshrc",
+    ".cshrc",
+    ".tcshrc",
+    ".login",
+    ".logout",
+    "csh.cshrc",
+    "csh.login",
+    "csh.logout",
+    ".envrc",
+}
 
 
 def _closes_fence(text, match, opening):
@@ -264,6 +300,9 @@ def _source_unit(ref, lines, line):
     # Shell syntax can cross blank lines through heredocs, substitutions and
     # compound commands. Without a parser, the complete script is the safe unit.
     # Any shebang conservatively applies the same rule to unknown extensions.
+    # Sourced startup/configuration files commonly have neither suffix nor shebang.
+    if Path(ref).name.lower() in _SHELL_STARTUP_FILES:
+        return 1, len(lines)
     if Path(ref).suffix.lower() in {
         ".sh",
         ".bash",
