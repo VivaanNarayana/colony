@@ -954,3 +954,90 @@ def test_indented_fence_like_prose_without_container_does_not_require_unrelated_
     _, _, result = _boundary_result(tmp_path, paragraph + "\n\nUnrelated tail.", 1)
     assert result["hit"] and result["evidence"][0]["text"] == paragraph
     assert "TIMEOUT=42" in result["content"] and "Unrelated tail" not in result["content"]
+
+
+@pytest.mark.parametrize(
+    "caption,opening_indent,body_indent",
+    [
+        ("- Production:", "    ", "  "),
+        ("1. Production:", "     ", "   "),
+        ("- Deployment:\n  - Production:", "      ", "    "),
+    ],
+)
+@pytest.mark.parametrize("select_body", [False, True])
+def test_blank_separated_list_fence_keeps_less_indented_body_and_opening(
+    tmp_path, caption, opening_indent, body_indent, select_body
+):
+    text = "\n".join(
+        [
+            caption,
+            "",
+            opening_indent + "```sh",
+            body_indent + "deploy --manifest=<(cat <<'JSON'",
+            "",
+            body_indent + '{"verified":true}',
+            body_indent + "JSON",
+            body_indent + ") --production",
+            body_indent + "```",
+            "",
+            "Original terminal note.",
+        ]
+    )
+    line = len(caption.splitlines()) + (5 if select_body else 2)
+    candidate, items, result = _boundary_result(tmp_path, text, line, maximum=2048)
+    assert ('"verified"' if select_body else "deploy --manifest") in candidate
+    assert result["hit"] and result["evidence"][0]["text"] == text
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, len(text.splitlines()))
+    assert not result["evidence"][0]["complete_file"]
+    assert_accounted(result, {"max_tokens": 2048})
+
+
+@pytest.mark.parametrize("separator", ["***", "___", "- - -", "* \t* *", "   ___\t", "---"])
+def test_thematic_break_ends_paragraph_before_complete_indented_command(tmp_path, separator):
+    required = (
+        "Deploy using this manifest:\n"
+        + separator
+        + "\n    deploy --manifest=<(cat <<'JSON'\n\n    {\"verified\":true}\n"
+        "    JSON\n    ) --production"
+    )
+    _, items, result = _boundary_result(tmp_path, required + "\n\nUnrelated tail.", 1, maximum=2048)
+    assert result["hit"] and result["evidence"][0]["text"] == required
+    assert items[0]["selected_end_line"] == 7 and "Unrelated tail" not in result["content"]
+    assert_accounted(result, {"max_tokens": 2048})
+
+
+@pytest.mark.parametrize("separator", ["***", "___", "- - -"])
+def test_nested_container_thematic_break_requires_complete_source(tmp_path, separator):
+    text = (
+        "- Deployment:\n  - Production:\n    "
+        + separator
+        + "\n        deploy --manifest=<(cat <<'JSON'\n\n        {\"verified\":true}\n"
+        "        JSON\n        ) --production\n\nOriginal terminal note."
+    )
+    _, _, result = _boundary_result(tmp_path, text, 1, maximum=2048)
+    assert result["hit"] and result["evidence"][0]["text"] == text
+    assert not result["evidence"][0]["complete_file"]
+
+
+@pytest.mark.parametrize("separator", ["***", "___"])
+def test_quoted_thematic_boundary_keeps_following_command_complete(tmp_path, separator):
+    text = (
+        "> Deployment:\n> "
+        + separator
+        + "\n    deploy --manifest=<(cat <<'JSON'\n\n    {\"verified\":true}\n"
+        "    JSON\n    ) --production\n\nOriginal terminal note."
+    )
+    _, _, result = _boundary_result(tmp_path, text, 1, maximum=2048)
+    assert result["hit"] and result["evidence"][0]["text"] == text
+
+
+def test_indented_thematic_marker_in_prose_remains_a_continuation(tmp_path):
+    paragraph = "Plain explanation.\n    ***\nTIMEOUT=42"
+    _, _, result = _boundary_result(tmp_path, paragraph + "\n\nUnrelated tail.", 1)
+    assert result["hit"] and result["evidence"][0]["text"] == paragraph
+
+
+def test_indented_quote_thematic_text_without_container_stays_literal(tmp_path):
+    code = "    > ***\n\n    literal continuation"
+    _, _, result = _boundary_result(tmp_path, code + "\n\nUnrelated tail.", 1)
+    assert result["hit"] and result["evidence"][0]["text"] == code

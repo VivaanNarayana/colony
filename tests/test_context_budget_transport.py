@@ -654,6 +654,10 @@ def test_http_capability_and_unavailable_counter_fail_closed(team, monkeypatch):
         ("caption-fence", "utf8_bytes", True),
         ("paragraph", "o200k_base", False),
         ("caption-fence", "o200k_base", False),
+        ("mixed-list", "utf8_bytes", False),
+        ("mixed-list", "utf8_bytes", True),
+        ("thematic-break", "utf8_bytes", False),
+        ("thematic-break", "utf8_bytes", True),
     ],
 )
 def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
@@ -676,6 +680,19 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
         lines[9] = "TIMEOUT=9876"
         text, selected = "\n".join(lines), 9
         maximum = 256 if small else 4096
+    elif case == "mixed-list":
+        text = (
+            "- Production café 🐜 deployment:\n\n    ```sh\n"
+            "    deploy --manifest=<(cat <<'JSON'\n\n"
+            '  {"verify_signature":true}\n  JSON\n  ) --production\n  ```'
+        )
+        selected, maximum = 6, 256 if small else 2048
+    elif case == "thematic-break":
+        text = (
+            "Production café 🐜 context:\n***\n    deploy --manifest=<(cat <<'JSON'\n\n"
+            '    {"verify_signature":true}\n    JSON\n    ) --production'
+        )
+        selected, maximum = 1, 256 if small else 2048
     else:
         text = (
             "Production café 🐜 command:\n```sh\n"
@@ -736,7 +753,14 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
     chosen = next(
         content for path, start, content in candidates if (path, start) == (ref, selected)
     )
-    assert ("TIMEOUT=9876" if case == "paragraph" else "deploy --manifest") in chosen
+    required_candidate_fact = (
+        "TIMEOUT=9876"
+        if case == "paragraph"
+        else "verify_signature"
+        if case == "mixed-list"
+        else "deploy --manifest"
+    )
+    assert required_candidate_fact in chosen
     items = excerpts(
         repo, [source], "deployment configuration", preferred=[(ref, selected)], adaptive=True
     )
