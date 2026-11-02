@@ -193,8 +193,10 @@ use a conservative complete-file fallback. List labels remain attached across bl
 large cited files can therefore produce a budget-limited miss.
 List or blockquote heading scopes conservatively retain the original source from the
 start of the file through the selected block.
-Unfenced shell files and files with a shebang require their entire source, since blank
-lines alone cannot identify safe command boundaries. These conservative spans can
+Known shell extensions, conventional startup/configuration names (such as `.bashrc`,
+`.bash_profile`, `.profile`, `.zshrc` and `.envrc`), and files with a shebang require
+their entire source, since blank lines alone cannot identify safe command boundaries.
+Startup names are recognized by basename even in subdirectories. These conservative spans can
 increase response size or require a budget-limited miss. Compact mode omits optional
 surrounding section text even when more would fit. Explicit complete-file requests may
 restore a whole file when it fits.

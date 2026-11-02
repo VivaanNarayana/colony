@@ -668,6 +668,15 @@ def test_http_capability_and_unavailable_counter_fail_closed(team, monkeypatch):
         ("ordered-prose", "utf8_bytes", True),
         ("list-prose", "o200k_base", False),
         ("ordered-prose", "o200k_base", False),
+        ("shell-bashrc", "utf8_bytes", False),
+        ("shell-bashrc", "utf8_bytes", True),
+        ("shell-zshrc", "utf8_bytes", False),
+        ("shell-zshrc", "utf8_bytes", True),
+        ("shell-envrc", "utf8_bytes", False),
+        ("shell-envrc", "utf8_bytes", True),
+        ("shell-bashrc-body", "utf8_bytes", False),
+        ("shell-bashrc-body", "utf8_bytes", True),
+        ("shell-bashrc-body", "o200k_base", False),
     ],
 )
 def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
@@ -720,6 +729,9 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
             + prefix + "Production:\n\n" + indent + "Set `TIMEOUT=30`."
         )
         selected, maximum = 7, 256 if small else 2048
+    elif case.startswith("shell-"):
+        text = "export SERVICE_JSON=$(cat <<'JSON'\n\n{\"verify_signature\":true}\nJSON\n)\nexport TIMEOUT=30"
+        selected, maximum = (3 if case.endswith("-body") else 1), 256 if small else 2048
     else:
         text = (
             "Production café 🐜 command:\n```sh\n"
@@ -729,6 +741,8 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
         assert text.splitlines()[1] == "```sh" and len(text.splitlines()) == 8
         selected, maximum = 1, 256 if small else 2048
     ref = "candidate.md"
+    if case.startswith("shell-"):
+        ref = ".zshrc" if case == "shell-zshrc" else ".envrc" if case == "shell-envrc" else ".bashrc"
     (repo / ref).write_bytes((text + "\n").encode("utf-8"))
     template = repo.parent / "candidate-empty-git-template"
     template.mkdir()
@@ -786,7 +800,9 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
         else "TIMEOUT=30"
         if case in {"list-profile", "ordered-profile", "list-prose", "ordered-prose"}
         else "verify_signature"
-        if case == "mixed-list"
+        if case == "mixed-list" or case == "shell-bashrc-body"
+        else "export SERVICE_JSON"
+        if case.startswith("shell-")
         else "deploy --manifest"
     )
     assert required_candidate_fact in chosen
