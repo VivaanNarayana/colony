@@ -13,6 +13,9 @@ _FENCE = re.compile(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,}
 _HEADING_PREFIX = r"[ \t]*(?:(?:>[ \t]*|[-+*][ \t]+|[0-9]{1,9}[.)][ \t]+))*"
 _ATX_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(#{1,6})(?:[ \t]+|$)")
 _SETEXT_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(=+|-+)[ \t]*$")
+_THEMATIC_MARKERS = r"(?:(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})"
+_THEMATIC_BREAK = re.compile(r" {0,3}" + _THEMATIC_MARKERS)
+_CONTAINER_PREFIX = re.compile(_HEADING_PREFIX)
 
 
 def _closes_fence(text, match, opening):
@@ -142,6 +145,24 @@ def _paragraph_unit(lines, index):
     return low + 1, high
 
 
+def _possible_container_break(text):
+    """Recognize a possible prefixed break without overlapping regex repeats."""
+    end = len(text.rstrip(" \t"))
+    if not end or text[end - 1] not in "*_-":
+        return False
+    marker, count, first = text[end - 1], 0, end
+    while end:
+        char = text[end - 1]
+        if char == marker:
+            count += 1
+            first = end - 1
+        elif char not in " \t":
+            break
+        end -= 1
+    prefix = text[:first]
+    return count >= 3 and bool(prefix.strip()) and _CONTAINER_PREFIX.fullmatch(prefix) is not None
+
+
 def _markdown_code_units(lines):
     """Yield original code spans; containers use conservative source envelopes."""
     index, container = 0, False
@@ -155,14 +176,25 @@ def _markdown_code_units(lines):
             paragraph_start, paragraph_indented = None, False
             index += 1
             continue
-        if indented.match(text):
+        if _THEMATIC_BREAK.fullmatch(text):
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
+            index += 1
+            continue
+        is_indented = indented.match(text) is not None
+        if _possible_container_break(text) and (container or not is_indented):
+            # A possible container-relative break is not a root block boundary
+            # we can certify. Retain original scope instead of guessing it.
+            context = paragraph_start if paragraph_start is not None else index
+            yield context, len(lines), context, True
+            return
+        if is_indented:
+            if container and (_FENCE.match(text) or _THEMATIC_BREAK.fullmatch(text.lstrip(" \t"))):
+                # Container indentation is ambiguous even after a blank line.
+                # Every later selected body must retain the opening and scope.
+                context = paragraph_start if paragraph_start is not None else index
+                yield context, len(lines), context, True
+                return
             if paragraph_start is not None:
-                if container and _FENCE.match(text):
-                    # Raw indentation is relative to an unknown list/quote
-                    # container here. Never call a possible opening fence prose
-                    # and return its command prefix without the remaining body.
-                    yield paragraph_start, len(lines), paragraph_start, True
-                    return
                 # Indented code cannot interrupt an ordinary paragraph. Keep
                 # its following dedented facts in that same paragraph instead.
                 paragraph_indented = True
