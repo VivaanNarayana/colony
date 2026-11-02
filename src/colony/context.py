@@ -217,6 +217,11 @@ def _markdown_code_units(lines):
         if match := _FENCE.match(text):
             start = index
             context = paragraph_start if paragraph_start is not None else start
+            if container and match[1].startswith((" ", "\t")):
+                # One-to-three-space fences may continue an enclosing list too.
+                # Blank lines must not detach its profile label or outer scope.
+                yield start, len(lines), context, True
+                return
             opening = (index, match[2][0], len(match[2]), match[1].count(">"))
             opening_prefix = match[1]
             index += 1
