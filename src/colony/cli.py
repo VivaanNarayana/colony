@@ -63,6 +63,56 @@ def _prompt_path(label):
     return Path(value)
 
 
+def _budget_tokens(value):
+    try:
+        tokens = int(value)
+    except (TypeError, ValueError):
+        raise argparse.ArgumentTypeError("Invalid context budget") from None
+    if not 256 <= tokens <= 8192:
+        raise argparse.ArgumentTypeError("Context budget must be between 256 and 8192")
+    return tokens
+
+
+def _budget_encoding(value):
+    if value not in {"utf8_bytes", "o200k_base"}:
+        raise argparse.ArgumentTypeError("Unsupported context encoding")
+    return value
+
+
+def _context_budget_flags(command):
+    command.add_argument(
+        "--context-budget",
+        nargs="?",
+        const=2048,
+        type=_budget_tokens,
+        help="Opt in to a bounded response (256..8192 tokens; default 2048)",
+    )
+    command.add_argument(
+        "--context-encoding",
+        type=_budget_encoding,
+        choices=("utf8_bytes", "o200k_base"),
+        help="Response counting encoding; requires --context-budget",
+    )
+
+
+def _context_budget(args):
+    maximum = getattr(args, "context_budget", None)
+    encoding = getattr(args, "context_encoding", None)
+    if maximum is None:
+        if encoding is not None:
+            raise ValueError("Context encoding requires a context budget")
+        return None
+    from colony.context_budget import count_response
+    from colony.models import ContextBudget
+
+    try:
+        budget = ContextBudget(max_tokens=maximum, encoding=encoding or "utf8_bytes")
+    except (TypeError, ValueError):
+        raise ValueError("Invalid context budget configuration") from None
+    count_response({}, budget)  # Fail closed before identity/network/config writes.
+    return budget
+
+
 def parser():
     p = argparse.ArgumentParser(description="Colony: shared memory for coding agents")
     p.add_argument(
@@ -111,6 +161,7 @@ def parser():
         action="store_true",
         help="Include bounded complete current source files when small",
     )
+    _context_budget_flags(ask)
     push = sub.add_parser("push", help="Push a JSON trail, with optional local file fingerprints")
     push.add_argument("file", type=Path)
     push.add_argument("--ns", required=True)
@@ -143,6 +194,7 @@ def parser():
     mcp.add_argument(
         "--workflow-read-only", action="store_true", help="Expose lookup only in workflow mode"
     )
+    _context_budget_flags(mcp)
     setup = sub.add_parser("setup", help="Configure a project to use Colony with a coding agent")
     clients = setup.add_subparsers(dest="setup_client", required=True)
     codex = clients.add_parser("codex", help="Manage project-scoped Codex MCP and guidance")
@@ -153,6 +205,7 @@ def parser():
     install.add_argument("--dry-run", action="store_true")
     install.add_argument("--read-only", action="store_true")
     install.add_argument("--repository-id", help="Enable Git-aware project workflow")
+    _context_budget_flags(install)
     for action in ("status", "uninstall"):
         command = actions.add_parser(action)
         command.add_argument("--repo", type=Path, required=True)
@@ -262,6 +315,8 @@ def parser():
 
 
 def execute(args):
+    budget = _context_budget(args)
+    budget_options = {"context_budget": budget} if budget is not None else {}
     if args.command == "models":
         from colony.provision import check_models, fetch_models
 
@@ -431,6 +486,7 @@ def execute(args):
             workflow_repo=args.workflow_repo,
             workflow_read_only=args.workflow_read_only,
             workflow_repository_id=args.workflow_repository_id,
+            **budget_options,
         )
         return None
     if args.command == "setup":
@@ -444,6 +500,7 @@ def execute(args):
             dry_run=getattr(args, "dry_run", False),
             read_only=getattr(args, "read_only", False),
             repository_id=getattr(args, "repository_id", None),
+            **budget_options,
         )
     client = Client(args.home)
     if args.command == "memory":
@@ -507,7 +564,11 @@ def execute(args):
             else {}
         )
         return client.ask(
-            args.question, args.ns, include_evidence_files=args.evidence_files, **options
+            args.question,
+            args.ns,
+            include_evidence_files=args.evidence_files,
+            **options,
+            **budget_options,
         )
     if args.command == "retry":
         return client.retry()
@@ -603,6 +664,14 @@ def main():
                     print(f"[{check['status']}] {check['name']}: {check['detail']}")
             elif args.command == "report" and args.format == "text":
                 print(result)
+            elif args.command == "ask" and args.context_budget is not None:
+                from colony.context_budget import serialize_response
+
+                text = serialize_response(result)
+                if hasattr(sys.stdout, "buffer"):
+                    sys.stdout.buffer.write(text.encode("utf-8"))
+                else:
+                    sys.stdout.write(text)
             else:
                 print(json.dumps(result, indent=2))
             if args.command in {"doctor", "onboard", "demo"} and not result["ok"]:

@@ -9,6 +9,24 @@ from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
 from colony.validation import repo_file
 
+_FENCE = re.compile(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,})")
+_HEADING_PREFIX = r"[ \t]*(?:(?:>[ \t]*|[-+*][ \t]+|[0-9]{1,9}[.)][ \t]+))*"
+_ATX_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(#{1,6})(?:[ \t]+|$)")
+_SETEXT_HEADING = re.compile(r"^(" + _HEADING_PREFIX + r")(=+|-+)[ \t]*$")
+_THEMATIC_MARKERS = r"(?:(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,})"
+_THEMATIC_BREAK = re.compile(r" {0,3}" + _THEMATIC_MARKERS)
+_CONTAINER_PREFIX = re.compile(_HEADING_PREFIX)
+
+
+def _closes_fence(text, match, opening):
+    return (
+        match[2][0] == opening[1]
+        and len(match[2]) >= opening[2]
+        and match[1].count(">") == opening[3]
+        and re.fullmatch(r"[ \t>]*", match[1])
+        and not text[match.end() :].strip()
+    )
+
 
 def source_lines(root: Path, source: Source) -> list[str]:
     if source.kind != "file":
@@ -95,6 +113,239 @@ def context_window(ref: str, lines: list[str], line: int, span: int) -> tuple[in
     return low + 1, "\n".join(lines[low:high])[:2400]
 
 
+def _selected_block(lines: list[str], line: int) -> tuple[int, int]:
+    """Recover the original paragraph, or the entire enclosing fenced block."""
+    index = min(line - 1, len(lines) - 1)
+    opening = None
+    for i, text in enumerate(lines):
+        # Conservatively retain fences nested in lists or blockquotes, including
+        # indented continuation lines. The returned text remains untouched source.
+        match = _FENCE.match(text)
+        if match:
+            prefix, marker = match[1], match[2]
+            if opening is None:
+                opening = (i, marker[0], len(marker), prefix.count(">"))
+            elif _closes_fence(text, match, opening):
+                if opening[0] <= index <= i:
+                    return opening[0] + 1, i + 1
+                opening = None
+        if i == index and opening is None:
+            break
+    if opening is not None and opening[0] <= index:
+        return opening[0] + 1, len(lines)
+    return _paragraph_unit(lines, index)
+
+
+def _paragraph_unit(lines, index):
+    low, high = index, index + 1
+    while low > 0 and lines[low - 1].strip():
+        low -= 1
+    while high < len(lines) and lines[high].strip():
+        high += 1
+    return low + 1, high
+
+
+def _possible_container_break(text):
+    """Recognize a possible prefixed break without overlapping regex repeats."""
+    end = len(text.rstrip(" \t"))
+    if not end or text[end - 1] not in "*_-":
+        return False
+    marker, count, first = text[end - 1], 0, end
+    while end:
+        char = text[end - 1]
+        if char == marker:
+            count += 1
+            first = end - 1
+        elif char not in " \t":
+            break
+        end -= 1
+    prefix = text[:first]
+    return count >= 3 and bool(prefix.strip()) and _CONTAINER_PREFIX.fullmatch(prefix) is not None
+
+
+def _markdown_code_units(lines):
+    """Yield original code spans; containers use conservative source envelopes."""
+    index, container = 0, False
+    paragraph_start, paragraph_indented, continuation_context = None, False, None
+    indented = re.compile(r"^(?: {4}| {0,3}\t)")
+    while index < len(lines):
+        text = lines[index]
+        if not text.strip():
+            if paragraph_start is not None:
+                continuation_context = paragraph_start if paragraph_indented else None
+            paragraph_start, paragraph_indented = None, False
+            index += 1
+            continue
+        if _THEMATIC_BREAK.fullmatch(text):
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
+            index += 1
+            continue
+        is_indented = indented.match(text) is not None
+        if _possible_container_break(text) and (container or not is_indented):
+            # A possible container-relative break is not a root block boundary
+            # we can certify. Retain original scope instead of guessing it.
+            context = paragraph_start if paragraph_start is not None else index
+            yield context, len(lines), context, True
+            return
+        if is_indented:
+            if container and (_FENCE.match(text) or _THEMATIC_BREAK.fullmatch(text.lstrip(" \t"))):
+                # Container indentation is ambiguous even after a blank line.
+                # Every later selected body must retain the opening and scope.
+                context = paragraph_start if paragraph_start is not None else index
+                yield context, len(lines), context, True
+                return
+            if paragraph_start is not None:
+                # Indented code cannot interrupt an ordinary paragraph. Keep
+                # its following dedented facts in that same paragraph instead.
+                paragraph_indented = True
+                index += 1
+                continue
+            start = index
+            while index < len(lines) and (not lines[index].strip() or indented.match(lines[index])):
+                index += 1
+            end = index
+            while end > start and not lines[end - 1].strip():
+                end -= 1
+            # A preceding paragraph that already used indentation is retained
+            # conservatively when its continuation crosses a blank line.
+            context = continuation_context if continuation_context is not None else start
+            yield start, end, context, container
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
+            continue
+        if re.match(r"^[ \t]*(?:>|[-+*][ \t]+|[0-9]{1,9}[.)][ \t]+)", text):
+            container = True
+        if match := _FENCE.match(text):
+            start = index
+            context = paragraph_start if paragraph_start is not None else start
+            opening = (index, match[2][0], len(match[2]), match[1].count(">"))
+            opening_prefix = match[1]
+            index += 1
+            while index < len(lines):
+                closing = _FENCE.match(lines[index])
+                index += 1
+                if closing and _closes_fence(lines[index - 1], closing, opening):
+                    if ">" in opening_prefix:
+                        tail = closing[1].rsplit(">", 1)[-1]
+                        # One space after a quote marker belongs to the quote.
+                        indentation = len(tail.expandtabs(4)) - int(tail.startswith(" "))
+                    else:
+                        baseline = (
+                            len(opening_prefix.expandtabs(4)) if opening_prefix.strip() else 0
+                        )
+                        indentation = len(closing[1].expandtabs(4)) - baseline
+                    if indentation >= 4 or indentation < 0:
+                        # Relative code indentation, or an uncertain container
+                        # transition, cannot certify a closing fence.
+                        continue
+                    break
+            yield start, index, context, False
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
+            continue
+        if _ATX_HEADING.match(text) or _SETEXT_HEADING.match(text):
+            paragraph_start, paragraph_indented, continuation_context = None, False, None
+        else:
+            if paragraph_start is None:
+                paragraph_start = index
+            continuation_context = None
+        index += 1
+
+
+def _source_unit(ref, lines, line):
+    # Shell syntax can cross blank lines through heredocs, substitutions and
+    # compound commands. Without a parser, the complete script is the safe unit.
+    # Any shebang conservatively applies the same rule to unknown extensions.
+    if Path(ref).suffix.lower() in {
+        ".sh",
+        ".bash",
+        ".dash",
+        ".zsh",
+        ".ksh",
+        ".fish",
+        ".csh",
+        ".tcsh",
+        ".command",
+        ".ps1",
+        ".bat",
+        ".cmd",
+    } or lines[0].startswith("#!"):
+        return 1, len(lines)
+    if Path(ref).suffix.lower() in {".md", ".markdown"}:
+        index = min(line - 1, len(lines) - 1)
+        units = list(_markdown_code_units(lines))
+        first, last = _paragraph_unit(lines, index)
+        first -= 1
+        # A completed code block ends the preceding paragraph even without a
+        # blank separator. Do not pull that unrelated block into a later read.
+        for _, end, _, _ in units:
+            if end <= index:
+                first = max(first, end)
+        while True:
+            previous = first, last
+            for start, end, context, container in units:
+                if start < last and end > first:
+                    # Source paragraphs may start before a fence or run through
+                    # its closer. Grow every partial overlap to the complete unit,
+                    # then repeat for any newly overlapping units or captions.
+                    if container:
+                        return 1, len(lines)
+                    first, last = min(first, context), max(last, end)
+            if previous == (first, last):
+                return first + 1, last
+    return _selected_block(lines, line)
+
+
+def _heading_start(lines, first):
+    """Keep actual ancestor headings in one conservative, contiguous envelope."""
+    stack = []
+    units = iter(_markdown_code_units(lines))
+    unit = next(units, None)
+    for index, text in enumerate(lines[:first]):
+        while unit is not None and index >= unit[1]:
+            unit = next(units, None)
+        if unit is not None and unit[0] <= index < unit[1]:
+            # Fence-like text and headings inside indented code are literal.
+            continue
+        heading = _ATX_HEADING.match(text)
+        if heading:
+            if heading[1]:
+                # List/quote/indented heading scope cannot be inferred safely
+                # without parsing containers. Keep its untouched source envelope.
+                return 1
+            level, line = len(heading[2]), index + 1
+        elif (
+            index > 0
+            and lines[index - 1].strip()
+            and not _FENCE.match(lines[index - 1])
+            and (heading := _SETEXT_HEADING.match(text))
+        ):
+            if heading[1]:
+                return 1
+            level, line = (1 if heading[2].startswith("=") else 2), index
+        else:
+            continue
+        stack = [(depth, start) for depth, start in stack if depth < level]
+        stack.append((level, line))
+    return stack[0][1] if stack else first
+
+
+def _adaptive_excerpt(ref, lines, unit, whole_files):
+    first, last = unit
+    if Path(ref).suffix.lower() in {".md", ".markdown"}:
+        first = _heading_start(lines, first)
+    low, high = first, last
+    complete = whole_files and len("\n".join(lines)) <= 16000
+    if complete:
+        low, high = 1, len(lines)
+    return {
+        "ref": ref,
+        "line": low,
+        "text": "\n".join(lines[low - 1 : high]),
+        "complete_file": complete,
+        "selected_line": first,
+        "selected_end_line": last,
+    }
+
+
 def excerpts(
     root: Path,
     sources: list[Source],
@@ -103,9 +354,10 @@ def excerpts(
     preferred: list[tuple[str, int]] | None = None,
     claims: str | None = None,
     whole_files: bool = False,
+    adaptive: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
-    if whole_files and 1 <= len(unique) <= 4:
+    if not adaptive and whole_files and 1 <= len(unique) <= 4:
         files = []
         for source in unique.values():
             lines = source_lines(root, source)
@@ -155,6 +407,16 @@ def excerpts(
             continue
         if len(selected) >= 2 or budget < 300:
             break
+        if adaptive:
+            # Count distinct original units before expanding or merging scopes;
+            # merging two envelopes must not make room for a third ranked unit.
+            first, last = _source_unit(ref, cache[ref], line)
+            if any(r == ref and first <= b and last >= a for r, a, b in occupied):
+                continue
+            item = _adaptive_excerpt(ref, cache[ref], (first, last), whole_files)
+            selected.append(item)
+            occupied.append((ref, first, last))
+            continue
         start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
         limit = min(2400, budget)
         offset = len("\n".join(cache[ref][start - 1 : line - 1])) + int(line > start)
@@ -171,4 +433,30 @@ def excerpts(
         selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
         occupied.append((ref, start, end))
         budget -= len(text)
+    if adaptive and len(selected) == 2 and selected[0]["ref"] == selected[1]["ref"]:
+        a, b = selected
+        if (
+            a["selected_line"] <= b["selected_end_line"]
+            and b["selected_line"] <= a["selected_end_line"]
+        ):
+            # Both selected facts remain required, even when their ancestor
+            # envelopes overlap. Never discard the later ranked fact.
+            first = min(a["selected_line"], b["selected_line"])
+            last = max(a["selected_end_line"], b["selected_end_line"])
+            a.update(selected_line=first, selected_end_line=last)
+            if not a["complete_file"]:
+                a.update(line=first, text="\n".join(cache[a["ref"]][first - 1 : last]))
+            return [a]
+        if a["line"] <= b["line"] + b["text"].count("\n") and b["line"] <= a["line"] + a[
+            "text"
+        ].count("\n"):
+            # Optional section/file expansion must not hide two independent cores
+            # behind one overlapping local read.
+            for item in selected:
+                first, last = item["selected_line"], item["selected_end_line"]
+                item.update(
+                    line=first,
+                    text="\n".join(cache[item["ref"]][first - 1 : last]),
+                    complete_file=False,
+                )
     return selected
