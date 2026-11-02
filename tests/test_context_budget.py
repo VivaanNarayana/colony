@@ -1083,3 +1083,48 @@ def test_root_aligned_fence_after_list_stays_bounded(tmp_path):
     text = "- Earlier item.\n\nUnrelated paragraph.\n\n" + code + "\n\nUnrelated note."
     _, _, result = _boundary_result(tmp_path, text, 5)
     assert result["hit"] and result["evidence"][0]["text"] == code
+
+
+@pytest.mark.parametrize("prefix", ["- ", "+ ", "* ", "1. ", "1) "])
+@pytest.mark.parametrize("maximum", [256, 2048])
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_list_continuation_paragraph_keeps_profile_label(tmp_path, prefix, maximum, wrapped):
+    indent = " " * len(prefix)
+    body = (
+        indent + "Production procedure explanation.\n" + "\n".join(["Continue reading."] * 7)
+        + "\nSet `TIMEOUT=30`.\n" + "\n".join(["Continuation."] * 8)
+        if wrapped
+        else indent + "Set `TIMEOUT=30`."
+    )
+    text = prefix + "Staging:\n\n" + indent + "Set `TIMEOUT=3`.\n\n" + prefix + "Production:\n\n" + body
+    line = 15 if wrapped else 7
+    candidate, items, result = _boundary_result(tmp_path, text, line, maximum=maximum)
+    assert "TIMEOUT=30" in candidate and "Production" not in candidate
+    assert items[0]["text"] == text
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, len(text.splitlines()))
+    assert_accounted(result, {"max_tokens": maximum})
+    if maximum == 256:
+        assert not result["hit"] and result["reason"] == "budget_limited"
+    else:
+        assert result["hit"] and result["evidence"][0]["text"] == text
+        assert not result["evidence"][0]["complete_file"]
+
+
+def test_large_list_scope_never_returns_unqualified_paragraph(tmp_path):
+    text = "- Production:\n\n  Set `TIMEOUT=30`.\n\n" + "Original background. " * 200
+    _, _, result = _boundary_result(tmp_path, text, 3, maximum=2048)
+    assert not result["hit"] and result["reason"] == "budget_limited"
+    assert_accounted(result, {"max_tokens": 2048})
+
+
+@pytest.mark.parametrize("indent", [" ", "  ", "   "])
+def test_plain_indented_paragraph_without_container_stays_bounded(tmp_path, indent):
+    paragraph = indent + "Set `TIMEOUT=30`."
+    _, _, result = _boundary_result(tmp_path, paragraph + "\n\nUnrelated note.", 1)
+    assert result["hit"] and result["evidence"][0]["text"] == paragraph
+
+
+def test_root_aligned_paragraph_after_list_stays_bounded(tmp_path):
+    text = "- Earlier item.\n\nRoot paragraph.\n\nUnrelated note."
+    _, _, result = _boundary_result(tmp_path, text, 3)
+    assert result["hit"] and result["evidence"][0]["text"] == "Root paragraph."

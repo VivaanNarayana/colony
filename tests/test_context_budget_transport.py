@@ -662,6 +662,12 @@ def test_http_capability_and_unavailable_counter_fail_closed(team, monkeypatch):
         ("list-profile", "utf8_bytes", True),
         ("ordered-profile", "utf8_bytes", False),
         ("ordered-profile", "utf8_bytes", True),
+        ("list-prose", "utf8_bytes", False),
+        ("list-prose", "utf8_bytes", True),
+        ("ordered-prose", "utf8_bytes", False),
+        ("ordered-prose", "utf8_bytes", True),
+        ("list-prose", "o200k_base", False),
+        ("ordered-prose", "o200k_base", False),
     ],
 )
 def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
@@ -706,6 +712,14 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
             + indent + "TIMEOUT=30\n" + indent + "```"
         )
         selected, maximum = 9, 256 if small else 2048
+    elif case in {"list-prose", "ordered-prose"}:
+        prefix = "- " if case == "list-prose" else "1. "
+        indent = " " * len(prefix)
+        text = (
+            prefix + "Staging café 🐜:\n\n" + indent + "Set `TIMEOUT=3`.\n\n"
+            + prefix + "Production:\n\n" + indent + "Set `TIMEOUT=30`."
+        )
+        selected, maximum = 7, 256 if small else 2048
     else:
         text = (
             "Production café 🐜 command:\n```sh\n"
@@ -770,7 +784,7 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
         "TIMEOUT=9876"
         if case == "paragraph"
         else "TIMEOUT=30"
-        if case in {"list-profile", "ordered-profile"}
+        if case in {"list-profile", "ordered-profile", "list-prose", "ordered-prose"}
         else "verify_signature"
         if case == "mixed-list"
         else "deploy --manifest"
