@@ -1041,3 +1041,45 @@ def test_indented_quote_thematic_text_without_container_stays_literal(tmp_path):
     code = "    > ***\n\n    literal continuation"
     _, _, result = _boundary_result(tmp_path, code + "\n\nUnrelated tail.", 1)
     assert result["hit"] and result["evidence"][0]["text"] == code
+
+
+@pytest.mark.parametrize("prefix", ["- ", "+ ", "* ", "1. ", "1) "])
+@pytest.mark.parametrize("marker", ["```", "~~~"])
+@pytest.mark.parametrize("maximum", [256, 2048])
+def test_blank_separated_list_fence_retains_profile_scope(tmp_path, prefix, marker, maximum):
+    indent = " " * len(prefix)
+    text = (
+        prefix + "Staging:\n\n" + indent + marker + "sh\n" + indent + "TIMEOUT=3\n"
+        + indent + marker + "\n\n" + prefix + "Production:\n\n" + indent + marker + "sh\n"
+        + indent + "TIMEOUT=30\n" + indent + marker
+    )
+    candidate, items, result = _boundary_result(tmp_path, text, 9, maximum=maximum)
+    assert "TIMEOUT=30" in candidate and "Production" not in candidate
+    assert items[0]["text"] == text
+    assert (items[0]["selected_line"], items[0]["selected_end_line"]) == (1, 11)
+    assert_accounted(result, {"max_tokens": maximum})
+    if maximum == 256:
+        assert not result["hit"] and result["reason"] == "budget_limited"
+    else:
+        assert result["hit"] and result["evidence"][0]["text"] == text
+        assert not result["evidence"][0]["complete_file"]
+
+
+def test_nested_list_fence_keeps_outer_profile_label(tmp_path):
+    text = "- Production:\n\n  - ```sh\n    TIMEOUT=30\n    ```\n\nOriginal note."
+    _, _, result = _boundary_result(tmp_path, text, 3, maximum=2048)
+    assert result["hit"] and result["evidence"][0]["text"] == text
+
+
+@pytest.mark.parametrize("indent", [" ", "  ", "   "])
+def test_root_indented_fence_without_container_stays_bounded(tmp_path, indent):
+    code = indent + "```sh\n" + indent + "TIMEOUT=30\n" + indent + "```"
+    _, _, result = _boundary_result(tmp_path, code + "\n\nUnrelated note.", 1)
+    assert result["hit"] and result["evidence"][0]["text"] == code
+
+
+def test_root_aligned_fence_after_list_stays_bounded(tmp_path):
+    code = "```sh\nTIMEOUT=30\n```"
+    text = "- Earlier item.\n\nUnrelated paragraph.\n\n" + code + "\n\nUnrelated note."
+    _, _, result = _boundary_result(tmp_path, text, 5)
+    assert result["hit"] and result["evidence"][0]["text"] == code
