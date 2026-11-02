@@ -14,6 +14,7 @@ from cryptography.fernet import Fernet
 
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import (
+    ContextBudget,
     GitContext,
     Keyfile,
     MemoryChange,
@@ -270,9 +271,11 @@ class Client:
         response.raise_for_status()
         return response.json()
 
-    def _git_supported(self, context: GitContext):
+    def _git_supported(self, context: GitContext, *, capabilities=None):
         try:
-            capability = self.request("/capabilities", {})["git_context"]
+            if capabilities is None:
+                capabilities = self.request("/capabilities", {})
+            capability = capabilities["git_context"]
             if capability["version"] != context.version or (
                 capability["repository_id"] != context.repository_id
             ):
@@ -291,7 +294,22 @@ class Client:
         include_evidence_files: bool = False,
         repo: Path | None = None,
         repository_id: str | None = None,
+        context_budget: ContextBudget | None = None,
     ):
+        budget = None
+        if context_budget is not None:
+            from colony.context_budget import count_response, fit_response
+
+            try:
+                budget = ContextBudget.model_validate(context_budget)
+            except (TypeError, ValueError):
+                raise ValueError("Invalid context budget") from None
+            # Validate explicitly requested local accounting before contacting a server.
+            count_response({}, budget)
+
+        def finish(value):
+            return fit_response(value, budget, question=question) if budget is not None else value
+
         context = None
         if repository_id is not None:
             from colony.git_context import capture
@@ -303,20 +321,65 @@ class Client:
             payload = {"question": scrub(question), "namespace": namespace}
             if include_evidence_files:
                 payload["include_evidence_files"] = True
+            capabilities = None
+            if budget is not None:
+                try:
+                    capabilities = self.request("/capabilities", {})
+                    capability = capabilities["context_budget"]
+                    if (
+                        capability["version"] != budget.version
+                        or not isinstance(capability["encodings"], list)
+                        or not all(isinstance(name, str) for name in capability["encodings"])
+                        or budget.encoding not in capability["encodings"]
+                        or type(capability["min_tokens"]) is not int
+                        or type(capability["max_tokens"]) is not int
+                        or not capability["min_tokens"] <= budget.max_tokens <= capability["max_tokens"]
+                    ):
+                        raise ValueError()
+                except (KeyError, TypeError, ValueError, httpx.HTTPStatusError):
+                    return finish({"hit": False, "reason": "context_budget_unsupported"})
+                payload["context_budget"] = budget.model_dump()
             if context is not None:
                 try:
-                    self._git_supported(context)
+                    if budget is not None:
+                        self._git_supported(context, capabilities=capabilities)
+                    else:
+                        self._git_supported(context)
                 except ValueError:
-                    return {"hit": False, "reason": "git_context_unsupported"}
+                    return finish({"hit": False, "reason": "git_context_unsupported"})
                 payload["git_context"] = context.model_dump()
             result = self.request("/ask", payload)
+            if budget is not None:
+                try:
+                    receipt = result["context_budget"]
+                    if (
+                        any(receipt[key] != value for key, value in budget.model_dump().items())
+                        or type(receipt["used"]) is not int
+                        or type(receipt["limited"]) is not bool
+                        or receipt["used"] != count_response(result, budget)
+                        or receipt["used"] > budget.max_tokens
+                        or receipt["measurement"]
+                        != ("utf8_bytes_estimate" if budget.encoding == "utf8_bytes" else "encoding_tokens")
+                    ):
+                        raise ValueError()
+                except (KeyError, TypeError, ValueError):
+                    return finish({"hit": False, "reason": "context_budget_invalid_receipt"})
             if context is not None:
                 from colony.git_client import verify_lookup
 
-                return verify_lookup(result, repo, context, whole_files=include_evidence_files)
-            return result
+                receipt = result.get("context_budget") if budget is not None else None
+                options = {"context_budget": budget} if budget is not None else {}
+                result = verify_lookup(
+                    result, repo, context, whole_files=include_evidence_files, **options
+                )
+                if budget is not None:
+                    if "context_budget" not in result:
+                        result["context_budget"] = receipt
+                    elif receipt["limited"]:
+                        result["context_budget"]["limited"] = True
+            return finish(result)
         except httpx.TransportError:
-            return {"hit": False, "reason": "server_unavailable"}
+            return finish({"hit": False, "reason": "server_unavailable"})
 
     def _memory_request(self, route: str, request_type, values: dict, *, mutation: bool):
         try:

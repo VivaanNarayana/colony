@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import (
@@ -91,7 +91,17 @@ def create_app(
     @app.post("/capabilities")
     def capabilities(grant: Annotated[Grant, Depends(member)]):
         # Separate from /health, which retains its original public contract.
-        return {"git_context": {"version": "colony.git-context/1", "repository_id": repository_id}}
+        from colony.context_budget import supported_encodings
+
+        return {
+            "git_context": {"version": "colony.git-context/1", "repository_id": repository_id},
+            "context_budget": {
+                "version": "colony.context-budget/1",
+                "encodings": supported_encodings(),
+                "min_tokens": 256,
+                "max_tokens": 8192,
+            },
+        }
 
     @app.post("/trails")
     def push(trail: Trail, grant: Annotated[Grant, Depends(member)]):
@@ -111,14 +121,34 @@ def create_app(
             if query.namespace not in namespaces:
                 raise HTTPException(403, "Namespace pull denied")
             namespaces = [query.namespace]
-        return store.ask(
-            query.question,
-            namespaces,
-            max_age,
-            threshold,
-            include_evidence_files=query.include_evidence_files,
-            git_context=query.git_context,
-        )
+        options = {}
+        if query.context_budget is not None:
+            from colony.context_budget import (
+                ContextBudgetError,
+                serialize_response,
+                supported_encodings,
+            )
+
+            if query.context_budget.encoding not in supported_encodings():
+                raise HTTPException(422, "Context budget encoding unavailable")
+            options["context_budget"] = query.context_budget
+        try:
+            result = store.ask(
+                query.question,
+                namespaces,
+                max_age,
+                threshold,
+                include_evidence_files=query.include_evidence_files,
+                git_context=query.git_context,
+                **options,
+            )
+        except ValueError as exc:
+            if query.context_budget is not None and isinstance(exc, ContextBudgetError):
+                raise HTTPException(422, "Context budget encoding unavailable") from None
+            raise
+        if query.context_budget is not None:
+            return Response(content=serialize_response(result), media_type="application/json")
+        return result
 
     @app.post("/memory/inspect")
     def memory_inspect(query: MemoryInspect, grant: Annotated[Grant, Depends(member)]):
