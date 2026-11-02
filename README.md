@@ -216,6 +216,14 @@ Without this option, legacy responses, setup defaults and tool schemas stay unch
 Only adaptive MCP connections expose an optional `max_context_tokens` argument on
 `ask`, allowing an explicit larger or smaller request with the connection's encoding.
 
+Adaptive MCP connections expose only the routine `ask` and `push` tools (only `ask`
+for read-only workflows). Adaptive setup and server guidance allow a direct read of a
+known small file/range, reserve lookups for substantial or repeated research, and skip
+trivial or unchanged publications. This is best-effort agent guidance, not an automatic
+router. Explicit memory management remains available through `colony memory` commands
+or a separately configured full non-adaptive MCP connection; ordinary adaptive setup
+does not install that second connection. See [adaptive low-overhead behavior](docs/adaptive-low-overhead.md).
+
 The default `utf8_bytes` accounting counts UTF-8 bytes of the canonical JSON payload.
 It is labelled `utf8_bytes_estimate`, not an exact model-token count or a universal
 token bound. This conservative size-based mode works without an optional tokenizer.
@@ -419,12 +427,14 @@ configuration must be trusted, and nested instructions or instruction-size limit
 affect which guidance is loaded. See the official [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp)
 and [project instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
-Installed guidance requests one lookup before substantive repository research. Sufficient
-current evidence can answer directly without another read or push. Misses, stale evidence,
-contradictions, and missing facts use the agent's existing research tools. After learning
-a reusable new fact, the agent can publish one concise answer with real file fingerprints
-already obtained during research. New facts after a partial hit also qualify. Routine
-progress, speculation, unchanged reused answers, and transcripts do not.
+Without a context budget, installed guidance requests one lookup before substantive
+repository research. Adaptive setup instead permits a direct known small-file/range read,
+selective lookups for repeated or multistep research, and publication of durable findings
+from meaningful new research. Sufficient current evidence can answer directly without
+another read or push. Misses, stale evidence, contradictions and missing facts use the
+agent's existing research tools. Publications require real file fingerprints already
+obtained during research; routine progress, speculation, unchanged reuse and transcripts
+do not qualify. A read-only connection never publishes.
 
 This is **agent guidance, not enforced interception of every research action**. Colony
 does not read session transcripts, summarize sessions, install hooks, or call a model
@@ -438,7 +448,7 @@ same identity and local project produce the same trail ID, including across rest
 offline retries. Source ordering does not create duplicates. Changed answers or hashes
 produce new IDs. This does not detect paraphrases or refresh an unchanged trail's age;
 use the existing manual push path to explicitly reaffirm an aged finding. Manual
-CLI/API and `colony mcp` without workflow options retain their schemas and random IDs.
+Non-adaptive CLI/API and `colony mcp` without workflow options retain their schemas and random IDs.
 
 Server outages allow research to continue; findings use the existing encrypted queue and
 explicit `retry`. Authentication/scope errors remain errors. Existing pattern redaction
@@ -494,8 +504,10 @@ that the corrected prose is true.
   status. Revision checks reject conflicting simultaneous changes. Normal pushes, delayed push
   retries, server restarts, and reindexing do not reactivate retired IDs or reset their age.
 
-MCP adds `memory_inspect`, `memory_feedback`, `memory_correct`, and `memory_change` for manual
-and writable workflow connections. Workflow namespace binding applies to every operation.
+Full non-adaptive MCP adds `memory_inspect`, `memory_feedback`, `memory_correct`, and
+`memory_change` for manual and writable workflow connections. Adaptive routine connections
+omit these management tools; use the existing CLI commands or explicitly configure a full
+connection for requested management work. Workflow namespace binding applies to every operation.
 The existing read-only workflow connection continues to expose only `ask`; pull-only users can
 inspect through the CLI or HTTP. The HTTP endpoints are `POST /memory/inspect`, `/memory/feedback`,
 `/memory/correct`, and `/memory/change`. Feedback and history notes are bounded to 1,000 characters,

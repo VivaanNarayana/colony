@@ -135,7 +135,8 @@ def test_adaptive_mcp_final_accounting_and_fixed_encoding_override(client, tmp_p
     validated(client[1])
     server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
     tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
-    assert len(tools) == 6 and "max_context_tokens" in tools["ask"].inputSchema["properties"]
+    assert set(tools) == {"ask", "push"}
+    assert "max_context_tokens" in tools["ask"].inputSchema["properties"]
     text = call(server, question="facts", max_context_tokens=2048)
     final = json.loads(text)
     assert text == serialize_response(final)

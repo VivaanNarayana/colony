@@ -528,7 +528,10 @@ def test_trailing_empty_script_lines_survive_actual_git_client_and_mcp(
             assert not read["complete_file"]
             if "sha256" in read:
                 assert read["sha256"] == hashes[ref]
-        assert {source["ref"]: source["content_hash"] for source in value["sources"]} == hashes
+        if "current_repository_reads" in value:
+            assert {read["path"]: read["sha256"] for read in reads} == hashes
+        else:
+            assert {source["ref"]: source["content_hash"] for source in value["sources"]} == hashes
         assert value["context_budget"]["used"] == count_response(value, budget) <= 4096
     assert rendered == serialize_response(final)
 
@@ -855,8 +858,11 @@ def test_selected_candidate_coverage_survives_actual_git_client_and_mcp(
             continue
         assert packet["hit"] and packet["status"] == "validated"
         assert packet["git"]["compatibility"] == "matched"
-        assert packet["sources"][0]["content_hash"] == source.content_hash
         reads = packet.get("evidence", packet.get("current_repository_reads"))
+        if "current_repository_reads" in packet:
+            assert {read["path"]: read["sha256"] for read in reads} == {ref: source.content_hash}
+        else:
+            assert packet["sources"][0]["content_hash"] == source.content_hash
         for read in reads:
             start = read.get("line", read.get("start_line"))
             content = read.get("text", read.get("content"))
@@ -980,8 +986,11 @@ def test_list_relative_indented_fence_retains_complete_source_through_git_and_mc
             continue
         assert packet["hit"] and packet["status"] == "validated"
         assert packet["git"]["compatibility"] == "matched"
-        assert packet["sources"][0]["content_hash"] == source.content_hash
         reads = packet.get("evidence", packet.get("current_repository_reads"))
+        if "current_repository_reads" in packet:
+            assert {read["path"]: read["sha256"] for read in reads} == {ref: source.content_hash}
+        else:
+            assert packet["sources"][0]["content_hash"] == source.content_hash
         assert len(reads) == 1
         read = reads[0]
         assert read.get("text", read.get("content")) == text
