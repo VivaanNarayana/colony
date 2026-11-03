@@ -27,6 +27,12 @@ python scripts/pr15_evaluation.py --output D:/evaluations/pr15-correction-001
 python -m pytest tests/pr15_evaluation -q
 ```
 
+The encoding-token journeys use the explicit `COLONY_TEST_CONTEXT_TOKENIZER`
+fixture and provision `COLONY_CONTEXT_TOKENIZER` within each test. Without that
+fixture or the optional `tiktoken` dependency, only those two journeys skip;
+byte-budget journeys and broken-publication/always-miss controls still run.
+No runtime tokenizer environment setting is required in the invoking shell.
+
 Run the original evaluator controls against the patched disposable export too:
 
 ```powershell
@@ -89,7 +95,12 @@ remain immutable. Corrected coverage must not silently relabel old campaigns.
 Any future native comparison needs a fresh frozen protocol identifying this
 overlay, its patched collector/catalog hashes, exact product/client revisions,
 explicit budget units, independent quality review and separately authorized limits.
-The template records the overlay version; the runner verifies active collector
-pins and native reports reject unversioned or historical collector protocols.
+The template records the overlay version. Live preflight and execution require
+exact active collector pins, including when called through their direct entry
+points. Missing, empty, null or mismatched collector bindings fail before local
+service provisioning, credential-file access or model dispatch; native reports
+apply the same guard. Provider-free fixture collection remains available without
+native collector pins and cannot certify savings. Regression controls intercept
+every live boundary and verify both rejection and the valid protocol path.
 All learning, failure and retry costs remain included. Passing these offline
 controls cannot turn the native token evidence check green or authorize a merge.

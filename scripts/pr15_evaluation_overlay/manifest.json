@@ -1,7 +1,7 @@
 {
   "contract": "colony.pr15-evaluator-overlay/1",
   "base": "1ee4cd787b9cf65d8df82cbcf9142ad0208208e7",
-  "patch_sha256": "7dfd5e2dfebff02b2b7a1b3c676078767962d7e4f50b0098799b7ca09569ca9a",
+  "patch_sha256": "953ca35bf2b7f1253b44c51fdba2de593b43ec93df9846b3367bdabc4251c964",
   "base_files": {
     "docs/token-evaluations.md": "bc79f8cc9146810101e980f8250e106d2ffc4bc6d9b2655df658c7c0023f7697",
     "scripts/token_evaluation.py": "eb092384efc5dfc3546d684acc9795a11ab0412e3e611f2419dbeafa2453adb1",
@@ -50,11 +50,13 @@
   "patched_files": {
     "scripts/token_evaluation/cli.py": "f81330d128f43c2a98cdaf1e14a1513a3946704a1485992a5bf01bcf407359b7",
     "scripts/token_evaluation/evidence.py": "b0ce48771f9a2be29b156800d6e59d6dacfcee1de44e7867560cf3045403be4b",
-    "scripts/token_evaluation/protocol.py": "c067792f23351d76c462e6b5a84490c7def9298df980c1b41d53373cbf360bf2",
+    "scripts/token_evaluation/native.py": "afe1025dbd86876aefd49fcc82fe6af14fda5be32f3450d482b316ec7e08f1ab",
+    "scripts/token_evaluation/protocol.py": "fbd50026abf1a5d920768087d7dd23fb373793b314c9b9f66b5d7c0a8fa45eb3",
     "scripts/token_evaluation/report.py": "95365c6a88ac1611d23db043b9ea39e763a5494e0faeb1a529786537fce4a758",
     "scripts/token_evaluation/research.py": "76b743b5932d2b6fadcfdeb216823c44fc04257991ec11b5bb9f4c9fef7d3067",
-    "scripts/token_evaluation/runner.py": "f58b17ed43a9f2d37de8bd905c900d25086d89c72b26a476c21ed54deecb2653",
+    "scripts/token_evaluation/runner.py": "e337d58b3f94e89c723729cff7f120e172fb55d63e3e8165d71ae44cd7d49905",
     "tests/token_evaluations/fixtures/catalog.json": "542f3d6e9b6581c9346776772b65ac35a6df7bb351ff372a47e3ee9b47bd0cca",
+    "tests/token_evaluations/test_native.py": "fd852843d1ce8f80151125d65124134de1ab6376c98bed517a1458e551796e0a",
     "tests/token_evaluations/test_product_integration.py": "dfc5ea4a12af9d8c238f47662685b995f32d759e81c4ef40bb267a3fc46ca8d8",
     "tests/token_evaluations/test_report.py": "5212703795e72d10998d9c32079d90d6dff09593d38bd58831bd799a35656269"
   }

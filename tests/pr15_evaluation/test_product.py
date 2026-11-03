@@ -1,6 +1,8 @@
 """Real offline product journeys and deliberate broken-runtime countercontrols."""
 
+import builtins
 import hashlib
+import os
 
 import pytest
 
@@ -9,7 +11,14 @@ from colony.models import ContextBudget, Source
 
 @pytest.mark.parametrize("workload", ["gateway", "worker"])
 @pytest.mark.parametrize("encoding,maximum", [("utf8_bytes", 4096), ("o200k_base", 2048)])
-def test_actual_adaptive_journey(evaluator, tmp_path, monkeypatch, workload, encoding, maximum):
+def test_actual_adaptive_journey(
+    evaluator, tmp_path, monkeypatch, request, workload, encoding, maximum
+):
+    if encoding == "o200k_base":
+        # The test owns provisioning; it must work without a runtime shell setting.
+        monkeypatch.delenv("COLONY_CONTEXT_TOKENIZER", raising=False)
+        configured = request.getfixturevalue("local_o200k_tokenizer")
+        assert os.environ["COLONY_CONTEXT_TOKENIZER"] == configured
     budget = ContextBudget(max_tokens=maximum, encoding=encoding)
     evaluator.product.test_authenticated_product_scenarios(
         tmp_path, monkeypatch, workload, budget=budget
@@ -35,6 +44,9 @@ def test_broken_adaptive_memory_fails_its_contract(
 ):
     from colony.store import Store
 
+    # These controls must still exercise the actual product without optional token support.
+    monkeypatch.delenv("COLONY_CONTEXT_TOKENIZER", raising=False)
+    monkeypatch.delenv("COLONY_TEST_CONTEXT_TOKENIZER", raising=False)
     if mutation == "push_noop":
         def noop(self, trail, grant):
             return {"stored": True, "id": trail.id}
@@ -46,8 +58,32 @@ def test_broken_adaptive_memory_fails_its_contract(
     with pytest.raises(AssertionError, match=expected):
         evaluator.product.test_authenticated_product_scenarios(
             tmp_path, monkeypatch, "gateway",
-            budget=ContextBudget(max_tokens=2048, encoding="o200k_base"),
+            budget=ContextBudget(max_tokens=4096, encoding="utf8_bytes"),
         )
+
+
+def test_optional_tokenizer_fixture_skips_when_unconfigured(monkeypatch, request):
+    monkeypatch.delenv("COLONY_CONTEXT_TOKENIZER", raising=False)
+    monkeypatch.delenv("COLONY_TEST_CONTEXT_TOKENIZER", raising=False)
+    with pytest.raises(pytest.skip.Exception, match="local tokenizer fixture unavailable"):
+        request.getfixturevalue("local_o200k_tokenizer")
+    assert "COLONY_CONTEXT_TOKENIZER" not in os.environ
+
+
+def test_optional_tokenizer_fixture_skips_without_dependency(tmp_path, monkeypatch, request):
+    monkeypatch.delenv("COLONY_CONTEXT_TOKENIZER", raising=False)
+    monkeypatch.setenv("COLONY_TEST_CONTEXT_TOKENIZER", str(tmp_path / "unused-tokenizer"))
+    original_import = builtins.__import__
+
+    def without_tiktoken(name, *args, **kwargs):
+        if name == "tiktoken":
+            raise ModuleNotFoundError("No module named 'tiktoken'", name="tiktoken")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_tiktoken)
+    with pytest.raises(pytest.skip.Exception, match="tiktoken"):
+        request.getfixturevalue("local_o200k_tokenizer")
+    assert "COLONY_CONTEXT_TOKENIZER" not in os.environ
 
 
 def test_explicit_global_passage_selection_is_not_replaced_by_bundle_expansion(tmp_path):

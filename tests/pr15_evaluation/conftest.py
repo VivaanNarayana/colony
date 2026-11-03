@@ -1,12 +1,23 @@
 import importlib
 import importlib.util
 import json
+import os
 import sys
 from types import SimpleNamespace
 
 import pytest
 
 from scripts.pr15_evaluation import prepare
+
+
+@pytest.fixture
+def local_o200k_tokenizer(monkeypatch):
+    configured = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
+    if not configured:
+        pytest.skip("Explicit verified local tokenizer fixture unavailable")
+    pytest.importorskip("tiktoken")
+    monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", configured)
+    return configured
 
 
 @pytest.fixture(scope="session")
