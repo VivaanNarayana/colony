@@ -1,10 +1,18 @@
 import copy
 import json
+import re
 from pathlib import Path
 
 import pytest
 
-from scripts.token_evaluation.protocol import CONTRACT, validate_authorization, validate_manifest
+from scripts.token_evaluation.protocol import (
+    ATTEMPT_ID_PATTERN,
+    CONTRACT,
+    attempt_id,
+    planned_attempt_ids,
+    validate_authorization,
+    validate_manifest,
+)
 
 
 def manifest(tmp_path):
@@ -68,3 +76,46 @@ def test_mechanism_contract_cannot_be_relabelled_to_force_pass(tmp_path, corrupt
         task['oracle']['citations'][0]['start'] = True
     with pytest.raises(ValueError):
         validate_manifest(value)
+
+
+def test_accepted_schedule_has_distinct_bounded_attempt_identities(tmp_path):
+    value = manifest(tmp_path)
+    original = value['workloads'][0]
+    original['id'] = 'gateway-alpha'
+    original['tasks'] = [original['tasks'][0], next(t for t in original['tasks'] if t['id'] == 'useful_hit')]
+    original['tasks'][0]['id'] = 'learn'
+    original['tasks'][1].update(id='reuse', memory_from='learn')
+    second = copy.deepcopy(original)
+    second['id'] = 'gateway'
+    second['tasks'][0]['id'] = 'alpha-learn'
+    second['tasks'][1].update(id='alpha-reuse', memory_from='alpha-learn')
+    value['workloads'].append(second)
+    validate_manifest(value)
+    plan = planned_attempt_ids(value)
+    assert len(plan) == len(set(plan.values())) == 8
+    assert plan[('gateway-alpha', 'learn', 'colony')] != plan[('gateway', 'alpha-learn', 'colony')]
+    assert all(re.fullmatch(ATTEMPT_ID_PATTERN, identity) for identity in plan.values())
+    assert plan == planned_attempt_ids(value)
+
+
+def test_maximum_display_names_produce_reportable_ids(tmp_path):
+    value = manifest(tmp_path)
+    workload = value['workloads'][0]
+    workload['id'] = 'w' * 64
+    cold = workload['tasks'][0]
+    reuse = next(t for t in workload['tasks'] if t['id'] == 'useful_hit')
+    workload['tasks'] = [cold, reuse]
+    cold['id'] = 'a' * 64
+    reuse.update(id='b' * 64, memory_from=cold['id'])
+    validate_manifest(value)
+    identities = planned_attempt_ids(value).values()
+    assert len(set(identities)) == 4
+    assert all(len(identity) <= 128 and re.fullmatch(ATTEMPT_ID_PATTERN, identity) for identity in identities)
+    assert attempt_id(workload['id'], cold['id'], 'colony') != attempt_id(workload['id'], cold['id'], 'no_colony')
+
+
+def test_colliding_generated_ids_are_rejected_during_validation(tmp_path, monkeypatch):
+    from scripts.token_evaluation import protocol
+    monkeypatch.setattr(protocol, 'attempt_id', lambda *args: 'same-identifier')
+    with pytest.raises(ValueError, match='Duplicate generated attempt identity'):
+        validate_manifest(manifest(tmp_path))

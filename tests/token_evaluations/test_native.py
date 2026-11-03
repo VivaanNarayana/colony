@@ -6,6 +6,7 @@ from unittest.mock import Mock
 import pytest
 
 from scripts.token_evaluation import native, runner
+from scripts.token_evaluation.protocol import attempt_id
 
 
 @pytest.mark.parametrize('host,shell,passes', [('true', 'false', True), ('false', 'false', False), ('true', 'true', False)])
@@ -85,7 +86,8 @@ def test_interruption_stops_child_and_server_and_retains_invocation(tmp_path, mo
     assert events == ['start', 'actual-team', 'stop']
     assert list((tmp_path / 'control').glob('*-invocation.json'))
     invocation = json.loads(next((tmp_path / 'control').glob('*-invocation.json')).read_text())
-    assert invocation['client_workspace'].replace('\\', '/').endswith('/sessions/w-t-no_colony')
+    assert invocation['id'] == attempt_id('w', 't', 'no_colony')
+    assert invocation['client_workspace'].replace('\\', '/').endswith('/sessions/' + invocation['id'])
     with pytest.raises(ValueError, match='no retries'):
         native.execute_live(tmp_path, {}, tmp_path / 'auth')
 
@@ -145,3 +147,48 @@ def test_client_args_isolate_roles_and_repository(tmp_path):
     settings = dict(a.split('=', 1) for i, a in enumerate(args) if i and args[i - 1] == '-c')
     assert str(tmp_path / 'source') in json.loads(settings['mcp_servers.colony.args'])
     assert str(tmp_path / 'source') in json.loads(settings['mcp_servers.repository.args'])
+
+
+def test_invalid_attempt_schedule_is_rejected_before_provision_or_launch(tmp_path, monkeypatch):
+    from scripts.token_evaluation import protocol
+    setup_run(tmp_path, monkeypatch)
+    monkeypatch.setattr(protocol, 'attempt_id', lambda *args: 'same-identifier')
+    provision = Mock(side_effect=AssertionError('must reject before starting local services'))
+    launch = Mock(side_effect=AssertionError('must reject before model dispatch'))
+    monkeypatch.setattr(native.runtime, 'provision', provision)
+    monkeypatch.setattr(native.subprocess, 'Popen', launch)
+    with pytest.raises(ValueError, match='Duplicate generated attempt identity'):
+        native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    provision.assert_not_called()
+    launch.assert_not_called()
+    assert not (tmp_path / 'private/client').exists()
+
+
+def test_same_basename_orphan_stops_before_next_native_dispatch(tmp_path, monkeypatch):
+    """Synthetic process output tests dispatch safety, never model-token savings."""
+    inventory_reader = runner.inventory
+    setup_run(tmp_path, monkeypatch)
+    monkeypatch.setattr(runner, 'inventory', inventory_reader)
+    launches = []
+    raw = '\n'.join(map(json.dumps, [{'type': 'turn.started'}, {'type': 'turn.completed',
+        'usage': {'input_tokens': 10, 'cached_input_tokens': 2, 'output_tokens': 4}}])).encode()
+    class Process:
+        returncode = 0
+        def __init__(self, stdout):
+            self.stdout = stdout
+        def communicate(self, *args, **kwargs):
+            self.stdout.write(raw)
+            self.stdout.flush()
+            from pathlib import Path
+            unlisted = tmp_path / 'logs/unlisted' / Path(self.stdout.name).name
+            unlisted.parent.mkdir(exist_ok=True)
+            unlisted.write_bytes(raw)
+    def launch(*args, **kwargs):
+        launches.append(args)
+        return Process(kwargs['stdout'])
+    monkeypatch.setattr(native.subprocess, 'Popen', launch)
+    value = native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    assert len(launches) == value['attempts'] == 1
+    assert value['status'] == 'partial' and 'Unreconciled prior native usage' in value['error']
+    assert value['inventory']['known_gross_tokens'] == 28
+    assert len(value['inventory']['orphan_logs']) == 1

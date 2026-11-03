@@ -7,7 +7,8 @@ import os
 import shutil
 import subprocess
 import time
-from pathlib import Path
+from collections import Counter
+from pathlib import Path, PurePosixPath
 
 
 def _sha(path):
@@ -211,6 +212,21 @@ def execute(run_dir, authorization_path=None, auth_home=None, execute_native=Fal
     return _write(root / "collection.json", receipt)
 
 
+def _event_reference(value):
+    """Canonical run-relative log name; a basename always means the logs root."""
+    if (not isinstance(value, str) or not value or "\\" in value or ":" in value
+            or any(ord(character) < 32 for character in value)):
+        return None
+    parts = value.split("/")
+    if any(part in {"", ".", ".."} for part in parts) or not value.endswith(".events.jsonl"):
+        return None
+    if len(parts) == 1:
+        return "logs/" + value
+    if parts[0] != "logs":
+        return None
+    return PurePosixPath(value).as_posix()
+
+
 def inventory(run_dir):
     root = Path(run_dir)
     parse_errors = []
@@ -234,10 +250,14 @@ def inventory(run_dir):
     usage_complete = True
     attempts_path = root / "control" / "attempts.jsonl"
     attempts = read_rows(attempts_path)
-    referenced = {row.get("events") for row in attempts}
+    references = [(row, _event_reference(row.get("events"))) for row in attempts]
+    reference_counts = Counter(reference for _, reference in references if reference is not None)
+    referenced = set(reference_counts)
+    invalid_references = [row.get("id") for row, reference in references if reference is None]
+    duplicate_references = sorted(reference for reference, count in reference_counts.items() if count > 1)
     for path in sorted((root / "logs").rglob("*.events.jsonl")):
         relative = path.relative_to(root).as_posix()
-        result = {"events": relative, "events_sha256": _sha(path), "orphan": relative not in referenced and path.name not in referenced, "usage": None}
+        result = {"events": relative, "events_sha256": _sha(path), "orphan": relative not in referenced, "usage": None}
         try:
             from colony.product_value import native_usage
             result["usage"] = native_usage(path)
@@ -275,14 +295,15 @@ def inventory(run_dir):
     orphan_invocations = sorted(invocation_ids - row_ids)
     orphan_rows = sorted(identifier for identifier in row_ids - invocation_ids if identifier is not None)
     orphan_logs = [row["events"] for row in native_records if row["orphan"]]
-    existing_names = {Path(row["events"]).name for row in native_records}
-    missing_logs = [row.get("id") for row in attempts if row.get("events") and Path(row["events"]).name not in existing_names]
+    existing_names = {row["events"] for row in native_records}
+    missing_logs = [row.get("id") for row, reference in references if reference not in existing_names]
     usage_complete = (bool(native_records) and usage_complete and not parse_errors and not orphan_invocations
                       and not orphan_rows and not missing_logs and not orphan_logs and not (invocations - results)
-                      and all(row.get("events") for row in attempts))
+                      and not invalid_references and not duplicate_references)
     return {"records": records, "attempts": attempts, "native_logs": native_records,
             "known_gross_tokens": known_gross, "usage_complete": usage_complete, "parse_errors": parse_errors,
             "orphan_invocations": orphan_invocations, "orphan_rows": orphan_rows,
             "orphan_logs": orphan_logs, "missing_logs": missing_logs,
+            "invalid_log_references": invalid_references, "duplicate_log_references": duplicate_references,
             "orphan_attempts": sorted(invocations - results), "native_evidence": bool(native_records),
             "billing": None, "certifying": False}

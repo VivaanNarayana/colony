@@ -14,6 +14,7 @@ from pathlib import Path
 from colony.product_value import native_usage
 
 from .evidence import evaluate_mechanisms
+from .protocol import ATTEMPT_ID_PATTERN
 
 ARMS = ("no_colony", "colony")
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "gross_tokens",
@@ -137,7 +138,7 @@ def _load(run_dir):
     invocations, results = {}, {}
     for record in records:
         identity = record["id"]
-        _require(isinstance(identity, str) and re.fullmatch(r"[a-zA-Z0-9_-]{1,128}", identity),
+        _require(isinstance(identity, str) and re.fullmatch(ATTEMPT_ID_PATTERN, identity),
                  "Invalid attempt identity")
         _require(identity not in results, "Duplicate attempt")
         invocation_path = root / "control" / f"{identity}-invocation.json"

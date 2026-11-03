@@ -8,6 +8,7 @@ from pathlib import Path
 
 CONTRACT = "colony.token-evaluation/1"
 ARMS = ("no_colony", "colony")
+ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}
 USES = {"optional", "required_publication", "required_hit", "required_miss", "required_stale", "required_insufficient"}
 
@@ -19,6 +20,29 @@ def digest(value):
 def require(value, message):
     if not value:
         raise ValueError(message)
+
+
+def attempt_id(workload, task, arm):
+    """Bounded identifier from an unambiguous tuple, independent of display-name length."""
+    require(all(isinstance(value, str) and re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", value)
+                for value in (workload, task)) and arm in ARMS, "Invalid attempt components")
+    return "attempt-" + digest([workload, task, arm])
+
+
+def planned_attempt_ids(manifest):
+    """Check the entire schedule before collection can create or launch a session."""
+    plan, identifiers = {}, set()
+    for workload in manifest["workloads"]:
+        for task in workload["tasks"]:
+            for arm in ARMS:
+                key = (workload["id"], task["id"], arm)
+                identity = attempt_id(*key)
+                require(isinstance(identity, str) and re.fullmatch(ATTEMPT_ID_PATTERN, identity),
+                        "Invalid generated attempt identity")
+                require(key not in plan and identity not in identifiers, "Duplicate generated attempt identity")
+                plan[key] = identity
+                identifiers.add(identity)
+    return plan
 
 
 def relative(value):
@@ -145,6 +169,7 @@ def _validate_manifest(manifest):
         require(phases == sorted(phases) and "reuse" in phases, "Freeze finite learn-then-reuse horizon")
         tasks_total += len(tasks)
     require(tasks_total * 2 <= limits["max_attempts"], "Attempt budget cannot complete the paired schedule")
+    planned_attempt_ids(manifest)
     # JSON round-trip rejects hidden non-serializable inputs/nonfinite numbers.
     json.dumps(manifest, allow_nan=False)
     return manifest

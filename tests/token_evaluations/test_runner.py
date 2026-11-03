@@ -114,3 +114,65 @@ def test_inventory_malformed_failed_turn_retains_cost(tmp_path):
     result = inventory(tmp_path)
     assert result["known_gross_tokens"] == 10
     assert not result["usage_complete"]
+
+
+def native_inventory_fixture(root, references, paths):
+    """Synthetic accounting controls only; no measured model usage."""
+    (root / 'control').mkdir()
+    raw = '\n'.join(map(json.dumps, [{'type': 'turn.started'}, {'type': 'turn.completed',
+        'usage': {'input_tokens': 10, 'cached_input_tokens': 2, 'output_tokens': 4}}])).encode()
+    for relative in paths:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(raw)
+    rows = []
+    for identity, reference in references:
+        (root / 'control' / (identity + '-invocation.json')).write_text(json.dumps({'id': identity}))
+        rows.append({'id': identity, 'events': reference})
+    (root / 'control/attempts.jsonl').write_text('\n'.join(map(json.dumps, rows)))
+
+
+@pytest.mark.parametrize('root_present', [True, False])
+def test_nested_same_basename_cannot_hide_orphan_or_missing_log(tmp_path, root_present):
+    paths = ['logs/unlisted/trial.events.jsonl']
+    if root_present:
+        paths.append('logs/trial.events.jsonl')
+    native_inventory_fixture(tmp_path, [('trial', 'trial.events.jsonl')], paths)
+    value = inventory(tmp_path)
+    assert value['orphan_logs'] == ['logs/unlisted/trial.events.jsonl']
+    assert value['missing_logs'] == ([] if root_present else ['trial'])
+    assert value['known_gross_tokens'] == 14 * len(paths)
+    assert not value['usage_complete']
+
+
+@pytest.mark.parametrize('reference,path', [
+    ('trial.events.jsonl', 'logs/trial.events.jsonl'),
+    ('logs/trial.events.jsonl', 'logs/trial.events.jsonl'),
+    ('logs/nested/trial.events.jsonl', 'logs/nested/trial.events.jsonl'),
+])
+def test_explicit_log_paths_reconcile_only_the_named_file(tmp_path, reference, path):
+    native_inventory_fixture(tmp_path, [('trial', reference)], [path])
+    value = inventory(tmp_path)
+    assert value['usage_complete'] and value['known_gross_tokens'] == 14
+    assert value['orphan_logs'] == value['missing_logs'] == []
+
+
+@pytest.mark.parametrize('reference', [None, '', [], {}, '../trial.events.jsonl',
+    'logs/../trial.events.jsonl', 'nested/trial.events.jsonl', 'logs\\trial.events.jsonl',
+    'D:/trial.events.jsonl'])
+def test_invalid_references_retain_known_cost_without_claiming_reconciliation(tmp_path, reference):
+    native_inventory_fixture(tmp_path, [('trial', reference)], ['logs/trial.events.jsonl'])
+    value = inventory(tmp_path)
+    assert value['known_gross_tokens'] == 14
+    assert value['invalid_log_references'] == value['missing_logs'] == ['trial']
+    assert value['orphan_logs'] == ['logs/trial.events.jsonl']
+    assert not value['usage_complete']
+
+
+def test_aliases_cannot_reference_the_same_log_twice(tmp_path):
+    native_inventory_fixture(tmp_path, [('a', 'trial.events.jsonl'), ('b', 'logs/trial.events.jsonl')],
+                             ['logs/trial.events.jsonl'])
+    value = inventory(tmp_path)
+    assert value['duplicate_log_references'] == ['logs/trial.events.jsonl']
+    assert value['known_gross_tokens'] == 14
+    assert not value['usage_complete']

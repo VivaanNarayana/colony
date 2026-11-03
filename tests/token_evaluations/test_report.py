@@ -66,6 +66,36 @@ def test_answer_selection_progress_preserved(run):
     assert not answer["phase_guaranteed"]
 
 
+def test_long_display_names_round_trip_with_generated_attempt_ids(run):
+    """Synthetic reader compatibility, not native token evidence."""
+    from scripts.token_evaluation.protocol import attempt_id
+    root, quality, _ = run
+    frozen = json.loads((root / "run.json").read_text())
+    workload = frozen["protocol"]["workloads"][0]
+    workload["id"] = "w" * 64
+    workload["tasks"][0]["id"] = "t" * 64
+    frozen["protocol_sha256"] = digest(frozen["protocol"])
+    put(root / "run.json", frozen)
+    journal = root / "control/attempts.jsonl"
+    rows = [json.loads(line) for line in journal.read_text().splitlines()]
+    for row in rows:
+        old_id, old_events = row["id"], row["events"]
+        identity = attempt_id(workload["id"], workload["tasks"][0]["id"], row["arm"])
+        row.update(id=identity, workload=workload["id"], task=workload["tasks"][0]["id"],
+                   events=identity + ".events.jsonl")
+        (root / "logs" / old_events).rename(root / "logs" / row["events"])
+        put(root / "control" / (identity + "-invocation.json"), row)
+        (root / "control" / (old_id + "-invocation.json")).unlink()
+        next(label for label in quality["labels"] if label["id"] == old_id)["id"] = identity
+    journal.write_text("\n".join(map(json.dumps, rows)))
+    quality["protocol_sha256"] = frozen["protocol_sha256"]
+    put(root / "quality.json", quality)
+    value = report(root, root / "quality.json", root / "long-names-report.json")
+    assert value["harness_complete"] and not value["native_evidence"]
+    assert {row["id"] for row in value["attempts"]} == {row["id"] for row in rows}
+    assert all(len(row["id"]) <= 128 for row in value["attempts"])
+
+
 @pytest.mark.parametrize("field", ["answer_sha256", "source_sha256", "citation_sha256", "label_sha256"])
 def test_corrupted_quality_binding_rejected(run, field):
     root, quality, _ = run

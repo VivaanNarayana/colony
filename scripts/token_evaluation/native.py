@@ -14,7 +14,7 @@ from colony.onboard_io import private_directory, write_new
 from colony.product_value import native_usage
 
 from . import runtime
-from .protocol import ARMS, digest, validate_authorization
+from .protocol import ARMS, digest, planned_attempt_ids, validate_authorization
 
 
 def _read(path):
@@ -217,6 +217,7 @@ def execute_live(run_dir, authorization, auth_home):
     if preflight.get("ok") is not True or preflight.get("native_ready") is not True or preflight.get("protocol_sha256") != run["protocol_sha256"]:
         raise ValueError("Successful matching local preflight required")
     validate_authorization(authorization, run)
+    attempt_ids = planned_attempt_ids(protocol)
     control = root / "control"
     if list(control.glob("*-invocation.json")) or (control / "attempts.jsonl").exists():
         raise ValueError("Collection already started; no retries or overwrite")
@@ -281,7 +282,7 @@ def execute_live(run_dir, authorization, auth_home):
                         guidance = ""
                         if config:
                             guidance = "\n".join(Path(x["path"]).read_text(encoding="utf-8") for x in config["files"] if Path(x["path"]).name.startswith("AGENTS"))
-                        ident = workload["id"] + "-" + task["id"] + "-" + arm
+                        ident = attempt_ids[(workload["id"], task["id"], arm)]
                         # Manual adapter: client cwd is outside managed project files.
                         # The generated guidance is charged exactly once in the prompt.
                         client_workspace = root / "sessions" / ident

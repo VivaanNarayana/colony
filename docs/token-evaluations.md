@@ -154,6 +154,21 @@ the run and stopped on completion, timeout or interruption. A started run cannot
 be restarted or overwritten. Partial/orphan invocations/logs remain inventoried;
 unknown usage stops further dispatch.
 
+Native attempt filenames use a bounded digest of the canonical
+`[workload, task, arm]` tuple. The complete schedule is checked for unique,
+reader-compatible identifiers before provisioning or dispatch, so hyphens and
+maximum-length display names cannot create overlapping artifacts. Human-readable
+workload/task/arm fields remain in each invocation and result. Existing retained
+IDs remain readable; historical evidence is never renamed.
+
+Inventory matches complete run-relative log paths. A basename references only
+`logs/<basename>`; an explicit `logs/subdirectory/<basename>` reference names only
+that nested file. This diagnostic support does not change the report's flat
+native-log layout. A nested same-basename file cannot substitute for a missing
+root log or hide as a referenced log. Invalid or duplicate references and every
+orphan keep reconciliation incomplete, while all observed known token costs are
+retained. Unreconciled evidence stops the next native dispatch.
+
 Gross-token, disk and free-space stops are sampled **between sessions**, so the
 last session can exceed them. Session and wall-time limits constrain the running
 native process; server initialization has its own local timeout. They are not a
