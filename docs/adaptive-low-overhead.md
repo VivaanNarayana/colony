@@ -65,6 +65,13 @@ source list. The final canonical payload, including its receipt,
 is counted again after formatting. Required evidence that cannot fit keeps the existing
 safe budget-limited miss behavior. Smaller counts do not establish sufficiency or truth.
 
+Explicit whole-file requests preserve complete published source bundles of at most
+four files when their combined text is at most 2,800 characters. The adaptive path
+counts every required file and identity against the final response budget; it returns
+a safe miss if the bundle cannot fit. This avoids the ranked two-passage cap omitting
+necessary files even when a small complete bundle would fit. Larger bundles and
+focused requests retain ranked excerpt selection; the no-budget path is unchanged.
+
 The parent PR #14 evaluation at `4ba3269` is retained as failed evidence: the initial
 collection had invalid harness configuration; the repaired 16-session sample had two
 protocol-deviating sessions and one unsupported citation. Its observed Colony totals
@@ -72,11 +79,15 @@ were 26.4% higher gross and 29.4% higher uncached-input-plus-output tokens. All 
 costs and unknown startup billing remain disclosed in that evaluation; these findings
 are not relabeled as passing or treated as evidence for the child changes.
 
-This child implementation has no fresh authorized live agent comparison. Provider-free
-checks of tool exposure, guidance, response bytes and accounting do not measure complete
-workflow savings. A savings claim needs a separately authorized frozen comparison of
-no Colony, the unchanged parent and this implementation, with equivalent correctness
-and grounding, a finite reuse horizon and inclusive learning, lookup, research,
-publication, retry and failure usage. Gross tokens are the primary proposed measure;
-uncached tokens and durations remain separate observations, and billing is unknown
-unless directly measured.
+Historical native measurements remain attached to their exact source revisions.
+The 28-session controlled comparison at `e073919` used 903,094 gross tokens without
+Colony and 962,593 with Colony (+6.59%); required quality and memory-journey checks
+did not all pass. It does not measure the subsequent small-bundle correction.
+
+[The PR15 evaluator correction](pr15-evaluator-correction.md) adds pinned offline
+controls and a versioned evaluator patch, preserving historical evidence. These
+controls do not measure complete workflow savings. A new savings claim needs a
+separately authorized frozen comparison with equivalent correctness and grounding,
+a finite reuse horizon and inclusive learning, lookup, research, publication,
+retry and failure usage. Gross tokens remain the primary measure; uncached tokens
+and durations remain separate observations, and billing is unknown unless measured.
