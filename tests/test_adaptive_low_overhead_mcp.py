@@ -2,11 +2,13 @@
 
 import asyncio
 import copy
+import hashlib
 import json
 from types import SimpleNamespace
 
 import pytest
 from mcp.server.fastmcp.exceptions import ToolError
+from test_integration import running_team as running_team
 
 from colony import mcp
 from colony.context_budget import count_response, serialize_response
@@ -129,7 +131,7 @@ def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(respon
     server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
     text = ask(server)
     packet = json.loads(text)
-    assert "sources" not in packet
+    assert packet["sources"] == [{"ref": "runbook.md", "content_hash": "b" * 64}]
     assert packet["content"] == response["content"]
     assert packet["current_repository_reads"] == [
         {
@@ -155,6 +157,40 @@ def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(respon
     assert response == before
     legacy = json.loads(ask(mcp.create_mcp(tmp_path)))
     assert legacy["sources"] == response["sources"]
+
+
+def test_real_adaptive_mcp_retains_publication_source_binding(running_team):
+    """A consumer must still bind a real retrieved finding to its published file hashes."""
+    cli, homes, repo, directory = running_team
+    question = "What is the build timeout in settings.py?"
+    trail_id = "a" * 32
+    trail = directory / "source-binding.json"
+    trail.write_text(json.dumps({
+        "id": trail_id, "question": question,
+        "content": "The build timeout is TIMEOUT = 30 in settings.py.",
+    }), encoding="utf-8")
+    published = json.loads(cli(
+        "--home", homes["a"], "push", trail, "--ns", "team", "--repo", repo,
+        "--source", "settings.py",
+    ).stdout)
+    assert published["stored"] and published["id"] == trail_id
+    published_identity = {
+        "settings.py": hashlib.sha256((repo / "settings.py").read_bytes()).hexdigest()
+    }
+    budget = ContextBudget(max_tokens=4096)
+    server = mcp.create_mcp(
+        homes["b"], workflow_namespace="team", workflow_repo=repo,
+        workflow_read_only=True, context_budget=budget,
+    )
+    text = asyncio.run(server.call_tool("ask", {"question": question}))[0].text
+    packet = json.loads(text)
+    assert packet["hit"] and packet["status"] == "validated" and packet["id"] == trail_id
+    returned_identity = {s["ref"]: s["content_hash"] for s in packet["sources"]}
+    assert returned_identity == published_identity
+    assert all(set(s) == {"ref", "content_hash"} for s in packet["sources"])
+    assert {r["path"]: r["sha256"] for r in packet["current_repository_reads"]} == returned_identity
+    assert all("TIMEOUT = 30" in r["content"] for r in packet["current_repository_reads"])
+    assert packet["context_budget"]["used"] == count_response(packet, budget) <= 4096
 
 
 @pytest.mark.parametrize(

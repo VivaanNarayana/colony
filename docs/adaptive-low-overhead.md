@@ -57,7 +57,11 @@ use explicit retry. Retired memories cannot be restored by ordinary publication.
 Adaptive formatting must preserve distinct saved findings, source coverage, original
 text, supporting coordinates, hashes, complete-file labels, Git validation, lifecycle
 state, taint and required warnings. A source hash must remain available even when
-repeated metadata can be omitted. The final canonical payload, including its receipt,
+repeated metadata can be omitted. Validated MCP hits retain a top-level `sources`
+list of `ref`/`content_hash` pairs so provenance consumers can bind the finding to
+its publication. Ordinary redundant file metadata is compacted only when current
+reads carry every identity; meaningful selection or extra metadata keeps the full
+source list. The final canonical payload, including its receipt,
 is counted again after formatting. Required evidence that cannot fit keeps the existing
 safe budget-limited miss behavior. Smaller counts do not establish sufficiency or truth.
 

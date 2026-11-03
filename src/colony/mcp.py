@@ -61,7 +61,7 @@ class FileEvidence(Model):
 
 
 def _deduplicate_adaptive_sources(response: dict) -> None:
-    """Omit ordinary file identities only when current reads carry every identity."""
+    """Compact redundant file metadata while retaining publication identity bindings."""
     if response.get("status") != "validated":
         return
     verification = response.get("verification", {})
@@ -105,7 +105,9 @@ def _deduplicate_adaptive_sources(response: dict) -> None:
             or identities.get(source["ref"]) != source.get("content_hash")
         ):
             return
-    response.pop("sources")
+    response["sources"] = [
+        {"ref": source["ref"], "content_hash": source["content_hash"]} for source in sources
+    ]
 
 
 def create_mcp(
