@@ -128,10 +128,11 @@ def evaluate_mechanisms(root, manifest, rows):
     report resolves each event log from its retained control invocation/result journal.
     """
     root = Path(root)
+    controlled = manifest.get('track') != 'natural'
     decisions, published, retrieved = {}, {}, set()
     for row in rows:
         decision = dict.fromkeys(('publication', 'hit', 'miss', 'stale', 'insufficient', 'useful_reuse'), False)
-        decision.update(successful_research=0, errors=[])
+        decision.update(successful_research=0, research_attempts=None, unresolved_mcp_calls=None, errors=[])
         decisions[row['id']] = decision
         if row['arm'] != 'colony':
             continue
@@ -151,15 +152,25 @@ def evaluate_mechanisms(root, manifest, rows):
             path = root / 'logs' / record.get('result', record)['events']
         research, current_partial, stale_seen = [], [], False
         required = task.get('oracle', {}).get('citations', [])
-        research_calls = 0
-        for line in path.read_text(encoding='utf-8').splitlines():
+        research_attempts, unresolved_calls = set(), set()
+        for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines()):
             event = json.loads(line)
             item = event.get('item', {})
+            event_type = event.get('type')
+            if item.get('type') == 'mcp_tool_call' and event_type in {'item.started', 'item.updated', 'item.completed'}:
+                call_id = item.get('id')
+                if not isinstance(call_id, str) or not call_id:
+                    call_id = ('line', line_number)
+                if str(item.get('server', '')).lower() == 'repository':
+                    research_attempts.add(call_id)
+                if event_type == 'item.completed':
+                    unresolved_calls.discard(call_id)
+                else:
+                    unresolved_calls.add(call_id)
             if event.get('type') != 'item.completed' or item.get('type') != 'mcp_tool_call':
                 continue
             server, tool = str(item.get('server', '')).lower(), item.get('tool')
             if server == 'repository':
-                research_calls += 1
                 spans = _research(item, source_root, files)
                 if spans:
                     research += spans
@@ -181,19 +192,22 @@ def evaluate_mechanisms(root, manifest, rows):
                 identity = (row['workload'], value.get('id'))
                 if tool == 'push':
                     sources = args.get('sources')
-                    valid = (value.get('stored') is True and isinstance(value.get('id'), str)
+                    valid = (task.get('phase', 'learn') == 'learn'
+                        and value.get('stored') is True and isinstance(value.get('id'), str)
                         and bool(value['id']) and isinstance(args.get('question'), str) and bool(args['question'])
                         and isinstance(args.get('content'), str) and bool(args['content'])
                         and isinstance(sources, list) and bool(sources) and bool(research))
                     if valid:
-                        valid &= args['question'] == task.get('question', args['question'])
+                        if controlled:
+                            valid &= args['question'] == task.get('question', args['question'])
                         valid = valid and all(isinstance(s, dict) and s.get('ref') in files
                             and s.get('content_hash') == files[s['ref']]
                             and any(span['path'] == s['ref'] for span in research) for s in sources)
-                        valid &= all(any(s['ref'] == citation['path'] for s in sources) for citation in required)
-                        valid &= covers(research, required)
-                        if task.get('publication_sources') is not None:
-                            valid &= {s['ref'] for s in sources} == set(task['publication_sources'])
+                        if controlled:
+                            valid &= all(any(s['ref'] == citation['path'] for s in sources) for citation in required)
+                            valid &= covers(research, required)
+                            if task.get('publication_sources') is not None:
+                                valid &= {s['ref'] for s in sources} == set(task['publication_sources'])
                     if valid and identity not in published:
                         published[identity] = {'sources': sources, 'question': args['question'],
                             'content': args['content'], 'snapshot': snapshot['id'], 'attempt': row['id'], 'task': row['task']}
@@ -210,7 +224,7 @@ def evaluate_mechanisms(root, manifest, rows):
                 prior = published.get(identity)
                 if not prior or prior['attempt'] == row['id']:
                     continue
-                if task.get('memory_from') and prior['task'] != task['memory_from']:
+                if controlled and task.get('memory_from') and prior['task'] != task['memory_from']:
                     continue
                 if manifest.get('track') != 'natural' and task.get('memory_query') and args.get('question') != task['memory_query']:
                     continue
@@ -243,5 +257,7 @@ def evaluate_mechanisms(root, manifest, rows):
                              for s in reads for c in required):
                         current_partial = reads
                         research = []  # only research AFTER the partial retrieval fills its gaps
-        decision['useful_reuse'] = decision['hit'] and research_calls == 0
+        decision['research_attempts'] = len(research_attempts)
+        decision['unresolved_mcp_calls'] = len(unresolved_calls)
+        decision['useful_reuse'] = decision['hit'] and not research_attempts and not unresolved_calls
     return decisions

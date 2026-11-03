@@ -291,7 +291,8 @@ def report(run_dir, quality_path, output_path):
             manifest["track"] == "natural" or field is None or proof[field])
         if row["arm"] == "colony" and manifest["track"] == "controlled":
             if task.get("expected_use") == "required_hit":
-                row["expected_use_verified"] &= proof["useful_reuse"]
+                row["expected_use_verified"] &= (proof["useful_reuse"]
+                                                and row["activity"]["research_calls"] == 0)
             if task.get("expected_use") == "required_publication" and task.get("scenario") == "cold_learning":
                 row["expected_use_verified"] &= proof["miss"]
         row["successful"] &= row["expected_use_verified"]
@@ -324,6 +325,7 @@ def report(run_dir, quality_path, output_path):
             and row["successful"] and proofs[row["id"]]["useful_reuse"]
             and any(prior["id"] == proofs[row["id"]].get("published_attempt")
                     and prior["successful"] for prior in rows)
+            and row["activity"]["research_calls"] == 0
             and row["activity"]["unapproved_calls"] == 0)
     useful_reuse = any(r["useful_reuse"] for r in rows)
     quality_complete = all(r["successful"] for r in rows)

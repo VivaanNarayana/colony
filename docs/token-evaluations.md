@@ -60,6 +60,12 @@ Its extra learning session and publication are included in the schedule and toke
 accounting. A generic miss does not prove either stale or partial handling.
 Controlled lookup questions and source scopes are frozen in the manifest.
 Natural runs do not force these queries or publications.
+Natural publication questions may be concise, their verified source sets may be
+wider or narrower than the controlled learning recipe, and later tasks may reuse
+any eligible earlier learning publication in that workload. The actual publication
+identity, successfully researched source hashes, returned content and current
+task's required evidence remain verified. Controlled question/source/parent
+bindings remain strict.
 
 The literal post-learning miss uses a source-unrelated astronomy question. During
 development the earlier bank-settlement retry question produced an irrelevant
@@ -209,6 +215,13 @@ publication ID/content/source binding, current excerpt hashes/text/line ranges,
 and required oracle coverage. Failed calls still consume the research allowance
 but cannot establish successful learning or fallback. Unknown, unrelated or forged
 evidence receives no useful-reuse or controlled-mechanism credit.
+The no-extra-research reuse flag counts unique repository attempts across started,
+updated and completed MCP events, including failures. Repeated lifecycle events
+for one call count once. An unfinished MCP call also withholds that flag; a valid
+hit can remain visible separately. The proof records `research_attempts` and
+`unresolved_mcp_calls` so missing completions cannot appear as zero extra work.
+Those two diagnostics remain null for arms the mechanism checker does not inspect;
+their ordinary tool activity is still inventoried separately.
 
 ## Provider-free verification
 
