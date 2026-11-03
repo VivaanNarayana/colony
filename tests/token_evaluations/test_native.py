@@ -192,3 +192,97 @@ def test_same_basename_orphan_stops_before_next_native_dispatch(tmp_path, monkey
     assert value['status'] == 'partial' and 'Unreconciled prior native usage' in value['error']
     assert value['inventory']['known_gross_tokens'] == 28
     assert len(value['inventory']['orphan_logs']) == 1
+
+
+def deadline_run(tmp_path, monkeypatch):
+    """Real resource/inventory checks with a synthetic clock and native-process output."""
+    resources, inventory_reader = native._resources, runner.inventory
+    events = setup_run(tmp_path, monkeypatch)
+    run = json.loads((tmp_path / 'run.json').read_text())
+    run['protocol']['limits'].update(wall_seconds=1, disk_bytes=10000000, min_free_bytes=1)
+    (tmp_path / 'run.json').write_text(json.dumps(run))
+    monkeypatch.setattr(native, '_resources', resources)
+    monkeypatch.setattr(runner, 'inventory', inventory_reader)
+    clock = [0.0]
+    monkeypatch.setattr(native.time, 'monotonic', lambda: clock[0])
+    processes, stopped = [], []
+    raw = '\n'.join(map(json.dumps, [{'type': 'turn.started'}, {'type': 'turn.completed',
+        'usage': {'input_tokens': 10, 'cached_input_tokens': 2, 'output_tokens': 4}}])).encode()
+    class Process:
+        returncode = 0
+        def __init__(self, stdout):
+            self.stdout = stdout
+            self.launch_time = clock[0]
+            self.inputs = []
+            self.timeouts = []
+        def communicate(self, prompt, *, timeout):
+            self.inputs.append(prompt)
+            self.timeouts.append(timeout)
+            self.stdout.write(raw)
+            self.stdout.flush()
+    def launch(*args, **kwargs):
+        process = Process(kwargs['stdout'])
+        processes.append(process)
+        return process
+    monkeypatch.setattr(native.subprocess, 'Popen', launch)
+    monkeypatch.setattr(native.runtime, '_stop', lambda process: stopped.append(process))
+    return clock, processes, stopped, events, launch
+
+
+def test_setup_expiry_blocks_next_launch_and_retains_prior_usage(tmp_path, monkeypatch):
+    clock, processes, stopped, events, _ = deadline_run(tmp_path, monkeypatch)
+    def configure(*args):
+        clock[0] = 2.0
+        return {'files': []}
+    monkeypatch.setattr(native.runtime, 'configure', configure)
+    value = native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    assert len(processes) == 1 and processes[0].launch_time == 0
+    assert len(processes[0].inputs) == value['attempts'] == 1
+    assert value['status'] == 'partial' and 'wall-time budget exhausted' in value['error']
+    assert value['inventory']['known_gross_tokens'] == 14
+    assert value['inventory']['usage_complete'] is False
+    assert len(value['inventory']['orphan_invocations']) == 1
+    assert not stopped and events[-1] == 'stop'
+
+
+@pytest.mark.parametrize('elapsed', [1.0, 2.0])
+def test_expiry_during_invocation_write_blocks_launch(tmp_path, monkeypatch, elapsed):
+    clock, processes, _, events, _ = deadline_run(tmp_path, monkeypatch)
+    save = native._save
+    def save_then_expire(path, value):
+        save(path, value)
+        if str(path).endswith('-invocation.json'):
+            clock[0] = elapsed
+    monkeypatch.setattr(native, '_save', save_then_expire)
+    value = native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    assert processes == []
+    assert value['status'] == 'partial' and 'wall-time budget exhausted' in value['error']
+    assert value['inventory']['orphan_invocations'] and events[-1] == 'stop'
+
+
+def test_expiry_during_process_start_stops_child_without_sending_prompt(tmp_path, monkeypatch):
+    clock, processes, stopped, events, launch = deadline_run(tmp_path, monkeypatch)
+    def slow_launch(*args, **kwargs):
+        process = launch(*args, **kwargs)
+        clock[0] = 2.0
+        return process
+    monkeypatch.setattr(native.subprocess, 'Popen', slow_launch)
+    value = native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    assert len(processes) == 1 and processes[0].inputs == []
+    assert stopped == processes and events[-1] == 'stop'
+    assert value['status'] == 'partial' and 'wall-time budget exhausted' in value['error']
+    assert value['inventory']['orphan_invocations']
+    assert value['inventory']['usage_complete'] is False
+
+
+def test_small_positive_wall_remainder_is_not_inflated(tmp_path, monkeypatch):
+    clock, processes, stopped, _, _ = deadline_run(tmp_path, monkeypatch)
+    def prepare_args(*args, **kwargs):
+        clock[0] = 0.96
+        return ['fake-client']
+    monkeypatch.setattr(native, '_client_args', prepare_args)
+    value = native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    assert value['status'] == 'complete' and len(processes) == 2
+    assert all(process.timeouts == [pytest.approx(0.04)] for process in processes)
+    assert value['inventory']['known_gross_tokens'] == 28
+    assert stopped == []

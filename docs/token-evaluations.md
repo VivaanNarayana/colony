@@ -174,6 +174,11 @@ last session can exceed them. Session and wall-time limits constrain the running
 native process; server initialization has its own local timeout. They are not a
 provider-enforced token/dollar ceiling. Dollar charges are unknown. Keep the
 owner's approved margin sufficient for one final session.
+Wall time is rechecked after local preparation immediately before client launch,
+then again before sending the prompt. An exhausted budget prevents launch; if
+process startup consumes the remaining time, the owned child is stopped without
+receiving the prompt. Small positive remainders are not inflated to a minimum
+timeout. Partial invocations/logs and previously observed usage remain retained.
 
 ## Review before looking at performance
 

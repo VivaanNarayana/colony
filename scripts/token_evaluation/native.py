@@ -148,6 +148,13 @@ def _resources(root, limits, deadline):
         raise ValueError("Declared sampled resource stop reached")
 
 
+def _wall_remaining(deadline):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Declared wall-time budget exhausted")
+    return remaining
+
+
 def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, client_workspace=None):
     client = protocol["client"]
     args = [client["executable"], "exec", "--ignore-user-config", "--ignore-rules",
@@ -303,11 +310,13 @@ def execute_live(run_dir, authorization, auth_home):
                         start = time.monotonic()
                         state = "completed"
                         with log.open("xb") as stdout, (control / (ident + ".stderr.log")).open("xb") as stderr:
+                            _wall_remaining(deadline)
                             process = subprocess.Popen(args, cwd=client_workspace, env=env, stdin=subprocess.PIPE,
                                                        stdout=stdout, stderr=stderr, start_new_session=os.name != "nt",
                                                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
                             try:
-                                process.communicate(prompt, timeout=min(limits["session_seconds"], max(0.1, deadline - time.monotonic())))
+                                timeout = min(limits["session_seconds"], _wall_remaining(deadline))
+                                process.communicate(prompt, timeout=timeout)
                             except subprocess.TimeoutExpired:
                                 state = "timeout"
                                 runtime._stop(process)
