@@ -50,3 +50,21 @@ def test_authorization_exact_binding(tmp_path):
         changed[key] = None
         with pytest.raises(ValueError):
             validate_authorization(changed, run)
+
+
+@pytest.mark.parametrize('corruption', ['missing_parent', 'wrong_lookup', 'future_parent', 'wrong_source', 'invalid_span'])
+def test_mechanism_contract_cannot_be_relabelled_to_force_pass(tmp_path, corruption):
+    value = manifest(tmp_path)
+    task = next(t for t in value['workloads'][0]['tasks'] if t['id'] == 'insufficient')
+    if corruption == 'missing_parent':
+        task.pop('memory_from')
+    elif corruption == 'wrong_lookup':
+        task['memory_query'] = 'another question'
+    elif corruption == 'future_parent':
+        task['memory_from'] = 'direct_read'
+    elif corruption == 'wrong_source':
+        value['workloads'][0]['tasks'][1]['publication_sources'] = ['transport.py']
+    else:
+        task['oracle']['citations'][0]['start'] = True
+    with pytest.raises(ValueError):
+        validate_manifest(value)

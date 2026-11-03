@@ -1,6 +1,9 @@
 """Provider-free command boundaries and blinded-review binding controls."""
 import hashlib
 import json
+import subprocess
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -107,3 +110,13 @@ def test_help_is_provider_free(capsys):
         cli.main(["--help"])
     assert caught.value.code == 0
     assert "preflight" in capsys.readouterr().out
+
+
+def test_script_entrypoint_runs_inventory_outside_checkout(tmp_path):
+    entrypoint = Path(__file__).resolve().parents[2] / "scripts/token_evaluation.py"
+    result = subprocess.run([sys.executable, str(entrypoint), "inventory", "--run", str(tmp_path)],
+                            cwd=tmp_path, capture_output=True, text=True, timeout=30, check=True)
+    value = json.loads(result.stdout)
+    assert value["native_evidence"] is False
+    assert value["usage_complete"] is False
+    assert value["native_logs"] == []

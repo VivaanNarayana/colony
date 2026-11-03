@@ -13,6 +13,8 @@ from pathlib import Path
 
 from colony.product_value import native_usage
 
+from .evidence import evaluate_mechanisms
+
 ARMS = ("no_colony", "colony")
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "gross_tokens",
           "uncached_input_plus_output")
@@ -56,7 +58,7 @@ def extract_answer(events_path, policy):
 def activity(events_path):
     """Observe exact completed MCP calls and every JSON content block; never infer reuse."""
     counts = dict.fromkeys(("colony_calls", "research_calls", "hits", "misses", "stored",
-                            "current_reads", "stale", "insufficient", "validated_hits", "safe_refusals", "evidence_hits", "cache_misses", "unapproved_calls"), 0)
+                            "claimed_current_reads", "stale", "miss_or_research_advice", "claimed_validated_hits", "safe_refusals", "claimed_evidence_hits", "cache_misses", "unapproved_calls"), 0)
     seen, completed = set(), set()
     for number, line in enumerate(Path(events_path).read_text(encoding="utf-8").splitlines()):
         event = json.loads(line)
@@ -98,22 +100,22 @@ def activity(events_path):
                 continue
             if tool == "ask":
                 counts["hits"] += value.get("hit") is True
-                counts["validated_hits"] += (value.get("hit") is True
+                counts["claimed_validated_hits"] += (value.get("hit") is True
                     and value.get("status") == "validated"
                     and bool(value.get("current_repository_reads")))
                 counts["misses"] += value.get("hit") is False
                 counts["cache_misses"] += (value.get("hit") is False
                     and value.get("reason") == "no_relevant_trail")
-                counts["current_reads"] += bool(value.get("current_repository_reads"))
+                counts["claimed_current_reads"] += bool(value.get("current_repository_reads"))
                 counts["stale"] += value.get("status") == "stale"
                 counts["safe_refusals"] += (value.get("hit") is False and value.get("reason") in {
                     "no_relevant_trail", "git_context_mismatch", "git_local_evidence_not_verified",
                     "git_no_verified_hit", "git_invalid_receipt"})
-                counts["evidence_hits"] += (value.get("hit") is True
+                counts["claimed_evidence_hits"] += (value.get("hit") is True
                     and value.get("status") == "validated"
                     and value.get("match_kind") == "evidence"
                     and bool(value.get("current_repository_reads")))
-                counts["insufficient"] += (value.get("hit") is False or value.get("recommendation") == "research")
+                counts["miss_or_research_advice"] += (value.get("hit") is False or value.get("recommendation") == "research")
             if tool == "push":
                 counts["stored"] += value.get("stored") is True
     return counts
@@ -276,36 +278,22 @@ def report(run_dir, quality_path, output_path):
                  "Explicit quality labels required")
         row["successful"] = (review["correct"] and review["grounded"] and review["format_compliant"]
                              and row["state"] == "completed" and row["native_finished"])
+    proofs = evaluate_mechanisms(root, manifest, rows)
     for row in rows:
         task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
                     for t in w["tasks"] if t["id"] == row["task"])
-        field = {"required_publication": "stored", "required_hit": "validated_hits",
-                 "required_miss": "cache_misses", "required_stale": "stale",
+        proof = proofs[row["id"]]
+        row["mechanism_proof"] = proof
+        field = {"required_publication": "publication", "required_hit": "hit",
+                 "required_miss": "miss", "required_stale": "stale",
                  "required_insufficient": "insufficient"}.get(task.get("expected_use"))
         row["expected_use_verified"] = (row["arm"] == "no_colony" or
-            manifest["track"] == "natural" or field is None or row["activity"][field] > 0)
-        if manifest["track"] == "controlled" and row["arm"] == "colony":
-            if task.get("expected_use") == "required_stale":
-                workload = next(w for w in manifest["workloads"] if w["id"] == row["workload"])
-                snapshots = {snap["id"]: snap["files"] for snap in workload["snapshots"]}
-                changed = any(t["phase"] == "learn" and t.get("snapshot") != task.get("snapshot")
-                              and snapshots.get(t.get("snapshot")) != snapshots.get(task.get("snapshot"))
-                              for t in workload["tasks"])
-                row["expected_use_verified"] = changed and any(row["activity"][f] > 0
-                    for f in ("stale", "safe_refusals", "evidence_hits", "cache_misses"))
-            if task.get("expected_use") == "required_insufficient":
-                row["expected_use_verified"] = (row["activity"]["insufficient"] > 0
-                    and row["activity"]["research_calls"] > 0)
-            if task.get("expected_use") == "required_publication":
-                row["expected_use_verified"] &= row["activity"]["research_calls"] > 0
-                if task.get("scenario") == "cold_learning":
-                    row["expected_use_verified"] &= row["activity"]["cache_misses"] > 0
+            manifest["track"] == "natural" or field is None or proof[field])
+        if row["arm"] == "colony" and manifest["track"] == "controlled":
             if task.get("expected_use") == "required_hit":
-                row["expected_use_verified"] &= row["activity"]["research_calls"] == 0
-                row["expected_use_verified"] &= any(
-                    other["workload"] == row["workload"] and other["arm"] == "colony"
-                    and other["phase"] == "learn" and other["activity"]["stored"] > 0
-                    and other["activity"]["research_calls"] > 0 for other in rows)
+                row["expected_use_verified"] &= proof["useful_reuse"]
+            if task.get("expected_use") == "required_publication" and task.get("scenario") == "cold_learning":
+                row["expected_use_verified"] &= proof["miss"]
         row["successful"] &= row["expected_use_verified"]
     arms = {}
     for arm in ARMS:
@@ -331,14 +319,12 @@ def report(run_dir, quality_path, output_path):
                           r["activity"]["unapproved_calls"] == 0 and
                           r["activity"]["research_calls"] <= manifest.get("research", {}).get("max_calls", 6)
                           for r in rows)
-    for index, row in enumerate(rows):
+    for row in rows:
         row["useful_reuse"] = (native and row["arm"] == "colony" and row["phase"] == "reuse"
-            and row["successful"] and row["activity"]["validated_hits"] > 0
-            and row["activity"]["research_calls"] == 0 and row["activity"]["unapproved_calls"] == 0
-            and any(prior["arm"] == "colony" and prior["workload"] == row["workload"]
-                    and prior["phase"] == "learn" and prior["successful"]
-                    and prior["activity"]["research_calls"] > 0 and prior["activity"]["stored"] > 0
-                    for prior in rows[:index]))
+            and row["successful"] and proofs[row["id"]]["useful_reuse"]
+            and any(prior["id"] == proofs[row["id"]].get("published_attempt")
+                    and prior["successful"] for prior in rows)
+            and row["activity"]["unapproved_calls"] == 0)
     useful_reuse = any(r["useful_reuse"] for r in rows)
     quality_complete = all(r["successful"] for r in rows)
     usage_complete = all(arms[a]["total_usage"] is not None for a in ARMS)

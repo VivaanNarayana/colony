@@ -11,7 +11,8 @@
             "settings.py": "8f5098e2b1698b9fcebae18f94641fb150ff0a1f17056224b8d48858bb5db648",
             "handler.py": "ac05d5ca1c0c2add2c3afeff6d1d6ca3e8e4d21bbccbb7d76b8d07451a7a4b19",
             "client.py": "82392c88397c196cdda08bad9523f6d4e1cb35f0cf994c813d3423f6f93ce12b",
-            "README.txt": "11f2b6aeb58e4ab92c9dadac4338659905258a48336b9858f8fceb90834466f4"
+            "README.txt": "5931065b70a7b9007cc29e84cb8e1c88e226fb0f05f2d1383e43029b4bf73a3f",
+            "transport.py": "4cef382fc12aa6e81ca9edb4e358b7e0cc705803c19bdbc4bb24dddb152faae0"
           }
         },
         {
@@ -20,7 +21,8 @@
             "settings.py": "ec225366b2bf98c9c4427ca2bd0378110dd73eb236821e880755bb52b135ef53",
             "handler.py": "ac05d5ca1c0c2add2c3afeff6d1d6ca3e8e4d21bbccbb7d76b8d07451a7a4b19",
             "client.py": "82392c88397c196cdda08bad9523f6d4e1cb35f0cf994c813d3423f6f93ce12b",
-            "README.txt": "11f2b6aeb58e4ab92c9dadac4338659905258a48336b9858f8fceb90834466f4"
+            "README.txt": "5931065b70a7b9007cc29e84cb8e1c88e226fb0f05f2d1383e43029b4bf73a3f",
+            "transport.py": "4cef382fc12aa6e81ca9edb4e358b7e0cc705803c19bdbc4bb24dddb152faae0"
           }
         }
       ],
@@ -60,7 +62,41 @@
           "rubric": {
             "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
             "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
-          }
+          },
+          "publication_sources": [
+            "settings.py",
+            "handler.py",
+            "client.py"
+          ]
+        },
+        {
+          "id": "partial_learning",
+          "phase": "learn",
+          "scenario": "insufficient",
+          "snapshot": "v1",
+          "question": "What is the default timeout before environment or request overrides?",
+          "expected_use": "required_publication",
+          "oracle": {
+            "facts": {
+              "default_timeout_ms": 900
+            },
+            "citations": [
+              {
+                "path": "settings.py",
+                "start": 1,
+                "end": 5
+              }
+            ],
+            "unsupported_claims_fail": true,
+            "stale_snapshot_fails": true
+          },
+          "rubric": {
+            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
+            "grounded": "The default configuration value must be supported by the current configuration source; publish only that narrow finding."
+          },
+          "publication_sources": [
+            "settings.py"
+          ]
         },
         {
           "id": "useful_hit",
@@ -97,19 +133,21 @@
           "rubric": {
             "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
             "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
-          }
+          },
+          "memory_from": "cold_learning",
+          "memory_query": "Trace a production request with no overrides through this gateway. If all responses are 503, how many requests occur and which timeout does each use? Cite configuration precedence and retry termination."
         },
         {
           "id": "miss",
           "phase": "reuse",
           "scenario": "miss",
           "snapshot": "v1",
-          "question": "Which bank settlement retry deadline does this service enforce? State whether the repository supports an answer.",
+          "question": "Which mineral composition was measured in Apollo 17 lunar sample 76535? State whether this repository contains the measurement.",
           "expected_use": "required_miss",
           "oracle": {
             "facts": {
               "answerable": false,
-              "reason": "No payment settlement configuration exists in this repository."
+              "reason": "No lunar sample composition measurement is defined in these repository sources."
             },
             "citations": [
               {
@@ -171,21 +209,22 @@
           "rubric": {
             "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
             "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
-          }
+          },
+          "memory_from": "cold_learning",
+          "memory_query": "Trace a production request with no overrides through this gateway. If all responses are 503, how many requests occur and which timeout does each use? Cite configuration precedence and retry termination."
         },
         {
           "id": "insufficient",
           "phase": "reuse",
           "scenario": "insufficient",
           "snapshot": "v1",
-          "question": "How many network connection attempts, including any retries internal to the injected transport, occur before a connection exception reaches the caller? Distinguish visible wrapper behavior from unspecified transport internals.",
+          "question": "State the default timeout before overrides, then determine how many wire attempts occur before the gateway caller receives ConnectionError when using RetryingTransport from transport.py and send always raises. Distinguish wrapper retries from transport retries.",
           "expected_use": "required_insufficient",
           "oracle": {
             "facts": {
-              "answerable": false,
+              "default_timeout_ms": 900,
               "wrapper_exception_retries": 0,
-              "internal_transport_attempts": "unknown",
-              "reason": "The injected transport implementation and its internal retry policy are absent."
+              "wire_attempts": 2
             },
             "citations": [
               {
@@ -194,23 +233,25 @@
                 "end": 5
               },
               {
-                "path": "handler.py",
-                "start": 5,
-                "end": 7
-              },
-              {
                 "path": "client.py",
                 "start": 1,
                 "end": 5
+              },
+              {
+                "path": "transport.py",
+                "start": 1,
+                "end": 13
               }
             ],
             "unsupported_claims_fail": true,
             "stale_snapshot_fails": true
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
-          }
+            "correct": "All typed facts must match executable current-source behavior. Do not invent invisible network operations.",
+            "grounded": "The returned narrow memory supports the default setting but cannot support wire attempts; successful reads of the missing wrapper and concrete backend sources are required."
+          },
+          "memory_from": "partial_learning",
+          "memory_query": "What is the default timeout before environment or request overrides?"
         },
         {
           "id": "direct_read",
@@ -254,7 +295,8 @@
             "policy.py": "8b43f2f84d67d383de9b4385765c4b5a374e7ee38fc89f682a789e6dcf0d04eb",
             "executor.py": "4c7fda5050957dbb4f7766560f015d67e146f43b85d5222577124e4b1c5be9a1",
             "dispatcher.py": "e454752f6d29f834159226843efae1016f0e6877ba4c45c99f9aa0f904707ecf",
-            "README.txt": "e24894eb45193c60a81bf0c5ec65b6feb8727338b5091c38c121b1365affc2e6"
+            "README.txt": "9664b5ea08a4d27d82ca651666c3eea2a76cb1b94230308936e6902defc2e230",
+            "backend.py": "84499736bf4604a09a7cf00993fa6d6c419a07d10c0c0f283aec29f62a1ad451"
           }
         },
         {
@@ -263,7 +305,8 @@
             "policy.py": "06b0b76c2791b4c8f0729c33ec4398f0173853b3a63624d61de8abb7885d2f81",
             "executor.py": "4c7fda5050957dbb4f7766560f015d67e146f43b85d5222577124e4b1c5be9a1",
             "dispatcher.py": "e454752f6d29f834159226843efae1016f0e6877ba4c45c99f9aa0f904707ecf",
-            "README.txt": "e24894eb45193c60a81bf0c5ec65b6feb8727338b5091c38c121b1365affc2e6"
+            "README.txt": "9664b5ea08a4d27d82ca651666c3eea2a76cb1b94230308936e6902defc2e230",
+            "backend.py": "84499736bf4604a09a7cf00993fa6d6c419a07d10c0c0f283aec29f62a1ad451"
           }
         }
       ],
@@ -304,7 +347,41 @@
           "rubric": {
             "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
             "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
-          }
+          },
+          "publication_sources": [
+            "policy.py",
+            "dispatcher.py",
+            "executor.py"
+          ]
+        },
+        {
+          "id": "partial_learning",
+          "phase": "learn",
+          "scenario": "insufficient",
+          "snapshot": "v1",
+          "question": "What delay applies by default before queue and per-job policy overrides?",
+          "expected_use": "required_publication",
+          "oracle": {
+            "facts": {
+              "default_delay_ms": 100
+            },
+            "citations": [
+              {
+                "path": "policy.py",
+                "start": 1,
+                "end": 6
+              }
+            ],
+            "unsupported_claims_fail": true,
+            "stale_snapshot_fails": true
+          },
+          "rubric": {
+            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
+            "grounded": "The default configuration value must be supported by the current configuration source; publish only that narrow finding."
+          },
+          "publication_sources": [
+            "policy.py"
+          ]
         },
         {
           "id": "useful_hit",
@@ -342,19 +419,21 @@
           "rubric": {
             "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
             "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
-          }
+          },
+          "memory_from": "cold_learning",
+          "memory_query": "Trace a priority-queue job with no per-job overrides. If the backend always returns retryable results, how many submissions and waits occur, and what is the wait duration? Cite policy precedence, propagation and termination."
         },
         {
           "id": "miss",
           "phase": "reuse",
           "scenario": "miss",
           "snapshot": "v1",
-          "question": "Which bank settlement retry deadline does this queue worker enforce? State whether the repository supports an answer.",
+          "question": "Which mineral composition was measured in Apollo 17 lunar sample 76535? State whether this repository contains the measurement.",
           "expected_use": "required_miss",
           "oracle": {
             "facts": {
               "answerable": false,
-              "reason": "No bank settlement deadline is defined in the worker sources."
+              "reason": "No lunar sample composition measurement is defined in these repository sources."
             },
             "citations": [
               {
@@ -417,21 +496,22 @@
           "rubric": {
             "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
             "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
-          }
+          },
+          "memory_from": "cold_learning",
+          "memory_query": "Trace a priority-queue job with no per-job overrides. If the backend always returns retryable results, how many submissions and waits occur, and what is the wait duration? Cite policy precedence, propagation and termination."
         },
         {
           "id": "insufficient",
           "phase": "reuse",
           "scenario": "insufficient",
           "snapshot": "v1",
-          "question": "How many network transmission attempts, including retries internal to the injected backend, occur before a connection exception reaches the dispatcher caller? Separate visible wrapper behavior from unspecified backend internals.",
+          "question": "State the default delay before overrides, then determine how many wire attempts occur before the dispatcher caller receives ConnectionError when using RetryingBackend from backend.py and send always raises. Distinguish wrapper retries from backend retries.",
           "expected_use": "required_insufficient",
           "oracle": {
             "facts": {
-              "answerable": false,
+              "default_delay_ms": 100,
               "wrapper_exception_retries": 0,
-              "internal_backend_attempts": "unknown",
-              "reason": "The injected backend implementation and its internal retry policy are absent."
+              "wire_attempts": 3
             },
             "citations": [
               {
@@ -440,23 +520,25 @@
                 "end": 6
               },
               {
-                "path": "dispatcher.py",
-                "start": 5,
-                "end": 7
-              },
-              {
                 "path": "executor.py",
                 "start": 1,
                 "end": 6
+              },
+              {
+                "path": "backend.py",
+                "start": 1,
+                "end": 13
               }
             ],
             "unsupported_claims_fail": true,
             "stale_snapshot_fails": true
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
-          }
+            "correct": "All typed facts must match executable current-source behavior. Do not invent invisible network operations.",
+            "grounded": "The returned narrow memory supports the default setting but cannot support wire attempts; successful reads of the missing wrapper and concrete backend sources are required."
+          },
+          "memory_from": "partial_learning",
+          "memory_query": "What delay applies by default before queue and per-job policy overrides?"
         },
         {
           "id": "direct_read",

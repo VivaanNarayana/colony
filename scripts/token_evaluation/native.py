@@ -192,8 +192,12 @@ def _prompt(protocol, task, guidance):
             f"Research budget: {protocol['research']['max_calls']} actual calls, including batching and failures. "
             "Use actual file hashes for any publication; never invent them.\n")
     if protocol["track"] == "controlled" and guidance:
+        lookup = task.get("memory_query", task["question"])
+        base += "For the first Colony ask, use this frozen lookup question exactly: " + json.dumps(lookup) + ". Then answer the task question below using current evidence.\n"
         if task["phase"] == "learn":
-            base += "Controlled mechanism test: ask Colony first, research missing facts, then publish one sourced finding after actual research.\n"
+            base += "Controlled mechanism test: ask Colony first, then obtain successful repository research for this learning step and publish one sourced finding for its question. This declared learning cost is charged even if an earlier memory was available.\n"
+            if task.get("publication_sources"):
+                base += "For this controlled learning step, publish exactly these source files, with their actual research hashes: " + json.dumps(task["publication_sources"]) + ". Keep the finding scoped to this task's facts.\n"
         else:
             base += "Controlled mechanism test: ask Colony first and assess actual current evidence. Research gaps or stale/insufficient evidence; do not publish on this read-only connection.\n"
     if protocol["output"]["format"] == "json":

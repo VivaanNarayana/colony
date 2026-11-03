@@ -107,8 +107,8 @@ def test_all_mcp_blocks_observed(tmp_path):
     observed = activity(path)
     assert observed["stored"] == observed["hits"] == observed["stale"] == 1
     assert observed["misses"] == 3
-    assert observed["current_reads"] == 1
-    assert observed["insufficient"] == 3
+    assert observed["claimed_current_reads"] == 1
+    assert observed["miss_or_research_advice"] == 3
 
 
 def rewrite_events(root, identity, transform):
@@ -235,6 +235,52 @@ def test_native_receipt_schema_control_descriptive_ratio(run):
     assert result["observed_token_reduction"]["gross_tokens"] == pytest.approx(1 - 100 / 120)
     assert result["supported_product_win"] == "not_established"
     assert result["certifying"] is False
+
+
+def test_marker_only_publication_cannot_pass_report_mechanism(run):
+    """A fabricated receipt is a negative scorer control, never product evidence.
+
+    The old count-based report accepted stored=True plus a failed research call.
+    The complete report path must now require the byte-bound publication proof.
+    """
+    root, quality, _ = run
+    native_receipt_control(root, quality)
+    frozen = json.loads((root / "run.json").read_text())
+    frozen["protocol"]["track"] = "controlled"
+    task = frozen["protocol"]["workloads"][0]["tasks"][0]
+    task.update(scenario="cold_learning", expected_use="required_publication")
+    frozen["protocol_sha256"] = digest(frozen["protocol"])
+    put(root / "run.json", frozen)
+    quality["protocol_sha256"] = frozen["protocol_sha256"]
+    put(root / "quality.json", quality)
+    preflight = json.loads((root / "preflight.json").read_text())
+    preflight["protocol_sha256"] = frozen["protocol_sha256"]
+    put(root / "preflight.json", preflight)
+    collection = json.loads((root / "collection.json").read_text())
+    collection.update(protocol_sha256=frozen["protocol_sha256"],
+                      preflight_sha256=hashlib.sha256((root / "preflight.json").read_bytes()).hexdigest())
+    put(root / "collection.json", collection)
+    for identity in ("a", "b"):
+        path = root / "control" / f"{identity}-invocation.json"
+        invocation = json.loads(path.read_text())
+        invocation["protocol_sha256"] = frozen["protocol_sha256"]
+        put(path, invocation)
+    def markers(events):
+        calls = [
+            {"id": "failed-read", "server": "repository", "tool": "fixture_read", "status": "failed"},
+            {"id": "miss", "server": "colony", "tool": "ask", "status": "completed",
+             "result": {"content": [{"type": "text", "text": '{"hit":false,"reason":"no_relevant_trail"}'}]}},
+            {"id": "push", "server": "colony", "tool": "push", "status": "completed",
+             "result": {"content": [{"type": "text", "text": '{"stored":true,"id":"made-up"}'}]}},
+        ]
+        events[1:1] = [{"type": "item.completed", "item": {"type": "mcp_tool_call", **call}} for call in calls]
+    rewrite_events(root, "b", markers)
+    value = report(root, root / "quality.json", root / "marker-report.json")
+    candidate = next(row for row in value["attempts"] if row["arm"] == "colony")
+    assert candidate["activity"]["stored"] == 1 and candidate["activity"]["research_calls"] == 1
+    assert not candidate["expected_use_verified"]
+    assert not candidate["mechanism_proof"]["publication"]
+    assert not value["controlled_mechanism_pass"]
 
 
 def test_corrupt_transition_rejected_before_comparison(run):

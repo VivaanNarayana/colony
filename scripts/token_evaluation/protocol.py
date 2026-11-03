@@ -105,6 +105,7 @@ def _validate_manifest(manifest):
         require(isinstance(tasks, list) and tasks and tasks[0].get("phase") == "learn", "First task must count learning")
         require(tasks[0].get("snapshot") == snapshots[0]["id"], "First task must use initial source snapshot")
         task_ids = set()
+        learning = {}
         phases = []
         for task in tasks:
             tid = task.get("id", "")
@@ -117,6 +118,30 @@ def _validate_manifest(manifest):
                 require(task["expected_use"] == "optional", "Natural adoption cannot force memory calls")
             _text(task.get("question"), "task question")
             require(isinstance(task.get("oracle"), dict) and isinstance(task.get("rubric"), dict), "Freeze independent quality oracle/rubric")
+            citations = task["oracle"].get("citations")
+            require(isinstance(citations, list) and citations, "Freeze required source spans")
+            snapshot = next(s for s in snapshots if s["id"] == task["snapshot"])
+            for citation in citations:
+                require(isinstance(citation, dict) and citation.get("path") in snapshot["files"]
+                        and type(citation.get("start")) is int and type(citation.get("end")) is int
+                        and 1 <= citation["start"] <= citation["end"], "Invalid required source span")
+            if "publication_sources" in task:
+                sources = task["publication_sources"]
+                require(task["phase"] == "learn" and isinstance(sources, list) and sources
+                        and len(sources) == len(set(sources))
+                        and set(sources) == {c["path"] for c in citations}, "Learning publication sources must match its oracle")
+            if "memory_from" in task or "memory_query" in task:
+                require(task["phase"] == "reuse" and task.get("memory_from") in learning,
+                        "Memory must bind an earlier declared learning step")
+                require(task.get("memory_query") == learning[task["memory_from"]]["question"],
+                        "Memory lookup must match the declared learning question")
+            if manifest["track"] == "controlled":
+                if task["expected_use"] in {"required_hit", "required_stale", "required_insufficient"}:
+                    require("memory_from" in task and "memory_query" in task, "Controlled reuse needs declared memory binding")
+                if task["expected_use"] == "required_publication":
+                    require("publication_sources" in task, "Controlled publication needs declared source scope")
+            if task["phase"] == "learn":
+                learning[tid] = task
         require(phases == sorted(phases) and "reuse" in phases, "Freeze finite learn-then-reuse horizon")
         tasks_total += len(tasks)
     require(tasks_total * 2 <= limits["max_attempts"], "Attempt budget cannot complete the paired schedule")

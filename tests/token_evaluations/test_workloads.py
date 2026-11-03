@@ -109,4 +109,37 @@ def test_validation_worker_retry_policy_oracles(monkeypatch):
             modules["dispatcher"].dispatch(job, SimpleNamespace(submit=fail), waits.append)
         insufficient = next(t for t in workload["tasks"] if t["id"] == "insufficient")
         assert insufficient["oracle"]["facts"]["wrapper_exception_retries"] == 0
-        assert insufficient["oracle"]["facts"]["internal_backend_attempts"] == "unknown"
+        assert insufficient["oracle"]["facts"]["wire_attempts"] == 3
+
+
+def test_concrete_network_retry_facts_and_partial_learning_are_source_derived(monkeypatch):
+    import pytest
+
+    catalog = json.loads((ROOT / "catalog.json").read_bytes())
+    for workload in catalog["workloads"]:
+        gateway = workload["id"] == "gateway"
+        modules = {}
+        names = ("settings", "client", "handler", "transport") if gateway else ("policy", "executor", "dispatcher", "backend")
+        for name in names:
+            spec = importlib.util.spec_from_file_location(name, ROOT / workload["source_root"] / "v1" / f"{name}.py")
+            module = importlib.util.module_from_spec(spec)
+            monkeypatch.setitem(__import__("sys").modules, name, module)
+            spec.loader.exec_module(module)
+            modules[name] = module
+        attempts = []
+        def send(*args, attempts=attempts, **kwargs):
+            attempts.append(args)
+            raise ConnectionError("Provider-free wire failure")
+        with pytest.raises(ConnectionError):
+            if gateway:
+                transport = modules["transport"].RetryingTransport(send)
+                modules["client"].fetch(transport, timeout_ms=1500, attempts=3)
+            else:
+                backend = modules["backend"].RetryingBackend(send)
+                modules["executor"].execute(backend, "invoice-7", attempts=4, delay_ms=250, sleep=lambda ms: pytest.fail("An exception is not retried by the wrapper"))
+        partial = next(t for t in workload["tasks"] if t["id"] == "partial_learning")
+        task = next(t for t in workload["tasks"] if t["id"] == "insufficient")
+        assert task["oracle"]["facts"]["wire_attempts"] == len(attempts) == (2 if gateway else 3)
+        assert task["memory_from"] == partial["id"] and task["memory_query"] == partial["question"]
+        assert set(partial["publication_sources"]) < {c["path"] for c in task["oracle"]["citations"]}
+        assert [t["phase"] for t in workload["tasks"]] == ["learn", "learn", "reuse", "reuse", "reuse", "reuse", "reuse"]

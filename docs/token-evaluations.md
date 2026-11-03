@@ -38,11 +38,11 @@ exercise these cases:
 
 | Case | Evidence needed beyond a plausible answer |
 | --- | --- |
-| Cold learning | Actual authenticated empty ask, source research and successful sourced publication; charge all of it |
-| Useful hit | Prior actual learning/publication, current validated ask evidence, correct grounded answer, no redundant repository tool calls |
+| Cold learning | Actual authenticated empty ask, successful source reads covering the learning oracle, and a persisted sourced publication; charge all of it |
+| Useful hit | The exact earlier published memory, matching saved content/source identities, byte-verified current excerpts covering the task oracle, correct grounded answer, no redundant repository tool calls |
 | Miss | Actual `no_relevant_trail` response and independently reviewed answer |
-| Stale evidence | Declared changed source snapshot, actual stale/refusal or safe current evidence, correct current answer |
-| Insufficient evidence | Actual insufficient/refusal response and source fallback; distinguish known wrapper behavior from unspecified injected backend behavior |
+| Stale evidence | Same previously retrieved memory and lookup question, a changed published source hash, actual stale response followed by successful current research (or verified current evidence from that memory), correct current answer |
+| Insufficient evidence | A linked relevant partial hit with verified source spans, a demonstrably missing required span, and successful later source reads filling the gap |
 | Cheap direct read | Optional memory use; compare its overhead against reading a small source directly |
 
 A scenario is an expectation, not a preseeded outcome. If the target returns a hit
@@ -51,6 +51,25 @@ An uncalled integration in the natural track is an adoption result; it does not
 measure useful-hit savings. Prompt-cache hits are reported separately from memory
 hits. Quality labels still require independent review; matching hashes cannot
 establish that a claim is true.
+
+Each lineage declares two learning steps: the first publishes the multi-file
+configuration/retry finding; the second publishes a narrow default-setting finding.
+The partial-evidence task retrieves that second memory and needs additional wrapper
+and concrete transport/backend sources to establish the actual wire-attempt count.
+Its extra learning session and publication are included in the schedule and token
+accounting. A generic miss does not prove either stale or partial handling.
+Controlled lookup questions and source scopes are frozen in the manifest.
+Natural runs do not force these queries or publications.
+
+The literal post-learning miss uses a source-unrelated astronomy question. During
+development the earlier bank-settlement retry question produced an irrelevant
+semantic hit in the worker lineage; that behavior was recorded, not counted as a
+successful miss or fixed in the product. These authored capability cases cannot
+estimate real-world false-positive rates.
+The integration retains that original question as a separate read-only hard
+negative after the declared journey. It checks source absence across the frozen
+fixture and denies unsupported reuse credit for either a semantic hit or a miss;
+it does not require the false positive to persist or add it to the native schedule.
 
 ## Prepare and check locally
 
@@ -73,8 +92,8 @@ needed. A future target branch can be exported read-only and installed separatel
 never move implementation work to that target branch as part of this feature.
 Collector and original/copied fixture hashes are rechecked before dispatch.
 
-Select one workload for 12 sessions (six tasks times two arms); the default two
-lineages require 24 sessions per track. The manifest records exact limits; these
+Select one workload for 14 sessions (two learning and five reuse tasks times two
+arms); the default two lineages require 28 sessions per track. The manifest records exact limits; these
 counts are not permission to run them. Context flags must agree between explicit
 MCP and setup arguments. For example, supply option/value separately as
 `--mcp-arg=--context-budget --mcp-arg=adaptive` and matching setup args when the
@@ -184,6 +203,13 @@ descriptive paired reductions; it never creates a confidence-supported product w
 dollar savings or automatic merge approval. Native receipts are auditable local
 records, not attestation against a malicious collector.
 
+Raw activity counters labelled `claimed_*` describe response markers only. The
+separate `mechanism_proof` verifies chronology, successful research results, the
+publication ID/content/source binding, current excerpt hashes/text/line ranges,
+and required oracle coverage. Failed calls still consume the research allowance
+but cannot establish successful learning or fallback. Unknown, unrelated or forged
+evidence receives no useful-reuse or controlled-mechanism credit.
+
 ## Provider-free verification
 
 ```powershell
@@ -198,3 +224,16 @@ usage, interruption cleanup and native authorization gates. Mock native receipts
 and fake events are labelled synthetic; they establish no measured token benefit.
 Any later savings claim requires separately authorized native runs, reviewed raw
 traces and independent correctness/grounding evidence at the fixed reuse horizon.
+
+`test_product_integration.py` also runs both declared lineages through actual MCP,
+Client, authenticated HTTP routes, Store, SQLite vector indexes and pinned offline
+ONNX models. Only the HTTP transport is adapted to a local ASGI test client. The
+positive journeys do not replace publication/retrieval methods or fabricate their
+responses; the strict scorer consumes their captured real MCP results. Per-task
+research MCP sessions enforce the same six-call allowance. Independent execution
+of the fixture source derives typed answers and concrete wire retry counts.
+Additional runtime mutation tests deliberately make Store publication a no-op or
+retrieval always miss, and require the same journey to fail its specific product
+contract. Missing offline model snapshots skip this coverage explicitly; a skipped
+integration is unavailable coverage, not a product pass. These tests involve no
+native agent sessions and establish no model-token savings.
