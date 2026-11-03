@@ -152,9 +152,42 @@
                          retrieved.add(identity)
                          decision['hit'] = True
                          decision['published_attempt'] = prior['attempt']
+--- a/scripts/token_evaluation/native.py
++++ b/scripts/token_evaluation/native.py
+@@ -14,7 +14,13 @@
+ from colony.product_value import native_usage
+ 
+ from . import runtime
+-from .protocol import ARMS, digest, planned_attempt_ids, validate_authorization
++from .protocol import (
++    ARMS,
++    digest,
++    planned_attempt_ids,
++    validate_authorization,
++    verify_active_collector,
++)
+ 
+ 
+ def _read(path):
+@@ -69,6 +75,7 @@
+     root = Path(run_dir).resolve()
+     run = _read(root / "run.json")
+     protocol = run["protocol"]
++    verify_active_collector(protocol)
+     receipt = {"protocol_sha256": run["protocol_sha256"], "ok": False,
+                "native_ready": False, "errors": [], "workloads": [],
+                "configuration_fidelity": "explicit MCP plus actual setup-generated guidance; native project-loader fidelity unverified"}
+@@ -220,6 +227,7 @@
+     root = Path(run_dir).resolve()
+     run = _read(root / "run.json")
+     protocol = run["protocol"]
++    verify_active_collector(protocol)
+     preflight = _read(root / "preflight.json")
+     if preflight.get("ok") is not True or preflight.get("native_ready") is not True or preflight.get("protocol_sha256") != run["protocol_sha256"]:
+         raise ValueError("Successful matching local preflight required")
 --- a/scripts/token_evaluation/protocol.py
 +++ b/scripts/token_evaluation/protocol.py
-@@ -193,3 +193,24 @@
+@@ -193,3 +193,25 @@
      require(isinstance(intent, str) and bool(intent.strip()) and len(intent) <= 4000,
              "Explicit written owner intent is required")
      return value
@@ -177,7 +210,8 @@
 +def verify_active_collector(manifest):
 +    require(manifest.get("evaluator_overlay") == EVALUATOR_OVERLAY,
 +            "Fresh overlay protocol required; historical trials must not be relabeled")
-+    require(manifest.get("collector", {}).get("files") == active_collector(),
++    collector = manifest.get("collector")
++    require(isinstance(collector, dict) and collector.get("files") == active_collector(),
 +            "Protocol must pin this exact patched collector; freeze a new protocol")
 --- a/scripts/token_evaluation/report.py
 +++ b/scripts/token_evaluation/report.py
@@ -245,6 +279,24 @@
      for arm in run["arms"].values():
          root = Path(arm["workspace"]).resolve(strict=True)
          for workload in manifest["workloads"]:
+@@ -125,6 +128,8 @@
+     run = _read(root / "run.json")
+     errors = []
+     try:
++        from .protocol import verify_active_collector
++        verify_active_collector(run["protocol"])
+         _verify(run)
+     except (OSError, ValueError, subprocess.SubprocessError) as exc:
+         errors.append(type(exc).__name__ + ": " + str(exc))
+@@ -151,6 +156,8 @@
+                     "model": manifest["client"]["model"], "limits": manifest["limits"]}
+         if any(authorization.get(key) != value for key, value in expected.items()) or not authorization.get("owner_intent"):
+             raise ValueError("Native authorization does not bind protocol, revision, model, limits and owner intent")
++        from .protocol import verify_active_collector
++        verify_active_collector(manifest)
+         _verify(run)
+         for relative, digest in run["files"].items():
+             if _sha(_inside(root.resolve(), relative)) != digest:
 --- a/tests/token_evaluations/fixtures/catalog.json
 +++ b/tests/token_evaluations/fixtures/catalog.json
 @@ -84,7 +84,7 @@
@@ -301,6 +353,17 @@
                }
              ],
              "unsupported_claims_fail": true,
+--- a/tests/token_evaluations/test_native.py
++++ b/tests/token_evaluations/test_native.py
+@@ -28,6 +28,8 @@
+ 
+ def setup_run(tmp_path, monkeypatch):
+     protocol = {'limits': {'wall_seconds': 60, 'max_attempts': 2, 'gross_token_stop': 100, 'session_seconds': 5}, 'workloads': [{'id': 'w', 'snapshots': [{'id': 'v1', 'files': {}}], 'tasks': [{'id': 't', 'snapshot': 'v1', 'phase': 'learn', 'question': 'q'}]}], 'client': {'model': 'm', 'sha256': 'a'}, 'target': {'revision': 'r'}, 'research': {'max_calls': 1}, 'output': {'format': 'json', 'answer_policy': 'last_agent_message'}, 'track': 'controlled'}
++    from scripts.token_evaluation.protocol import EVALUATOR_OVERLAY, active_collector
++    protocol.update(evaluator_overlay=dict(EVALUATOR_OVERLAY), collector={'files': active_collector()})
+     run = {'protocol': protocol, 'protocol_sha256': 'digest'}
+     for name in ('control', 'logs', 'auth', 'private'):
+         (tmp_path / name).mkdir()
 --- a/tests/token_evaluations/test_product_integration.py
 +++ b/tests/token_evaluations/test_product_integration.py
 @@ -89,24 +89,17 @@
