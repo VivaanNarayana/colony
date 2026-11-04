@@ -126,6 +126,45 @@ def test_adaptive_policy_applies_without_workflow_and_legacy_policy_stays(respon
     assert ADAPTIVE_WORKFLOW_GUIDANCE not in legacy.instructions
 
 
+@pytest.mark.parametrize("read_only", [False, True])
+@pytest.mark.parametrize("git_aware", [False, True])
+def test_adaptive_discovery_keeps_complete_policy_once(response, tmp_path, read_only, git_aware):
+    server = mcp.create_mcp(
+        tmp_path,
+        workflow_namespace="team",
+        workflow_repo=tmp_path,
+        workflow_read_only=read_only,
+        workflow_repository_id="project" if git_aware else None,
+        context_budget=ContextBudget(),
+    )
+    policy = ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
+    # The shared policy remains self-contained even with smaller tool descriptions.
+    assert server.instructions == policy + (
+        " Git checks use this caller's current checkout." if git_aware else ""
+    )
+
+
+@pytest.mark.parametrize("workflow", [False, True])
+def test_adaptive_discovery_preserves_publication_schema_and_annotations(response, tmp_path, workflow):
+    options = {"workflow_namespace": "team", "workflow_repo": tmp_path} if workflow else {}
+    legacy = {
+        tool.name: tool for tool in asyncio.run(mcp.create_mcp(tmp_path, **options).list_tools())
+    }
+    adaptive = {
+        tool.name: tool
+        for tool in asyncio.run(
+            mcp.create_mcp(tmp_path, context_budget=ContextBudget(), **options).list_tools()
+        )
+    }
+    assert adaptive["push"].inputSchema == legacy["push"].inputSchema
+    assert adaptive["push"].outputSchema == legacy["push"].outputSchema
+    assert all(adaptive[name].annotations == legacy[name].annotations for name in adaptive)
+    assert adaptive["ask"].outputSchema == legacy["ask"].outputSchema
+    assert set(adaptive["ask"].inputSchema["properties"]) == {
+        *legacy["ask"].inputSchema["properties"], "max_context_tokens"
+    }
+
+
 def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(response, tmp_path):
     before = copy.deepcopy(response)
     server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
