@@ -200,6 +200,12 @@ Startup names are recognized by basename even in subdirectories. These conservat
 increase response size or require a budget-limited miss. Compact mode omits optional
 surrounding section text even when more would fit. Explicit complete-file requests may
 restore a whole file when it fits.
+Adaptive MCP also negotiates a compact wire profile with compatible servers, packing
+the final representation before transport. Validated saved-answer lookups automatically
+include complete already-cited bundles of up to four files and 2,800 redacted characters;
+every required file must fit or the result is a safe miss. Explicitly selected passages
+retain focused selection. Ordinary CLI/HTTP requests keep their response layout. See
+[adaptive low-overhead behavior](docs/adaptive-low-overhead.md) for the profile contract.
 Retrieval models, ranking, permissions, source validation and Git compatibility rules
 are unchanged. There is no extra summarizer, automatic retry or model-provider call.
 

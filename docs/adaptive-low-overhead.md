@@ -18,8 +18,9 @@ edited or conflicting owned blocks. `setup codex status` and `doctor --repo` ins
 setup ownership/loading prerequisites, not actual agent adherence or token savings.
 
 Without `--context-budget`, existing MCP tools, schemas, response formatting and
-workflow policy remain unchanged. Adaptive CLI/HTTP budget accounting also retains its
-existing behavior; the lean routine tool interface is specific to adaptive MCP.
+workflow policy remain unchanged. Ordinary adaptive CLI/HTTP requests retain their
+existing response layout. The lean routine tool interface and automatically negotiated
+compact profile are specific to adaptive MCP.
 
 ## Routine research and explicit management
 
@@ -65,12 +66,34 @@ source list. The final canonical payload, including its receipt,
 is counted again after formatting. Required evidence that cannot fit keeps the existing
 safe budget-limited miss behavior. Smaller counts do not establish sufficiency or truth.
 
-Explicit whole-file requests preserve complete published source bundles of at most
-four files when their combined text is at most 2,800 characters. The adaptive path
-counts every required file and identity against the final response budget; it returns
-a safe miss if the bundle cannot fit. This avoids the ranked two-passage cap omitting
-necessary files even when a small complete bundle would fit. Larger bundles and
-focused requests retain ranked excerpt selection; the no-budget path is unchanged.
+Adaptive MCP negotiates `colony.mcp-compact/1` through the authenticated server's
+`context_budget.profiles` capability. Its `/ask` request includes `response_profile`
+alongside the existing context budget; a profile without a budget is rejected.
+Storage packs this compact evidence representation before transport, avoiding evidence
+loss caused by the legacy response's duplicated text and narration. The client
+checks the negotiated marker and the complete wire receipt before optional independent
+Git worktree verification; MCP applies the same packing again. An older server uses
+the bounded legacy path. Missing or conflicting negotiated identities fail closed.
+Git-aware transport still includes the full origin/request receipt needed for independent
+verification; that required receipt can cost more than the final verified Git summary.
+
+The profile carries saved findings once in `content` and evidence once in
+`current_repository_reads`, with original coordinates, per-read hashes, complete-file
+labels and a publication `sources` identity map. Evidence-only results omit the saved
+finding. Repeated next-action narration, ranking diagnostics and internal selection
+coordinates are omitted; taint, age, lifecycle/feedback, Git receipts and unverified
+feedback warnings remain. Stale/unverified results retain their research recommendation.
+Unknown additive source/read metadata survives packing. Both MCP instructions and
+managed project guidance remain self-contained, using the same shorter policy.
+
+For a validated answer's already-cited files, the profile automatically includes a
+complete bundle of at most four files when the combined redacted text is at most
+2,800 characters. Explicit whole-file requests also retain their existing bundle
+behavior. Every required file and identity counts against the final response budget;
+a bundle that cannot fit produces a safe miss, never a hit with a required file
+silently dropped. Larger bundles and explicitly selected passages retain ranked
+excerpt selection. Uncited files are never included. Byte and encoding-token budgets
+keep their existing defaults, bounds and separate units; no-budget behavior is unchanged.
 
 The parent PR #14 evaluation at `4ba3269` is retained as failed evidence: the initial
 collection had invalid harness configuration; the repaired 16-session sample had two
@@ -83,6 +106,12 @@ Historical native measurements remain attached to their exact source revisions.
 The 28-session controlled comparison at `e073919` used 903,094 gross tokens without
 Colony and 962,593 with Colony (+6.59%); required quality and memory-journey checks
 did not all pass. It does not measure the subsequent small-bundle correction.
+
+The later 28-session comparison at `8aa6d95` used 739,406 gross tokens without Colony
+and 838,708 with Colony (+13.43%). The compact-profile changes are subsequent to that
+run. Offline size measurements and product tests do not revise that result or prove
+lower gross usage; current-head native token evidence remains pending until a separately
+authorized evaluation measures the complete workflow.
 
 [The PR15 evaluator correction](pr15-evaluator-correction.md) adds pinned offline
 controls and a versioned evaluator patch, preserving historical evidence. These

@@ -72,7 +72,7 @@ prepared sources and explicitly records zero native sessions.
 ## Budgets and interpretation
 
 The full offline journey is tested separately at 4,096 UTF-8 bytes and 2,048
-`o200k_base` tokens. A 2,048-byte multi-file journey is a deliberately tight
+`o200k_base` tokens. A minimum 256-byte multi-file journey is a deliberately tight
 diagnostic: an honestly reported `budget_limited` result is not a verified full
 journey or a memory-reuse success. Tests do not increase a requested limit to fit.
 Every final hit/miss receipt must count the complete response, including source
@@ -83,7 +83,12 @@ whole-file requests now preserve all files when there are at most four and their
 combined text fits the existing 2,800-character excerpt allowance. The complete
 bundle is required and is still subject to final protocol counting; it is never
 silently clipped to make a hit. Larger bundles and focused requests retain the
-ranked selection path.
+ranked selection path. The subsequent negotiated compact MCP profile automatically
+enables bounded small bundles for validated saved-answer lookups. Its final representation
+is packed before HTTP transport; the same three-file fixtures can now fit at 2,048 bytes.
+The undersized diagnostic therefore uses the existing minimum budget rather than
+requiring a miss at a limit where the correct compact evidence fits. Frozen native
+fixtures, task questions, source identities and historical results are unchanged.
 
 Byte counts and offline encoding-token counts are not native model usage or
 billing. No default is changed and the two units are never pooled. Runtime packing

@@ -135,6 +135,11 @@ def verify_lookup(
         reason = compare(origin, context)
         if reason == "repository_mismatch" or result.get("status") != "validated":
             raise ValueError()
+        from colony.compact import PROFILE, legacy_evidence
+
+        compact = result.get("response_profile") == PROFILE
+        if compact:
+            result = legacy_evidence(result)
         raw_sources = result["sources"]
         if not isinstance(raw_sources, list) or not 1 <= len(raw_sources) <= 50:
             raise ValueError()
@@ -145,7 +150,7 @@ def verify_lookup(
             repo,
             sources,
             hints,
-            whole_files,
+            whole_files or compact,
             **({"adaptive": True} if context_budget is not None else {}),
         )
         if context_budget is not None and (

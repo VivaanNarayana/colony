@@ -295,8 +295,15 @@ class Client:
         repo: Path | None = None,
         repository_id: str | None = None,
         context_budget: ContextBudget | None = None,
+        response_profile: str | None = None,
     ):
         budget = None
+        negotiated_profile = False
+        if response_profile is not None:
+            from colony.compact import PROFILE
+
+            if response_profile != PROFILE or context_budget is None:
+                raise ValueError("Invalid response profile")
         if context_budget is not None:
             from colony.context_budget import count_response, fit_response
 
@@ -308,6 +315,8 @@ class Client:
             count_response({}, budget)
 
         def finish(value):
+            if negotiated_profile:
+                value = {**value, "response_profile": response_profile}
             return fit_response(value, budget, question=question) if budget is not None else value
 
         context = None
@@ -339,6 +348,10 @@ class Client:
                 except (KeyError, TypeError, ValueError, httpx.HTTPStatusError):
                     return finish({"hit": False, "reason": "context_budget_unsupported"})
                 payload["context_budget"] = budget.model_dump()
+                profiles = capability.get("profiles")
+                if response_profile is not None and isinstance(profiles, list) and response_profile in profiles:
+                    payload["response_profile"] = response_profile
+                    negotiated_profile = True
             if context is not None:
                 try:
                     if budget is not None:
@@ -349,6 +362,10 @@ class Client:
                     return finish({"hit": False, "reason": "git_context_unsupported"})
                 payload["git_context"] = context.model_dump()
             result = self.request("/ask", payload)
+            if negotiated_profile and (
+                not isinstance(result, dict) or result.get("response_profile") != response_profile
+            ):
+                return finish({"hit": False, "reason": "context_budget_invalid_profile"})
             if budget is not None:
                 try:
                     receipt = result["context_budget"]

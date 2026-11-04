@@ -31,7 +31,7 @@ def test_tight_byte_budget_is_an_explicit_limited_diagnostic(
 ):
     evaluator.product.test_authenticated_product_scenarios(
         tmp_path, monkeypatch, workload,
-        budget=ContextBudget(max_tokens=2048, encoding="utf8_bytes"), expect_limited=True,
+        budget=ContextBudget(max_tokens=256, encoding="utf8_bytes"), expect_limited=True,
     )
 
 
