@@ -14,7 +14,8 @@ from pathlib import Path
 from colony.product_value import native_usage
 
 from .evidence import evaluate_mechanisms
-from .protocol import ATTEMPT_ID_PATTERN
+from .output import instruction, structurally_compliant
+from .protocol import ATTEMPT_ID_PATTERN, CONTRACT, validate_contract, verify_active_collector
 
 ARMS = ("no_colony", "colony")
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "gross_tokens",
@@ -126,6 +127,9 @@ def _load(run_dir):
     root = Path(run_dir).resolve(strict=True)
     run = _read(root / "run.json")
     manifest = run["protocol"]
+    validate_contract(manifest)
+    if (root / "collection.json").exists() and _read(root / "collection.json").get("native_evidence") is True:
+        verify_active_collector(manifest)
     _require(run.get("contract") == "colony.token-evaluation-run/1", "Wrong run contract")
     _require(digest(manifest) == run.get("protocol_sha256"), "Frozen protocol changed")
     for relative, expected_hash in run["files"].items():
@@ -178,6 +182,8 @@ def _load(run_dir):
         current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
         rows.append({"id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
                      "state": state, "seconds": seconds, "phase": task["phase"],
+                     "output_sha256": digest({"output": manifest["output"],
+                                              "output_instruction": instruction(manifest["output"])}),
                      "source_sha256": digest({"snapshot": task.get("snapshot"), "files": current["files"] if current else None}),
                      "citation_sha256": digest(task["oracle"]),
                      "label_sha256": digest(task["rubric"]), **answer, "activity": activity(path), **native_usage(path)})
@@ -204,7 +210,7 @@ def mask(run_dir, output_dir):
     for row in rows:
         case = secrets.token_hex(16)
         binding = {k: row[k] for k in ("answer_sha256", "source_sha256", "citation_sha256",
-                                       "label_sha256")}
+                                       "label_sha256", "output_sha256")}
         task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
                     for t in w["tasks"] if t["id"] == row["task"])
         workload = next(w for w in manifest["workloads"] if w["id"] == row["workload"])
@@ -220,6 +226,8 @@ def mask(run_dir, output_dir):
         public.append({"case": case, "answer": row["text"], "current_sources": sources,
                        "question": task.get("question"), "oracle": task["oracle"],
                        "rubric": task["rubric"], "snapshot": task.get("snapshot"),
+                       "output": manifest["output"],
+                       "output_instruction": instruction(manifest["output"]),
                        "protocol_sha256": run["protocol_sha256"], **binding})
         private.append({"case": case, "id": row["id"], **binding})
     secrets.SystemRandom().shuffle(public)
@@ -273,11 +281,14 @@ def report(run_dir, quality_path, output_path):
     _require(set(lookup) == {r["id"] for r in rows}, "Missing/unlisted quality")
     for row in rows:
         review = lookup[row["id"]]
-        for field in ("answer_sha256", "source_sha256", "citation_sha256", "label_sha256"):
+        for field in ("answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"):
             _require(review.get(field) == row[field], "Quality binding changed: " + field)
         _require(all(type(review.get(k)) is bool for k in ("correct", "grounded", "format_compliant")),
                  "Explicit quality labels required")
-        row["successful"] = (review["correct"] and review["grounded"] and review["format_compliant"]
+        row["review_format_compliant"] = review["format_compliant"]
+        row["structural_format_compliant"] = structurally_compliant(row["text"], manifest["output"])
+        row["format_compliant"] = row["review_format_compliant"] and row["structural_format_compliant"]
+        row["successful"] = (review["correct"] and review["grounded"] and row["format_compliant"]
                              and row["state"] == "completed" and row["native_finished"])
     proofs = evaluate_mechanisms(root, manifest, rows)
     for row in rows:
@@ -341,7 +352,8 @@ def report(run_dir, quality_path, output_path):
         for field in ("gross_tokens", "uncached_input_plus_output"):
             baseline = arms["no_colony"]["total_usage"][field]
             reduction[field] = 1 - arms["colony"]["total_usage"][field] / baseline if baseline else None
-    result = {"contract": "colony.token-evaluation/1", "arms": arms, "attempts": rows,
+    result = {"contract": CONTRACT, "protocol_sha256": run["protocol_sha256"],
+              "output": manifest["output"], "arms": arms, "attempts": rows,
               "certifying": False, "supported_product_win": "not_established", "billing": None,
               "native_evidence": native, "harness_complete": True, "quality_complete": quality_complete,
               "controlled_mechanism_pass": controlled_pass,

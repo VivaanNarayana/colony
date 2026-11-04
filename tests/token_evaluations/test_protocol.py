@@ -5,10 +5,12 @@ from pathlib import Path
 
 import pytest
 
+from scripts.token_evaluation.output import OUTPUT_CONTRACT
 from scripts.token_evaluation.protocol import (
     ATTEMPT_ID_PATTERN,
     CONTRACT,
     attempt_id,
+    collector_hashes,
     planned_attempt_ids,
     validate_authorization,
     validate_manifest,
@@ -21,7 +23,8 @@ def manifest(tmp_path):
     return {'contract': CONTRACT, 'track': 'controlled', 'target': {'revision': 'a' * 40, 'python': str(tmp_path / 'python.exe'), 'runtime_hashes': {'colony/a.py': 'b' * 64}},
             'client': {'executable': str(tmp_path / 'codex.exe'), 'sha256': 'c' * 64, 'model': 'frozen', 'version': 'frozen', 'effort': 'low'},
             'limits': {'max_attempts': 128, 'session_seconds': 10, 'wall_seconds': 60, 'gross_token_stop': 100, 'disk_bytes': 10000, 'min_free_bytes': 1, 'retries': 0},
-            'research': {'max_calls': 2}, 'output': {'answer_policy': 'last_agent_message', 'format': 'json'}, 'workloads': workloads}
+            'collector': {'files': collector_hashes()},
+            'research': {'max_calls': 2}, 'output': {'contract': OUTPUT_CONTRACT, 'answer_policy': 'last_agent_message', 'format': 'json'}, 'workloads': workloads}
 
 
 def test_valid_and_source_start(tmp_path):
@@ -119,3 +122,23 @@ def test_colliding_generated_ids_are_rejected_during_validation(tmp_path, monkey
     monkeypatch.setattr(protocol, 'attempt_id', lambda *args: 'same-identifier')
     with pytest.raises(ValueError, match='Duplicate generated attempt identity'):
         validate_manifest(manifest(tmp_path))
+
+
+@pytest.mark.parametrize('change', ['legacy', 'missing_version', 'mismatched_version',
+                                  'missing_format', 'missing_collector', 'partial_collector'])
+def test_prospective_contract_is_required_before_prepare(tmp_path, change):
+    value = manifest(tmp_path)
+    if change == 'legacy':
+        value['contract'] = 'colony.token-evaluation/1'
+    elif change == 'missing_version':
+        value['output'].pop('contract')
+    elif change == 'mismatched_version':
+        value['output']['contract'] = 'other'
+    elif change == 'missing_format':
+        value['output'].pop('format')
+    elif change == 'missing_collector':
+        value.pop('collector')
+    else:
+        value['collector']['files'].pop(next(iter(value['collector']['files'])))
+    with pytest.raises(ValueError):
+        validate_manifest(value)

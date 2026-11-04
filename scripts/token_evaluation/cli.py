@@ -8,7 +8,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from .protocol import CONTRACT, digest, validate_manifest
+from .output import OUTPUT_CONTRACT, instruction
+from .protocol import CONTRACT, collector_hashes, digest, validate_manifest
 
 
 def _sha(path):
@@ -66,21 +67,20 @@ def template(args):
         if args.track == "natural":
             for task in workload["tasks"]:
                 task["expected_use"] = "optional"
-    collector = Path(__file__).resolve().parent
-    files = [*sorted(collector.glob("*.py")), collector.parent / "token_evaluation.py"]
     value = {
         "contract": CONTRACT, "track": args.track,
         "target": {"revision": revision, "python": target_python, "runtime_hashes": installed,
                    "mcp_args": args.mcp_arg, "setup_args": args.setup_arg, "server_args": args.server_arg},
         "client": {"executable": executable, "sha256": _sha(executable), "version": version,
                    "model": args.model, "effort": args.effort},
-        "collector": {"files": {str(path): _sha(path) for path in files}},
+        "collector": {"files": collector_hashes()},
         "limits": {"max_attempts": 2 * sum(len(w["tasks"]) for w in workloads),
                    "session_seconds": args.session_seconds, "wall_seconds": args.wall_seconds,
                    "gross_token_stop": args.gross_token_stop, "disk_bytes": args.disk_bytes,
                    "min_free_bytes": args.min_free_bytes, "retries": 0},
         "research": {"max_calls": args.research_calls},
-        "output": {"answer_policy": args.answer_policy, "format": args.format},
+        "output": {"contract": OUTPUT_CONTRACT, "answer_policy": args.answer_policy,
+                   "format": args.format},
         "provenance": catalog.get("provenance"), "workloads": workloads,
     }
     validate_manifest(value)
@@ -122,8 +122,13 @@ def bind_quality(packet, review_path, output):
         if not all(type(label.get(key)) is bool for key in fields):
             raise ValueError("Explicit Boolean independent labels required")
         answer = next(row for row in public if row["case"] == binding["case"])
+        expected_instruction = instruction(answer.get("output"))
+        if (answer.get("output_instruction") != expected_instruction
+                or answer.get("output_sha256") != digest({"output": answer["output"],
+                    "output_instruction": expected_instruction})):
+            raise ValueError("Masked output contract binding changed")
         if any(answer[key] != binding[key] for key in
-               ("answer_sha256", "source_sha256", "citation_sha256", "label_sha256")):
+               ("answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256")):
             raise ValueError("Review packet bindings changed")
         if hashlib.sha256(answer["answer"].encode()).hexdigest() != binding["answer_sha256"]:
             raise ValueError("Masked answer bytes changed")

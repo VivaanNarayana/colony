@@ -77,6 +77,50 @@ negative after the declared journey. It checks source absence across the frozen
 fixture and denies unsupported reuse credit for either a semantic hit or a miss;
 it does not require the false positive to persist or add it to the native schedule.
 
+## Prospective shared output contract
+
+New manifests use `colony.token-evaluation/2` and bind the shared instruction and
+structural check through `output.contract`:
+
+```json
+{
+  "contract": "colony.token-evaluation/2",
+  "output": {
+    "contract": "colony.token-evaluation-output/1",
+    "answer_policy": "last_agent_message",
+    "format": "json"
+  }
+}
+```
+
+This is an excerpt, not a complete executable manifest. `template` writes the
+binding automatically. Missing or unknown output-contract identifiers fail before
+collection or scoring. Historical `/1` manifests are rejected by this collector
+with instructions to use their original pinned collector for historical replay.
+Do not add the new version/field to an old protocol or relabel old answers, labels,
+reports, failures or statuses under these rules. A new candidate comparison needs
+a new frozen protocol and separate native authorization.
+
+For JSON output, the same shared final-answer instruction is supplied to every
+task in both arms, in both tracks. The selected answer must parse as one JSON
+object with both `facts` and `sources` at its top level. Nested-only sources,
+Markdown fences, prose around the object, multiple objects, arrays, scalars and
+malformed JSON do not satisfy this structure. The check requires key presence;
+it introduces no value-type, citation-format or additional-key restriction.
+Structurally accepted output can still be incorrect, unsupported or insufficient.
+The existing independent correctness, grounding, citation and format review and
+controlled-mechanism/tool-policy checks remain necessary for success. A reviewer
+format pass cannot override a structural failure.
+
+For example, both `{"facts": [], "sources": []}` and
+`{"facts": {"answer": "..."}, "sources": {"citation": "..."}}` have the required
+structure. Neither example establishes factual quality or grounding. An object
+such as `{"facts": [{"sources": []}]}` fails because it lacks top-level `sources`.
+The `free_text` option retains independent review without the JSON structural
+gate. Extraction remains frozen separately; no messages are rewritten or repaired
+to make the selected answer comply. These evaluator changes do not alter runtime
+behavior, task questions, source snapshots, oracles, reuse horizon or accounting.
+
 ## Prepare and check locally
 
 For Windows development, first use the workspace's existing D-storage environment
@@ -97,6 +141,11 @@ from Git is rejected: use an isolated clean LF export/install. No branch switch 
 needed. A future target branch can be exported read-only and installed separately;
 never move implementation work to that target branch as part of this feature.
 Collector and original/copied fixture hashes are rechecked before dispatch.
+Live preflight and execution require the exact complete active collector file/hash
+binding, including when called through their direct entrypoints. Missing, empty or
+mismatched bindings fail before local team provisioning, credential copying or
+model dispatch. This includes the shared output-contract implementation: changing
+it requires a fresh protocol rather than silently changing a frozen campaign.
 
 Select one workload for 14 sessions (two learning and five reuse tasks times two
 arms); the default two lineages require 28 sessions per track. The manifest records exact limits; these
@@ -194,7 +243,12 @@ The chosen extraction policy is frozen before collection. `last_agent_message`
 selects the last completed agent message, and `all_agent_messages` joins all of
 them. If the client omits phase metadata, final-phase provenance is not guaranteed.
 All agent messages still incur usage, including narration outside the selected
-answer. JSON compliance, when requested, is judged independently.
+answer. The masked packet carries the frozen output contract and extraction policy
+so independent review uses the same requirement as collection. JSON compliance is
+both structurally checked under that contract and independently reviewed; the
+structural check does not verify the truth of any fact or citation. The packet's
+output specification and exact instruction are hash-bound through quality binding
+and reporting; changing the reviewer's contract or extraction policy is rejected.
 
 The reviewer writes an arm-blind file containing `reviewer`, `method`, and `labels`:
 
@@ -205,7 +259,7 @@ The reviewer writes an arm-blind file containing `reviewer`, `method`, and `labe
 ```
 
 Every case needs explicit Boolean labels. The coordinator then binds random case
-IDs back to attempt IDs and exact answer/current-source/oracle/rubric hashes:
+IDs back to attempt IDs and exact answer/current-source/oracle/rubric/output hashes:
 
 ```powershell
 python scripts/token_evaluation.py bind-quality --packet D:/evaluations/review-001 --review D:/evaluations/blind-labels.json --output D:/evaluations/quality.json
@@ -253,7 +307,10 @@ python -m ruff check scripts/token_evaluation.py scripts/token_evaluation tests/
 Tests exercise source-derived facts in both lineages, snapshot/citation corruption,
 bounded research (including invalid calls), role/permission controls, answer
 extraction, independent labels, complete raw usage inventories, failure/unknown
-usage, interruption cleanup and native authorization gates. Mock native receipts
+usage, interruption cleanup and native authorization gates. Output-contract controls
+cover accepted JSON shapes, missing/nested-only keys, malformed/fenced output,
+free text, unchanged independent quality failures, prospective version rejection
+and collector-pin rejection before live boundaries. Mock native receipts
 and fake events are labelled synthetic; they establish no measured token benefit.
 Any later savings claim requires separately authorized native runs, reviewed raw
 traces and independent correctness/grounding evidence at the fixed reuse horizon.

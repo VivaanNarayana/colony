@@ -4,6 +4,8 @@ import json
 
 import pytest
 
+from scripts.token_evaluation.output import JSON_INSTRUCTION, OUTPUT_CONTRACT, instruction
+from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
 from scripts.token_evaluation.report import activity, digest, extract_answer, mask, report
 
 
@@ -16,7 +18,9 @@ def put(path, value):
 def run(tmp_path):
     task = {"id": "trace", "phase": "learn", "expected_use": "optional",
             "oracle": {"facts": {"timeout": 1500}}, "rubric": {"correct": "current facts"}}
-    protocol = {"track": "natural", "output": {"answer_policy": "last_agent_message"},
+    protocol = {"contract": CONTRACT, "collector": {"files": collector_hashes()},
+                "track": "natural", "output": {"contract": OUTPUT_CONTRACT,
+                "format": "free_text", "answer_policy": "last_agent_message"},
                 "workloads": [{"id": "gateway", "snapshots": [], "tasks": [task]}]}
     put(tmp_path / "run.json", {"contract": "colony.token-evaluation-run/1",
                                "protocol": protocol, "protocol_sha256": digest(protocol),
@@ -96,7 +100,7 @@ def test_long_display_names_round_trip_with_generated_attempt_ids(run):
     assert all(len(row["id"]) <= 128 for row in value["attempts"])
 
 
-@pytest.mark.parametrize("field", ["answer_sha256", "source_sha256", "citation_sha256", "label_sha256"])
+@pytest.mark.parametrize("field", ["answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"])
 def test_corrupted_quality_binding_rejected(run, field):
     root, quality, _ = run
     quality["labels"][0][field] = "0" * 64
@@ -151,6 +155,101 @@ def rewrite_events(root, identity, transform):
     row = next(r for r in rows if r["id"] == identity)
     row["events_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
     journal.write_text("\n".join(map(json.dumps, rows)))
+
+
+def json_answer_control(run, answer, *, reviewer_format=True, correct=True, grounded=True):
+    """Synthetic full report controls; every altered answer gets an honest new binding."""
+    root, quality, _ = run
+    frozen = json.loads((root / "run.json").read_text())
+    frozen["protocol"]["output"]["format"] = "json"
+    frozen["protocol_sha256"] = digest(frozen["protocol"])
+    put(root / "run.json", frozen)
+    quality["protocol_sha256"] = frozen["protocol_sha256"]
+    output_binding = digest({"output": frozen["protocol"]["output"],
+                             "output_instruction": instruction(frozen["protocol"]["output"])})
+    for identity in ("a", "b"):
+        def replace(events):
+            events[-2]["item"]["text"] = answer
+        rewrite_events(root, identity, replace)
+        label = next(label for label in quality["labels"] if label["id"] == identity)
+        label.update(answer_sha256=hashlib.sha256(answer.encode()).hexdigest(),
+                     output_sha256=output_binding, format_compliant=reviewer_format,
+                     correct=correct, grounded=grounded)
+    put(root / "quality.json", quality)
+    return root
+
+
+@pytest.mark.parametrize("answer,structure,reviewer,combined", [
+    ('{"facts":{},"sources":[]}', True, True, True),
+    ('{"facts":{"sources":[]}}', False, True, False),
+    ('```json\n{"facts":{},"sources":[]}\n```', False, True, False),
+    ('{"facts":{},"sources":[]}', True, False, False),
+])
+def test_structural_and_reviewer_format_are_both_required(run, answer, structure, reviewer, combined):
+    root = json_answer_control(run, answer, reviewer_format=reviewer)
+    result = report(root, root / "quality.json", root / "report.json")
+    assert result["contract"] == CONTRACT and result["output"]["contract"] == OUTPUT_CONTRACT
+    for row in result["attempts"]:
+        assert row["review_format_compliant"] is reviewer
+        assert row["structural_format_compliant"] is structure
+        assert row["format_compliant"] is combined
+        assert row["successful"] is combined
+    assert result["quality_complete"] is combined
+    assert all(result["arms"][arm]["known_usage"]["gross_tokens"] == 120
+               for arm in ("no_colony", "colony"))
+    mask(root, root / "remasked")
+    packet = json.loads((root / "remasked" / "answers.json").read_text())
+    assert all(row["output_instruction"] == JSON_INSTRUCTION
+               and row["output"]["answer_policy"] == "last_agent_message" for row in packet)
+
+
+@pytest.mark.parametrize("field", ["correct", "grounded"])
+def test_valid_json_cannot_override_independent_factual_quality(run, field):
+    root = json_answer_control(run, '{"facts":{},"sources":[]}', **{field: False})
+    result = report(root, root / "quality.json", root / "report.json")
+    assert all(row["format_compliant"] and not row["successful"] for row in result["attempts"])
+    assert not result["quality_complete"] and result["observed_token_reduction"] is None
+
+
+def test_free_text_still_requires_independent_format_judgment(run):
+    root, quality, _ = run
+    for label in quality["labels"]:
+        label["format_compliant"] = False
+    put(root / "quality.json", quality)
+    result = report(root, root / "quality.json", root / "report.json")
+    assert all(row["structural_format_compliant"] and not row["format_compliant"]
+               and not row["successful"] for row in result["attempts"])
+
+
+def test_parser_failure_keeps_complete_usage_in_report(run):
+    root = json_answer_control(run, '{"facts":' + '[' * 2000 + '0' + ']' * 1999 + ',"sources":[]}')
+    result = report(root, root / "quality.json", root / "report.json")
+    assert all(not row["structural_format_compliant"] for row in result["attempts"])
+    assert all(result["arms"][arm]["total_usage"]["gross_tokens"] == 120
+               for arm in ("no_colony", "colony"))
+
+
+@pytest.mark.parametrize("change", ["legacy", "missing_version", "wrong_version", "missing_format"])
+def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading(run, change):
+    root, _, _ = run
+    frozen = json.loads((root / "run.json").read_text())
+    if change == "legacy":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/1"
+    elif change == "missing_version":
+        frozen["protocol"]["output"].pop("contract")
+    elif change == "wrong_version":
+        frozen["protocol"]["output"]["contract"] = "other"
+    else:
+        frozen["protocol"]["output"].pop("format")
+    frozen["protocol_sha256"] = digest(frozen["protocol"])
+    put(root / "run.json", frozen)
+    before = {str(path): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    for action in [lambda: report(root, root / "quality.json", root / "refused.json"),
+                   lambda: mask(root, root / "refused-mask")]:
+        with pytest.raises(ValueError):
+            action()
+    assert before == {str(path): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    assert not (root / "refused-mask").exists()
 
 
 def test_interrupted_unknown_usage_never_zero(run):
@@ -248,6 +347,23 @@ def native_receipt_control(root, quality):
                   "transitions": transitions}
     put(root / "collection.json", collection)
     return collection
+
+
+@pytest.mark.parametrize("entrypoint", ["mask", "report"])
+def test_native_scoring_rejects_changed_collector_before_new_artifact(run, entrypoint):
+    root, quality, _ = run
+    native_receipt_control(root, quality)
+    frozen = json.loads((root / "run.json").read_text())
+    files = frozen["protocol"]["collector"]["files"]
+    files[next(iter(files))] = "0" * 64
+    frozen["protocol_sha256"] = digest(frozen["protocol"])
+    put(root / "run.json", frozen)
+    with pytest.raises(ValueError, match="complete active collector"):
+        if entrypoint == "mask":
+            mask(root, root / "refused-mask")
+        else:
+            report(root, root / "quality.json", root / "refused.json")
+    assert not (root / "refused-mask").exists() and not (root / "refused.json").exists()
 
 
 def test_native_receipt_schema_control_descriptive_ratio(run):

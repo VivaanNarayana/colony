@@ -83,13 +83,13 @@ def prepare(manifest_path, output_dir):
 
 
 def _verify(run):
+    from .protocol import verify_active_collector
+
     manifest = run["protocol"]
+    verify_active_collector(manifest)
     digest = hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
     if digest != run["protocol_sha256"]:
         raise ValueError("Frozen protocol drift")
-    for path, expected_hash in manifest.get("collector", {}).get("files", {}).items():
-        if not Path(path).is_absolute() or _sha(path) != expected_hash:
-            raise ValueError("Frozen collector source drift")
     for arm in run["arms"].values():
         root = Path(arm["workspace"]).resolve(strict=True)
         for workload in manifest["workloads"]:

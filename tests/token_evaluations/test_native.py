@@ -6,7 +6,8 @@ from unittest.mock import Mock
 import pytest
 
 from scripts.token_evaluation import native, runner
-from scripts.token_evaluation.protocol import attempt_id
+from scripts.token_evaluation.output import OUTPUT_CONTRACT
+from scripts.token_evaluation.protocol import CONTRACT, attempt_id, collector_hashes
 
 
 @pytest.mark.parametrize('host,shell,passes', [('true', 'false', True), ('false', 'false', False), ('true', 'true', False)])
@@ -28,6 +29,8 @@ def test_metadata_parses_actual_overrides_without_model_or_mcp(tmp_path, monkeyp
 
 def setup_run(tmp_path, monkeypatch):
     protocol = {'limits': {'wall_seconds': 60, 'max_attempts': 2, 'gross_token_stop': 100, 'session_seconds': 5}, 'workloads': [{'id': 'w', 'snapshots': [{'id': 'v1', 'files': {}}], 'tasks': [{'id': 't', 'snapshot': 'v1', 'phase': 'learn', 'question': 'q'}]}], 'client': {'model': 'm', 'sha256': 'a'}, 'target': {'revision': 'r'}, 'research': {'max_calls': 1}, 'output': {'format': 'json', 'answer_policy': 'last_agent_message'}, 'track': 'controlled'}
+    protocol.update(contract=CONTRACT, collector={'files': collector_hashes()})
+    protocol['output']['contract'] = OUTPUT_CONTRACT
     run = {'protocol': protocol, 'protocol_sha256': 'digest'}
     for name in ('control', 'logs', 'auth', 'private'):
         (tmp_path / name).mkdir()
@@ -286,3 +289,41 @@ def test_small_positive_wall_remainder_is_not_inflated(tmp_path, monkeypatch):
     assert all(process.timeouts == [pytest.approx(0.04)] for process in processes)
     assert value['inventory']['known_gross_tokens'] == 28
     assert stopped == []
+
+
+@pytest.mark.parametrize('entrypoint', ['preflight', 'execute'])
+@pytest.mark.parametrize('change', ['legacy', 'missing_output_contract', 'wrong_output_contract',
+                                  'missing_collector', 'partial_collector', 'wrong_hash', 'extra_file'])
+def test_contract_and_collector_rejected_before_native_side_effects(tmp_path, monkeypatch,
+                                                                  entrypoint, change):
+    setup_run(tmp_path, monkeypatch)
+    run = json.loads((tmp_path / 'run.json').read_text())
+    protocol = run['protocol']
+    if change == 'legacy':
+        protocol['contract'] = 'colony.token-evaluation/1'
+    elif change == 'missing_output_contract':
+        protocol['output'].pop('contract')
+    elif change == 'wrong_output_contract':
+        protocol['output']['contract'] = 'other'
+    elif change == 'missing_collector':
+        protocol.pop('collector')
+    elif change == 'partial_collector':
+        protocol['collector']['files'].pop(next(iter(protocol['collector']['files'])))
+    elif change == 'wrong_hash':
+        protocol['collector']['files'][next(iter(protocol['collector']['files']))] = '0' * 64
+    else:
+        protocol['collector']['files'][str(tmp_path / 'other.py')] = '0' * 64
+    (tmp_path / 'run.json').write_text(json.dumps(run))
+    environment, provision, launch = Mock(), Mock(), Mock()
+    monkeypatch.setattr(native.runtime, 'environment', environment)
+    monkeypatch.setattr(native.runtime, 'provision', provision)
+    monkeypatch.setattr(native.subprocess, 'Popen', launch)
+    with pytest.raises(ValueError):
+        if entrypoint == 'preflight':
+            native.preflight_live(tmp_path)
+        else:
+            native.execute_live(tmp_path, {}, tmp_path / 'auth')
+    environment.assert_not_called()
+    provision.assert_not_called()
+    launch.assert_not_called()
+    assert not (tmp_path / 'private/client').exists()
