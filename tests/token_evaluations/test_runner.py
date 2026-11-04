@@ -70,8 +70,13 @@ def test_runtime_inventory_rejects_partial_module_manifest(tmp_path, monkeypatch
     from types import SimpleNamespace
 
     from scripts.token_evaluation import runner
+    from scripts.token_evaluation.output import OUTPUT_CONTRACT
+    from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
 
-    protocol = {"workloads": [], "target": {"python": "target", "runtime_hashes": {"colony/__init__.py": "a" * 64}}, "client": {}}
+    protocol = {"contract": CONTRACT, "output": {"contract": OUTPUT_CONTRACT,
+                "format": "free_text", "answer_policy": "last_agent_message"},
+                "collector": {"files": collector_hashes()},
+                "workloads": [], "target": {"python": "target", "runtime_hashes": {"colony/__init__.py": "a" * 64}}, "client": {}}
     run = {"protocol": protocol, "arms": {}, "protocol_sha256": hashlib.sha256(json.dumps(protocol, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()}
     monkeypatch.setattr(runner.subprocess, "run", lambda *a, **kw: SimpleNamespace(stdout=json.dumps({"__init__.py": "a" * 64, "omitted.py": "b" * 64})))
     with pytest.raises(ValueError, match="runtime drift"):
@@ -97,12 +102,16 @@ def test_inventory_empty_or_simulated_is_not_complete(tmp_path):
 
 
 def test_collector_source_drift_blocks_verification(tmp_path):
+    from scripts.token_evaluation.output import OUTPUT_CONTRACT
+    from scripts.token_evaluation.protocol import CONTRACT
     from scripts.token_evaluation.report import digest
     from scripts.token_evaluation.runner import _verify
     source = tmp_path / "collector.py"
     source.write_text("changed")
-    protocol = {"collector": {"files": {str(source): "0" * 64}}}
-    with pytest.raises(ValueError, match="collector source drift"):
+    protocol = {"contract": CONTRACT, "output": {"contract": OUTPUT_CONTRACT,
+                "format": "free_text", "answer_policy": "last_agent_message"},
+                "collector": {"files": {str(source): "0" * 64}}}
+    with pytest.raises(ValueError, match="complete active collector"):
         _verify({"protocol": protocol, "protocol_sha256": digest(protocol)})
 
 

@@ -6,7 +6,9 @@ import json
 import re
 from pathlib import Path
 
-CONTRACT = "colony.token-evaluation/1"
+from .output import validate_output
+
+CONTRACT = "colony.token-evaluation/2"
 ARMS = ("no_colony", "colony")
 ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}
@@ -20,6 +22,26 @@ def digest(value):
 def require(value, message):
     if not value:
         raise ValueError(message)
+
+
+def validate_contract(manifest):
+    require(isinstance(manifest, dict) and manifest.get("contract") == CONTRACT,
+            "Unsupported evaluation contract; use the original pinned collector for historical protocols")
+    validate_output(manifest.get("output"))
+
+
+def collector_hashes():
+    collector = Path(__file__).resolve().parent
+    files = [*sorted(collector.glob("*.py")), collector.parent / "token_evaluation.py"]
+    return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
+
+
+def verify_active_collector(manifest):
+    """Require the complete active implementation, not a partial or other export's pins."""
+    validate_contract(manifest)
+    collector = manifest.get("collector")
+    require(isinstance(collector, dict) and collector.get("files") == collector_hashes(),
+            "Pin the complete active collector with matching source hashes")
 
 
 def attempt_id(workload, task, arm):
@@ -73,7 +95,7 @@ def _flags(args, allowed):
 
 
 def _validate_manifest(manifest):
-    require(isinstance(manifest, dict) and manifest.get("contract") == CONTRACT, "Wrong evaluation contract")
+    verify_active_collector(manifest)
     require(manifest.get("track") in {"natural", "controlled"}, "Unknown evaluation track")
     for key in ("target", "client", "limits", "research", "output"):
         require(isinstance(manifest.get(key), dict), "Missing " + key)
