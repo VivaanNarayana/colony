@@ -91,6 +91,7 @@ def create_app(
     @app.post("/capabilities")
     def capabilities(grant: Annotated[Grant, Depends(member)]):
         # Separate from /health, which retains its original public contract.
+        from colony.compact import PROFILE
         from colony.context_budget import supported_encodings
 
         return {
@@ -100,6 +101,7 @@ def create_app(
                 "encodings": supported_encodings(),
                 "min_tokens": 256,
                 "max_tokens": 8192,
+                "profiles": [PROFILE],
             },
         }
 
@@ -132,6 +134,8 @@ def create_app(
             if query.context_budget.encoding not in supported_encodings():
                 raise HTTPException(422, "Context budget encoding unavailable")
             options["context_budget"] = query.context_budget
+        if query.response_profile is not None:
+            options["response_profile"] = query.response_profile
         try:
             result = store.ask(
                 query.question,

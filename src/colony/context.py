@@ -404,10 +404,11 @@ def excerpts(
     claims: str | None = None,
     whole_files: bool = False,
     adaptive: bool = False,
+    compact_bundle: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
     if (
-        whole_files
+        (whole_files or (adaptive and compact_bundle))
         and 1 <= len(unique) <= 4
         and (not adaptive or (claims is not None and preferred is None))
     ):

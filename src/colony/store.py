@@ -655,8 +655,15 @@ class Store:
         include_evidence_files: bool = False,
         git_context: GitContext | None = None,
         context_budget: ContextBudget | None = None,
+        response_profile: str | None = None,
     ):
         options = {}
+        if response_profile is not None:
+            from colony.compact import PROFILE
+
+            if response_profile != PROFILE or context_budget is None:
+                raise ValueError("Invalid response profile")
+            options["compact_bundle"] = True
         if context_budget is not None:
             try:
                 context_budget = ContextBudget.model_validate(context_budget)
@@ -685,6 +692,8 @@ class Store:
                 )
                 or answer
             )
+        if response_profile is not None:
+            result = {**result, "response_profile": response_profile}
         if context_budget is not None:
             from colony.context_budget import fit_response
 
@@ -700,6 +709,7 @@ class Store:
         include_evidence_files=False,
         git_context: GitContext | None = None,
         context_budget: ContextBudget | None = None,
+        compact_bundle: bool = False,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
@@ -863,6 +873,7 @@ class Store:
         include_evidence_files: bool = False,
         git_context: GitContext | None = None,
         context_budget: ContextBudget | None = None,
+        compact_bundle: bool = False,
     ):
         requested = self._git_request(git_context)
         if not namespaces:
@@ -1015,6 +1026,7 @@ class Store:
                     question,
                     claims=content,
                     whole_files=include_evidence_files,
+                    **({"compact_bundle": True} if compact_bundle else {}),
                     **({"adaptive": True} if context_budget is not None else {}),
                 )
                 if status == "validated"

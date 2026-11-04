@@ -23,6 +23,8 @@ class Model(BaseModel):
             data.pop("git_context", None)
         if data.get("context_budget", False) is None:
             data.pop("context_budget", None)
+        if data.get("response_profile", False) is None:
+            data.pop("response_profile", None)
         return data
 
 
@@ -119,6 +121,13 @@ class Ask(Model):
     include_evidence_files: bool = False
     git_context: GitContext | None = None
     context_budget: ContextBudget | None = None
+    response_profile: Literal["colony.mcp-compact/1"] | None = None
+
+    @model_validator(mode="after")
+    def profile_requires_budget(self):
+        if self.response_profile is not None and self.context_budget is None:
+            raise ValueError("Compact response profile requires a context budget")
+        return self
 
 
 class MemoryInspect(Model):
