@@ -61,6 +61,10 @@ def test_mask_and_cached_accounting_no_adoption(run):
     assert result["adoption"] is False
     assert result["observed_token_reduction"] is None
     assert result["certifying"] is False
+    assert result["answer_quality_complete"] is True
+    assert result["mechanism_complete"] is None
+    assert result["workflow_success"] is result["quality_complete"] is True
+    assert result["controlled_mechanism_pass"] is False
 
 
 def test_answer_selection_progress_preserved(run):
@@ -193,8 +197,12 @@ def test_structural_and_reviewer_format_are_both_required(run, answer, structure
         assert row["review_format_compliant"] is reviewer
         assert row["structural_format_compliant"] is structure
         assert row["format_compliant"] is combined
+        assert row["answer_quality_successful"] is combined
         assert row["successful"] is combined
     assert result["quality_complete"] is combined
+    assert result["answer_quality_complete"] is combined
+    assert result["workflow_success"] is combined
+    assert result["mechanism_complete"] is None
     assert all(result["arms"][arm]["known_usage"]["gross_tokens"] == 120
                for arm in ("no_colony", "colony"))
     mask(root, root / "remasked")
@@ -209,6 +217,8 @@ def test_valid_json_cannot_override_independent_factual_quality(run, field):
     result = report(root, root / "quality.json", root / "report.json")
     assert all(row["format_compliant"] and not row["successful"] for row in result["attempts"])
     assert not result["quality_complete"] and result["observed_token_reduction"] is None
+    assert not result["answer_quality_complete"] and not result["workflow_success"]
+    assert result["mechanism_complete"] is None
 
 
 def test_free_text_still_requires_independent_format_judgment(run):
@@ -289,6 +299,10 @@ def test_asymmetric_controlled_adoption_not_green(run):
     assert result["arms"]["no_colony"]["successful_workflows"] == 1
     assert result["supported_product_win"] == "not_established"
     assert not result["controlled_mechanism_pass"]
+    assert result["answer_quality_complete"] is True
+    assert result["mechanism_complete"] is False
+    assert result["workflow_success"] is result["quality_complete"] is False
+    assert result["observed_token_reduction"] is None
 
 
 def test_synthetic_optional_schedule_cannot_pass_controlled_mechanism(run):
@@ -381,6 +395,51 @@ def test_native_receipt_schema_control_descriptive_ratio(run):
     assert result["observed_token_reduction"]["gross_tokens"] == pytest.approx(1 - 100 / 120)
     assert result["supported_product_win"] == "not_established"
     assert result["certifying"] is False
+    assert result["answer_quality_complete"] is True
+    assert result["mechanism_complete"] is None
+    assert result["workflow_success"] is result["quality_complete"] is True
+
+
+@pytest.mark.parametrize("answer_pass,mechanism_pass", [
+    (True, True), (True, False), (False, True), (False, False),
+])
+def test_answer_and_mechanism_diagnostics_preserve_strict_native_gate(
+    run, answer_pass, mechanism_pass,
+):
+    """Fabricated native receipts test report logic, never product performance."""
+    root, quality, _ = run
+    frozen = json.loads((root / "run.json").read_text())
+    frozen["protocol"]["track"] = "controlled"
+    frozen["protocol"]["workloads"][0]["tasks"][0]["expected_use"] = "required_miss"
+    put(root / "run.json", frozen)
+    next(label for label in quality["labels"] if label["id"] == "b")["correct"] = answer_pass
+    native_receipt_control(root, quality)
+
+    def ask(events):
+        reason = "no_relevant_trail" if mechanism_pass else "budget_limited"
+        events.insert(1, {"type": "item.completed", "item": {
+            "id": "actual-miss-call", "type": "mcp_tool_call", "server": "colony",
+            "tool": "ask", "status": "completed", "result": {"content": [{
+                "type": "text", "text": json.dumps({"hit": False, "reason": reason}),
+            }]},
+        }})
+
+    rewrite_events(root, "b", ask)
+    value = report(root, root / "quality.json", root / "diagnostics-report.json")
+    candidate = next(row for row in value["attempts"] if row["arm"] == "colony")
+    combined = answer_pass and mechanism_pass
+    assert candidate["answer_quality_successful"] is answer_pass
+    assert candidate["expected_use_verified"] is mechanism_pass
+    assert candidate["successful"] is combined
+    assert value["answer_quality_complete"] is answer_pass
+    assert value["mechanism_complete"] is mechanism_pass
+    assert value["quality_complete"] is value["workflow_success"] is combined
+    assert value["controlled_mechanism_pass"] is combined
+    assert (value["observed_token_reduction"] is not None) is combined
+    assert value["useful_reuse"] is False
+    assert value["tool_policy_compliant"] is True
+    assert all(value["arms"][arm]["total_usage"]["gross_tokens"] == 120
+               for arm in ("no_colony", "colony"))
 
 
 def test_marker_only_publication_cannot_pass_report_mechanism(run):
@@ -427,6 +486,12 @@ def test_marker_only_publication_cannot_pass_report_mechanism(run):
     assert not candidate["expected_use_verified"]
     assert not candidate["mechanism_proof"]["publication"]
     assert not value["controlled_mechanism_pass"]
+    assert candidate["answer_quality_successful"] is True and not candidate["successful"]
+    assert value["answer_quality_complete"] is True
+    assert value["mechanism_complete"] is False
+    assert value["workflow_success"] is value["quality_complete"] is False
+    assert value["observed_token_reduction"] is None
+    assert value["arms"]["colony"]["total_usage"]["gross_tokens"] == 120
 
 
 def test_corrupt_transition_rejected_before_comparison(run):

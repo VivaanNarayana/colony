@@ -208,13 +208,18 @@ def _prompt(protocol, task, guidance):
             "Do not execute source, write files, use shell/web or inspect control/private files. Cite supporting repository paths and line ranges. "
             f"Research budget: {protocol['research']['max_calls']} actual calls, including batching and failures. "
             "Use actual file hashes for any publication; never invent them.\n")
-    if protocol["track"] == "controlled" and guidance:
+    controlled = protocol["track"] == "controlled" and task.get("expected_use") != "optional"
+    hints = (task.get("publication_sources") if controlled and task["phase"] == "learn"
+             else task.get("research_hints") if task.get("expected_use") == "optional" else None)
+    if hints:
+        base += "Repository path hints (paths only, not evidence): " + json.dumps(hints) + ".\n"
+    if controlled and guidance:
         lookup = task.get("memory_query", task["question"])
         base += "For the first Colony ask, use this frozen lookup question exactly: " + json.dumps(lookup) + ". Then answer the task question below using current evidence.\n"
         if task["phase"] == "learn":
             base += "Controlled mechanism test: ask Colony first, then obtain successful repository research for this learning step and publish one sourced finding for its question. This declared learning cost is charged even if an earlier memory was available.\n"
             if task.get("publication_sources"):
-                base += "For this controlled learning step, publish exactly these source files, with their actual research hashes: " + json.dumps(task["publication_sources"]) + ". Keep the finding scoped to this task's facts.\n"
+                base += "For this controlled learning step, publish exactly the source files in the repository path hints, with their actual research hashes. Keep the finding scoped to this task's facts.\n"
         else:
             base += "Controlled mechanism test: ask Colony first and assess actual current evidence. Research gaps or stale/insufficient evidence; do not publish on this read-only connection.\n"
     output_instruction = instruction(protocol["output"])

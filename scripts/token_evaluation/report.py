@@ -288,8 +288,10 @@ def report(run_dir, quality_path, output_path):
         row["review_format_compliant"] = review["format_compliant"]
         row["structural_format_compliant"] = structurally_compliant(row["text"], manifest["output"])
         row["format_compliant"] = row["review_format_compliant"] and row["structural_format_compliant"]
-        row["successful"] = (review["correct"] and review["grounded"] and row["format_compliant"]
-                             and row["state"] == "completed" and row["native_finished"])
+        row["answer_quality_successful"] = (
+            review["correct"] and review["grounded"] and row["format_compliant"]
+            and row["state"] == "completed" and row["native_finished"])
+        row["successful"] = row["answer_quality_successful"]
     proofs = evaluate_mechanisms(root, manifest, rows)
     for row in rows:
         task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
@@ -340,6 +342,11 @@ def report(run_dir, quality_path, output_path):
             and row["activity"]["research_calls"] == 0
             and row["activity"]["unapproved_calls"] == 0)
     useful_reuse = any(r["useful_reuse"] for r in rows)
+    answer_quality_complete = all(r["answer_quality_successful"] for r in rows)
+    # Natural runs impose no controlled mechanism expectations. Do not report a
+    # vacuous mechanism pass when the agent was free to bypass memory entirely.
+    mechanism_complete = (all(r["expected_use_verified"] for r in rows)
+                          if manifest["track"] == "controlled" else None)
     quality_complete = all(r["successful"] for r in rows)
     usage_complete = all(arms[a]["total_usage"] is not None for a in ARMS)
     controlled_pass = (native and collection.get("status") == "complete"
@@ -356,6 +363,8 @@ def report(run_dir, quality_path, output_path):
               "output": manifest["output"], "arms": arms, "attempts": rows,
               "certifying": False, "supported_product_win": "not_established", "billing": None,
               "native_evidence": native, "harness_complete": True, "quality_complete": quality_complete,
+              "answer_quality_complete": answer_quality_complete,
+              "mechanism_complete": mechanism_complete, "workflow_success": quality_complete,
               "controlled_mechanism_pass": controlled_pass,
               "adoption": adoption, "adoption_context": manifest["track"],
               "natural_adoption_observed": adoption if manifest["track"] == "natural" else None,

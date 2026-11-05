@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
-from mcp.types import TextContent
+from mcp.types import CallToolResult, TextContent
 from pydantic import Field, StrictInt
 
 Bound = Annotated[StrictInt, Field(ge=1, le=120)]
@@ -102,17 +102,17 @@ def create_server(root: Path, max_calls: int = 6, files=None) -> FastMCP:
 
     server = ChargedMCP("evaluation-fixture-research")
 
-    @server.tool()
-    def fixture_files() -> list[TextContent]:
-        return research.files()
+    @server.tool(structured_output=False)
+    def fixture_files() -> CallToolResult:
+        return CallToolResult(content=research.files())
 
-    @server.tool()
-    def fixture_read(path: str, start: Annotated[StrictInt, Field(ge=1)] = 1, lines: Bound = 120) -> list[TextContent]:
-        return research.read(path, start, lines)
+    @server.tool(structured_output=False)
+    def fixture_read(path: str, start: Annotated[StrictInt, Field(ge=1)] = 1, lines: Bound = 120) -> CallToolResult:
+        return CallToolResult(content=research.read(path, start, lines))
 
-    @server.tool()
-    def fixture_search(query: str) -> list[TextContent]:
-        return research.search(query)
+    @server.tool(structured_output=False)
+    def fixture_search(query: str) -> CallToolResult:
+        return CallToolResult(content=research.search(query))
 
     return server
 

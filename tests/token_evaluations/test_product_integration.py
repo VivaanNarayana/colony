@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from mcp.types import CallToolResult
 
 from colony.client import Client
 from colony.mcp import create_mcp
@@ -173,7 +174,11 @@ def test_authenticated_product_scenarios(tmp_path, monkeypatch, workload):
     evidence.mkdir()
     def call(server, tool, arguments, scenario, origin="colony"):
         blocks = asyncio.run(server.call_tool(tool, arguments))
-        if isinstance(blocks, tuple):
+        if origin == "repository":
+            assert isinstance(blocks, CallToolResult)
+            assert blocks.isError is False and blocks.structuredContent is None
+            blocks = blocks.content
+        elif isinstance(blocks, tuple):
             blocks = blocks[0]
         text = blocks[0].text
         try:

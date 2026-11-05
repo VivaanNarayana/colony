@@ -20,7 +20,7 @@ Freeze one track per manifest; do not pool tracks or change them after seeing re
 | Track | Candidate behavior | What it answers |
 | --- | --- | --- |
 | `natural` | Installed guidance is available; no mandated ask/push | Does the agent choose to use memory, and what overhead/results follow? |
-| `controlled` | Learning asks an empty store, researches and publishes; fresh reuse agents ask first, then research gaps | Can actual publication and validated reuse help when the mechanism is exercised? |
+| `controlled` | Required learning/reuse cases exercise the declared mechanism; optional cases follow installed guidance | Does the declared mechanism work, and what does this controlled recipe cost? |
 
 Both arms use the same model, effort, research-call limit, questions, selected
 answer policy and source snapshots. No-Colony has only the same repository research
@@ -29,6 +29,23 @@ The client is ephemeral per task. Each candidate workload has a fresh authentica
 team: A can publish during learning; B is pull-only during reuse. Stores remain
 alive across the declared learning/reuse horizon and never share across workloads.
 Task order is fixed; arm order alternates. There are no retries.
+
+Controlled learning names the same relevant source paths to both arms. Only Colony
+receives the publication instruction; its publication and lookup costs remain
+charged. Optional direct-read tasks supply the same known file path to both arms
+through a frozen `research_hints` list, so the baseline can read it directly.
+These hints contain paths, not answers or source spans, and must name distinct
+files in that task's current snapshot. They are allowed only on optional tasks.
+Optional tasks do not force a Colony lookup or a particular memory query, even
+inside a controlled run. Natural runs never receive the controlled learning
+recipe or its publication-source hints; optional direct-read hints still apply
+equally to both arms.
+
+Research tools return one text representation through the actual MCP transport,
+with no duplicated structured result. Paths, source text, coordinates, hashes,
+tool input schemas and the charge for every attempted call are preserved.
+This removes a shared harness artifact; it does not establish how a provider
+serialized or charged duplicate representations in older runs.
 
 Two authored public source lineages are included: a gateway configuration/retry
 flow for development and a worker queue/retry flow for validation. Both are
@@ -60,6 +77,12 @@ Its extra learning session and publication are included in the schedule and toke
 accounting. A generic miss does not prove either stale or partial handling.
 Controlled lookup questions and source scopes are frozen in the manifest.
 Natural runs do not force these queries or publications.
+Controlled learning still requires research and publication even when earlier
+memory already answers a later learning question. This is an intentional mechanism
+test, not the ordinary selective workflow. Use a separately frozen natural track
+to assess that workflow; do not remove these costs from controlled results or
+pool the tracks. Equal source hints and optional lookups do not guarantee that
+Colony will save tokens.
 Natural publication questions may be concise, their verified source sets may be
 wider or narrower than the controlled learning recipe, and later tasks may reuse
 any eligible earlier learning publication in that workload. The actual publication
@@ -79,12 +102,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/2` and bind the shared instruction and
+New manifests use `colony.token-evaluation/3` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/2",
+  "contract": "colony.token-evaluation/3",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -95,7 +118,7 @@ structural check through `output.contract`:
 
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically. Missing or unknown output-contract identifiers fail before
-collection or scoring. Historical `/1` manifests are rejected by this collector
+collection or scoring. Historical `/1` and `/2` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -120,6 +143,33 @@ The `free_text` option retains independent review without the JSON structural
 gate. Extraction remains frozen separately; no messages are rewritten or repaired
 to make the selected answer comply. These evaluator changes do not alter runtime
 behavior, task questions, source snapshots, oracles, reuse horizon or accounting.
+
+Version `/3` changes prospective prompt parity, optional lookup behavior and MCP
+research representation. Its token results cannot be pooled with `/2` results or
+attributed solely to a product revision across that change. Old collectors,
+protocols, answers, labels, reports and failed outcomes stay attached to their
+original revisions. No historical campaign is repaired or regraded.
+
+## Separate diagnostics, unchanged acceptance
+
+The report exposes the causes of failure without relaxing its final conjunction:
+
+| Field | Meaning |
+| --- | --- |
+| `answer_quality_successful` (per attempt) | Independent correctness and grounding, independent AND structural format, completed session and finished native turn |
+| `answer_quality_complete` | Every scheduled attempt satisfies that answer-quality condition |
+| `mechanism_complete` | Every controlled expected-use requirement is verified; `null` in a natural run, where no controlled recipe is required |
+| `workflow_success` | Every scheduled attempt passes answer quality and its applicable expected-use requirements |
+| `quality_complete` | Retained compatibility name for the same composite as `workflow_success`; not a pure answer-quality field |
+
+Successful accounting, tool-policy compliance and adoption remain additional
+conditions for an observed reduction. A required mechanism failure still prevents
+success and leaves reduction unqualified even when every answer is correct.
+An answer failure still prevents success when every mechanism is verified. All
+learning, publication, research, failures and cached input remain in gross usage.
+Neither passing local harness tests nor these diagnostic fields certifies product
+savings; `certifying` remains false and `supported_product_win` remains
+`not_established`. The three delivery-check names and requirements are unchanged.
 
 ## Prepare and check locally
 

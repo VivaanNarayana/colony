@@ -277,7 +277,10 @@
           "rubric": {
             "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
             "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
-          }
+          },
+          "research_hints": [
+            "settings.py"
+          ]
         }
       ],
       "split": "development",
@@ -564,7 +567,10 @@
           "rubric": {
             "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
             "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
-          }
+          },
+          "research_hints": [
+            "policy.py"
+          ]
         }
       ]
     }

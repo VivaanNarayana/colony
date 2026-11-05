@@ -1,5 +1,6 @@
 """Actual local stdio MCP shapes/budget; no models or external network."""
 import asyncio
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -18,7 +19,7 @@ def test_actual_research_mcp_blocks_validation_eof_and_hard_budget(tmp_path):
     (root / 'AGENTS.md').write_bytes(b'private instructions')
     script = Path(__file__).resolve().parents[2] / 'scripts/token_evaluation/research.py'
     parameters = StdioServerParameters(command=sys.executable,
-        args=['-I', str(script), '--root', str(root), '--max-calls', '7', '--files', '["a.py","b.py"]'],
+        args=['-I', str(script), '--root', str(root), '--max-calls', '8', '--files', '["a.py","b.py"]'],
         env=environment(tmp_path))
 
     async def control():
@@ -26,8 +27,13 @@ def test_actual_research_mcp_blocks_validation_eof_and_hard_budget(tmp_path):
             await session.initialize()
             listing = await session.list_tools()
             assert {t.name for t in listing.tools} == {'fixture_files', 'fixture_read', 'fixture_search'}
+            assert all(t.outputSchema is None for t in listing.tools)
             files = await session.call_tool('fixture_files', {})
             assert files.content[0].text == 'a.py\nb.py'
+            source = await session.call_tool('fixture_read', {'path': 'a.py', 'start': 2, 'lines': 1})
+            assert json.loads(source.content[0].text) == {
+                'path': 'a.py', 'sha256': hashlib.sha256(b'one\ncommon\n').hexdigest(),
+                'start': 2, 'end': 2, 'content': 'common'}
             missing = await session.call_tool('fixture_search', {'query': 'absent'})
             assert missing.content == []
             multi = await session.call_tool('fixture_search', {'query': 'common'})
@@ -42,4 +48,25 @@ def test_actual_research_mcp_blocks_validation_eof_and_hard_budget(tmp_path):
             assert private.isError
             limited = await session.call_tool('fixture_files', {})
             assert limited.isError and 'limit' in limited.content[0].text.lower()
+            for result in [files, source, missing, multi, one, eof, invalid, private, limited]:
+                assert result.structuredContent is None
+                assert 'structuredContent' not in result.model_dump(exclude_none=True)
+    asyncio.run(asyncio.wait_for(control(), timeout=30))
+
+
+def test_actual_unknown_and_malformed_calls_are_both_charged(tmp_path):
+    script = Path(__file__).resolve().parents[2] / 'scripts/token_evaluation/research.py'
+    parameters = StdioServerParameters(command=sys.executable,
+        args=['-I', str(script), '--root', str(tmp_path), '--max-calls', '2', '--files', '[]'],
+        env=environment(tmp_path))
+
+    async def control():
+        async with stdio_client(parameters) as (read, write), ClientSession(read, write) as session:
+            await session.initialize()
+            unknown = await session.call_tool('not_a_tool', {})
+            invalid = await session.call_tool('fixture_read', {'path': 'a', 'start': False})
+            limited = await session.call_tool('fixture_files', {})
+            for result in [unknown, invalid, limited]:
+                assert result.isError and result.structuredContent is None
+            assert 'limit' in limited.content[0].text.lower()
     asyncio.run(asyncio.wait_for(control(), timeout=30))
