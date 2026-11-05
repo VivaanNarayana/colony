@@ -137,7 +137,10 @@ def verify_lookup(
             raise ValueError()
         from colony.compact import PROFILE, legacy_evidence
 
-        compact = result.get("response_profile") == PROFILE
+        profile = result.get("response_profile")
+        if profile is not None and (profile != PROFILE or context_budget is None):
+            raise ValueError()
+        compact = profile == PROFILE
         if compact:
             result = legacy_evidence(result)
         raw_sources = result["sources"]

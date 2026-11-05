@@ -73,7 +73,10 @@ Storage packs this compact evidence representation before transport, avoiding ev
 loss caused by the legacy response's duplicated text and narration. The client
 checks the negotiated marker and the complete wire receipt before optional independent
 Git worktree verification; MCP applies the same packing again. An older server uses
-the bounded legacy path. Missing or conflicting negotiated identities fail closed.
+the bounded legacy path. A server cannot opt that path into compact mode with an
+unsolicited marker. Missing or conflicting negotiated identities fail closed;
+direct Git verification also rejects compact responses without a budget. See
+[the opt-in boundary and measurement plan](pr15-profile-optin.md).
 Git-aware transport still includes the full origin/request receipt needed for independent
 verification; that required receipt can cost more than the final verified Git summary.
 

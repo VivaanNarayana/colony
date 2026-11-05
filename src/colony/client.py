@@ -362,8 +362,10 @@ class Client:
                     return finish({"hit": False, "reason": "git_context_unsupported"})
                 payload["git_context"] = context.model_dump()
             result = self.request("/ask", payload)
-            if negotiated_profile and (
-                not isinstance(result, dict) or result.get("response_profile") != response_profile
+            expected_profile = response_profile if negotiated_profile else None
+            if (
+                (negotiated_profile and not isinstance(result, dict))
+                or (isinstance(result, dict) and result.get("response_profile") != expected_profile)
             ):
                 return finish({"hit": False, "reason": "context_budget_invalid_profile"})
             if budget is not None:
