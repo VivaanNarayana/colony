@@ -10,6 +10,38 @@ from scripts.token_evaluation.output import OUTPUT_CONTRACT
 from scripts.token_evaluation.protocol import CONTRACT, attempt_id, collector_hashes
 
 
+@pytest.mark.parametrize('track', ['controlled', 'natural'])
+@pytest.mark.parametrize('expected_use', ['optional', 'required_publication'])
+@pytest.mark.parametrize('phase', ['learn', 'reuse'])
+def test_prompt_forcing_and_path_hints_respect_track_and_optional_tasks(track, expected_use, phase):
+    protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
+                'format': 'json', 'answer_policy': 'last_agent_message'},
+                'research': {'max_calls': 6}, 'track': track}
+    task = {'phase': phase, 'expected_use': expected_use, 'question': 'What is the timeout?',
+            'memory_query': 'Distinct frozen lookup', 'publication_sources': ['published.py'],
+            'research_hints': ['direct.py']}
+    baseline = native._prompt(protocol, task, '')
+    colony = native._prompt(protocol, task, 'Ordinary configured guidance.')
+    controlled = track == 'controlled' and expected_use != 'optional'
+    assert ('Controlled mechanism test:' in colony) == controlled
+    assert ('Distinct frozen lookup' in colony) == controlled
+    assert 'Controlled mechanism test:' not in baseline
+    assert 'Distinct frozen lookup' not in baseline
+    expected_hints = ['direct.py'] if expected_use == 'optional' else (
+        ['published.py'] if controlled and phase == 'learn' else None)
+    for prompt in [baseline, colony]:
+        assert ('Repository path hints' in prompt) == bool(expected_hints)
+        if expected_hints:
+            assert ('Repository path hints (paths only, not evidence): '
+                    + json.dumps(expected_hints) + '.') in prompt
+        assert ('["direct.py"]' in prompt) == (expected_hints == ['direct.py'])
+        assert ('["published.py"]' in prompt) == (expected_hints == ['published.py'])
+        assert '6 actual calls, including batching and failures' in prompt
+        assert 'Question: What is the timeout?' in prompt
+    assert ('publish exactly the source files' in colony) == (controlled and phase == 'learn')
+    assert 'publish exactly the source files' not in baseline
+
+
 @pytest.mark.parametrize('host,shell,passes', [('true', 'false', True), ('false', 'false', False), ('true', 'true', False)])
 def test_metadata_parses_actual_overrides_without_model_or_mcp(tmp_path, monkeypatch, host, shell, passes):
     called = []

@@ -124,12 +124,14 @@ def test_colliding_generated_ids_are_rejected_during_validation(tmp_path, monkey
         validate_manifest(manifest(tmp_path))
 
 
-@pytest.mark.parametrize('change', ['legacy', 'missing_version', 'mismatched_version',
+@pytest.mark.parametrize('change', ['legacy', 'previous', 'missing_version', 'mismatched_version',
                                   'missing_format', 'missing_collector', 'partial_collector'])
 def test_prospective_contract_is_required_before_prepare(tmp_path, change):
     value = manifest(tmp_path)
     if change == 'legacy':
         value['contract'] = 'colony.token-evaluation/1'
+    elif change == 'previous':
+        value['contract'] = 'colony.token-evaluation/2'
     elif change == 'missing_version':
         value['output'].pop('contract')
     elif change == 'mismatched_version':
@@ -142,3 +144,39 @@ def test_prospective_contract_is_required_before_prepare(tmp_path, change):
         value['collector']['files'].pop(next(iter(value['collector']['files'])))
     with pytest.raises(ValueError):
         validate_manifest(value)
+
+
+@pytest.mark.parametrize('hints', [[], 'settings.py', ['missing.py'], ['../settings.py'],
+                                  ['settings.py', 'settings.py'], [None], [{}]])
+def test_optional_hints_reject_invalid_or_unfrozen_paths(tmp_path, hints):
+    value = manifest(tmp_path)
+    task = next(t for t in value['workloads'][0]['tasks'] if t['id'] == 'direct_read')
+    task['research_hints'] = hints
+    with pytest.raises(ValueError, match='research hints'):
+        validate_manifest(value)
+
+
+def test_hint_paths_are_snapshot_bound_and_cannot_be_ignored_by_required_recipe(tmp_path):
+    value = manifest(tmp_path)
+    workload = value['workloads'][0]
+    task = next(t for t in workload['tasks'] if t['id'] == 'direct_read')
+    assert validate_manifest(value) is value
+    task['expected_use'] = 'required_miss'
+    with pytest.raises(ValueError, match='research hints'):
+        validate_manifest(value)
+    task['expected_use'] = 'optional'
+    other = next(s for s in workload['snapshots'] if s['id'] != task['snapshot'])
+    other['files']['other-snapshot-only.py'] = 'f' * 64
+    task['research_hints'] = ['other-snapshot-only.py']
+    with pytest.raises(ValueError, match='research hints'):
+        validate_manifest(value)
+
+
+def test_natural_track_keeps_same_frozen_optional_path_hints(tmp_path):
+    value = manifest(tmp_path)
+    value['track'] = 'natural'
+    for task in value['workloads'][0]['tasks']:
+        task['expected_use'] = 'optional'
+    assert validate_manifest(value) is value
+    task = next(t for t in value['workloads'][0]['tasks'] if t['id'] == 'direct_read')
+    assert task['research_hints'] == ['settings.py']

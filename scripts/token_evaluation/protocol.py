@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .output import validate_output
 
-CONTRACT = "colony.token-evaluation/2"
+CONTRACT = "colony.token-evaluation/3"
 ARMS = ("no_colony", "colony")
 ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}
@@ -167,6 +167,13 @@ def _validate_manifest(manifest):
             citations = task["oracle"].get("citations")
             require(isinstance(citations, list) and citations, "Freeze required source spans")
             snapshot = next(s for s in snapshots if s["id"] == task["snapshot"])
+            if "research_hints" in task:
+                hints = task["research_hints"]
+                require(task["expected_use"] == "optional"
+                        and isinstance(hints, list) and hints
+                        and all(isinstance(name, str) and name in snapshot["files"] for name in hints)
+                        and len(hints) == len(set(hints)),
+                        "Optional research hints must name distinct frozen source files")
             for citation in citations:
                 require(isinstance(citation, dict) and citation.get("path") in snapshot["files"]
                         and type(citation.get("start")) is int and type(citation.get("end")) is int

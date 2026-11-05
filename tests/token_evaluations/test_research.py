@@ -76,3 +76,32 @@ def test_malformed_mcp_calls_consume_allowance(tmp_path):
         with pytest.raises(ValueError, match="limit"):
             await server.call_tool("fixture_files", {})
     asyncio.run(control())
+
+
+def test_explicit_tool_results_preserve_literal_blocks_without_structured_copy(tmp_path):
+    import asyncio
+
+    from mcp.types import CallToolResult
+
+    from scripts.token_evaluation.research import create_server
+
+    (tmp_path / "a").write_text("common\nother")
+    (tmp_path / "b").write_text("common")
+    direct = Research(tmp_path)
+    server = create_server(tmp_path)
+
+    async def control():
+        for name, arguments, expected in [
+            ("fixture_files", {}, direct.files()),
+            ("fixture_read", {"path": "a"}, direct.read("a")),
+            ("fixture_search", {"query": "common"}, direct.search("common")),
+            ("fixture_search", {"query": "absent"}, []),
+        ]:
+            result = await server.call_tool(name, arguments)
+            assert isinstance(result, CallToolResult)
+            assert result.content == expected
+            assert result.structuredContent is None
+            assert not result.isError
+        tools = await server.list_tools()
+        assert all(tool.outputSchema is None for tool in tools)
+    asyncio.run(control())
