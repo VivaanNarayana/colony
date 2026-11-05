@@ -89,10 +89,18 @@ managed project guidance remain self-contained, using the same shorter policy.
 For a validated answer's already-cited files, the profile automatically includes a
 complete bundle of at most four files when the combined redacted text is at most
 2,800 characters. Explicit whole-file requests also retain their existing bundle
-behavior. Every required file and identity counts against the final response budget;
-a bundle that cannot fit produces a safe miss, never a hit with a required file
-silently dropped. Larger bundles and explicitly selected passages retain ranked
-excerpt selection. Uncited files are never included. Byte and encoding-token budgets
+behavior. Every required file and identity counts against the final response budget.
+If an automatically selected complete bundle cannot fit, one local fallback may
+select evidence-only excerpts from that same active finding's cited sources using
+the existing relevance rules. It withholds the saved answer, retains all selected
+source units and identities, and marks the budget receipt limited. The excerpts do
+not certify complete question coverage; assess them and research remaining gaps.
+If fallback evidence cannot be validated or fit, return the original safe miss.
+Explicit whole-file requests keep their all-required-unit behavior. Larger bundles
+and explicitly selected passages retain ranked excerpt selection. No extra agent-visible MCP call or
+provider model request is added by the fallback. Local embedding/reranking still
+runs, and larger evidence can cost more gross input than a miss if it does not
+displace subsequent research. Uncited files are never included. Byte and encoding-token budgets
 keep their existing defaults, bounds and separate units; no-budget behavior is unchanged.
 
 The parent PR #14 evaluation at `4ba3269` is retained as failed evidence: the initial
