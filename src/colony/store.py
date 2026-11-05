@@ -645,6 +645,27 @@ class Store:
             self._memory_audit(db, request, grant, request.action)
             return self._memory_result(db, request, grant, digest, action=request.action)
 
+    @staticmethod
+    def _automatic_bundle_sources(answer):
+        """Recognize the complete small-file selection, not an explicit passage request."""
+        evidence, sources = answer.get("evidence"), answer.get("sources")
+        if not evidence or not sources:
+            return None
+        identities = frozenset((source["ref"], source["content_hash"]) for source in sources)
+        if not 1 <= len(identities) <= 4 or len(evidence) != len(identities):
+            return None
+        if {item["ref"] for item in evidence} != {ref for ref, _ in identities}:
+            return None
+        if any(
+            item.get("complete_file") is not True
+            or item.get("line") != 1
+            or item.get("selected_line") != 1
+            or item.get("selected_end_line") != len(item["text"].split("\n"))
+            for item in evidence
+        ):
+            return None
+        return identities if sum(len(item["text"]) for item in evidence) <= 2800 else None
+
     def ask(
         self,
         question: str,
@@ -697,7 +718,42 @@ class Store:
         if context_budget is not None:
             from colony.context_budget import fit_response
 
-            result = fit_response(result, context_budget, question=question)
+            packed = fit_response(result, context_budget, question=question)
+            if (
+                response_profile is None
+                or include_evidence_files
+                or packed.get("hit") is not False
+                or packed.get("reason") != "budget_limited"
+                or answer.get("status") != "validated"
+                or answer.get("match_kind") != "answer"
+            ):
+                return packed
+            identities = self._automatic_bundle_sources(answer)
+            if identities is None:
+                return packed
+            # One local evidence selection can salvage a useful source core when the
+            # automatic complete-file bundle cannot fit. Never change the finding,
+            # broaden its cited sources or return the saved answer through this path.
+            fallback = self.find_evidence(
+                question, namespaces, max_age, git_context=git_context,
+                context_budget=context_budget, restricted_trail_id=answer["id"],
+                required_source_identities=identities,
+            )
+            if (
+                fallback is None
+                or fallback.get("id") != answer["id"]
+                or fallback.get("status") != "validated"
+                or fallback.get("match_kind") != "evidence"
+            ):
+                return packed
+            fallback = fit_response(
+                {**fallback, "response_profile": response_profile,
+                 "context_budget": packed["context_budget"]}, context_budget,
+                question=question,
+            )
+            if fallback.get("hit") and fallback.get("match_kind") == "evidence":
+                return fallback
+            return packed
         return result
 
     def find_evidence(
@@ -710,12 +766,18 @@ class Store:
         git_context: GitContext | None = None,
         context_budget: ContextBudget | None = None,
         compact_bundle: bool = False,
+        restricted_trail_id: str | None = None,
+        required_source_identities: frozenset[tuple[str, str]] | None = None,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
         if not namespaces or (requested is not None and not self._git_bound(requested)):
             return None
         placeholders = ",".join("?" for _ in namespaces)
+        restriction = " AND t.id=?" if restricted_trail_id is not None else ""
+        parameters = [embed(question, query=True), *namespaces, time.time() - max_age]
+        if restricted_trail_id is not None:
+            parameters.append(restricted_trail_id)
         with self.connect() as db:
             rows = db.execute(
                 f"""SELECT t.*, c.ref, c.content_hash, c.line,
@@ -723,13 +785,17 @@ class Store:
                 FROM source_chunks c JOIN source_vectors v ON c.id=v.rowid
                 JOIN trails t ON c.trail_id=t.id
                 JOIN memory_state_v1 m ON m.trail_id=t.id
-                WHERE m.state='active' AND t.namespace IN ({placeholders}) AND t.created_at>=?
+                WHERE m.state='active' AND t.namespace IN ({placeholders}) AND t.created_at>=?{restriction}
                 ORDER BY distance, t.created_at DESC""",
-                [embed(question, query=True), *namespaces, time.time() - max_age],
+                parameters,
             ).fetchall()
             cache, groups, candidates = {}, {}, []
             for row in rows:
                 if row["distance"] is None:
+                    continue
+                if required_source_identities is not None and (
+                    row["ref"], row["content_hash"]
+                ) not in required_source_identities:
                     continue
                 if requested is not None and (
                     self._git_receipt(db, row["id"], requested)["compatibility"]
@@ -798,6 +864,10 @@ class Store:
                         if git_receipt["compatibility"] == "repository_mismatch":
                             continue
                     sources = self.sources(db, row["id"])
+                    if required_source_identities is not None and frozenset(
+                        (source.ref, source.content_hash) for source in sources
+                    ) != required_source_identities:
+                        continue
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
                         continue
