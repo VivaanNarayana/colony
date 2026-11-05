@@ -202,12 +202,15 @@ surrounding section text even when more would fit. Explicit complete-file reques
 restore a whole file when it fits.
 Adaptive MCP also negotiates a compact wire profile with compatible servers, packing
 the final representation before transport. Validated saved-answer lookups automatically
-include complete already-cited bundles of up to four files and 2,800 redacted characters;
-every required file must fit or the result is a safe miss. Explicitly selected passages
-retain focused selection. Ordinary CLI/HTTP requests keep their response layout. See
+include complete already-cited bundles of up to four files and 2,800 redacted characters.
+If that bundle exceeds the budget, one local evidence-only fallback may return verified
+source excerpts from the same finding and cited sources, without the saved answer.
+Every required source unit and the complete response must fit; otherwise the result
+remains a safe miss. Explicitly selected passages retain focused selection.
+Ordinary CLI/HTTP requests keep their response layout. See
 [adaptive low-overhead behavior](docs/adaptive-low-overhead.md) for the profile contract.
 Retrieval models, ranking, permissions, source validation and Git compatibility rules
-are unchanged. There is no extra summarizer, automatic retry or model-provider call.
+are unchanged. There is no extra summarizer, automatic provider retry or model-provider call.
 
 ```sh
 colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/project --repository-id project --context-budget 2048
