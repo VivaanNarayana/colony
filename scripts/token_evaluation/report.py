@@ -11,11 +11,11 @@ import re
 import secrets
 from pathlib import Path
 
-from colony.product_value import native_usage
-
 from .evidence import evaluate_mechanisms
 from .output import instruction, structurally_compliant
 from .protocol import ATTEMPT_ID_PATTERN, CONTRACT, validate_contract, verify_active_collector
+from .receipt import validate_native_receipts
+from .usage import native_usage
 
 ARMS = ("no_colony", "colony")
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "gross_tokens",
@@ -61,16 +61,24 @@ def activity(events_path):
     """Observe exact completed MCP calls and every JSON content block; never infer reuse."""
     counts = dict.fromkeys(("colony_calls", "research_calls", "hits", "misses", "stored",
                             "claimed_current_reads", "stale", "miss_or_research_advice", "claimed_validated_hits", "safe_refusals", "claimed_evidence_hits", "cache_misses", "unapproved_calls"), 0)
-    seen, completed = set(), set()
+    seen, completed = {}, set()
     for number, line in enumerate(Path(events_path).read_text(encoding="utf-8").splitlines()):
         event = json.loads(line)
+        if event.get("type") == "turn.started":
+            # Item IDs are scoped to a turn; a later turn still incurs new calls.
+            seen, completed = {}, set()
         item = event.get("item", {})
         if event.get("type") not in {"item.started", "item.updated", "item.completed"}:
             continue
         kind = item.get("type")
         identity = item.get("id", ("line", number))
+        if kind == "mcp_tool_call":
+            _require(isinstance(item.get("id"), str) and bool(item["id"]),
+                     "Invalid tool call identity")
+        signature = (kind, item.get("server"), item.get("tool"))
         first = identity not in seen
-        seen.add(identity)
+        _require(first or seen[identity] == signature, "Item identity changed")
+        seen[identity] = signature
         if kind != "mcp_tool_call":
             if first and kind not in {"agent_message", "reasoning", "todo_list"}:
                 counts["unapproved_calls"] += 1
@@ -83,11 +91,15 @@ def activity(events_path):
             counts["unapproved_calls"] += not allowed
             counts["colony_calls"] += colony
             counts["research_calls"] += server == "repository"
-        if not colony or event.get("type") != "item.completed":
-            continue
         if identity in completed:
-            raise ValueError("Duplicate completed tool call")
+            if event.get("type") == "item.completed":
+                raise ValueError("Duplicate completed tool call")
+            raise ValueError("Tool call event after completion")
+        if event.get("type") != "item.completed":
+            continue
         completed.add(identity)
+        if not colony:
+            continue
         result = item.get("result") or {}
         if item.get("status") != "completed" or result.get("isError"):
             continue
@@ -271,6 +283,7 @@ def report(run_dir, quality_path, output_path):
                      "Invocation protocol changed")
             _require(invocation.get("frozenclient_executable_sha256") == manifest["client"]["sha256"],
                      "Invocation client changed")
+        validate_native_receipts(root, run, manifest, rows)
     quality = _read(quality_path)
     _require(quality.get("reviewer") and quality.get("method"),
              "Independent reviewer identity and method required")

@@ -124,7 +124,7 @@ def test_colliding_generated_ids_are_rejected_during_validation(tmp_path, monkey
         validate_manifest(manifest(tmp_path))
 
 
-@pytest.mark.parametrize('change', ['legacy', 'previous', 'missing_version', 'mismatched_version',
+@pytest.mark.parametrize('change', ['legacy', 'previous', 'research_v3', 'missing_version', 'mismatched_version',
                                   'missing_format', 'missing_collector', 'partial_collector'])
 def test_prospective_contract_is_required_before_prepare(tmp_path, change):
     value = manifest(tmp_path)
@@ -132,6 +132,8 @@ def test_prospective_contract_is_required_before_prepare(tmp_path, change):
         value['contract'] = 'colony.token-evaluation/1'
     elif change == 'previous':
         value['contract'] = 'colony.token-evaluation/2'
+    elif change == 'research_v3':
+        value['contract'] = 'colony.token-evaluation/3'
     elif change == 'missing_version':
         value['output'].pop('contract')
     elif change == 'mismatched_version':

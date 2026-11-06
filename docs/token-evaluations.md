@@ -42,10 +42,26 @@ recipe or its publication-source hints; optional direct-read hints still apply
 equally to both arms.
 
 Research tools return one text representation through the actual MCP transport,
-with no duplicated structured result. Paths, source text, coordinates, hashes,
-tool input schemas and the charge for every attempted call are preserved.
+with no duplicated structured result. Paths, source text, coordinates, hashes
+and the charge for every attempted call are preserved.
 This removes a shared harness artifact; it does not establish how a provider
 serialized or charged duplicate representations in older runs.
+
+The shared research contract describes the tools available to both arms:
+`fixture_files` discovers allowed relative paths; `fixture_search` matches a
+nonempty literal string in file contents, not regex, semantic queries or filenames;
+`fixture_read` returns source text with its hash and line coordinates. Omitting
+read bounds uses the first 120 lines, ending at EOF for shorter files. Explicit
+line counts must be integers from 1 through 120; invalid requests are rejected,
+not silently expanded or retried.
+
+The frozen research allowance counts repository tool calls only. Each individual
+call in a batch and each failed attempt consumes a call. Colony lookups and
+publications do not consume that repository allowance, but all their token usage
+remains charged in the comparison. There is no additional call allowance,
+automatic retry or exemption for failed research. The same descriptions and
+accounting explanation are supplied to both arms; they contain no fixture answers
+or task-specific source hints.
 
 Two authored public source lineages are included: a gateway configuration/retry
 flow for development and a worker queue/retry flow for validation. Both are
@@ -102,12 +118,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/3` and bind the shared instruction and
+New manifests use `colony.token-evaluation/4` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/3",
+  "contract": "colony.token-evaluation/4",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -118,7 +134,7 @@ structural check through `output.contract`:
 
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically. Missing or unknown output-contract identifiers fail before
-collection or scoring. Historical `/1` and `/2` manifests are rejected by this collector
+collection or scoring. Historical `/1`, `/2` and `/3` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -144,11 +160,20 @@ gate. Extraction remains frozen separately; no messages are rewritten or repaire
 to make the selected answer comply. These evaluator changes do not alter runtime
 behavior, task questions, source snapshots, oracles, reuse horizon or accounting.
 
-Version `/3` changes prospective prompt parity, optional lookup behavior and MCP
-research representation. Its token results cannot be pooled with `/2` results or
-attributed solely to a product revision across that change. Old collectors,
-protocols, answers, labels, reports and failed outcomes stay attached to their
-original revisions. No historical campaign is repaired or regraded.
+Version `/3` introduced prompt parity, optional lookup behavior and text-only MCP
+research results. Version `/4` retains those rules and clarifies the research-tool
+descriptions and repository-only allowance. It also advertises the already
+required nonempty search query in the input schema. Six-call or other frozen
+limits, read bounds, source access, tasks, oracles, quality gates and token
+accounting are unchanged. Better tool descriptions do not prove that a model
+will use them correctly or that accuracy or gross tokens will improve.
+
+Results from different protocol versions cannot be pooled or attributed solely
+to a product revision across an evaluator change. Old collectors, protocols,
+answers, labels, reports and failed outcomes stay attached to their original
+revisions. No historical campaign is repaired or regraded. In particular, `/3`
+results remain replayable with their original pinned collector; do not relabel
+their manifests as `/4`.
 
 ## Separate diagnostics, unchanged acceptance
 
@@ -289,6 +314,12 @@ python scripts/token_evaluation.py mask --run D:/evaluations/run-001 --output D:
 Give the independent reviewer only `answers.json`, the frozen source snapshots and
 the frozen rubric, without costs, arm identities or `private-map.json`. Answer text
 may incidentally reveal memory use; arm masking is not guaranteed perfect blinding.
+This packet supports source-truth grading, not proof that the agent actually read
+a source. If the frozen rubric requires observed reads or other process evidence,
+also supply chronological tool arguments/results with costs and coordinator IDs
+removed, and retain that review evidence. Tool names may reveal the arm; disclose
+that limitation rather than treating access-dependent grounding as proven by the
+source packet alone.
 The chosen extraction policy is frozen before collection. `last_agent_message`
 selects the last completed agent message, and `all_agent_messages` joins all of
 them. If the client omits phase metadata, final-phase provenance is not guaranteed.
@@ -323,11 +354,27 @@ schedules cannot produce a matched report: use `inventory` or the partial
 `collection.json` inventory to retain known costs and failure details. Do not throw
 those costs away or silently rerun them.
 
-The report sums every completed native turn, learning and reuse, failures and all
+For current native runs, the report also checks retained prompt bytes, invocation
+settings against the frozen client/research contract, and the complete alternating
+arm schedule. These checks establish consistency of retained records, not external
+process attestation. Duplicate or invalid attempt IDs make the inventory incomplete
+and prevent another native dispatch. Tool-call identities and completion events
+are validated equally for repository and Colony calls; malformed lifecycle records
+cannot silently collapse multiple calls into one.
+Native preflight and collection reject a missing, stale or noncanonical recorded
+launch directory before native setup or dispatch. Prepare a fresh run at its
+intended location instead of relocating an uncollected run. Completed runs may
+still be copied for read-only replay using their retained original launch paths.
+
+The report accounts for every retained native turn, learning and reuse, failures and all
 output. It separates input, cached input, output, gross and uncached-plus-output
 tokens; missing usage is unknown, never zero. It reports observed adoption, useful
 reuse, mechanism expectations, quality, per-phase costs, session-time sums and
-cost per successful workflow. With no successes that cost is undefined. Session
+cost per successful workflow. Partial usage retains the sum of every validated
+known input and output component as known gross, including cached input. A missing
+component still makes total usage unknown and prevents qualification; a known
+subtotal is never a complete total. Auxiliary counters are not added again.
+With no successes that cost is undefined. Session
 sums are not end-to-end wall time. A complete qualifying native run may show
 descriptive paired reductions; it never creates a confidence-supported product win,
 dollar savings or automatic merge approval. Native receipts are auditable local

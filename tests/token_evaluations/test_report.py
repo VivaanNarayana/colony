@@ -1,6 +1,7 @@
 """Provider-free replay controls; these are not measurements of token savings."""
 import hashlib
 import json
+import sys
 
 import pytest
 
@@ -137,7 +138,7 @@ def test_all_mcp_blocks_observed(tmp_path):
                           ("ask", {"hit": True, "current_repository_reads": ["evidence"]}),
                           ("ask", {"hit": False, "status": "stale"}),
                           ("ask", {"hit": False, "reason": "no_relevant_trail"})]:
-        events.append({"type": "item.completed", "item": {"type": "mcp_tool_call",
+        events.append({"type": "item.completed", "item": {"id": f"blocks-{len(events)}", "type": "mcp_tool_call",
                        "server": "colony", "tool": tool, "status": "completed",
                        "result": {"content": [{"type": "text", "text": "non-JSON progress"},
                                                {"type": "text", "text": json.dumps(payload)}]}}})
@@ -239,12 +240,16 @@ def test_parser_failure_keeps_complete_usage_in_report(run):
                for arm in ("no_colony", "colony"))
 
 
-@pytest.mark.parametrize("change", ["legacy", "missing_version", "wrong_version", "missing_format"])
+@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "missing_version", "wrong_version", "missing_format"])
 def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading(run, change):
     root, _, _ = run
     frozen = json.loads((root / "run.json").read_text())
     if change == "legacy":
         frozen["protocol"]["contract"] = "colony.token-evaluation/1"
+    elif change == "previous":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/2"
+    elif change == "research_v3":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/3"
     elif change == "missing_version":
         frozen["protocol"]["output"].pop("contract")
     elif change == "wrong_version":
@@ -333,10 +338,19 @@ def native_receipt_control(root, quality):
     """Fabricated receipt schema control only; never native measurements."""
     frozen = json.loads((root / "run.json").read_text())
     protocol = frozen["protocol"]
-    protocol["client"] = {"sha256": "c" * 64}
+    from scripts.token_evaluation.native import _client_args, _prompt
+    from scripts.token_evaluation.runtime import environment
+
+    protocol["client"] = {"sha256": "c" * 64, "executable": str(root / "client.exe"),
+                          "model": "fixture-model", "effort": "low"}
+    protocol.setdefault("target", {"python": sys.executable, "mcp_args": []})
+    protocol.setdefault("research", {"max_calls": 6})
+    frozen["run_dir"] = str(root.resolve())
     workload = protocol["workloads"][0]
     workload["snapshots"] = [{"id": "v1", "files": {}}]
     workload["tasks"][0]["snapshot"] = "v1"
+    task = workload["tasks"][0]
+    task.setdefault("question", "Fixture question")
     frozen["protocol_sha256"] = digest(protocol)
     put(root / "run.json", frozen)
     quality["protocol_sha256"] = frozen["protocol_sha256"]
@@ -346,11 +360,28 @@ def native_receipt_control(root, quality):
     put(root / "preflight.json", {"synthetic_schema_control": True, "ok": True,
                                    "native_ready": True, "protocol_sha256": frozen["protocol_sha256"]})
     transitions = []
+    env = environment(root)
+    env["CODEX_HOME"] = str(root / "private/client")
+    team = {"homes": {role: str(root / "private/gateway/team" / ("agent-" + role))
+                      for role in ("a", "b")}}
     for identity, arm in [("a", "no_colony"), ("b", "colony")]:
         invocation_path = root / "control" / f"{identity}-invocation.json"
         invocation = json.loads(invocation_path.read_text())
+        guidance = "Fixture installed guidance." if arm == "colony" else ""
+        prompt = _prompt(protocol, task, guidance).encode()
+        prompt_path = root / "prompts" / (identity + ".txt")
+        prompt_path.parent.mkdir(exist_ok=True)
+        prompt_path.write_bytes(prompt)
+        workspace = root / "sessions" / identity
         invocation.update(native_evidence=True, protocol_sha256=frozen["protocol_sha256"],
-                          frozenclient_executable_sha256=protocol["client"]["sha256"])
+                          frozenclient_executable_sha256=protocol["client"]["sha256"],
+                          client_workspace=str(workspace),
+                          prompt_sha256=hashlib.sha256(prompt).hexdigest(),
+                          guidance_sha256=hashlib.sha256(guidance.encode()).hexdigest(),
+                          configuration=({"mode": "managed", "role": "a" if task["phase"] == "learn" else "b",
+                                          "files": []} if arm == "colony" else None),
+                          args=_client_args(protocol, root / "active" / arm / "gateway", team,
+                                            task, root, arm, env, {}, client_workspace=workspace))
         put(invocation_path, invocation)
         transitions.append({"arm": arm, "workload": "gateway", "task": "trace",
                             "snapshot": "v1", "files_sha256": digest({})})
@@ -384,7 +415,7 @@ def test_native_receipt_schema_control_descriptive_ratio(run):
     root, quality, _ = run
     native_receipt_control(root, quality)
     def add_call(events):
-        events.insert(1, {"type": "item.completed", "item": {"type": "mcp_tool_call",
+        events.insert(1, {"type": "item.completed", "item": {"id": "native-call", "type": "mcp_tool_call",
                           "server": "colony", "tool": "ask", "status": "completed",
                           "result": {"content": [{"type": "text", "text": json.dumps({
                               "hit": True, "status": "validated",
@@ -419,7 +450,8 @@ def test_answer_and_mechanism_diagnostics_preserve_strict_native_gate(
         reason = "no_relevant_trail" if mechanism_pass else "budget_limited"
         events.insert(1, {"type": "item.completed", "item": {
             "id": "actual-miss-call", "type": "mcp_tool_call", "server": "colony",
-            "tool": "ask", "status": "completed", "result": {"content": [{
+            "tool": "ask", "arguments": {"question": "Fixture question"},
+            "status": "completed", "result": {"content": [{
                 "type": "text", "text": json.dumps({"hit": False, "reason": reason}),
             }]},
         }})
@@ -449,31 +481,17 @@ def test_marker_only_publication_cannot_pass_report_mechanism(run):
     The complete report path must now require the byte-bound publication proof.
     """
     root, quality, _ = run
-    native_receipt_control(root, quality)
     frozen = json.loads((root / "run.json").read_text())
     frozen["protocol"]["track"] = "controlled"
     task = frozen["protocol"]["workloads"][0]["tasks"][0]
     task.update(scenario="cold_learning", expected_use="required_publication")
-    frozen["protocol_sha256"] = digest(frozen["protocol"])
     put(root / "run.json", frozen)
-    quality["protocol_sha256"] = frozen["protocol_sha256"]
-    put(root / "quality.json", quality)
-    preflight = json.loads((root / "preflight.json").read_text())
-    preflight["protocol_sha256"] = frozen["protocol_sha256"]
-    put(root / "preflight.json", preflight)
-    collection = json.loads((root / "collection.json").read_text())
-    collection.update(protocol_sha256=frozen["protocol_sha256"],
-                      preflight_sha256=hashlib.sha256((root / "preflight.json").read_bytes()).hexdigest())
-    put(root / "collection.json", collection)
-    for identity in ("a", "b"):
-        path = root / "control" / f"{identity}-invocation.json"
-        invocation = json.loads(path.read_text())
-        invocation["protocol_sha256"] = frozen["protocol_sha256"]
-        put(path, invocation)
+    native_receipt_control(root, quality)
     def markers(events):
         calls = [
             {"id": "failed-read", "server": "repository", "tool": "fixture_read", "status": "failed"},
             {"id": "miss", "server": "colony", "tool": "ask", "status": "completed",
+             "arguments": {"question": "Fixture question"},
              "result": {"content": [{"type": "text", "text": '{"hit":false,"reason":"no_relevant_trail"}'}]}},
             {"id": "push", "server": "colony", "tool": "push", "status": "completed",
              "result": {"content": [{"type": "text", "text": '{"stored":true,"id":"made-up"}'}]}},

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .output import validate_output
 
-CONTRACT = "colony.token-evaluation/3"
+CONTRACT = "colony.token-evaluation/4"
 ARMS = ("no_colony", "colony")
 ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}

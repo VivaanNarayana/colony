@@ -4,11 +4,14 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
 from collections import Counter
 from pathlib import Path, PurePosixPath
+
+from .protocol import ATTEMPT_ID_PATTERN
 
 
 def _sha(path):
@@ -250,6 +253,15 @@ def inventory(run_dir):
     usage_complete = True
     attempts_path = root / "control" / "attempts.jsonl"
     attempts = read_rows(attempts_path)
+    valid_ids = [row["id"] for row in attempts
+                 if isinstance(row.get("id"), str)
+                 and re.fullmatch(ATTEMPT_ID_PATTERN, row["id"])]
+    # Report malformed rows by their 1-based journal positions; IDs may be unhashable.
+    invalid_ids = [number for number, row in enumerate(attempts, 1)
+                   if not isinstance(row.get("id"), str)
+                   or not re.fullmatch(ATTEMPT_ID_PATTERN, row["id"])]
+    id_counts = Counter(valid_ids)
+    duplicate_ids = sorted(identity for identity, count in id_counts.items() if count > 1)
     references = [(row, _event_reference(row.get("events"))) for row in attempts]
     reference_counts = Counter(reference for _, reference in references if reference is not None)
     referenced = set(reference_counts)
@@ -259,7 +271,7 @@ def inventory(run_dir):
         relative = path.relative_to(root).as_posix()
         result = {"events": relative, "events_sha256": _sha(path), "orphan": relative not in referenced, "usage": None}
         try:
-            from colony.product_value import native_usage
+            from .usage import native_usage
             result["usage"] = native_usage(path)
         except (ImportError, OSError, ValueError) as exc:
             result["error_type"] = type(exc).__name__
@@ -291,7 +303,7 @@ def inventory(run_dir):
         native_records.append(result)
     invocation_files = list((root / "control").glob("*-invocation.json"))
     invocation_ids = {path.name.removesuffix("-invocation.json") for path in invocation_files}
-    row_ids = {row.get("id") for row in attempts}
+    row_ids = set(valid_ids)
     orphan_invocations = sorted(invocation_ids - row_ids)
     orphan_rows = sorted(identifier for identifier in row_ids - invocation_ids if identifier is not None)
     orphan_logs = [row["events"] for row in native_records if row["orphan"]]
@@ -299,11 +311,13 @@ def inventory(run_dir):
     missing_logs = [row.get("id") for row, reference in references if reference not in existing_names]
     usage_complete = (bool(native_records) and usage_complete and not parse_errors and not orphan_invocations
                       and not orphan_rows and not missing_logs and not orphan_logs and not (invocations - results)
-                      and not invalid_references and not duplicate_references)
+                      and not invalid_references and not duplicate_references
+                      and not invalid_ids and not duplicate_ids)
     return {"records": records, "attempts": attempts, "native_logs": native_records,
             "known_gross_tokens": known_gross, "usage_complete": usage_complete, "parse_errors": parse_errors,
             "orphan_invocations": orphan_invocations, "orphan_rows": orphan_rows,
             "orphan_logs": orphan_logs, "missing_logs": missing_logs,
             "invalid_log_references": invalid_references, "duplicate_log_references": duplicate_references,
+            "invalid_attempt_ids": invalid_ids, "duplicate_attempt_ids": duplicate_ids,
             "orphan_attempts": sorted(invocations - results), "native_evidence": bool(native_records),
             "billing": None, "certifying": False}
