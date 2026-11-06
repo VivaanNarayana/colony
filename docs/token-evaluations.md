@@ -42,10 +42,26 @@ recipe or its publication-source hints; optional direct-read hints still apply
 equally to both arms.
 
 Research tools return one text representation through the actual MCP transport,
-with no duplicated structured result. Paths, source text, coordinates, hashes,
-tool input schemas and the charge for every attempted call are preserved.
+with no duplicated structured result. Paths, source text, coordinates, hashes
+and the charge for every attempted call are preserved.
 This removes a shared harness artifact; it does not establish how a provider
 serialized or charged duplicate representations in older runs.
+
+The shared research contract describes the tools available to both arms:
+`fixture_files` discovers allowed relative paths; `fixture_search` matches a
+nonempty literal string in file contents, not regex, semantic queries or filenames;
+`fixture_read` returns source text with its hash and line coordinates. Omitting
+read bounds uses the first 120 lines, ending at EOF for shorter files. Explicit
+line counts must be integers from 1 through 120; invalid requests are rejected,
+not silently expanded or retried.
+
+The frozen research allowance counts repository tool calls only. Each individual
+call in a batch and each failed attempt consumes a call. Colony lookups and
+publications do not consume that repository allowance, but all their token usage
+remains charged in the comparison. There is no additional call allowance,
+automatic retry or exemption for failed research. The same descriptions and
+accounting explanation are supplied to both arms; they contain no fixture answers
+or task-specific source hints.
 
 Two authored public source lineages are included: a gateway configuration/retry
 flow for development and a worker queue/retry flow for validation. Both are
@@ -102,12 +118,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/3` and bind the shared instruction and
+New manifests use `colony.token-evaluation/4` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/3",
+  "contract": "colony.token-evaluation/4",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -118,7 +134,7 @@ structural check through `output.contract`:
 
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically. Missing or unknown output-contract identifiers fail before
-collection or scoring. Historical `/1` and `/2` manifests are rejected by this collector
+collection or scoring. Historical `/1`, `/2` and `/3` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -144,11 +160,20 @@ gate. Extraction remains frozen separately; no messages are rewritten or repaire
 to make the selected answer comply. These evaluator changes do not alter runtime
 behavior, task questions, source snapshots, oracles, reuse horizon or accounting.
 
-Version `/3` changes prospective prompt parity, optional lookup behavior and MCP
-research representation. Its token results cannot be pooled with `/2` results or
-attributed solely to a product revision across that change. Old collectors,
-protocols, answers, labels, reports and failed outcomes stay attached to their
-original revisions. No historical campaign is repaired or regraded.
+Version `/3` introduced prompt parity, optional lookup behavior and text-only MCP
+research results. Version `/4` retains those rules and clarifies the research-tool
+descriptions and repository-only allowance. It also advertises the already
+required nonempty search query in the input schema. Six-call or other frozen
+limits, read bounds, source access, tasks, oracles, quality gates and token
+accounting are unchanged. Better tool descriptions do not prove that a model
+will use them correctly or that accuracy or gross tokens will improve.
+
+Results from different protocol versions cannot be pooled or attributed solely
+to a product revision across an evaluator change. Old collectors, protocols,
+answers, labels, reports and failed outcomes stay attached to their original
+revisions. No historical campaign is repaired or regraded. In particular, `/3`
+results remain replayable with their original pinned collector; do not relabel
+their manifests as `/4`.
 
 ## Separate diagnostics, unchanged acceptance
 

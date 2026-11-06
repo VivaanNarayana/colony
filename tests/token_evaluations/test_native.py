@@ -1,22 +1,24 @@
 import json
 from contextlib import contextmanager
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
 from scripts.token_evaluation import native, runner
-from scripts.token_evaluation.output import OUTPUT_CONTRACT
+from scripts.token_evaluation.output import JSON_INSTRUCTION, OUTPUT_CONTRACT
 from scripts.token_evaluation.protocol import CONTRACT, attempt_id, collector_hashes
 
 
 @pytest.mark.parametrize('track', ['controlled', 'natural'])
 @pytest.mark.parametrize('expected_use', ['optional', 'required_publication'])
 @pytest.mark.parametrize('phase', ['learn', 'reuse'])
-def test_prompt_forcing_and_path_hints_respect_track_and_optional_tasks(track, expected_use, phase):
+@pytest.mark.parametrize('max_calls', [1, 6, 12])
+def test_prompt_forcing_and_path_hints_respect_track_and_optional_tasks(track, expected_use, phase, max_calls):
     protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
                 'format': 'json', 'answer_policy': 'last_agent_message'},
-                'research': {'max_calls': 6}, 'track': track}
+                'research': {'max_calls': max_calls}, 'track': track}
     task = {'phase': phase, 'expected_use': expected_use, 'question': 'What is the timeout?',
             'memory_query': 'Distinct frozen lookup', 'publication_sources': ['published.py'],
             'research_hints': ['direct.py']}
@@ -36,10 +38,41 @@ def test_prompt_forcing_and_path_hints_respect_track_and_optional_tasks(track, e
                     + json.dumps(expected_hints) + '.') in prompt
         assert ('["direct.py"]' in prompt) == (expected_hints == ['direct.py'])
         assert ('["published.py"]' in prompt) == (expected_hints == ['published.py'])
-        assert '6 actual calls, including batching and failures' in prompt
+        budget_instruction = (
+            f'Repository research budget: {max_calls} calls to '
+            'fixture_files, fixture_read and fixture_search; count each call in a batch '
+            'and every failed attempt. Colony calls do not consume this repository '
+            'allowance; all calls remain charged in token accounting. '
+        )
+        assert prompt.count(budget_instruction) == 1
         assert 'Question: What is the timeout?' in prompt
     assert ('publish exactly the source files' in colony) == (controlled and phase == 'learn')
     assert 'publish exactly the source files' not in baseline
+    if not controlled:
+        assert colony.removeprefix('Configured project guidance:\nOrdinary configured guidance.\n\n') == baseline
+
+
+@pytest.mark.parametrize('track', ['natural', 'controlled'])
+def test_catalog_tasks_share_research_contract_with_only_declared_arm_differences(track):
+    catalog = json.loads((Path(__file__).parent / 'fixtures/catalog.json').read_text())
+    protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
+                'format': 'json', 'answer_policy': 'last_agent_message'},
+                'research': {'max_calls': 6}, 'track': track}
+    for workload in catalog['workloads']:
+        for original in workload['tasks']:
+            task = {**original, **({'expected_use': 'optional'} if track == 'natural' else {})}
+            baseline = native._prompt(protocol, task, '')
+            candidate = native._prompt(protocol, task, 'Installed guidance.').removeprefix(
+                'Configured project guidance:\nInstalled guidance.\n\n')
+            controlled = track == 'controlled' and task['expected_use'] != 'optional'
+            recipe_lines = [line for line in candidate.splitlines(keepends=True)
+                            if line.startswith(('For the first Colony ask,', 'Controlled mechanism test:',
+                                                'For this controlled learning step,'))]
+            assert bool(recipe_lines) == controlled
+            for line in recipe_lines:
+                candidate = candidate.replace(line, '')
+            assert candidate == baseline, (track, workload['id'], task['id'])
+            assert baseline.count(JSON_INSTRUCTION) == 1
 
 
 @pytest.mark.parametrize('host,shell,passes', [('true', 'false', True), ('false', 'false', False), ('true', 'true', False)])
@@ -324,7 +357,7 @@ def test_small_positive_wall_remainder_is_not_inflated(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize('entrypoint', ['preflight', 'execute'])
-@pytest.mark.parametrize('change', ['legacy', 'missing_output_contract', 'wrong_output_contract',
+@pytest.mark.parametrize('change', ['legacy', 'previous', 'research_v3', 'missing_output_contract', 'wrong_output_contract',
                                   'missing_collector', 'partial_collector', 'wrong_hash', 'extra_file'])
 def test_contract_and_collector_rejected_before_native_side_effects(tmp_path, monkeypatch,
                                                                   entrypoint, change):
@@ -333,6 +366,10 @@ def test_contract_and_collector_rejected_before_native_side_effects(tmp_path, mo
     protocol = run['protocol']
     if change == 'legacy':
         protocol['contract'] = 'colony.token-evaluation/1'
+    elif change == 'previous':
+        protocol['contract'] = 'colony.token-evaluation/2'
+    elif change == 'research_v3':
+        protocol['contract'] = 'colony.token-evaluation/3'
     elif change == 'missing_output_contract':
         protocol['output'].pop('contract')
     elif change == 'wrong_output_contract':

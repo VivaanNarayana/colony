@@ -239,12 +239,16 @@ def test_parser_failure_keeps_complete_usage_in_report(run):
                for arm in ("no_colony", "colony"))
 
 
-@pytest.mark.parametrize("change", ["legacy", "missing_version", "wrong_version", "missing_format"])
+@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "missing_version", "wrong_version", "missing_format"])
 def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading(run, change):
     root, _, _ = run
     frozen = json.loads((root / "run.json").read_text())
     if change == "legacy":
         frozen["protocol"]["contract"] = "colony.token-evaluation/1"
+    elif change == "previous":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/2"
+    elif change == "research_v3":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/3"
     elif change == "missing_version":
         frozen["protocol"]["output"].pop("contract")
     elif change == "wrong_version":

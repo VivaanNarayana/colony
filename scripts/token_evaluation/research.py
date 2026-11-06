@@ -12,7 +12,10 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import CallToolResult, TextContent
 from pydantic import Field, StrictInt
 
-Bound = Annotated[StrictInt, Field(ge=1, le=120)]
+Bound = Annotated[StrictInt, Field(
+    ge=1, le=120,
+    description="Number of lines, 1-120; omit for a normal small-file read (default 120).",
+)]
 
 
 class Research:
@@ -104,14 +107,36 @@ def create_server(root: Path, max_calls: int = 6, files=None) -> FastMCP:
 
     @server.tool(structured_output=False)
     def fixture_files() -> CallToolResult:
+        """List allowed repository-relative filenames; read a known file directly.
+
+        Every attempt, including failures, consumes one repository research call.
+        """
         return CallToolResult(content=research.files())
 
     @server.tool(structured_output=False)
-    def fixture_read(path: str, start: Annotated[StrictInt, Field(ge=1)] = 1, lines: Bound = 120) -> CallToolResult:
+    def fixture_read(
+        path: Annotated[str, Field(description="Allowed repository-relative filename.")],
+        start: Annotated[StrictInt, Field(ge=1, description="First line, 1-based.")] = 1,
+        lines: Bound = 120,
+    ) -> CallToolResult:
+        """Read exact file text, line coordinates and the full file's SHA-256.
+
+        Omit lines for a small-file read; the default and maximum are 120 lines.
+        End-of-file is clamped. Every attempt, even an invalid or failed read,
+        consumes one repository research call.
+        """
         return CallToolResult(content=research.read(path, start, lines))
 
     @server.tool(structured_output=False)
-    def fixture_search(query: str) -> CallToolResult:
+    def fixture_search(query: Annotated[str, Field(
+        min_length=1, description="Nonempty, case-sensitive literal substring of file contents.",
+    )]) -> CallToolResult:
+        """Find a case-sensitive literal substring in allowed file contents.
+
+        This is not regex, semantic or filename search. No matches returns no
+        blocks. Discover unknown paths with fixture_files, then read full context
+        with fixture_read. Every attempt consumes one repository research call.
+        """
         return CallToolResult(content=research.search(query))
 
     return server
