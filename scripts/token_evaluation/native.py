@@ -33,6 +33,19 @@ def _sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _validate_launch_root(run, root):
+    """Match the path spelling used to reconstruct receipts before native work.
+
+    Preparation stores the resolved path. Resolving only the declaration here
+    would accept aliases that the receipt reader's exact argv checks reject.
+    This guard applies to collection, never to relocated completed-run replay.
+    """
+    declared = run.get("run_dir")
+    if (not isinstance(declared, str) or not Path(declared).is_absolute()
+            or str(Path(declared)) != str(root)):
+        raise ValueError("Prepared launch directory must match the resolved dispatch directory")
+
+
 def _save(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -82,6 +95,7 @@ def preflight_live(run_dir):
                "native_ready": False, "errors": [], "workloads": [],
                "configuration_fidelity": "explicit MCP plus actual setup-generated guidance; native project-loader fidelity unverified"}
     try:
+        _validate_launch_root(run, root)
         check_root = root / "preflight-runtime"
         env = runtime.environment(check_root)
         client = protocol["client"]
@@ -238,6 +252,7 @@ def execute_live(run_dir, authorization, auth_home):
     from .runner import _verify, inventory
     root = Path(run_dir).resolve()
     run = _read(root / "run.json")
+    _validate_launch_root(run, root)
     protocol = run["protocol"]
     verify_active_collector(protocol)
     preflight = _read(root / "preflight.json")

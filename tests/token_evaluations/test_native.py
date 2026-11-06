@@ -96,7 +96,7 @@ def setup_run(tmp_path, monkeypatch):
     protocol = {'limits': {'wall_seconds': 60, 'max_attempts': 2, 'gross_token_stop': 100, 'session_seconds': 5}, 'workloads': [{'id': 'w', 'snapshots': [{'id': 'v1', 'files': {}}], 'tasks': [{'id': 't', 'snapshot': 'v1', 'phase': 'learn', 'question': 'q'}]}], 'client': {'model': 'm', 'sha256': 'a'}, 'target': {'revision': 'r'}, 'research': {'max_calls': 1}, 'output': {'format': 'json', 'answer_policy': 'last_agent_message'}, 'track': 'controlled'}
     protocol.update(contract=CONTRACT, collector={'files': collector_hashes()})
     protocol['output']['contract'] = OUTPUT_CONTRACT
-    run = {'protocol': protocol, 'protocol_sha256': 'digest'}
+    run = {'protocol': protocol, 'protocol_sha256': 'digest', 'run_dir': str(tmp_path.resolve())}
     for name in ('control', 'logs', 'auth', 'private'):
         (tmp_path / name).mkdir()
     (tmp_path / 'auth/auth.json').write_text('{}')

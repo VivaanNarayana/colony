@@ -127,7 +127,9 @@ def test_native_joint_arm_order_is_not_only_per_arm_task_order(native_run):
         report(root, root / "quality.json", root / "refused.json")
 
 
-def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path, monkeypatch):
+@pytest.mark.parametrize('dispatch_alias', [False, True])
+def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path, monkeypatch,
+                                                                    dispatch_alias):
     """Real collector/argument/prompt writer; only processes/server I/O are simulated."""
     from colony.onboarding import initialize
     from scripts.token_evaluation import native, runner
@@ -196,7 +198,11 @@ def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path,
     monkeypatch.setattr(native.runtime, "trail_count", lambda *args: 0)
     monkeypatch.setattr(native.runtime, "configure", configure)
     monkeypatch.setattr(native.subprocess, "Popen", Process)
-    collection = native.execute_live(tmp_path, {}, tmp_path / "auth")
+    dispatch = tmp_path
+    if dispatch_alias:
+        (tmp_path / 'dispatch-alias').mkdir()
+        dispatch = tmp_path / 'dispatch-alias' / '..'
+    collection = native.execute_live(dispatch, {}, tmp_path / "auth")
     assert collection["status"] == "complete" and collection["attempts"] == 4, collection["error"]
     rows = [json.loads(line) for line in (tmp_path / "control/attempts.jsonl").read_text().splitlines()]
     validate_native_receipts(tmp_path, run, protocol, rows)

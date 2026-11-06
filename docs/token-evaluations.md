@@ -361,6 +361,10 @@ process attestation. Duplicate or invalid attempt IDs make the inventory incompl
 and prevent another native dispatch. Tool-call identities and completion events
 are validated equally for repository and Colony calls; malformed lifecycle records
 cannot silently collapse multiple calls into one.
+Native preflight and collection reject a missing, stale or noncanonical recorded
+launch directory before native setup or dispatch. Prepare a fresh run at its
+intended location instead of relocating an uncollected run. Completed runs may
+still be copied for read-only replay using their retained original launch paths.
 
 The report accounts for every retained native turn, learning and reuse, failures and all
 output. It separates input, cached input, output, gross and uncached-plus-output
