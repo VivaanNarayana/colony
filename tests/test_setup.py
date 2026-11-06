@@ -659,7 +659,8 @@ def test_setup_selects_adaptive_policy_without_adding_management_connection(
         ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
     ) if adaptive else WORKFLOW_GUIDANCE
     assert policy in guidance
-    assert ("Use Colony selectively." in guidance) == adaptive
+    assert ("Keep answers focused; check necessary conditions against exceptional exits."
+            in guidance) == adaptive
     if adaptive and read_only:
         assert "after meaningful new research publish" not in guidance
         assert "do not call push or publish findings" in guidance
