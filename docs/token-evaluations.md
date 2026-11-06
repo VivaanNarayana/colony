@@ -314,6 +314,12 @@ python scripts/token_evaluation.py mask --run D:/evaluations/run-001 --output D:
 Give the independent reviewer only `answers.json`, the frozen source snapshots and
 the frozen rubric, without costs, arm identities or `private-map.json`. Answer text
 may incidentally reveal memory use; arm masking is not guaranteed perfect blinding.
+This packet supports source-truth grading, not proof that the agent actually read
+a source. If the frozen rubric requires observed reads or other process evidence,
+also supply chronological tool arguments/results with costs and coordinator IDs
+removed, and retain that review evidence. Tool names may reveal the arm; disclose
+that limitation rather than treating access-dependent grounding as proven by the
+source packet alone.
 The chosen extraction policy is frozen before collection. `last_agent_message`
 selects the last completed agent message, and `all_agent_messages` joins all of
 them. If the client omits phase metadata, final-phase provenance is not guaranteed.
@@ -348,11 +354,23 @@ schedules cannot produce a matched report: use `inventory` or the partial
 `collection.json` inventory to retain known costs and failure details. Do not throw
 those costs away or silently rerun them.
 
-The report sums every completed native turn, learning and reuse, failures and all
+For current native runs, the report also checks retained prompt bytes, invocation
+settings against the frozen client/research contract, and the complete alternating
+arm schedule. These checks establish consistency of retained records, not external
+process attestation. Duplicate or invalid attempt IDs make the inventory incomplete
+and prevent another native dispatch. Tool-call identities and completion events
+are validated equally for repository and Colony calls; malformed lifecycle records
+cannot silently collapse multiple calls into one.
+
+The report accounts for every retained native turn, learning and reuse, failures and all
 output. It separates input, cached input, output, gross and uncached-plus-output
 tokens; missing usage is unknown, never zero. It reports observed adoption, useful
 reuse, mechanism expectations, quality, per-phase costs, session-time sums and
-cost per successful workflow. With no successes that cost is undefined. Session
+cost per successful workflow. Partial usage retains the sum of every validated
+known input and output component as known gross, including cached input. A missing
+component still makes total usage unknown and prevents qualification; a known
+subtotal is never a complete total. Auxiliary counters are not added again.
+With no successes that cost is undefined. Session
 sums are not end-to-end wall time. A complete qualifying native run may show
 descriptive paired reductions; it never creates a confidence-supported product win,
 dollar savings or automatic merge approval. Native receipts are auditable local

@@ -278,7 +278,14 @@ def test_every_research_attempt_disqualifies_no_extra_research_credit(trace, lif
     events['reuse'] += [{'type': state, 'item': copy.deepcopy(item)} for state in lifecycle]
     proof = evaluate()['reuse']
     from scripts.token_evaluation.report import activity
-    assert activity(root / 'reuse.jsonl')['research_calls'] == proof['research_attempts'] == 1
+    assert proof['research_attempts'] == 1
+    if lifecycle == ['item.completed', 'item.started']:
+        # The mechanism diagnostic still withholds reuse credit; the report now
+        # rejects this invalid lifecycle for either arm before comparing tokens.
+        with pytest.raises(ValueError, match='after completion'):
+            activity(root / 'reuse.jsonl')
+    else:
+        assert activity(root / 'reuse.jsonl')['research_calls'] == 1
     assert proof['hit']  # Current source evidence still exists; extra work is counted separately.
     assert proof['unresolved_mcp_calls'] == unresolved
     assert not proof['useful_reuse']

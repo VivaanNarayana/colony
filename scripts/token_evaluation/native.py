@@ -11,7 +11,6 @@ from contextlib import ExitStack, suppress
 from pathlib import Path
 
 from colony.onboard_io import private_directory, write_new
-from colony.product_value import native_usage
 
 from . import runtime
 from .output import instruction
@@ -23,6 +22,7 @@ from .protocol import (
     validate_contract,
     verify_active_collector,
 )
+from .usage import native_usage
 
 
 def _read(path):
@@ -323,6 +323,7 @@ def execute_live(run_dir, authorization, auth_home):
                                             client_workspace=client_workspace)
                         invocation = {"id": ident, "arm": arm, "workload": workload["id"], "task": task["id"],
                                       "args": args, "prompt_sha256": _sha(prompt_path), "native_evidence": True,
+                                      "guidance_sha256": hashlib.sha256(guidance.encode("utf-8")).hexdigest(),
                                       "protocol_sha256": run["protocol_sha256"], "frozenclient_executable_sha256": protocol["client"]["sha256"],
                                       "configuration": config, "client_workspace": str(client_workspace)}
                         _save(control / (ident + "-invocation.json"), invocation)
