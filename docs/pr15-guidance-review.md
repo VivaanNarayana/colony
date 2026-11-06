@@ -1,5 +1,10 @@
 # Adaptive guidance: conditional implementation decision
 
+This document records the decision at `9235bc6`. The subsequent fixed diagnostic
+and narrowly scoped production candidate are described in
+[focused claims and exceptional exits](pr15-exception-guidance.md). Historical
+measurements and decisions below retain their original revision bindings.
+
 This review applies the conditional guidance plan to PR15 after evaluator PR19
 merged at `7483df10cd616e78c1fcbbdc415f9b3e0d017705`. It retains the production
 policy at `f65299b12e6e777a55e4a735852d8b75bd34ced1` and adds verification controls.
