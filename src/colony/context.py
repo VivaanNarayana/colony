@@ -404,20 +404,33 @@ def excerpts(
     claims: str | None = None,
     whole_files: bool = False,
     adaptive: bool = False,
+    compact_bundle: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
-    if not adaptive and whole_files and 1 <= len(unique) <= 4:
+    if (
+        (whole_files or (adaptive and compact_bundle))
+        and 1 <= len(unique) <= 4
+        and (not adaptive or (claims is not None and preferred is None))
+    ):
         files = []
         for source in unique.values():
             lines = source_lines(root, source)
             text = "\n".join(lines)
             if not lines or len(text) > 16000:
                 break
-            files.append({"ref": source.ref, "line": 1, "text": text, "complete_file": True})
+            files.append(
+                _adaptive_excerpt(source.ref, lines, (1, len(lines)), True)
+                if adaptive
+                else {"ref": source.ref, "line": 1, "text": text, "complete_file": True}
+            )
         else:
             # Complete small, redacted files remove the need to reread an identical
             # file through another tool. Large/many files retain focused excerpts.
-            if sum(len(f["text"]) for f in files) <= 24000:
+            # An explicit whole-file request must not lose a small published source
+            # bundle to the ranked two-passage cap. Adaptive bundles stay within the
+            # existing 2,800-character excerpt allowance; final protocol packing
+            # counts every file identity/byte and fails closed if the bundle cannot fit.
+            if sum(len(f["text"]) for f in files) <= (2800 if adaptive else 24000):
                 return files
     candidates = source_chunks(root, sources)
     if preferred is not None:

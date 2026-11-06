@@ -1,1 +1,4 @@
 * text=auto eol=lf
+# Unified-diff context represents an empty source line with a single space.
+# Applied source still passes git apply --whitespace=error in the pinned runner.
+scripts/pr15_evaluation_overlay/correction.patch whitespace=-blank-at-eol

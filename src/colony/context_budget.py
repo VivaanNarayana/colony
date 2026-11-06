@@ -168,8 +168,18 @@ def fit_response(response: dict, budget, *, question="") -> dict:
     counter = _counter(budget)
     result = copy.deepcopy(response)
     limited = bool((result.pop("context_budget", None) or {}).get("limited"))
+    from colony.compact import PROFILE, compact_response
+
+    compact = result.get("response_profile") == PROFILE
+    if compact:
+        try:
+            result = compact_response(result, packing=True)
+        except (KeyError, TypeError, ValueError):
+            result = {"hit": False, "reason": "invalid_evidence", "response_profile": PROFILE}
 
     def measured(value, is_limited):
+        if compact:
+            value = compact_response(value)
         return _receipt(value, budget, counter, is_limited)
 
     def fits(value):

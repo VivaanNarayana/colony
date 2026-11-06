@@ -12,7 +12,12 @@ from pydantic import Field
 from colony.client import Client, MemoryUnavailable
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import ContextBudget, Model, Source, Trail
-from colony.workflow import WORKFLOW_GUIDANCE, configure_workflow
+from colony.workflow import (
+    ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE,
+    ADAPTIVE_WORKFLOW_GUIDANCE,
+    WORKFLOW_GUIDANCE,
+    configure_workflow,
+)
 
 MEMORY_TOOLS = {"memory_inspect", "memory_feedback", "memory_correct", "memory_change"}
 
@@ -55,6 +60,56 @@ class FileEvidence(Model):
     kind: str = Field(default="file", pattern="^file$")
 
 
+def _deduplicate_adaptive_sources(response: dict) -> None:
+    """Compact redundant file metadata while retaining publication identity bindings."""
+    if response.get("status") != "validated":
+        return
+    verification = response.get("verification", {})
+    if (
+        not isinstance(verification, dict)
+        or verification.get("file_fingerprints_match") is not True
+        or verification.get("source_reads_current") is not True
+    ):
+        return
+    sources, reads = response.get("sources"), response.get("current_repository_reads")
+    if not isinstance(sources, list) or not sources or not isinstance(reads, list) or not reads:
+        return
+    identities = {}
+    for read in reads:
+        if not isinstance(read, dict):
+            return
+        path, digest = read.get("path"), read.get("sha256")
+        if (
+            not isinstance(path, str)
+            or not path
+            or not isinstance(digest, str)
+            or not re.fullmatch(r"[a-f0-9]{64}", digest)
+            or not isinstance(read.get("content"), str)
+            or not read["content"]
+            or type(read.get("start_line")) is not int
+            or read["start_line"] < 1
+            or type(read.get("complete_file")) is not bool
+            or (path in identities and identities[path] != digest)
+        ):
+            return
+        identities[path] = digest
+    for source in sources:
+        if (
+            not isinstance(source, dict)
+            or set(source) - {"kind", "ref", "content_hash", "symbol", "contains"}
+            or source.get("kind", "file") != "file"
+            or source.get("symbol") is not None
+            or source.get("contains") is not None
+            or not isinstance(source.get("ref"), str)
+            or source["ref"] not in identities
+            or identities.get(source["ref"]) != source.get("content_hash")
+        ):
+            return
+    response["sources"] = [
+        {"ref": source["ref"], "content_hash": source["content_hash"]} for source in sources
+    ]
+
+
 def create_mcp(
     home: Path,
     *,
@@ -86,14 +141,29 @@ def create_mcp(
         "discover and try your configured research tools before reporting them unavailable."
     )
     instructions = research_guidance
+    if context_budget is not None:
+        research_guidance = (
+            "A lookup does not test other tools' availability. If evidence is insufficient, "
+            "discover and try configured research tools."
+        )
+        instructions = (
+            ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE
+            if workflow and workflow.read_only
+            else ADAPTIVE_WORKFLOW_GUIDANCE
+        )
     if workflow:
-        instructions += " " + WORKFLOW_GUIDANCE
+        if context_budget is None:
+            instructions += " " + WORKFLOW_GUIDANCE
+        # Adaptive instructions already contain the Git mismatch and read-only policy.
+        # Keep only the checkout binding here; legacy discovery stays unchanged.
         if workflow.repository_id is not None:
             instructions += (
-                " Git-aware mode checks this caller's current checkout. A Git mismatch "
+                " Git checks use this caller's current checkout."
+                if context_budget is not None
+                else " Git-aware mode checks this caller's current checkout. A Git mismatch "
                 "withholds saved answers; reuse only the returned current local file evidence."
             )
-        if workflow.read_only:
+        if workflow.read_only and context_budget is None:
             instructions += " This connection is read-only; do not publish findings."
     server = _MemorySafeMCP("Colony", instructions=instructions)
     server._adaptive_context_budget = context_budget is not None
@@ -113,7 +183,12 @@ def create_mcp(
             if workflow and workflow.repository_id is not None
             else {}
         )
-        budget_options = {"context_budget": budget} if budget is not None else {}
+        if budget is not None:
+            from colony.compact import PROFILE
+
+            budget_options = {"context_budget": budget, "response_profile": PROFILE}
+        else:
+            budget_options = {}
         result = client.ask(
             question,
             namespace,
@@ -121,6 +196,8 @@ def create_mcp(
             **git_options,
             **budget_options,
         )
+        if budget is not None and result.get("response_profile") == PROFILE:
+            return render(result, budget, question)
         if not result.get("hit"):
             result["research_guidance"] = research_guidance
             return render(result, budget, question)
@@ -194,6 +271,12 @@ def create_mcp(
                 "these reads counts as reuse. Research missing facts only. A lookup does "
                 "not test other tools' availability."
             )
+            if budget is not None:
+                response["next_action"] = (
+                    "Assess current_repository_reads. If sufficient, answer requested facts "
+                    "with source citations; no reread or push. Otherwise research missing "
+                    "facts. A lookup does not test other tools' availability."
+                )
         else:
             response["research_guidance"] = research_guidance
         if not response.get("complete_files"):
@@ -204,6 +287,7 @@ def create_mcp(
         if budget is not None:
             from colony.context_budget import fit_response, serialize_response
 
+            _deduplicate_adaptive_sources(response)
             response = fit_response(response, budget, question=question)
             text = serialize_response(response)
         else:
@@ -226,7 +310,12 @@ def create_mcp(
                 budget = budget.model_copy(update={"max_tokens": max_context_tokens})
             return lookup(question, namespace, budget)
 
-        adaptive_ask.__doc__ = lookup.__doc__
+        # Keep the complete policy in initialize instructions, rather than repeating it
+        # in every routine tool description. Schemas and result serialization stay fixed.
+        adaptive_ask.__doc__ = (
+            "Look up one focused repository question; returns saved findings and current "
+            "source evidence. Follow the server's research and reuse policy."
+        )
         ask = adaptive_ask
     server.tool(
         name="ask",
@@ -280,7 +369,10 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                publish.__doc__
+                "Publish one finding with actual file ref/content_hash under the server's "
+                "publication policy. Namespace bound; taint true; secrets scrubbed."
+                if context_budget is not None
+                else publish.__doc__
                 + " Workflow mode requires repository file evidence and <=4,000 characters; "
                 "taint is always true. Namespace defaults to the configured binding. "
                 "Exact duplicates retain their original age."
@@ -290,10 +382,16 @@ def create_mcp(
     elif not workflow:
         server.tool(
             name="push",
+            description=(
+                "Store one finding with actual file ref/content_hash under the server's "
+                "publication policy. Client scrubs secrets; mark external content tainted."
+                if context_budget is not None
+                else None
+            ),
             annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
         )(publish)
 
-    if not workflow or not workflow.read_only:
+    if context_budget is None and (not workflow or not workflow.read_only):
 
         def inspect_memory(trail_id: str, namespace: str) -> dict:
             result = client.memory_inspect(trail_id, namespace)
