@@ -35,6 +35,10 @@ native gross-token savings evidence.
 
 ## Prospective measurement plan
 
+The sequence below records the PR18-era measurement plan. The current conditional
+plan and PR19 `/4` evaluator decision are in [the guidance review](pr15-guidance-review.md);
+historical runs retain their original evaluator bindings.
+
 1. Keep the existing 28-session evidence immutable. Use the merged PR18 evaluator
    through a separately verified read-only export, not by merging evaluator code
    into this child branch. Future manifests must use its prospective `/3` protocol.
