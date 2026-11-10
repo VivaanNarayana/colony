@@ -52,6 +52,15 @@ signal tested on independent examples before another threshold proposal.
 
 ## Regression and evaluation boundaries
 
+Git-aware caller verification now reconstructs up to eight cores only for the
+negotiated adaptive compact profile, matching the server's existing bound. The
+previous caller limit of four rejected otherwise valid five-to-eight-file bundles.
+Every advertised core must still be reconstructed from current hash-verified local
+files and fit the full serialized budget. Missing or changed later sources reject
+the entire hit. Legacy focused/whole-file limits remain two/four. Regression tests
+cover real Git/HTTP/client/MCP delivery, LF/CRLF files, late-source tampering, the
+eight-read ceiling and an undersized all-or-nothing budget.
+
 The shipped regression tests cover five, six and eight cited files, reversed source
 order, the ninth-source work boundary, legacy selection, real MCP serialization,
 exact full-payload accounting, fail-closed small budgets and recomputation of partial

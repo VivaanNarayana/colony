@@ -48,10 +48,15 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
     return result
 
 
-def _local_reads(repo, sources, remote_evidence, whole_files, *, adaptive=False):
+def _local_reads(
+    repo, sources, remote_evidence, whole_files, *, adaptive=False, compact_bundle=False,
+):
     by_ref = {source.ref: source for source in sources}
     hints = remote_evidence if isinstance(remote_evidence, list) else []
     selected, occupied, budget = [], [], 24000 if whole_files else 4800
+    # Compact adaptive responses can require all eight bounded source cores.
+    # Legacy focused/whole-file requests retain their two/four-read limits.
+    limit = 8 if adaptive and compact_bundle else (4 if whole_files else 2)
     for item in hints[:8]:
         if not isinstance(item, dict):
             continue
@@ -100,7 +105,7 @@ def _local_reads(repo, sources, remote_evidence, whole_files, *, adaptive=False)
         selected.append(read)
         occupied.append((ref, start, end))
         budget -= len(text)
-        if len(selected) >= (4 if whole_files else 2):
+        if len(selected) >= limit:
             break
     return selected
 
@@ -154,6 +159,7 @@ def verify_lookup(
             sources,
             hints,
             whole_files or compact,
+            **({"compact_bundle": True} if compact else {}),
             **({"adaptive": True} if context_budget is not None else {}),
         )
         if context_budget is not None and (

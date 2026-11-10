@@ -2,7 +2,6 @@
 
 import copy
 import hashlib
-import importlib
 import json
 import sys
 from pathlib import Path
@@ -15,8 +14,8 @@ import colony
 
 @pytest.fixture
 def prepared_native_control(evaluator, tmp_path):
-    protocol = importlib.import_module("scripts.token_evaluation.protocol")
-    runner = importlib.import_module("scripts.token_evaluation.runner")
+    protocol = evaluator.module("protocol")
+    runner = evaluator.module("runner")
     workload = copy.deepcopy(evaluator.catalog["workloads"][0])
     workload["source_root"] = str(evaluator.product.FIXTURES / workload["id"])
     runtime = Path(colony.__file__).parent
@@ -83,8 +82,8 @@ def prepared_native_control(evaluator, tmp_path):
 def test_invalid_collector_rejected_before_any_live_boundary(
     evaluator, prepared_native_control, monkeypatch, corruption, endpoint
 ):
-    runner = importlib.import_module("scripts.token_evaluation.runner")
-    native = importlib.import_module("scripts.token_evaluation.native")
+    runner = evaluator.module("runner")
+    native = evaluator.module("native")
     output, authorization = prepared_native_control(corruption)
     forbidden = Mock(side_effect=AssertionError("live boundary must not be reached"))
     if endpoint.startswith("direct_"):
@@ -116,8 +115,8 @@ def test_invalid_collector_rejected_before_any_live_boundary(
 def test_exact_current_collector_reaches_only_intercepted_live_boundary(
     evaluator, prepared_native_control, monkeypatch, endpoint
 ):
-    runner = importlib.import_module("scripts.token_evaluation.runner")
-    native = importlib.import_module("scripts.token_evaluation.native")
+    runner = evaluator.module("runner")
+    native = evaluator.module("native")
     output, authorization = prepared_native_control()
     # Fixture/source/runtime hashes are verified for real; only live work is intercepted.
     intercepted = Mock(return_value={"ok": True, "native_ready": True, "native_sessions_started": 0})

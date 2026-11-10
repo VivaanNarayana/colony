@@ -155,9 +155,7 @@ def test_default_oracle_uses_defining_assignment_without_changing_facts(evaluato
 
 
 def test_fresh_protocol_binds_patched_collector_and_rejects_historical_pins(evaluator):
-    import importlib
-
-    protocol = importlib.import_module("scripts.token_evaluation.protocol")
+    protocol = evaluator.module("protocol")
     fresh = {"evaluator_overlay": dict(protocol.EVALUATOR_OVERLAY),
              "collector": {"files": protocol.active_collector()}}
     protocol.verify_active_collector(fresh)
@@ -175,9 +173,7 @@ def test_fresh_protocol_binds_patched_collector_and_rejects_historical_pins(eval
 def test_native_report_refuses_unversioned_evidence_before_scoring(
     evaluator, tmp_path, monkeypatch
 ):
-    import importlib
-
-    report = importlib.import_module("scripts.token_evaluation.report")
+    report = evaluator.module("report")
     (tmp_path / "collection.json").write_text(
         json.dumps({"native_evidence": True}), encoding="utf-8"
     )

@@ -109,3 +109,14 @@ native collector pins and cannot certify savings. Regression controls intercept
 every live boundary and verify both rejection and the valid protocol path.
 All learning, failure and retry costs remain included. Passing these offline
 controls cannot turn the native token evidence check green or authorize a merge.
+
+## Coexistence with the current evaluator on main
+
+The historical overlay tests load their immutable exported evaluator under a
+private test package. They no longer replace or remove the current
+`scripts.token_evaluation` modules. Only the historical product test helper's two
+absolute evaluator import targets are rebound in memory; its assertions and the
+exported evaluator files remain unchanged. Regression controls verify those exact
+import-only changes, file hashes, both import orders and teardown isolation.
+Both historical and current suites must pass together. This is test isolation,
+not a new evaluator version, altered grading or a reinterpretation of past runs.
