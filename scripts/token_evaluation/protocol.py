@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .output import validate_output
 
-CONTRACT = "colony.token-evaluation/4"
+CONTRACT = "colony.token-evaluation/5"
 ARMS = ("no_colony", "colony")
 ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}
@@ -94,6 +94,40 @@ def _flags(args, allowed):
         i += 1
 
 
+def validate_evidence_policy(oracle, files):
+    """Freeze support obligations separately from a bounded absence claim."""
+    require(isinstance(oracle, dict), "Freeze an evidence oracle")
+    policy = oracle.get("evidence_policy")
+    require(isinstance(policy, dict), "Freeze explicit task evidence policy")
+    kind = policy.get("kind")
+    facts = oracle.get("facts", {})
+    require(isinstance(facts, dict), "Freeze typed evidence facts")
+    if "answerable" in facts:
+        require(type(facts["answerable"]) is bool, "Answerability must be explicit Boolean")
+    citations = oracle.get("citations")
+    require(isinstance(citations, list), "Freeze source spans")
+    if kind == "support":
+        require(set(policy) == {"kind"} and citations, "Support requires source spans")
+        require(oracle.get("facts", {}).get("answerable") is not False,
+                "Unanswerable facts require scoped absence evidence")
+    elif kind == "scoped_absence":
+        scope = policy.get("scope")
+        require(set(policy) == {"kind", "scope"}
+                and isinstance(scope, list) and scope
+                and all(isinstance(name, str) for name in scope)
+                and len(scope) == len(set(scope)) and set(scope) == set(files),
+                "Absence scope must name every distinct frozen source file")
+        require(not citations and oracle.get("facts", {}).get("answerable") is False,
+                "Scoped absence requires unanswerable facts and no support spans")
+    else:
+        raise ValueError("Unknown task evidence policy")
+    for citation in citations:
+        require(isinstance(citation, dict) and citation.get("path") in files
+                and type(citation.get("start")) is int and type(citation.get("end")) is int
+                and 1 <= citation["start"] <= citation["end"], "Invalid required source span")
+    return policy
+
+
 def _validate_manifest(manifest):
     verify_active_collector(manifest)
     require(manifest.get("track") in {"natural", "controlled"}, "Unknown evaluation track")
@@ -164,9 +198,17 @@ def _validate_manifest(manifest):
                 require(task["expected_use"] == "optional", "Natural adoption cannot force memory calls")
             _text(task.get("question"), "task question")
             require(isinstance(task.get("oracle"), dict) and isinstance(task.get("rubric"), dict), "Freeze independent quality oracle/rubric")
-            citations = task["oracle"].get("citations")
-            require(isinstance(citations, list) and citations, "Freeze required source spans")
+            oracle = task["oracle"]
+            require(isinstance(oracle.get("facts"), dict) and oracle["facts"],
+                    "Freeze nonempty independent facts")
+            require(oracle.get("unsupported_claims_fail") is True
+                    and oracle.get("stale_snapshot_fails") is True,
+                    "Unsupported claims and stale evidence must fail")
+            for field in ("correct", "grounded"):
+                _text(task["rubric"].get(field), "task " + field + " rubric")
+            citations = oracle.get("citations")
             snapshot = next(s for s in snapshots if s["id"] == task["snapshot"])
+            policy = validate_evidence_policy(oracle, snapshot["files"])
             if "research_hints" in task:
                 hints = task["research_hints"]
                 require(task["expected_use"] == "optional"
@@ -174,15 +216,13 @@ def _validate_manifest(manifest):
                         and all(isinstance(name, str) and name in snapshot["files"] for name in hints)
                         and len(hints) == len(set(hints)),
                         "Optional research hints must name distinct frozen source files")
-            for citation in citations:
-                require(isinstance(citation, dict) and citation.get("path") in snapshot["files"]
-                        and type(citation.get("start")) is int and type(citation.get("end")) is int
-                        and 1 <= citation["start"] <= citation["end"], "Invalid required source span")
             if "publication_sources" in task:
                 sources = task["publication_sources"]
                 require(task["phase"] == "learn" and isinstance(sources, list) and sources
                         and len(sources) == len(set(sources))
-                        and set(sources) == {c["path"] for c in citations}, "Learning publication sources must match its oracle")
+                        and set(sources) == (set(policy["scope"]) if policy["kind"] == "scoped_absence"
+                                             else {c["path"] for c in citations}),
+                        "Learning publication sources must match its oracle")
             if "memory_from" in task or "memory_query" in task:
                 require(task["phase"] == "reuse" and task.get("memory_from") in learning,
                         "Memory must bind an earlier declared learning step")

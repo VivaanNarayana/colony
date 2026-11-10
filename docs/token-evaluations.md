@@ -118,12 +118,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/4` and bind the shared instruction and
+New manifests use `colony.token-evaluation/5` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/4",
+  "contract": "colony.token-evaluation/5",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -134,7 +134,7 @@ structural check through `output.contract`:
 
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically. Missing or unknown output-contract identifiers fail before
-collection or scoring. Historical `/1`, `/2` and `/3` manifests are rejected by this collector
+collection or scoring. Historical `/1`, `/2`, `/3` and `/4` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -157,8 +157,9 @@ structure. Neither example establishes factual quality or grounding. An object
 such as `{"facts": [{"sources": []}]}` fails because it lacks top-level `sources`.
 The `free_text` option retains independent review without the JSON structural
 gate. Extraction remains frozen separately; no messages are rewritten or repaired
-to make the selected answer comply. These evaluator changes do not alter runtime
-behavior, task questions, source snapshots, oracles, reuse horizon or accounting.
+to make the selected answer comply. The output contract does not alter runtime behavior, task questions, source
+snapshots, reuse horizon or accounting. Task evidence requirements are versioned
+separately below.
 
 Version `/3` introduced prompt parity, optional lookup behavior and text-only MCP
 research results. Version `/4` retains those rules and clarifies the research-tool
@@ -173,7 +174,62 @@ to a product revision across an evaluator change. Old collectors, protocols,
 answers, labels, reports and failed outcomes stay attached to their original
 revisions. No historical campaign is repaired or regraded. In particular, `/3`
 results remain replayable with their original pinned collector; do not relabel
-their manifests as `/4`.
+their manifests as `/4` or `/5`. The same rule preserves `/4` campaigns under
+their original pinned collector; they are not regraded with `/5`.
+
+## Task-specific evidence contract (version /5)
+
+Version `/5` fixes the evaluator's review and mechanism evidence rules. It keeps
+the same fourteen task questions, learning/reuse order, source snapshots, typed
+answers, model-facing prompts, research limits, output structure and token
+accounting. It does not change Colony production behavior or establish a token
+improvement. Both arms receive the same task-specific quality rules; oracle and
+rubric metadata is reviewer-only and never becomes an agent hint.
+
+Each task declares `oracle.evidence_policy.kind`. `support` requires meaningful current
+source spans establishing the requested facts. A default-setting question needs
+its definition, not unrelated propagation or retry analysis. A retry question
+still needs its relevant precedence, propagation and termination evidence.
+Learning quality does not require publication: that requirement belongs only to
+Colony's explicitly controlled mechanism recipe, never to No-Colony or natural
+adoption. Current evidence may arrive through repository tools or verified Colony
+excerpts; the reviewer must judge support, not reward a particular tool sequence.
+
+`scoped_absence` declares the frozen repository scope and has no positive-fact
+citation list. The reviewer must see adequate observed current evidence supporting
+the scoped absence claim. A cache miss, an irrelevant retry snippet, or an empty
+literal search for `termA|termB` does not by itself establish that the individual
+terms or requested information are absent. The search tool treats that entire
+string literally. An observed measurement contradicts an absence answer; an
+invented external measurement fails even when the answer otherwise correctly
+states that it is not recorded here. No particular sequence of research calls is
+mandatory. Complete verified current source evidence delivered by cache can
+support the same claim as repository evidence.
+
+Mechanism coverage for scoped absence checks the declared repository scope,
+not inherited retry-code spans. Mechanical coverage is necessary for a reuse
+proof, not sufficient for semantic correctness: a current full-source bundle
+can still accompany an incorrect or unsupported answer. Independent quality and
+all existing format, policy, accounting and controlled-use requirements remain
+conjunctive. A mechanism miss never automatically passes grounding.
+
+All tasks retain the rule that **every additional factual claim needs support**.
+For example, an injected dependency cannot be assumed to be the repository's
+concrete retry adapter. A wire-attempt ceiling derived from that adapter must
+state the condition. Correct requested facts cannot excuse an unsupported extra
+ceiling, stale citation or invented detail in either arm.
+
+Review packets bind the exact question as well as the answer, current source
+snapshot, oracle, rubric and output contract. Removing the source-evidence field
+or altering any of those displayed inputs rejects binding; it cannot bypass
+verification by retaining the old digest strings.
+
+Regression tests exercise the evidence boundaries and symmetric gate enforcement;
+source-execution counterexamples calibrate review. They do not implement a general
+semantic grader or prove that a model or human reviewer will always follow the
+rubric. Historical protocols, answers, grades and conclusions remain immutable.
+Future comparisons need a newly frozen `/5` protocol and separate authorization;
+results from different evaluator contracts cannot establish a product-only effect.
 
 ## Separate diagnostics, unchanged acceptance
 
@@ -340,7 +396,7 @@ The reviewer writes an arm-blind file containing `reviewer`, `method`, and `labe
 ```
 
 Every case needs explicit Boolean labels. The coordinator then binds random case
-IDs back to attempt IDs and exact answer/current-source/oracle/rubric/output hashes:
+IDs back to attempt IDs and exact question/answer/current-source/oracle/rubric/output hashes:
 
 ```powershell
 python scripts/token_evaluation.py bind-quality --packet D:/evaluations/review-001 --review D:/evaluations/blind-labels.json --output D:/evaluations/quality.json
@@ -348,7 +404,7 @@ python scripts/token_evaluation.py report --run D:/evaluations/run-001 --quality
 ```
 
 `quality-template` also produces a private coordinator template with null labels;
-null is never a pass. The report rejects altered answers, sources, protocol, labels,
+null is never a pass. The report rejects altered questions, answers, sources, protocol, labels,
 duplicate/missing tasks, invalid task order and unlisted events/invocations. Incomplete
 schedules cannot produce a matched report: use `inventory` or the partial
 `collection.json` inventory to retain known costs and failure details. Do not throw

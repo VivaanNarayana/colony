@@ -19,14 +19,19 @@ def write(path, value):
 
 def packet(tmp_path):
     value = {"case": "random", "answer": "current fact", "protocol_sha256": "protocol",
+             "question": "State the current fact.", "snapshot": "v1",
+             "current_sources": [], "oracle": {}, "rubric": {},
              "answer_sha256": hashlib.sha256(b"current fact").hexdigest(),
-             "source_sha256": "source", "citation_sha256": "citation", "label_sha256": "label"}
+             "question_sha256": hashlib.sha256(b"State the current fact.").hexdigest(),
+             "source_sha256": cli.digest({"snapshot": "v1", "files": {}}),
+             "citation_sha256": cli.digest({}), "label_sha256": cli.digest({})}
     value.update(output={"contract": OUTPUT_CONTRACT, "format": "free_text",
                          "answer_policy": "last_agent_message"}, output_instruction="")
     value["output_sha256"] = cli.digest({key: value[key] for key in ("output", "output_instruction")})
     write(tmp_path / "answers.json", [value])
-    write(tmp_path / "private-map.json", [{"id": "work-task-colony", **{k: v for k, v in value.items()
-        if k not in {"answer", "protocol_sha256", "output", "output_instruction"}}}])
+    write(tmp_path / "private-map.json", [{"id": "work-task-colony", **{k: value[k] for k in
+        ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
+         "label_sha256", "output_sha256")}}])
     write(tmp_path / "review.json", {"reviewer": "independent", "method": "arm-blind source review",
         "labels": [{"case": "random", "correct": True, "grounded": True, "format_compliant": True}]})
     return tmp_path
@@ -86,7 +91,8 @@ def test_bind_rejects_changed_grading_source_or_oracle(tmp_path):
     answer["citation_sha256"] = answer["label_sha256"] = cli.digest({})
     write(root / "answers.json", [answer])
     write(root / "private-map.json", [{"id": "work-task-colony", **{k: answer[k] for k in
-        ("case", "answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256")}}])
+        ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
+         "label_sha256", "output_sha256")}}])
     cli.bind_quality(root, root / "review.json", root / "good-quality.json")
     answer["current_sources"][0]["content"] = "wrong source"
     write(root / "answers.json", [answer])
@@ -117,6 +123,68 @@ def test_bind_rejects_changed_reviewer_output_contract(tmp_path, change):
     with pytest.raises(ValueError):
         cli.bind_quality(root, root / "review.json", root / "refused-quality.json")
     assert not (root / "refused-quality.json").exists()
+
+
+@pytest.mark.parametrize("identity", ["work-task-no_colony", "work-task-colony"])
+def test_complete_review_subject_with_explicit_empty_sources_binds_each_arm(tmp_path, identity):
+    root = packet(tmp_path)
+    private = json.loads((root / "private-map.json").read_text())
+    private[0]["id"] = identity
+    write(root / "private-map.json", private)
+    cli.bind_quality(root, root / "review.json", root / "quality.json")
+    label = json.loads((root / "quality.json").read_text())["labels"][0]
+    assert label["id"] == identity
+    assert label["question_sha256"] == hashlib.sha256(b"State the current fact.").hexdigest()
+    assert label["source_sha256"] == cli.digest({"snapshot": "v1", "files": {}})
+
+
+@pytest.mark.parametrize("identity", ["work-task-no_colony", "work-task-colony"])
+@pytest.mark.parametrize("mutation", [
+    "question", "missing_question", "question_rehashed", "question_hash",
+    "missing_question_hash", "private_question_hash", "missing_private_question_hash",
+    "missing_sources", "invalid_sources", "missing_sources_and_changed_oracle",
+    "snapshot", "missing_snapshot", "oracle", "missing_oracle", "rubric", "missing_rubric",
+])
+def test_independent_review_subject_cannot_change_or_drop_fields(tmp_path, identity, mutation):
+    root = packet(tmp_path)
+    answer = json.loads((root / "answers.json").read_text())[0]
+    private = json.loads((root / "private-map.json").read_text())
+    private[0]["id"] = identity
+    if mutation in {"question", "question_rehashed"}:
+        answer["question"] = "A different and easier task."
+        if mutation == "question_rehashed":
+            answer["question_sha256"] = hashlib.sha256(answer["question"].encode()).hexdigest()
+    elif mutation == "missing_question":
+        answer.pop("question")
+    elif mutation == "question_hash":
+        answer["question_sha256"] = "f" * 64
+    elif mutation == "missing_question_hash":
+        answer.pop("question_sha256")
+    elif mutation == "private_question_hash":
+        private[0]["question_sha256"] = "f" * 64
+    elif mutation == "missing_private_question_hash":
+        private[0].pop("question_sha256")
+    elif mutation in {"missing_sources", "missing_sources_and_changed_oracle"}:
+        answer.pop("current_sources")
+        if mutation == "missing_sources_and_changed_oracle":
+            answer["oracle"] = {"facts": {"easier_fact": "already known"}}
+            answer["rubric"] = {"grounded": "No evidence needed."}
+            answer["snapshot"] = "different"
+    elif mutation == "invalid_sources":
+        answer["current_sources"] = None
+    elif mutation == "snapshot":
+        answer["snapshot"] = "different"
+    elif mutation == "missing_snapshot":
+        answer.pop("snapshot")
+    elif mutation in {"oracle", "rubric"}:
+        answer[mutation] = {"changed": "reviewed a different requirement"}
+    else:
+        answer.pop(mutation.removeprefix("missing_"))
+    write(root / "answers.json", [answer])
+    write(root / "private-map.json", private)
+    with pytest.raises(ValueError):
+        cli.bind_quality(root, root / "review.json", root / "rejected-quality.json")
+    assert not (root / "rejected-quality.json").exists()
 
 
 def test_template_freezes_prospective_output_and_complete_collector(tmp_path, monkeypatch):

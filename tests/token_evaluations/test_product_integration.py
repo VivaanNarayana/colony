@@ -212,7 +212,7 @@ def test_authenticated_product_scenarios(tmp_path, monkeypatch, workload):
         return receipt
     question = tasks["cold_learning"]["question"]
     assert call(a, "ask", {"question": question}, "cold_learning")["hit"] is False
-    paths = [c["path"] for c in tasks["cold_learning"]["oracle"]["citations"]]
+    paths = list(dict.fromkeys(c["path"] for c in tasks["cold_learning"]["oracle"]["citations"]))
     reads = read_sources("cold_learning", paths)
     facts = source_facts(repo, workload)
     assert facts == tasks["cold_learning"]["oracle"]["facts"]
@@ -255,7 +255,7 @@ def test_authenticated_product_scenarios(tmp_path, monkeypatch, workload):
     assert_evidence(repo, partial, narrow["oracle"]["citations"])
     with pytest.raises(AssertionError):
         assert_evidence(repo, partial, tasks["insufficient"]["oracle"]["citations"])
-    gap_paths = [c["path"] for c in tasks["insufficient"]["oracle"]["citations"] if c["path"] not in narrow["publication_sources"]]
+    gap_paths = list(dict.fromkeys(c["path"] for c in tasks["insufficient"]["oracle"]["citations"] if c["path"] not in narrow["publication_sources"]))
     gap_reads = read_sources("insufficient", gap_paths)
     assert gap_reads
     assert source_gap_facts(repo, workload) == tasks["insufficient"]["oracle"]["facts"]
@@ -341,7 +341,6 @@ def test_authenticated_product_scenarios(tmp_path, monkeypatch, workload):
                      if workload == "gateway" else
                      "Which bank settlement retry deadline does this queue worker enforce? State whether the repository supports an answer.")
     frozen_files = catalog["snapshots"][0]["files"]
-    absence_citations = []
     for path, expected_hash in frozen_files.items():
         raw = (repo / path).read_bytes()
         assert hashlib.sha256(raw).hexdigest() == expected_hash
@@ -356,7 +355,6 @@ def test_authenticated_product_scenarios(tmp_path, monkeypatch, workload):
         else:
             assert all(line == "Payment settlement policy is outside this repository."
                        for line in domain_mentions), "fixture prose unexpectedly supplies bank-settlement policy"
-        absence_citations.append({"path": path, "start": 1, "end": len(text.splitlines())})
     bank_result = call(connection("b"), "ask", {"question": bank_question}, "bank_challenge")
     challenge_events = traces.pop("bank_challenge")
     control_dir = evidence / "controls"
@@ -368,18 +366,21 @@ def test_authenticated_product_scenarios(tmp_path, monkeypatch, workload):
     challenge_workload["tasks"].append({
         "id": "bank_challenge", "question": bank_question, "memory_query": bank_question,
         "memory_from": "cold_learning", "snapshot": "v1", "phase": "reuse",
-        "oracle": {"facts": {"answerable": False}, "citations": absence_citations},
+        "oracle": {"facts": {"answerable": False}, "citations": [],
+                   "evidence_policy": {"kind": "scoped_absence", "scope": sorted(frozen_files)}},
     })
     challenge_rows = rows + [{"id": "bank_challenge", "arm": "colony", "workload": workload,
                               "task": "bank_challenge", "events_path": str(challenge_path)}]
     challenge_decisions = evaluate_mechanisms(evidence, challenge_manifest, challenge_rows)
     challenge = challenge_decisions["bank_challenge"]
+    assert challenge["errors"] == []
     assert not challenge["hit"] and not challenge["useful_reuse"]
     assert not challenge["insufficient"] and challenge["successful_research"] == 0
     assert len(challenge_events) == 1 and challenge_events[0]["item"]["tool"] == "ask"
     (control_dir / "bank-challenge.json").write_text(json.dumps({
         "actual_response": bank_result, "mechanism_decision": challenge,
-        "oracle": {"facts": {"answerable": False}, "citations": absence_citations,
+        "oracle": {"facts": {"answerable": False}, "citations": [],
+                   "evidence_policy": {"kind": "scoped_absence", "scope": sorted(frozen_files)},
                    "files": frozen_files},
         "native_evidence": False, "model_tokens": None, "provider_calls": 0,
         "declared_journey_unchanged": True,
