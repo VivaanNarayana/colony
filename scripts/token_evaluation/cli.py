@@ -127,12 +127,23 @@ def bind_quality(packet, review_path, output):
                 or answer.get("output_sha256") != digest({"output": answer["output"],
                     "output_instruction": expected_instruction})):
             raise ValueError("Masked output contract binding changed")
-        if any(answer[key] != binding[key] for key in
-               ("answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256")):
+        if any(not binding.get(key) or answer.get(key) != binding[key] for key in
+               ("answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
+                "label_sha256", "output_sha256")):
             raise ValueError("Review packet bindings changed")
         if hashlib.sha256(answer["answer"].encode()).hexdigest() != binding["answer_sha256"]:
             raise ValueError("Masked answer bytes changed")
-        if "current_sources" in answer:
+        question = answer.get("question")
+        if (not isinstance(question, str)
+                or hashlib.sha256(question.encode("utf-8")).hexdigest() != binding["question_sha256"]):
+            raise ValueError("Masked question bytes changed")
+        # Every prospective packet carries the complete grading subject. Missing
+        # sources must not disable snapshot/oracle/rubric integrity checks.
+        if (not isinstance(answer.get("current_sources"), list) or "snapshot" not in answer
+                or not isinstance(answer.get("oracle"), dict)
+                or not isinstance(answer.get("rubric"), dict)):
+            raise ValueError("Masked grading evidence is incomplete")
+        try:
             sources = answer["current_sources"]
             source_hashes = {source["path"]: source["sha256"] for source in sources}
             if (len(source_hashes) != len(sources)
@@ -142,6 +153,8 @@ def bind_quality(packet, review_path, output):
                     or digest(answer["oracle"]) != binding["citation_sha256"]
                     or digest(answer["rubric"]) != binding["label_sha256"]):
                 raise ValueError("Masked grading evidence changed")
+        except (KeyError, TypeError, AttributeError):
+            raise ValueError("Masked grading evidence is malformed") from None
         labels.append({**binding, **{key: label[key] for key in fields}})
     return _write(output, {"protocol_sha256": protocols.pop(), "reviewer": review["reviewer"],
                            "method": review["method"], "labels": labels})

@@ -192,8 +192,10 @@ def _load(run_dir):
         answer = extract_answer(path, manifest["output"]["answer_policy"])
         workload = next(w for w in manifest["workloads"] if w["id"] == key[1])
         current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
+        _require(isinstance(task.get("question"), str), "Missing frozen review question")
         rows.append({"id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
                      "state": state, "seconds": seconds, "phase": task["phase"],
+                     "question_sha256": hashlib.sha256(task["question"].encode("utf-8")).hexdigest(),
                      "output_sha256": digest({"output": manifest["output"],
                                               "output_instruction": instruction(manifest["output"])}),
                      "source_sha256": digest({"snapshot": task.get("snapshot"), "files": current["files"] if current else None}),
@@ -221,7 +223,7 @@ def mask(run_dir, output_dir):
     public, private = [], []
     for row in rows:
         case = secrets.token_hex(16)
-        binding = {k: row[k] for k in ("answer_sha256", "source_sha256", "citation_sha256",
+        binding = {k: row[k] for k in ("answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
                                        "label_sha256", "output_sha256")}
         task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
                     for t in w["tasks"] if t["id"] == row["task"])
@@ -294,7 +296,7 @@ def report(run_dir, quality_path, output_path):
     _require(set(lookup) == {r["id"] for r in rows}, "Missing/unlisted quality")
     for row in rows:
         review = lookup[row["id"]]
-        for field in ("answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"):
+        for field in ("answer_sha256", "question_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"):
             _require(review.get(field) == row[field], "Quality binding changed: " + field)
         _require(all(type(review.get(k)) is bool for k in ("correct", "grounded", "format_compliant")),
                  "Explicit quality labels required")

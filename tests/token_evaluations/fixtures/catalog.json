@@ -43,6 +43,11 @@
               {
                 "path": "settings.py",
                 "start": 1,
+                "end": 2
+              },
+              {
+                "path": "settings.py",
+                "start": 4,
                 "end": 5
               },
               {
@@ -57,11 +62,14 @@
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
+            "correct": "Match the current configuration and outer-call/wait bounds under the question conditions. A final permitted call may return without requiring a retryable result; do not add stronger necessary conditions. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Joint current evidence must support override precedence, caller propagation, outer-loop termination and any wait placement actually claimed. Do not attribute a concrete internal retry implementation to an unspecified injected dependency. Evidence may come from current memory reads or repository research; mechanism success is separate from answer quality."
           },
           "publication_sources": [
             "settings.py",
@@ -84,15 +92,18 @@
               {
                 "path": "settings.py",
                 "start": 1,
-                "end": 5
+                "end": 1
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "The default configuration value must be supported by the current configuration source; publish only that narrow finding."
+            "correct": "Give the default configuration value before environment/queue and per-request/per-job overrides. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Support the default value with its current defining assignment. No propagation/retry facts, publication, memory hit or specific research method are required for answer quality."
           },
           "publication_sources": [
             "settings.py"
@@ -114,6 +125,11 @@
               {
                 "path": "settings.py",
                 "start": 1,
+                "end": 2
+              },
+              {
+                "path": "settings.py",
+                "start": 4,
                 "end": 5
               },
               {
@@ -128,11 +144,14 @@
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
+            "correct": "Match the current configuration and outer-call/wait bounds under the question conditions. A final permitted call may return without requiring a retryable result; do not add stronger necessary conditions. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Joint current evidence must support override precedence, caller propagation, outer-loop termination and any wait placement actually claimed. Do not attribute a concrete internal retry implementation to an unspecified injected dependency. Evidence may come from current memory reads or repository research; mechanism success is separate from answer quality."
           },
           "memory_from": "cold_learning",
           "memory_query": "Trace a production request with no overrides through this gateway. If all responses are 503, how many requests occur and which timeout does each use? Cite configuration precedence and retry termination."
@@ -149,29 +168,23 @@
               "answerable": false,
               "reason": "No lunar sample composition measurement is defined in these repository sources."
             },
-            "citations": [
-              {
-                "path": "settings.py",
-                "start": 1,
-                "end": 5
-              },
-              {
-                "path": "handler.py",
-                "start": 5,
-                "end": 7
-              },
-              {
-                "path": "client.py",
-                "start": 1,
-                "end": 5
-              }
-            ],
+            "citations": [],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "scoped_absence",
+              "scope": [
+                "README.txt",
+                "client.py",
+                "handler.py",
+                "settings.py",
+                "transport.py"
+              ]
+            }
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
+            "correct": "State that the requested measurement is not answerable from the declared repository scope; do not invent an external measurement or composition. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Scope the absence claim to all declared frozen files. Assess actual current source/search evidence; a cache miss or an empty literal search alone is not proof of absence. Complete verified current evidence delivered by memory is acceptable. No retry-policy facts or particular research method are required."
           }
         },
         {
@@ -190,6 +203,11 @@
               {
                 "path": "settings.py",
                 "start": 1,
+                "end": 2
+              },
+              {
+                "path": "settings.py",
+                "start": 4,
                 "end": 5
               },
               {
@@ -204,11 +222,14 @@
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
+            "correct": "Match the current configuration and outer-call/wait bounds under the question conditions. A final permitted call may return without requiring a retryable result; do not add stronger necessary conditions. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Joint current evidence must support override precedence, caller propagation, outer-loop termination and any wait placement actually claimed. Do not attribute a concrete internal retry implementation to an unspecified injected dependency. Evidence may come from current memory reads or repository research; mechanism success is separate from answer quality."
           },
           "memory_from": "cold_learning",
           "memory_query": "Trace a production request with no overrides through this gateway. If all responses are 503, how many requests occur and which timeout does each use? Cite configuration precedence and retry termination."
@@ -230,7 +251,12 @@
               {
                 "path": "settings.py",
                 "start": 1,
-                "end": 5
+                "end": 1
+              },
+              {
+                "path": "handler.py",
+                "start": 5,
+                "end": 7
               },
               {
                 "path": "client.py",
@@ -240,15 +266,28 @@
               {
                 "path": "transport.py",
                 "start": 1,
+                "end": 1
+              },
+              {
+                "path": "transport.py",
+                "start": 3,
+                "end": 5
+              },
+              {
+                "path": "transport.py",
+                "start": 7,
                 "end": 13
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts must match executable current-source behavior. Do not invent invisible network operations.",
-            "grounded": "The returned narrow memory supports the default setting but cannot support wire attempts; successful reads of the missing wrapper and concrete backend sources are required."
+            "correct": "Match the default value and the explicitly named concrete adapter under the stated always-raising send. An uncaught exception exits the outer wrapper instead of retrying it. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Current evidence must support the default assignment, caller propagation, outer wrapper and concrete adapter exception/retry behavior. Complete current cache evidence is acceptable; research is needed only for facts missing from observed evidence. Memory mechanism expectations are scored separately from answer quality."
           },
           "memory_from": "partial_learning",
           "memory_query": "What is the default timeout before environment or request overrides?"
@@ -268,15 +307,18 @@
               {
                 "path": "settings.py",
                 "start": 1,
-                "end": 5
+                "end": 1
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts match the current snapshot; unsupported specificity fails.",
-            "grounded": "Joint evidence must support precedence, propagation and termination; facts alone do not establish memory reuse."
+            "correct": "Give the default configuration value before environment/queue and per-request/per-job overrides. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Support the default value with its current defining assignment. No propagation/retry facts, publication, memory hit or specific research method are required for answer quality."
           },
           "research_hints": [
             "settings.py"
@@ -331,6 +373,11 @@
               {
                 "path": "policy.py",
                 "start": 1,
+                "end": 2
+              },
+              {
+                "path": "policy.py",
+                "start": 5,
                 "end": 6
               },
               {
@@ -345,11 +392,14 @@
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
+            "correct": "Match the current configuration and outer-call/wait bounds under the question conditions. A final permitted call may return without requiring a retryable result; do not add stronger necessary conditions. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Joint current evidence must support override precedence, caller propagation, outer-loop termination and any wait placement actually claimed. Do not attribute a concrete internal retry implementation to an unspecified injected dependency. Evidence may come from current memory reads or repository research; mechanism success is separate from answer quality."
           },
           "publication_sources": [
             "policy.py",
@@ -372,15 +422,18 @@
               {
                 "path": "policy.py",
                 "start": 1,
-                "end": 6
+                "end": 1
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "The default configuration value must be supported by the current configuration source; publish only that narrow finding."
+            "correct": "Give the default configuration value before environment/queue and per-request/per-job overrides. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Support the default value with its current defining assignment. No propagation/retry facts, publication, memory hit or specific research method are required for answer quality."
           },
           "publication_sources": [
             "policy.py"
@@ -403,6 +456,11 @@
               {
                 "path": "policy.py",
                 "start": 1,
+                "end": 2
+              },
+              {
+                "path": "policy.py",
+                "start": 5,
                 "end": 6
               },
               {
@@ -417,11 +475,14 @@
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
+            "correct": "Match the current configuration and outer-call/wait bounds under the question conditions. A final permitted call may return without requiring a retryable result; do not add stronger necessary conditions. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Joint current evidence must support override precedence, caller propagation, outer-loop termination and any wait placement actually claimed. Do not attribute a concrete internal retry implementation to an unspecified injected dependency. Evidence may come from current memory reads or repository research; mechanism success is separate from answer quality."
           },
           "memory_from": "cold_learning",
           "memory_query": "Trace a priority-queue job with no per-job overrides. If the backend always returns retryable results, how many submissions and waits occur, and what is the wait duration? Cite policy precedence, propagation and termination."
@@ -438,29 +499,23 @@
               "answerable": false,
               "reason": "No lunar sample composition measurement is defined in these repository sources."
             },
-            "citations": [
-              {
-                "path": "policy.py",
-                "start": 1,
-                "end": 6
-              },
-              {
-                "path": "dispatcher.py",
-                "start": 5,
-                "end": 7
-              },
-              {
-                "path": "executor.py",
-                "start": 1,
-                "end": 6
-              }
-            ],
+            "citations": [],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "scoped_absence",
+              "scope": [
+                "README.txt",
+                "backend.py",
+                "dispatcher.py",
+                "executor.py",
+                "policy.py"
+              ]
+            }
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
+            "correct": "State that the requested measurement is not answerable from the declared repository scope; do not invent an external measurement or composition. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Scope the absence claim to all declared frozen files. Assess actual current source/search evidence; a cache miss or an empty literal search alone is not proof of absence. Complete verified current evidence delivered by memory is acceptable. No retry-policy facts or particular research method are required."
           }
         },
         {
@@ -480,6 +535,11 @@
               {
                 "path": "policy.py",
                 "start": 1,
+                "end": 2
+              },
+              {
+                "path": "policy.py",
+                "start": 5,
                 "end": 6
               },
               {
@@ -494,11 +554,14 @@
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
+            "correct": "Match the current configuration and outer-call/wait bounds under the question conditions. A final permitted call may return without requiring a retryable result; do not add stronger necessary conditions. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Joint current evidence must support override precedence, caller propagation, outer-loop termination and any wait placement actually claimed. Do not attribute a concrete internal retry implementation to an unspecified injected dependency. Evidence may come from current memory reads or repository research; mechanism success is separate from answer quality."
           },
           "memory_from": "cold_learning",
           "memory_query": "Trace a priority-queue job with no per-job overrides. If the backend always returns retryable results, how many submissions and waits occur, and what is the wait duration? Cite policy precedence, propagation and termination."
@@ -520,7 +583,12 @@
               {
                 "path": "policy.py",
                 "start": 1,
-                "end": 6
+                "end": 1
+              },
+              {
+                "path": "dispatcher.py",
+                "start": 5,
+                "end": 7
               },
               {
                 "path": "executor.py",
@@ -530,15 +598,28 @@
               {
                 "path": "backend.py",
                 "start": 1,
+                "end": 1
+              },
+              {
+                "path": "backend.py",
+                "start": 3,
+                "end": 5
+              },
+              {
+                "path": "backend.py",
+                "start": 7,
                 "end": 13
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "All typed facts must match executable current-source behavior. Do not invent invisible network operations.",
-            "grounded": "The returned narrow memory supports the default setting but cannot support wire attempts; successful reads of the missing wrapper and concrete backend sources are required."
+            "correct": "Match the default value and the explicitly named concrete adapter under the stated always-raising send. An uncaught exception exits the outer wrapper instead of retrying it. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Current evidence must support the default assignment, caller propagation, outer wrapper and concrete adapter exception/retry behavior. Complete current cache evidence is acceptable; research is needed only for facts missing from observed evidence. Memory mechanism expectations are scored separately from answer quality."
           },
           "memory_from": "partial_learning",
           "memory_query": "What delay applies by default before queue and per-job policy overrides?"
@@ -558,15 +639,18 @@
               {
                 "path": "policy.py",
                 "start": 1,
-                "end": 6
+                "end": 1
               }
             ],
             "unsupported_claims_fail": true,
-            "stale_snapshot_fails": true
+            "stale_snapshot_fails": true,
+            "evidence_policy": {
+              "kind": "support"
+            }
           },
           "rubric": {
-            "correct": "Every typed fact must match the declared current snapshot; distinguish submissions, waits and unspecified backend internals. Unsupported specificity fails.",
-            "grounded": "Joint citations must establish policy precedence, dispatch propagation, retry termination and wait placement. Correct facts alone do not prove actual memory reuse."
+            "correct": "Give the default configuration value before environment/queue and per-request/per-job overrides. Every factual claim, including optional elaboration, must be supported by current source behavior. Unsupported specificity and stale-snapshot claims fail. Distinguish necessary from sufficient conditions and explicitly supplied injected implementations from unspecified dependencies.",
+            "grounded": "Support the default value with its current defining assignment. No propagation/retry facts, publication, memory hit or specific research method are required for answer quality."
           },
           "research_hints": [
             "policy.py"

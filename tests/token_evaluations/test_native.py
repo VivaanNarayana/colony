@@ -357,7 +357,7 @@ def test_small_positive_wall_remainder_is_not_inflated(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize('entrypoint', ['preflight', 'execute'])
-@pytest.mark.parametrize('change', ['legacy', 'previous', 'research_v3', 'missing_output_contract', 'wrong_output_contract',
+@pytest.mark.parametrize('change', ['legacy', 'previous', 'research_v3', 'evidence_v4', 'missing_output_contract', 'wrong_output_contract',
                                   'missing_collector', 'partial_collector', 'wrong_hash', 'extra_file'])
 def test_contract_and_collector_rejected_before_native_side_effects(tmp_path, monkeypatch,
                                                                   entrypoint, change):
@@ -370,6 +370,8 @@ def test_contract_and_collector_rejected_before_native_side_effects(tmp_path, mo
         protocol['contract'] = 'colony.token-evaluation/2'
     elif change == 'research_v3':
         protocol['contract'] = 'colony.token-evaluation/3'
+    elif change == 'evidence_v4':
+        protocol['contract'] = 'colony.token-evaluation/4'
     elif change == 'missing_output_contract':
         protocol['output'].pop('contract')
     elif change == 'wrong_output_contract':
@@ -396,3 +398,27 @@ def test_contract_and_collector_rejected_before_native_side_effects(tmp_path, mo
     provision.assert_not_called()
     launch.assert_not_called()
     assert not (tmp_path / 'private/client').exists()
+
+
+@pytest.mark.parametrize('track', ['natural', 'controlled'])
+def test_grading_metadata_never_becomes_agent_hints(track):
+    """Prospective rubric corrections must not supply solutions to either arm."""
+    from copy import deepcopy
+    catalog = json.loads((Path(__file__).parent / 'fixtures/catalog.json').read_bytes())
+    protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
+                'format': 'json', 'answer_policy': 'last_agent_message'},
+                'research': {'max_calls': 6}, 'track': track}
+    for workload in catalog['workloads']:
+        for original in workload['tasks']:
+            task = deepcopy(original)
+            if track == 'natural':
+                task['expected_use'] = 'optional'
+            changed = deepcopy(task)
+            changed['oracle'] = {'facts': {'sentinel': 'PRIVATE_ORACLE_ANSWER'},
+                                 'citations': [{'path': 'PRIVATE_ORACLE_PATH', 'start': 999, 'end': 999}],
+                                 'evidence_policy': 'PRIVATE_EVIDENCE_RULE'}
+            changed['rubric'] = {'correct': 'PRIVATE_CORRECT_RULE',
+                                 'grounded': 'PRIVATE_GROUNDING_RULE'}
+            for guidance in ('', 'Installed Colony guidance.'):
+                assert native._prompt(protocol, task, guidance) == native._prompt(
+                    protocol, changed, guidance), (track, workload['id'], task['id'])
