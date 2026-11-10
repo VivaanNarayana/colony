@@ -49,6 +49,7 @@ from colony.retrieval import (
     rank,
     requires_procedure,
 )
+from colony.retrieval_diagnostics import record_retrieval
 from colony.security import fingerprint, private_write, scrub
 from colony.validation import validate
 
@@ -663,8 +664,12 @@ class Store:
             git_context=git_context,
         )
         if answer.get("status") == "validated" or not namespaces:
+            record_retrieval(
+                "result", accepted=bool(answer.get("hit")),
+                validated=answer.get("status") == "validated", reason=answer.get("reason"),
+            )
             return answer
-        return (
+        result = (
             self.find_evidence(
                 question,
                 namespaces,
@@ -674,6 +679,11 @@ class Store:
             )
             or answer
         )
+        record_retrieval(
+            "result", accepted=bool(result.get("hit")),
+            validated=result.get("status") == "validated", reason=result.get("reason"),
+        )
+        return result
 
     def find_evidence(
         self,
@@ -687,6 +697,7 @@ class Store:
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
         if not namespaces or (requested is not None and not self._git_bound(requested)):
+            record_retrieval("evidence_scope", accepted=False, reason="scope_or_repository")
             return None
         placeholders = ",".join("?" for _ in namespaces)
         with self.connect() as db:
@@ -700,6 +711,7 @@ class Store:
                 ORDER BY distance, t.created_at DESC""",
                 [embed(question, query=True), *namespaces, time.time() - max_age],
             ).fetchall()
+            record_retrieval("evidence_candidates", count=len(rows), accepted=bool(rows))
             cache, groups, candidates = {}, {}, []
             for row in rows:
                 if row["distance"] is None:
@@ -735,6 +747,7 @@ class Store:
             # A lexical candidate can rescue evidence below the dense cutoff. Keep
             # the expensive cross-encoder bounded to at most 48 distinct passages.
             chosen = sorted(set(dense) | set(sparse))
+            record_retrieval("evidence_selection", count=len(chosen), limit=48)
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
             scores = rank(question, [text for _, text in candidates])
@@ -755,6 +768,13 @@ class Store:
                 key=lambda item: item[1],
                 reverse=True,
             )
+            accepted_groups = {id(linked) for linked, _ in ordered}
+            for (linked, _), score, coverage in zip(candidates, scores, lexical, strict=True):
+                record_retrieval(
+                    "evidence_gate", candidate_id=linked[0]["id"],
+                    dense=1 - linked[0]["distance"], rerank=score, coverage=coverage,
+                    accepted=id(linked) in accepted_groups,
+                )
             # A candidate can be retired during reranking. Serialize the final state
             # check with lifecycle writes before validating/returning current evidence.
             db.execute("BEGIN IMMEDIATE")
@@ -765,6 +785,10 @@ class Store:
                         continue
                     checked.add(row["id"])
                     if self.memory_metadata(db, row["id"])["state"] != "active":
+                        record_retrieval(
+                            "evidence_validation", candidate_id=row["id"],
+                            accepted=False, reason="inactive",
+                        )
                         continue
                     if requested is not None:
                         git_receipt = self._git_receipt(db, row["id"], requested)
@@ -772,6 +796,10 @@ class Store:
                             continue
                     sources = self.sources(db, row["id"])
                     status, checks = validate(self.repo, sources)
+                    record_retrieval(
+                        "evidence_validation", candidate_id=row["id"],
+                        validated=status == "validated", source_count=len(sources),
+                    )
                     if status != "validated":
                         continue
                     permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
@@ -847,10 +875,12 @@ class Store:
     ):
         requested = self._git_request(git_context)
         if not namespaces:
+            record_retrieval("answer_scope", accepted=False, reason="no_pull_scope")
             if requested is not None:
                 return self._git_miss(requested, reason="no_pull_scope")
             return {"hit": False, "reason": "no_pull_scope"}
         if requested is not None and not self._git_bound(requested):
+            record_retrieval("answer_scope", accepted=False, reason="repository_mismatch")
             return self._git_miss(
                 requested,
                 compatibility="repository_mismatch" if self.repository_id else "unavailable",
@@ -887,6 +917,14 @@ class Store:
                 rows.append(row)
                 if len(rows) == CANDIDATES:
                     break
+            record_retrieval("answer_candidates", count=len(rows), limit=CANDIDATES)
+            for row in rows:
+                record_retrieval(
+                    "answer_dense_gate", candidate_id=row["id"],
+                    dense=None if row["distance"] is None else 1 - row["distance"],
+                    threshold=0.55,
+                    accepted=row["distance"] is not None and 1 - row["distance"] >= 0.55,
+                )
             rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
             contents = [self.read_content(r["content_ref"]) for r in rows]
             scores = rank(question, [c[:4000] for c in contents])
@@ -920,6 +958,24 @@ class Store:
                     or item[0]["question"].strip().casefold() == question.strip().casefold()
                 )
             ]
+            accepted_ids = {item[0]["id"] for item in candidates}
+            for row, content, score, relevance in zip(
+                rows, contents, scores, relevance_scores, strict=True
+            ):
+                exact = row["question"].strip().casefold() == question.strip().casefold()
+                procedure = requires_procedure(question)
+                question_threshold = 0.70 if procedure else 0.65
+                record_retrieval(
+                    "answer_gate", candidate_id=row["id"], rerank=score,
+                    question_similarity=1 - row["question_distance"],
+                    relevance=relevance, threshold=threshold,
+                    exact_question=exact, question_threshold=question_threshold,
+                    procedure_required=procedure,
+                    relevance_pass=relevance >= threshold or exact,
+                    question_pass=1 - row["question_distance"] >= question_threshold or exact,
+                    procedure_pass=not procedure or procedural_text(content) or exact,
+                    accepted=row["id"] in accepted_ids,
+                )
             if not candidates:
                 if requested is not None:
                     return self._git_miss(
@@ -950,6 +1006,11 @@ class Store:
                 old = time.time() - row["created_at"] > max_age
                 if old and status == "validated":
                     status = "unverified"
+                record_retrieval(
+                    "answer_validation", candidate_id=row["id"],
+                    validated=status == "validated", age_valid=not old,
+                    source_count=len(sources),
+                )
                 now = time.time()
                 db.execute(
                     "UPDATE trails SET status=?,last_validated_at=? WHERE id=?",
