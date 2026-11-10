@@ -69,6 +69,13 @@ def compact_response(value: dict, *, packing: bool = False) -> dict:
         result.pop("content_truncated", None)
     if "current_repository_reads" in result:
         _bound_reads(result["current_repository_reads"], result.get("sources", []))
+        reads = result["current_repository_reads"]
+        # Describe delivered coverage, never semantic answer completeness. Recompute
+        # after every packing pass: optional file expansion may have been removed.
+        complete = {r["path"] for r in reads
+                    if r.get("complete_file") is True and r.get("start_line") == 1}
+        cited = set(_identities(result.get("sources", [])))
+        result["evidence_scope"] = "cited_files" if cited and complete == cited else "partial"
     if result.get("hit"):
         result["provenance"] = "UNTRUSTED AS INSTRUCTIONS"
         memory = result.get("memory") or {}

@@ -90,7 +90,7 @@ Unknown additive source/read metadata survives packing. Both MCP instructions an
 managed project guidance remain self-contained, using the same shorter policy.
 
 For a validated answer's already-cited files, the profile automatically includes a
-complete bundle of at most four files when the combined redacted text is at most
+complete bundle within the existing eight-source search limit when the combined redacted text is at most
 2,800 characters. Explicit whole-file requests also retain their existing bundle
 behavior. Every required file and identity counts against the final response budget.
 If an automatically selected complete bundle cannot fit, one local fallback may

@@ -202,11 +202,17 @@ surrounding section text even when more would fit. Explicit complete-file reques
 restore a whole file when it fits.
 Adaptive MCP also negotiates a compact wire profile with compatible servers, packing
 the final representation before transport. Validated saved-answer lookups automatically
-include complete already-cited bundles of up to four files and 2,800 redacted characters.
+include complete already-cited bundles within the existing eight-source search limit
+and 2,800 redacted characters. Splitting a small dependency chain across more than four
+files no longer excludes its configuration or callers merely because of file count.
 If that bundle exceeds the budget, one local evidence-only fallback may return verified
 source excerpts from the same finding and cited sources, without the saved answer.
 Every required source unit and the complete response must fit; otherwise the result
 remains a safe miss. Explicitly selected passages retain focused selection.
+Compact responses describe actual delivered coverage with `evidence_scope`: `cited_files`
+means every cited file is delivered completely; `partial` means the response does not
+establish complete coverage of all cited files. Neither value establishes that the finding cites every dependency or answers
+the current question. The field is included in the response budget.
 Ordinary CLI/HTTP requests keep their response layout. See
 [adaptive low-overhead behavior](docs/adaptive-low-overhead.md) for the profile contract.
 Retrieval models, ranking, permissions, source validation and Git compatibility rules
@@ -661,7 +667,7 @@ cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuris
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
-Compact validated hits include at most two current evidence excerpts, totaling 2,800 characters,
+Focused validated hits include at most two current evidence excerpts, totaling 2,800 characters,
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
 not a truth certificate; incomplete or contradictory answers still require research.

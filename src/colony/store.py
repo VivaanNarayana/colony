@@ -652,7 +652,7 @@ class Store:
         if not evidence or not sources:
             return None
         identities = frozenset((source["ref"], source["content_hash"]) for source in sources)
-        if not 1 <= len(identities) <= 4 or len(evidence) != len(identities):
+        if not 1 <= len(identities) <= 8 or len(evidence) != len(identities):
             return None
         if {item["ref"] for item in evidence} != {ref for ref, _ in identities}:
             return None

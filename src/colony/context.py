@@ -409,14 +409,15 @@ def excerpts(
     unique = {s.ref: s for s in sources}
     if (
         (whole_files or (adaptive and compact_bundle))
-        and 1 <= len(unique) <= 4
+        and 1 <= len(unique) <= (8 if adaptive and compact_bundle else 4)
         and (not adaptive or (claims is not None and preferred is None))
     ):
-        files = []
+        files, size = [], 0
         for source in unique.values():
             lines = source_lines(root, source)
             text = "\n".join(lines)
-            if not lines or len(text) > 16000:
+            size += len(text)
+            if not lines or len(text) > 16000 or (adaptive and size > 2800):
                 break
             files.append(
                 _adaptive_excerpt(source.ref, lines, (1, len(lines)), True)
@@ -425,7 +426,9 @@ def excerpts(
             )
         else:
             # Complete small, redacted files remove the need to reread an identical
-            # file through another tool. Large/many files retain focused excerpts.
+            # file through another tool. The adaptive source-work ceiling is the
+            # same eight cited files used by source_chunks; file count alone must
+            # not discard a dependency from an otherwise small complete bundle.
             # An explicit whole-file request must not lose a small published source
             # bundle to the ranked two-passage cap. Adaptive bundles stay within the
             # existing 2,800-character excerpt allowance; final protocol packing

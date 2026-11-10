@@ -334,7 +334,7 @@ def test_compact_bundle_scrubs_secrets_and_never_reads_uncited_files(transport):
     assert first["sha256"] == snapshot(repo, "part0.py").content_hash
 
 
-@pytest.mark.parametrize("count,lines", [(5, 1), (3, 160)])
+@pytest.mark.parametrize("count,lines", [(9, 1), (3, 160)])
 def test_compact_bundle_limits_keep_ranked_selection(tmp_path, monkeypatch, count, lines):
     sources = []
     for index in range(count):
