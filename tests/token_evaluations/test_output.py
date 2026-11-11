@@ -11,6 +11,7 @@ from scripts.token_evaluation.output import (
     structurally_compliant,
 )
 from scripts.token_evaluation.protocol import CONTRACT
+from scripts.token_evaluation.quality import review_policy
 
 
 def output(format="json"):
@@ -55,7 +56,7 @@ def test_free_text_has_no_new_structure_requirement(text):
 @pytest.mark.parametrize("guidance", ["", "Configured project research guidance."])
 @pytest.mark.parametrize("phase", ["learn", "reuse"])
 def test_both_arms_and_phases_receive_identical_shared_json_instruction(guidance, phase):
-    protocol = {"contract": CONTRACT, "output": output(), "research": {"max_calls": 6},
+    protocol = {"contract": CONTRACT, "quality_review": review_policy(), "output": output(), "research": {"max_calls": 6},
                 "track": "controlled"}
     task = {"phase": phase, "question": "What is the timeout?"}
     prompt = native._prompt(protocol, task, guidance)

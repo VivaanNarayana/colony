@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from scripts.token_evaluation.quality import review_policy
 from scripts.token_evaluation.runner import execute, inventory
 
 
@@ -73,7 +74,7 @@ def test_runtime_inventory_rejects_partial_module_manifest(tmp_path, monkeypatch
     from scripts.token_evaluation.output import OUTPUT_CONTRACT
     from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
 
-    protocol = {"contract": CONTRACT, "output": {"contract": OUTPUT_CONTRACT,
+    protocol = {"contract": CONTRACT, "quality_review": review_policy(), "output": {"contract": OUTPUT_CONTRACT,
                 "format": "free_text", "answer_policy": "last_agent_message"},
                 "collector": {"files": collector_hashes()},
                 "workloads": [], "target": {"python": "target", "runtime_hashes": {"colony/__init__.py": "a" * 64}}, "client": {}}
@@ -108,7 +109,7 @@ def test_collector_source_drift_blocks_verification(tmp_path):
     from scripts.token_evaluation.runner import _verify
     source = tmp_path / "collector.py"
     source.write_text("changed")
-    protocol = {"contract": CONTRACT, "output": {"contract": OUTPUT_CONTRACT,
+    protocol = {"contract": CONTRACT, "quality_review": review_policy(), "output": {"contract": OUTPUT_CONTRACT,
                 "format": "free_text", "answer_policy": "last_agent_message"},
                 "collector": {"files": {str(source): "0" * 64}}}
     with pytest.raises(ValueError, match="complete active collector"):

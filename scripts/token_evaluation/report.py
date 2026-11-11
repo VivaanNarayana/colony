@@ -11,9 +11,11 @@ import re
 import secrets
 from pathlib import Path
 
-from .evidence import evaluate_mechanisms
-from .output import instruction, structurally_compliant
+from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
+from .output import instruction
 from .protocol import ATTEMPT_ID_PATTERN, CONTRACT, validate_contract, verify_active_collector
+from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_advice
+from .quality import CONTRACT as QUALITY_CONTRACT
 from .receipt import validate_native_receipts
 from .usage import native_usage
 
@@ -198,7 +200,7 @@ def _load(run_dir):
                      "question_sha256": hashlib.sha256(task["question"].encode("utf-8")).hexdigest(),
                      "output_sha256": digest({"output": manifest["output"],
                                               "output_instruction": instruction(manifest["output"])}),
-                     "source_sha256": digest({"snapshot": task.get("snapshot"), "files": current["files"] if current else None}),
+                     "source_sha256": digest({"snapshot": task.get("snapshot"), "files": current["files"] if current else {}}),
                      "citation_sha256": digest(task["oracle"]),
                      "label_sha256": digest(task["rubric"]), **answer, "activity": activity(path), **native_usage(path)})
         # native_usage hashes all agent messages; preserve declared answer selection.
@@ -216,6 +218,55 @@ def _load(run_dir):
     return run, manifest, rows
 
 
+def review_subject(run_dir, run, manifest, row, case):
+    """Rebuild reviewer subject from frozen bytes, not submitted grading claims."""
+    binding = {key: row[key] for key in BINDINGS}
+    workload = next(w for w in manifest["workloads"] if w["id"] == row["workload"])
+    task = next(t for t in workload["tasks"] if t["id"] == row["task"])
+    current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
+    sources, observed = [], []
+    if current:
+        source_root = Path(run_dir).resolve() / "workspaces" / "no_colony" / row["workload"] / current["id"]
+        for relative, expected_hash in current["files"].items():
+            source = (source_root / relative).resolve(strict=True)
+            _require(source.is_relative_to(source_root) and _sha(source) == expected_hash,
+                     "Current grading source changed")
+            sources.append({"path": relative, "sha256": expected_hash,
+                            "content": source.read_bytes().decode("utf-8")})
+        journal = Path(run_dir) / "control" / "attempts.jsonl"
+        record = next(json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()
+                      if json.loads(line)["id"] == row["id"])
+        events = [json.loads(line) for line in (Path(run_dir) / "logs" / record.get("result", record)["events"])
+                  .read_text(encoding="utf-8").splitlines()]
+        # Only evidence delivered before the selected final answer is available.
+        final = max((n for n, event in enumerate(events) if event.get("type") == "item.completed"
+                     and event.get("item", {}).get("type") == "agent_message"), default=0)
+        spans = []
+        for event in events[:final]:
+            item = event.get("item", {})
+            if event.get("type") != "item.completed" or item.get("type") != "mcp_tool_call":
+                continue
+            server = str(item.get("server", "")).lower()
+            if server == "repository":
+                spans += _research(item, source_root, current["files"])
+            elif server == "colony" and item.get("tool") == "ask":
+                for value in _objects(item):
+                    spans += verify_current_reads(value.get("current_repository_reads"), source_root, current["files"])
+        # Normalize by evidence bytes, never credit tool names or number of calls.
+        for relative, start, end in sorted({(s["path"], s["start"], s["end"]) for s in spans}):
+            source = next(s for s in sources if s["path"] == relative)
+            observed.append({"path": relative, "sha256": source["sha256"], "start": start, "end": end,
+                             "content": "\n".join(source["content"].splitlines()[start - 1:end])})
+    return {"case": case, "answer": row["text"], "current_sources": sources,
+            "observed_current_evidence": observed,
+            "evidence_limit": "Verified current excerpts before the final answer; not proof of semantic grounding or earlier-message chronology.",
+            "question": task["question"], "oracle": task["oracle"], "rubric": task["rubric"],
+            "snapshot": task.get("snapshot"), "output": manifest["output"],
+            "output_instruction": instruction(manifest["output"]),
+            "review_policy": manifest["quality_review"],
+            "protocol_sha256": run["protocol_sha256"], **binding}
+
+
 def mask(run_dir, output_dir):
     run, manifest, rows = _load(run_dir)
     output = Path(output_dir)
@@ -223,27 +274,8 @@ def mask(run_dir, output_dir):
     public, private = [], []
     for row in rows:
         case = secrets.token_hex(16)
-        binding = {k: row[k] for k in ("answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
-                                       "label_sha256", "output_sha256")}
-        task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
-                    for t in w["tasks"] if t["id"] == row["task"])
-        workload = next(w for w in manifest["workloads"] if w["id"] == row["workload"])
-        current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
-        sources = []
-        for relative, expected_hash in (current["files"].items() if current else []):
-            source_root = Path(run_dir).resolve() / "workspaces" / "no_colony" / row["workload"] / current["id"]
-            source = (source_root / relative).resolve(strict=True)
-            _require(source.is_relative_to(source_root) and _sha(source) == expected_hash,
-                     "Current grading source changed")
-            sources.append({"path": relative, "sha256": expected_hash,
-                            "content": source.read_bytes().decode("utf-8")})
-        public.append({"case": case, "answer": row["text"], "current_sources": sources,
-                       "question": task.get("question"), "oracle": task["oracle"],
-                       "rubric": task["rubric"], "snapshot": task.get("snapshot"),
-                       "output": manifest["output"],
-                       "output_instruction": instruction(manifest["output"]),
-                       "protocol_sha256": run["protocol_sha256"], **binding})
-        private.append({"case": case, "id": row["id"], **binding})
+        public.append(review_subject(run_dir, run, manifest, row, case))
+        private.append({"case": case, "id": row["id"], **{key: row[key] for key in BINDINGS}})
     secrets.SystemRandom().shuffle(public)
     (output / "answers.json").write_text(json.dumps(public, indent=2), encoding="utf-8")
     (output / "private-map.json").write_text(json.dumps(private, indent=2), encoding="utf-8")
@@ -287,26 +319,27 @@ def report(run_dir, quality_path, output_path):
                      "Invocation client changed")
         validate_native_receipts(root, run, manifest, rows)
     quality = _read(quality_path)
-    _require(quality.get("reviewer") and quality.get("method"),
-             "Independent reviewer identity and method required")
+    _require(set(quality) == {"contract", "protocol_sha256", "policy", "labels", "reviews"}
+             and quality["contract"] == QUALITY_CONTRACT and quality["policy"] == review_policy(),
+             "Advisory quality contract required; Boolean grades are not accepted")
     _require(quality.get("protocol_sha256") == run.get("protocol_sha256"), "Protocol binding changed")
     reviews = quality["labels"]
     _require(len({r["id"] for r in reviews}) == len(reviews), "Duplicate quality")
     lookup = {r["id"]: r for r in reviews}
     _require(set(lookup) == {r["id"] for r in rows}, "Missing/unlisted quality")
+    _require(len({r["case"] for r in reviews}) == len(reviews), "Duplicate masked case")
     for row in rows:
         review = lookup[row["id"]]
-        for field in ("answer_sha256", "question_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"):
+        _require(set(review) == {"id", "case", *BINDINGS}, "Advisory bindings only; Boolean grades are not accepted")
+        for field in BINDINGS:
             _require(review.get(field) == row[field], "Quality binding changed: " + field)
-        _require(all(type(review.get(k)) is bool for k in ("correct", "grounded", "format_compliant")),
-                 "Explicit quality labels required")
-        row["review_format_compliant"] = review["format_compliant"]
-        row["structural_format_compliant"] = structurally_compliant(row["text"], manifest["output"])
-        row["format_compliant"] = row["review_format_compliant"] and row["structural_format_compliant"]
-        row["answer_quality_successful"] = (
-            review["correct"] and review["grounded"] and row["format_compliant"]
-            and row["state"] == "completed" and row["native_finished"])
-        row["successful"] = row["answer_quality_successful"]
+        row.update(assess(row["text"], manifest["output"]))
+    # A missing review cannot pass. Nonempty advice is replayed against the actual
+    # frozen subject, closing the direct-report / changed-packet bypass.
+    _require(isinstance(quality["reviews"], list), "Advisory reviews must be a list")
+    if quality["reviews"]:
+        public = [review_subject(root, run, manifest, row, lookup[row["id"]]["case"]) for row in rows]
+        validate_advice(public, {"contract": REVIEW_CONTRACT, "reviews": quality["reviews"]})
     proofs = evaluate_mechanisms(root, manifest, rows)
     for row in rows:
         task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
@@ -376,6 +409,9 @@ def report(run_dir, quality_path, output_path):
             reduction[field] = 1 - arms["colony"]["total_usage"][field] / baseline if baseline else None
     result = {"contract": CONTRACT, "protocol_sha256": run["protocol_sha256"],
               "output": manifest["output"], "arms": arms, "attempts": rows,
+              "quality_policy": review_policy(), "advisory_reviews": quality["reviews"],
+              "quality_artifact_sha256": digest(quality),
+              "unresolved_quality_attempts": sum(r["quality_state"] == "unresolved" for r in rows),
               "certifying": False, "supported_product_win": "not_established", "billing": None,
               "native_evidence": native, "harness_complete": True, "quality_complete": quality_complete,
               "answer_quality_complete": answer_quality_complete,
@@ -393,7 +429,8 @@ def report(run_dir, quality_path, output_path):
                               "Unknown usage is not zero; no hypothetical future amortization.",
                               "Native receipts are declared counterproof, not cryptographic attestation.",
                               "Setup guidance is delivered manually; native loader fidelity is unverified.",
-                              "Independent quality labels bind bytes; hashes do not establish truth.",
+                              "Semantic correctness and grounding remain unresolved; advisory agreement cannot pass quality.",
+                              "Reviewer configuration and context separation are declared, not attested.",
                               "No-Colony initial empty-store proof means no memory configured."]}
     path = Path(output_path)
     with path.open("x", encoding="utf-8") as stream:

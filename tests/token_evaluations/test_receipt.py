@@ -10,6 +10,7 @@ import pytest
 from test_report import native_receipt_control, put
 from test_report import run as run
 
+from scripts.token_evaluation.quality import review_policy
 from scripts.token_evaluation.report import report
 
 
@@ -142,7 +143,7 @@ def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path,
                 "tasks": [{"id": phase, "phase": phase, "snapshot": "v1",
                            "question": "What is the value?", "expected_use": "optional"}
                           for phase in ("learn", "reuse")]}
-    protocol = {"contract": CONTRACT, "collector": {"files": collector_hashes()},
+    protocol = {"contract": CONTRACT, "quality_review": review_policy(), "collector": {"files": collector_hashes()},
                 "track": "natural", "output": {"contract": OUTPUT_CONTRACT,
                 "format": "json", "answer_policy": "last_agent_message"},
                 "client": {"executable": str(tmp_path / "client.exe"), "sha256": "c" * 64,

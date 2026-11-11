@@ -7,6 +7,7 @@ import pytest
 
 from scripts.token_evaluation.output import JSON_INSTRUCTION, OUTPUT_CONTRACT, instruction
 from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
+from scripts.token_evaluation.quality import review_policy
 from scripts.token_evaluation.report import activity, digest, extract_answer, mask, report
 
 
@@ -25,7 +26,7 @@ def run(tmp_path):
                        "unsupported_claims_fail": True, "stale_snapshot_fails": True},
             "rubric": {"correct": "current facts", "grounded": "observed current definition"}}
     protocol = {"contract": CONTRACT, "collector": {"files": collector_hashes()},
-                "track": "natural", "output": {"contract": OUTPUT_CONTRACT,
+                "track": "natural", "quality_review": review_policy(), "output": {"contract": OUTPUT_CONTRACT,
                 "format": "free_text", "answer_policy": "last_agent_message"},
                 "workloads": [{"id": "gateway", "snapshots": [], "tasks": [task]}]}
     put(tmp_path / "run.json", {"contract": "colony.token-evaluation-run/1",
@@ -49,10 +50,8 @@ def run(tmp_path):
     (tmp_path / "control" / "attempts.jsonl").write_text("\n".join(map(json.dumps, rows)))
     masked = mask(tmp_path, tmp_path / "masked")
     labels = json.loads((tmp_path / "masked" / "private-map.json").read_text())
-    for label in labels:
-        label.update(correct=True, grounded=True, format_compliant=True)
-    quality = {"protocol_sha256": digest(protocol), "reviewer": "independent fixture control",
-               "method": "synthetic labels; harness only", "labels": labels}
+    quality = {"contract": "colony.advisory-quality/1",
+               "protocol_sha256": digest(protocol), "policy": review_policy(), "labels": labels, "reviews": []}
     put(tmp_path / "quality.json", quality)
     return tmp_path, quality, masked
 
@@ -67,10 +66,15 @@ def test_mask_and_cached_accounting_no_adoption(run):
     assert result["adoption"] is False
     assert result["observed_token_reduction"] is None
     assert result["certifying"] is False
-    assert result["answer_quality_complete"] is True
+    assert result["answer_quality_complete"] is False
     assert result["mechanism_complete"] is None
-    assert result["workflow_success"] is result["quality_complete"] is True
+    assert result["workflow_success"] is result["quality_complete"] is False
     assert result["controlled_mechanism_pass"] is False
+    assert all(row["quality_state"] == "unresolved" and not row["successful"]
+               for row in result["attempts"])
+    assert all(result["arms"][arm]["total_usage"]["gross_tokens"] == 120
+               and result["arms"][arm]["successful_workflows"] == 0
+               for arm in ("colony", "no_colony"))
 
 
 def test_answer_selection_progress_preserved(run):
@@ -119,14 +123,15 @@ def test_corrupted_quality_binding_rejected(run, field):
         report(root, root / "bad.json", root / "report.json")
 
 
-def test_wrong_or_stale_answer_fails_quality(run):
+@pytest.mark.parametrize("field", ["correct", "grounded", "format_compliant"])
+@pytest.mark.parametrize("value", [True, False])
+def test_report_rejects_forged_boolean_quality_labels(run, field, value):
     root, quality, _ = run
-    for label in quality["labels"]:
-        label["correct"] = False
-    put(root / "wrong.json", quality)
-    result = report(root, root / "wrong.json", root / "report.json")
-    assert result["arms"]["colony"]["successful_workflows"] == 0
-    assert result["arms"]["colony"]["gross_tokens_per_successful_workflow"] is None
+    quality["labels"][0][field] = value
+    put(root / "forged.json", quality)
+    with pytest.raises(ValueError):
+        report(root, root / "forged.json", root / "report.json")
+    assert not (root / "report.json").exists()
 
 
 def test_unlisted_log_rejected(run):
@@ -167,7 +172,7 @@ def rewrite_events(root, identity, transform):
     journal.write_text("\n".join(map(json.dumps, rows)))
 
 
-def json_answer_control(run, answer, *, reviewer_format=True, correct=True, grounded=True):
+def json_answer_control(run, answer):
     """Synthetic full report controls; every altered answer gets an honest new binding."""
     root, quality, _ = run
     frozen = json.loads((root / "run.json").read_text())
@@ -183,31 +188,33 @@ def json_answer_control(run, answer, *, reviewer_format=True, correct=True, grou
         rewrite_events(root, identity, replace)
         label = next(label for label in quality["labels"] if label["id"] == identity)
         label.update(answer_sha256=hashlib.sha256(answer.encode()).hexdigest(),
-                     output_sha256=output_binding, format_compliant=reviewer_format,
-                     correct=correct, grounded=grounded)
+                     output_sha256=output_binding)
     put(root / "quality.json", quality)
     return root
 
 
-@pytest.mark.parametrize("answer,structure,reviewer,combined", [
-    ('{"facts":{},"sources":[]}', True, True, True),
-    ('{"facts":{"sources":[]}}', False, True, False),
-    ('```json\n{"facts":{},"sources":[]}\n```', False, True, False),
-    ('{"facts":{},"sources":[]}', True, False, False),
+@pytest.mark.parametrize("answer,structure", [
+    ('{"facts":{},"sources":[]}', True),
+    ('{"facts":{"sources":[]}}', False),
+    ('```json\n{"facts":{},"sources":[]}\n```', False),
+    ('{"facts":{"claim":"unsupported"},"sources":[]}', True),
 ])
-def test_structural_and_reviewer_format_are_both_required(run, answer, structure, reviewer, combined):
-    root = json_answer_control(run, answer, reviewer_format=reviewer)
+def test_structural_checks_do_not_resolve_semantics(run, answer, structure):
+    root = json_answer_control(run, answer)
     result = report(root, root / "quality.json", root / "report.json")
     assert result["contract"] == CONTRACT and result["output"]["contract"] == OUTPUT_CONTRACT
     for row in result["attempts"]:
-        assert row["review_format_compliant"] is reviewer
         assert row["structural_format_compliant"] is structure
-        assert row["format_compliant"] is combined
-        assert row["answer_quality_successful"] is combined
-        assert row["successful"] is combined
-    assert result["quality_complete"] is combined
-    assert result["answer_quality_complete"] is combined
-    assert result["workflow_success"] is combined
+        assert row["format_compliant"] is structure
+        assert row["quality_state"] == ("unresolved" if structure else "failed")
+        assert row["quality_obligations"]["correct"] == "unresolved"
+        assert row["quality_obligations"]["grounded"] == "unresolved"
+        assert row["answer_quality_successful"] is False
+        assert row["successful"] is False
+    assert result["quality_complete"] is False
+    assert result["answer_quality_complete"] is False
+    assert result["workflow_success"] is False
+    assert result["observed_token_reduction"] is None
     assert result["mechanism_complete"] is None
     assert all(result["arms"][arm]["known_usage"]["gross_tokens"] == 120
                for arm in ("no_colony", "colony"))
@@ -217,24 +224,12 @@ def test_structural_and_reviewer_format_are_both_required(run, answer, structure
                and row["output"]["answer_policy"] == "last_agent_message" for row in packet)
 
 
-@pytest.mark.parametrize("field", ["correct", "grounded"])
-def test_valid_json_cannot_override_independent_factual_quality(run, field):
-    root = json_answer_control(run, '{"facts":{},"sources":[]}', **{field: False})
+def test_free_text_semantics_remain_unresolved(run):
+    root, _, _ = run
     result = report(root, root / "quality.json", root / "report.json")
-    assert all(row["format_compliant"] and not row["successful"] for row in result["attempts"])
-    assert not result["quality_complete"] and result["observed_token_reduction"] is None
-    assert not result["answer_quality_complete"] and not result["workflow_success"]
-    assert result["mechanism_complete"] is None
-
-
-def test_free_text_still_requires_independent_format_judgment(run):
-    root, quality, _ = run
-    for label in quality["labels"]:
-        label["format_compliant"] = False
-    put(root / "quality.json", quality)
-    result = report(root, root / "quality.json", root / "report.json")
-    assert all(row["structural_format_compliant"] and not row["format_compliant"]
-               and not row["successful"] for row in result["attempts"])
+    assert all(row["structural_format_compliant"] and row["format_compliant"]
+               and row["quality_state"] == "unresolved" and not row["successful"]
+               for row in result["attempts"])
 
 
 def test_parser_failure_keeps_complete_usage_in_report(run):
@@ -245,7 +240,7 @@ def test_parser_failure_keeps_complete_usage_in_report(run):
                for arm in ("no_colony", "colony"))
 
 
-@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "evidence_v4", "missing_version", "wrong_version", "missing_format"])
+@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "evidence_v4", "adjudicated_v5", "missing_version", "wrong_version", "missing_format"])
 def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading(run, change):
     root, _, _ = run
     frozen = json.loads((root / "run.json").read_text())
@@ -257,6 +252,8 @@ def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading
         frozen["protocol"]["contract"] = "colony.token-evaluation/3"
     elif change == "evidence_v4":
         frozen["protocol"]["contract"] = "colony.token-evaluation/4"
+    elif change == "adjudicated_v5":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/5"
     elif change == "missing_version":
         frozen["protocol"]["output"].pop("contract")
     elif change == "wrong_version":
@@ -308,10 +305,10 @@ def test_asymmetric_controlled_adoption_not_green(run):
     put(root / "quality.json", quality)
     result = report(root, root / "quality.json", root / "report.json")
     assert result["arms"]["colony"]["successful_workflows"] == 0
-    assert result["arms"]["no_colony"]["successful_workflows"] == 1
+    assert result["arms"]["no_colony"]["successful_workflows"] == 0
     assert result["supported_product_win"] == "not_established"
     assert not result["controlled_mechanism_pass"]
-    assert result["answer_quality_complete"] is True
+    assert result["answer_quality_complete"] is False
     assert result["mechanism_complete"] is False
     assert result["workflow_success"] is result["quality_complete"] is False
     assert result["observed_token_reduction"] is None
@@ -425,7 +422,7 @@ def test_native_scoring_rejects_changed_collector_before_new_artifact(run, entry
     assert not (root / "refused-mask").exists() and not (root / "refused.json").exists()
 
 
-def test_native_receipt_schema_control_descriptive_ratio(run):
+def test_native_receipt_accounting_does_not_publish_unresolved_ratio(run):
     root, quality, _ = run
     native_receipt_control(root, quality)
     def add_call(events):
@@ -437,19 +434,21 @@ def test_native_receipt_schema_control_descriptive_ratio(run):
         events[-1]["usage"]["input_tokens"] = 80
     rewrite_events(root, "b", add_call)
     result = report(root, root / "quality.json", root / "schema-control.json")
-    assert result["observed_token_reduction"]["gross_tokens"] == pytest.approx(1 - 100 / 120)
+    assert result["observed_token_reduction"] is None
+    assert result["arms"]["colony"]["total_usage"]["gross_tokens"] == 100
+    assert result["arms"]["no_colony"]["total_usage"]["gross_tokens"] == 120
     assert result["supported_product_win"] == "not_established"
     assert result["certifying"] is False
-    assert result["answer_quality_complete"] is True
+    assert result["answer_quality_complete"] is False
     assert result["mechanism_complete"] is None
-    assert result["workflow_success"] is result["quality_complete"] is True
+    assert result["workflow_success"] is result["quality_complete"] is False
 
 
-@pytest.mark.parametrize("answer_pass,mechanism_pass", [
+@pytest.mark.parametrize("structure_pass,mechanism_pass", [
     (True, True), (True, False), (False, True), (False, False),
 ])
 def test_answer_and_mechanism_diagnostics_preserve_strict_native_gate(
-    run, answer_pass, mechanism_pass,
+    run, structure_pass, mechanism_pass,
 ):
     """Fabricated native receipts test report logic, never product performance."""
     root, quality, _ = run
@@ -457,7 +456,8 @@ def test_answer_and_mechanism_diagnostics_preserve_strict_native_gate(
     frozen["protocol"]["track"] = "controlled"
     frozen["protocol"]["workloads"][0]["tasks"][0]["expected_use"] = "required_miss"
     put(root / "run.json", frozen)
-    next(label for label in quality["labels"] if label["id"] == "b")["correct"] = answer_pass
+    answer = '{"facts":{},"sources":[]}' if structure_pass else '{"facts":{}}'
+    json_answer_control(run, answer)
     native_receipt_control(root, quality)
 
     def ask(events):
@@ -473,15 +473,16 @@ def test_answer_and_mechanism_diagnostics_preserve_strict_native_gate(
     rewrite_events(root, "b", ask)
     value = report(root, root / "quality.json", root / "diagnostics-report.json")
     candidate = next(row for row in value["attempts"] if row["arm"] == "colony")
-    combined = answer_pass and mechanism_pass
-    assert candidate["answer_quality_successful"] is answer_pass
+    assert candidate["structural_format_compliant"] is structure_pass
+    assert candidate["quality_state"] == ("unresolved" if structure_pass else "failed")
+    assert candidate["answer_quality_successful"] is False
     assert candidate["expected_use_verified"] is mechanism_pass
-    assert candidate["successful"] is combined
-    assert value["answer_quality_complete"] is answer_pass
+    assert candidate["successful"] is False
+    assert value["answer_quality_complete"] is False
     assert value["mechanism_complete"] is mechanism_pass
-    assert value["quality_complete"] is value["workflow_success"] is combined
-    assert value["controlled_mechanism_pass"] is combined
-    assert (value["observed_token_reduction"] is not None) is combined
+    assert value["quality_complete"] is value["workflow_success"] is False
+    assert value["controlled_mechanism_pass"] is False
+    assert value["observed_token_reduction"] is None
     assert value["useful_reuse"] is False
     assert value["tool_policy_compliant"] is True
     assert all(value["arms"][arm]["total_usage"]["gross_tokens"] == 120
@@ -518,8 +519,8 @@ def test_marker_only_publication_cannot_pass_report_mechanism(run):
     assert not candidate["expected_use_verified"]
     assert not candidate["mechanism_proof"]["publication"]
     assert not value["controlled_mechanism_pass"]
-    assert candidate["answer_quality_successful"] is True and not candidate["successful"]
-    assert value["answer_quality_complete"] is True
+    assert candidate["answer_quality_successful"] is False and not candidate["successful"]
+    assert value["answer_quality_complete"] is False
     assert value["mechanism_complete"] is False
     assert value["workflow_success"] is value["quality_complete"] is False
     assert value["observed_token_reduction"] is None
@@ -647,13 +648,16 @@ def test_mask_exposes_only_selected_current_sources(run):
 
 
 @pytest.mark.parametrize("identity", ["a", "b"])
-@pytest.mark.parametrize("field", ["correct", "grounded", "format_compliant"])
-def test_each_independent_quality_failure_blocks_either_arm_without_dropping_cost(
-    run, identity, field,
-):
-    """Synthetic labels test symmetric enforcement, not semantic model grading."""
+def test_structural_failure_and_unresolved_semantics_block_either_arm_without_dropping_cost(run, identity):
+    """Neither a mechanical failure nor unresolved semantics establishes success."""
     root, quality, _ = run
-    next(label for label in quality["labels"] if label["id"] == identity)[field] = False
+    json_answer_control(run, '{"facts":{},"sources":[]}')
+    invalid = '{"facts":{}}'
+    def invalidate(events):
+        events[-2]["item"]["text"] = invalid
+    rewrite_events(root, identity, invalidate)
+    next(label for label in quality["labels"] if label["id"] == identity)["answer_sha256"] = (
+        hashlib.sha256(invalid.encode()).hexdigest())
     native_receipt_control(root, quality)
 
     def ask(events):
@@ -664,12 +668,15 @@ def test_each_independent_quality_failure_blocks_either_arm_without_dropping_cos
                 "text": '{"hit": false, "reason": "no_relevant_trail"}'}]},
         }})
     rewrite_events(root, "b", ask)
-    result = report(root, root / "quality.json", root / "symmetric-failure.json")
+    result = report(root, root / "quality.json", root / "symmetric-unresolved.json")
     selected = {row["id"]: row for row in result["attempts"]}
-    assert selected[identity]["answer_quality_successful"] is False
-    assert selected["b" if identity == "a" else "a"]["answer_quality_successful"] is True
+    assert selected[identity]["quality_state"] == "failed"
+    assert selected["b" if identity == "a" else "a"]["quality_state"] == "unresolved"
+    assert all(row["answer_quality_successful"] is False for row in selected.values())
     assert result["adoption"] and result["tool_policy_compliant"]
     assert not result["answer_quality_complete"] and not result["workflow_success"]
     assert result["observed_token_reduction"] is None
     assert all(result["arms"][arm]["total_usage"]["gross_tokens"] == 120
+               and result["arms"][arm]["successful_workflows"] == 0
+               and result["arms"][arm]["gross_tokens_per_successful_workflow"] is None
                for arm in ("colony", "no_colony"))

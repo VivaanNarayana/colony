@@ -11,16 +11,27 @@ import pytest
 from scripts.token_evaluation import cli
 from scripts.token_evaluation.output import OUTPUT_CONTRACT, instruction
 from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
+from scripts.token_evaluation.quality import advice_template, review_policy
 
 
 def write(path, value):
     path.write_bytes(json.dumps(value).encode())
 
 
+def refresh_advice(root):
+    advice = advice_template(json.loads((root / "answers.json").read_text()))
+    for review in advice["reviews"]:
+        review["session_id"] = "fixture-session-" + review["slot"]
+        for case in review["cases"]:
+            case["uncertainty"] = "Synthetic advisory fixture; semantics unresolved."
+    write(root / "review.json", advice)
+
+
 def packet(tmp_path):
     value = {"case": "random", "answer": "current fact", "protocol_sha256": "protocol",
+             "observed_current_evidence": [], "evidence_limit": "Synthetic review fixture",
              "question": "State the current fact.", "snapshot": "v1",
-             "current_sources": [], "oracle": {}, "rubric": {},
+             "current_sources": [], "oracle": {}, "rubric": {}, "review_policy": review_policy(),
              "answer_sha256": hashlib.sha256(b"current fact").hexdigest(),
              "question_sha256": hashlib.sha256(b"State the current fact.").hexdigest(),
              "source_sha256": cli.digest({"snapshot": "v1", "files": {}}),
@@ -32,8 +43,7 @@ def packet(tmp_path):
     write(tmp_path / "private-map.json", [{"id": "work-task-colony", **{k: value[k] for k in
         ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
          "label_sha256", "output_sha256")}}])
-    write(tmp_path / "review.json", {"reviewer": "independent", "method": "arm-blind source review",
-        "labels": [{"case": "random", "correct": True, "grounded": True, "format_compliant": True}]})
+    refresh_advice(tmp_path)
     return tmp_path
 
 
@@ -43,7 +53,8 @@ def test_bind_review_without_exposing_arm_to_grader(tmp_path):
     cli.bind_quality(root, root / "review.json", output)
     value = json.loads(output.read_text())
     assert value["labels"][0]["id"] == "work-task-colony"
-    assert value["labels"][0]["correct"] is True
+    assert "correct" not in value["labels"][0]
+    assert value["reviews"][0]["model"] == "gpt-6.1-sol"
     assert all("arm" not in row and "id" not in row
                for row in json.loads((root / "answers.json").read_text()))
     assert "work-task-colony" not in (root / "answers.json").read_text()
@@ -58,13 +69,13 @@ def test_bind_rejects_corrupt_or_incomplete_review(tmp_path, corruption):
         answers[0]["answer"] = "altered"
         write(root / "answers.json", answers)
     elif corruption == "missing_label":
-        review["labels"][0].pop("grounded")
+        review["reviews"][0]["cases"][0].pop("uncertainty")
     elif corruption == "unknown":
-        review["labels"][0]["case"] = "unknown"
+        review["reviews"][0]["cases"][0]["case"] = "unknown"
     elif corruption == "duplicate":
-        review["labels"] *= 2
+        review["reviews"][0]["cases"] *= 2
     else:
-        review["labels"][0]["correct"] = 1
+        review["reviews"][0]["cases"][0]["correct"] = 1
     write(root / "review.json", review)
     with pytest.raises(ValueError):
         cli.bind_quality(root, root / "review.json", root / "quality.json")
@@ -76,8 +87,9 @@ def test_quality_template_is_explicitly_ungraded_and_no_overwrite(tmp_path):
     output = root / "quality.json"
     cli.quality_template(root, output)
     value = json.loads(output.read_text())
-    assert value["labels"][0]["correct"] is None
-    assert value["reviewer"] == ""
+    assert value["reviews"][0]["session_id"] == ""
+    assert "labels" not in value
+    assert "work-task-colony" not in output.read_text()
     with pytest.raises(FileExistsError):
         cli.quality_template(root, output)
 
@@ -93,6 +105,7 @@ def test_bind_rejects_changed_grading_source_or_oracle(tmp_path):
     write(root / "private-map.json", [{"id": "work-task-colony", **{k: answer[k] for k in
         ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
          "label_sha256", "output_sha256")}}])
+    refresh_advice(root)
     cli.bind_quality(root, root / "review.json", root / "good-quality.json")
     answer["current_sources"][0]["content"] = "wrong source"
     write(root / "answers.json", [answer])

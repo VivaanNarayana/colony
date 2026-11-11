@@ -82,8 +82,8 @@ A scenario is an expectation, not a preseeded outcome. If the target returns a h
 for the miss question, or the learner never publishes, controlled coverage fails.
 An uncalled integration in the natural track is an adoption result; it does not
 measure useful-hit savings. Prompt-cache hits are reported separately from memory
-hits. Quality labels still require independent review; matching hashes cannot
-establish that a claim is true.
+hits. Matching hashes and advisory review cannot establish semantic truth. Under
+`/6`, unresolved correctness or grounding blocks a quality-qualified result.
 
 Each lineage declares two learning steps: the first publishes the multi-file
 configuration/retry finding; the second publishes a narrow default-setting finding.
@@ -118,12 +118,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/5` and bind the shared instruction and
+New manifests use `colony.token-evaluation/6` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/5",
+  "contract": "colony.token-evaluation/6",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -133,8 +133,9 @@ structural check through `output.contract`:
 ```
 
 This is an excerpt, not a complete executable manifest. `template` writes the
-binding automatically. Missing or unknown output-contract identifiers fail before
-collection or scoring. Historical `/1`, `/2`, `/3` and `/4` manifests are rejected by this collector
+binding automatically, together with the frozen `quality_review` policy (GPT-6.1 Sol,
+medium reasoning, exact instructions and their hash). Missing or unknown contract identifiers fail before
+collection or scoring. Historical `/1`, `/2`, `/3`, `/4` and `/5` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -147,16 +148,16 @@ Markdown fences, prose around the object, multiple objects, arrays, scalars and
 malformed JSON do not satisfy this structure. The check requires key presence;
 it introduces no value-type, citation-format or additional-key restriction.
 Structurally accepted output can still be incorrect, unsupported or insufficient.
-The existing independent correctness, grounding, citation and format review and
-controlled-mechanism/tool-policy checks remain necessary for success. A reviewer
-format pass cannot override a structural failure.
+Correctness, grounding and citation obligations remain necessary for success,
+alongside controlled-mechanism/tool-policy checks. Under `/6`, advisory findings
+cannot pass those semantic obligations or override a structural failure.
 
 For example, both `{"facts": [], "sources": []}` and
 `{"facts": {"answer": "..."}, "sources": {"citation": "..."}}` have the required
 structure. Neither example establishes factual quality or grounding. An object
 such as `{"facts": [{"sources": []}]}` fails because it lacks top-level `sources`.
-The `free_text` option retains independent review without the JSON structural
-gate. Extraction remains frozen separately; no messages are rewritten or repaired
+The `free_text` option retains advisory review and unresolved semantic obligations
+without the JSON structural gate. Extraction remains frozen separately; no messages are rewritten or repaired
 to make the selected answer comply. The output contract does not alter runtime behavior, task questions, source
 snapshots, reuse horizon or accounting. Task evidence requirements are versioned
 separately below.
@@ -228,7 +229,8 @@ Regression tests exercise the evidence boundaries and symmetric gate enforcement
 source-execution counterexamples calibrate review. They do not implement a general
 semantic grader or prove that a model or human reviewer will always follow the
 rubric. Historical protocols, answers, grades and conclusions remain immutable.
-Future comparisons need a newly frozen `/5` protocol and separate authorization;
+These task-specific evidence obligations are retained by `/6`. Future comparisons
+need a newly frozen `/6` protocol and separate authorization;
 results from different evaluator contracts cannot establish a product-only effect.
 
 ## Separate diagnostics, unchanged acceptance
@@ -237,7 +239,8 @@ The report exposes the causes of failure without relaxing its final conjunction:
 
 | Field | Meaning |
 | --- | --- |
-| `answer_quality_successful` (per attempt) | Independent correctness and grounding, independent AND structural format, completed session and finished native turn |
+| `answer_quality_successful` (per attempt) | False while correctness or grounding is unresolved; no agent-provided Boolean is accepted |
+| `quality_state` / `quality_obligations` | Deterministic format failure is `failed`; structurally valid free-form semantics remain `unresolved`, never implicitly passed |
 | `answer_quality_complete` | Every scheduled attempt satisfies that answer-quality condition |
 | `mechanism_complete` | Every controlled expected-use requirement is verified; `null` in a natural run, where no controlled recipe is required |
 | `workflow_success` | Every scheduled attempt passes answer quality and its applicable expected-use requirements |
@@ -367,48 +370,98 @@ python scripts/token_evaluation.py inventory --run D:/evaluations/run-001
 python scripts/token_evaluation.py mask --run D:/evaluations/run-001 --output D:/evaluations/review-001
 ```
 
-Give the independent reviewer only `answers.json`, the frozen source snapshots and
-the frozen rubric, without costs, arm identities or `private-map.json`. Answer text
-may incidentally reveal memory use; arm masking is not guaranteed perfect blinding.
-This packet supports source-truth grading, not proof that the agent actually read
-a source. If the frozen rubric requires observed reads or other process evidence,
-also supply chronological tool arguments/results with costs and coordinator IDs
-removed, and retain that review evidence. Tool names may reveal the arm; disclose
-that limitation rather than treating access-dependent grounding as proven by the
-source packet alone.
-The chosen extraction policy is frozen before collection. `last_agent_message`
-selects the last completed agent message, and `all_agent_messages` joins all of
-them. If the client omits phase metadata, final-phase provenance is not guaranteed.
-All agent messages still incur usage, including narration outside the selected
-answer. The masked packet carries the frozen output contract and extraction policy
-so independent review uses the same requirement as collection. JSON compliance is
-both structurally checked under that contract and independently reviewed; the
-structural check does not verify the truth of any fact or citation. The packet's
-output specification and exact instruction are hash-bound through quality binding
-and reporting; changing the reviewer's contract or extraction policy is rejected.
+The prospective `/6` workflow separates **advice** from **grading**. Neither a
+review subagent nor the orchestrator decides semantic pass/fail. The two advisory
+slots (`claims` and `counterexamples`) use **GPT-6.1 Sol (`gpt-6.1-sol`), medium
+reasoning**, with the exact instructions frozen in `quality_review`. Each gets a
+fresh context containing only the public packet and those instructions. Do not
+mount the coordinator directory or give reviewers filesystem access to the
+private map, traces with costs/identities, implementation discussion or the other
+review. `quality-template` reads only `answers.json` and contains no private attempt IDs.
+Model/session identity and context separation are declarations, not attestation.
+Answer contents may reveal treatment, so masking is not guaranteed perfect blinding.
 
-The reviewer writes an arm-blind file containing `reviewer`, `method`, and `labels`:
+The public packet includes the frozen question, rubric, oracle, output contract,
+current source snapshots and normalized **observed current evidence**. Verified
+repository and cache excerpts use the same path/hash/line/content representation;
+publication, hit status and research volume confer no quality credit. Evidence
+returned after the last answer is excluded. The normalized excerpts are useful
+review context, not proof that an answer's claims follow from them. For
+`all_agent_messages`, this final-answer evidence set does not establish the
+chronology of each earlier message. Unknown chronology stays unresolved.
 
-```json
-{"reviewer":"independent reviewer", "method":"arm-masked source review",
- "labels":[{"case":"RANDOM_CASE_FROM_ANSWERS", "correct":true,
-             "grounded":true, "format_compliant":true}]}
-```
-
-Every case needs explicit Boolean labels. The coordinator then binds random case
-IDs back to attempt IDs and exact question/answer/current-source/oracle/rubric/output hashes:
+Create the review template offline:
 
 ```powershell
-python scripts/token_evaluation.py bind-quality --packet D:/evaluations/review-001 --review D:/evaluations/blind-labels.json --output D:/evaluations/quality.json
-python scripts/token_evaluation.py report --run D:/evaluations/run-001 --quality D:/evaluations/quality.json --output D:/evaluations/report.json
+python scripts/token_evaluation.py quality-template --packet D:/evaluations/review-001 --output D:/evaluations/advice-template.json
 ```
 
-`quality-template` also produces a private coordinator template with null labels;
-null is never a pass. The report rejects altered questions, answers, sources, protocol, labels,
-duplicate/missing tasks, invalid task order and unlisted events/invocations. Incomplete
-schedules cannot produce a matched report: use `inventory` or the partial
-`collection.json` inventory to retain known costs and failure details. Do not throw
-those costs away or silently rerun them.
+The template deliberately has empty session IDs and uncertainty fields; it cannot
+be submitted as completed advice. Submit both distinct review slots, each bound
+to the complete packet hash, exact model/effort/instruction hash and every random
+case ID. Findings name a frozen `correct` or `grounded` rubric obligation, a kind
+(`support`, `concern`, `omission`, `counterexample`), rationale, proposed
+counterexample text and exact source references. Non-omission findings require
+zero-based Unicode code-point answer offsets `[start,end)` and the exact text.
+Omissions bind the whole answer hash, including empty answers. Source references
+use one-based inclusive `start`/`end` lines, full source SHA-256 and exact text.
+Every case must state uncertainty, including cases with no findings. Proposals
+are unverified data and are never executed. Agreement is not proof.
+
+For example, a finding within a submitted case has this shape (values are illustrative):
+
+```json
+{"obligation":"correct","kind":"concern",
+ "anchor":{"start":0,"end":4,"text":"1500"},
+ "sources":[],"rationale":"Check the qualification against current control flow.",
+ "counterexample":"Describe a possible exception path; this proposal is unverified."}
+```
+
+To inspect an unreviewed collection, the explicit empty-advice artifact is
+`{"contract":"colony.quality-advice/1","reviews":[]}`. It records missing advice;
+it does not pass quality. There is no agent-Boolean or historical-label fallback.
+
+```powershell
+python scripts/token_evaluation.py bind-quality --packet D:/evaluations/review-001 --review D:/evaluations/advice.json --output D:/evaluations/quality.json
+python scripts/token_evaluation.py report --run D:/evaluations/run-001 --quality D:/evaluations/quality.json --output D:/evaluations/report.json
+python scripts/token_evaluation.py human-review --packet D:/evaluations/review-001 --review D:/evaluations/advice.json --output D:/evaluations/review.html
+python scripts/token_evaluation.py human-template --packet D:/evaluations/review-001 --output D:/evaluations/notes-template.json
+```
+
+Open `review.html` locally when time permits. It shows mechanical state, exact
+answers and frozen sources, observed excerpts, advisory findings and uncertainty.
+It has no active scripts or external requests; all untrusted text is escaped.
+Human notes contain an author declaration and entries `{case, answer_sha256, text}`.
+Save edited notes to a new file, then validate and retain them separately:
+
+```powershell
+python scripts/token_evaluation.py bind-human-notes --packet D:/evaluations/review-001 --notes D:/evaluations/my-notes.json --output D:/evaluations/retained-notes.json
+python scripts/token_evaluation.py human-review --packet D:/evaluations/review-001 --review D:/evaluations/advice.json --notes D:/evaluations/retained-notes.json --output D:/evaluations/review-with-notes.html
+```
+
+Notes are additive, bound to the entire packet and answer, and self-declared human
+provenance is not identity verification. They cannot override any outcome. All
+commands write new files exclusively and never launch model sessions. The public
+HTML is an inspection artifact, not an accepted report: only `report --run` can
+reconstruct subjects against the retained collection. It revalidates submitted
+advice against those subjects, including evidence and reviewer instructions.
+
+**Current limit:** no semantic proof checker is registered for these free-form
+workloads. Structural format is checked deterministically, but correctness and
+grounding remain `unresolved`, even for apparently good answers and unanimous
+advice. Consequently `/6` cannot establish a quality-qualified token win yet.
+A later, separately reviewed proof-checker contract would need sound, bounded
+semantics and adversarial regression tests. Substring matches, citation presence,
+oracle-value equality, agent votes and human notes cannot substitute for it.
+This limitation is explicit rather than claiming automatic semantic certainty.
+
+The report still rejects altered questions, answers, sources, protocol, duplicate
+or missing tasks, invalid task order and unlisted events/invocations. All failed
+and unresolved attempts retain their costs; no selective filtering, retries or
+favorable reruns are introduced. Incomplete schedules cannot produce a matched
+report: use `inventory` or the partial `collection.json` inventory to retain known
+costs and failure details. Historical `/5` labels and reports retain their original
+meaning and must be replayed using the original pinned collector, never relabeled.
 
 For current native runs, the report also checks retained prompt bytes, invocation
 settings against the frozen client/research contract, and the complete alternating
@@ -459,10 +512,10 @@ python -m ruff check scripts/token_evaluation.py scripts/token_evaluation tests/
 
 Tests exercise source-derived facts in both lineages, snapshot/citation corruption,
 bounded research (including invalid calls), role/permission controls, answer
-extraction, independent labels, complete raw usage inventories, failure/unknown
+extraction, advisory bindings and unresolved gates, complete raw usage inventories, failure/unknown
 usage, interruption cleanup and native authorization gates. Output-contract controls
 cover accepted JSON shapes, missing/nested-only keys, malformed/fenced output,
-free text, unchanged independent quality failures, prospective version rejection
+free text, unresolved semantic gates, prospective version rejection
 and collector-pin rejection before live boundaries. Mock native receipts
 and fake events are labelled synthetic; they establish no measured token benefit.
 Any later savings claim requires separately authorized native runs, reviewed raw
@@ -480,3 +533,20 @@ retrieval always miss, and require the same journey to fail its specific product
 contract. Missing offline model snapshots skip this coverage explicitly; a skipped
 integration is unavailable coverage, not a product pass. These tests involve no
 native agent sessions and establish no model-token savings.
+
+
+### Advisory-quality regression coverage
+
+Provider-free tests cover direct Boolean-grade rejection at the CLI and report,
+review model/effort/instruction/session and complete-case inventory, exact Unicode
+answer spans, omissions, stale/foreign source references, full-packet replay and
+mutation, equivalent observed cache/repository excerpts, escaped human inspection,
+nonbinding notes and original-artifact preservation. Synthetic evidence is clearly
+marked and never reported as native token savings. Existing receipt, tool-policy,
+source-integrity, schedule, usage and shared-prompt tests remain enforced.
+
+Benchmark answering remains a separate role: use the user-required Luna 6 Light
+for future authorized native sessions, after verifying and pinning the exact
+supported client model identifier and light reasoning setting for all fresh arms.
+Do not substitute the Sol reviewer model. The advisory commands neither select nor
+launch benchmark models, and this change does not authorize a new evaluation.
