@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .protocol import validate_evidence_policy
+from .research import Research
 
 
 def _objects(item):
@@ -97,7 +98,15 @@ def _research(item, root, files):
                     or type(value.get('end')) is not int
                     or value['end'] >= args.get('start', 1) + args.get('lines', 120)):
                 return []
-            got = verify_current_reads([value], root, files)
+            # Research.read returns the requested spelling, including accepted
+            # aliases. Reuse its authorization before translating to the frozen
+            # source identity; never normalize away a link or escape first.
+            try:
+                research = Research(Path(root), files=files)
+                canonical = research._path(value['path']).relative_to(research.root).as_posix()
+            except (OSError, ValueError, RuntimeError):
+                return []
+            got = verify_current_reads([{**value, 'path': canonical}], root, files)
         elif item.get('tool') == 'fixture_search':
             query = args.get('query')
             if not isinstance(query, str) or not query or not isinstance(value.get('matches'), list):

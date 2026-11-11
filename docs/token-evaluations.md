@@ -399,6 +399,12 @@ cache excerpts have the same path/hash/line/content representation. Publication,
 hits, tool choice and research volume confer no quality credit. Oracle citations
 are not the only acceptable support: other current observed spans may justify an
 answer. Sources available only to the reviewer cannot justify a grounding pass.
+Successful repository reads keep their exact request/result path binding. Before
+checking the evidence, accepted aliases such as `./settings.py` are resolved using
+the research tool's existing authorization against the frozen snapshot and mapped
+to its canonical source key. Containment, allowlist, symlink/junction, hash, text
+and line checks still apply. Raw tool results and historical artifacts are not
+rewritten; Colony's canonical source-reference validation is unchanged.
 Evidence after the last answer is excluded. For `all_agent_messages`, the excerpt
 union does not prove what was available before each earlier factual claim. The
 review instructions require unresolved grounding when the missing chronology is
