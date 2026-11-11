@@ -11,19 +11,20 @@ import pytest
 from scripts.token_evaluation import cli
 from scripts.token_evaluation.output import OUTPUT_CONTRACT, instruction
 from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
-from scripts.token_evaluation.quality import advice_template, review_policy
+from scripts.token_evaluation.quality import review_policy, review_template
 
 
 def write(path, value):
     path.write_bytes(json.dumps(value).encode())
 
 
-def refresh_advice(root):
-    advice = advice_template(json.loads((root / "answers.json").read_text()))
+def refresh_reviews(root):
+    advice = review_template(json.loads((root / "answers.json").read_text()))
     for review in advice["reviews"]:
         review["session_id"] = "fixture-session-" + review["slot"]
         for case in review["cases"]:
             case["uncertainty"] = "Synthetic advisory fixture; semantics unresolved."
+            case["judgments"] = {key: {"verdict": "unresolved", "rationale": "Synthetic fixture; insufficient evidence.", "evidence": []} for key in ("correct", "grounded")}
     write(root / "review.json", advice)
 
 
@@ -43,7 +44,7 @@ def packet(tmp_path):
     write(tmp_path / "private-map.json", [{"id": "work-task-colony", **{k: value[k] for k in
         ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
          "label_sha256", "output_sha256")}}])
-    refresh_advice(tmp_path)
+    refresh_reviews(tmp_path)
     return tmp_path
 
 
@@ -105,7 +106,7 @@ def test_bind_rejects_changed_grading_source_or_oracle(tmp_path):
     write(root / "private-map.json", [{"id": "work-task-colony", **{k: answer[k] for k in
         ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
          "label_sha256", "output_sha256")}}])
-    refresh_advice(root)
+    refresh_reviews(root)
     cli.bind_quality(root, root / "review.json", root / "good-quality.json")
     answer["current_sources"][0]["content"] = "wrong source"
     write(root / "answers.json", [answer])

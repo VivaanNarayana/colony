@@ -12,13 +12,14 @@ from .output import OUTPUT_CONTRACT
 from .protocol import CONTRACT, collector_hashes, digest, validate_manifest
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .quality import (
-    advice_template,
+    REVIEW_CONTRACT,
     notes_template,
     render_html,
     review_policy,
-    validate_advice,
+    review_template,
     validate_notes,
     validate_packet,
+    validate_reviews,
 )
 
 
@@ -98,18 +99,37 @@ def template(args):
             "native_sessions_started": 0}
 
 
-def quality_template(packet, output):
+def quality_template(packet, output, slot=None):
     """Public-only template; never expose private attempt IDs to reviewers."""
-    return _write(output, advice_template(_read(Path(packet) / "answers.json")))
+    template = review_template(_read(Path(packet) / "answers.json"))
+    if slot is not None:
+        if slot not in review_policy()["slots"]:
+            raise ValueError("Unknown reviewer slot")
+        template["reviews"] = [review for review in template["reviews"] if review["slot"] == slot]
+    return _write(output, template)
+
+
+def combine_reviews(packet, first, second, output):
+    """Combine immutable single-reviewer responses without editing any judgment."""
+    reviews = []
+    for path in (first, second):
+        submission = _read(path)
+        if (set(submission) != {"contract", "reviews"} or submission["contract"] != REVIEW_CONTRACT
+                or not isinstance(submission["reviews"], list) or len(submission["reviews"]) != 1):
+            raise ValueError("Each independent response must contain exactly one reviewer")
+        reviews.extend(submission["reviews"])
+    combined = {"contract": REVIEW_CONTRACT, "reviews": reviews}
+    validate_reviews(_read(Path(packet) / "answers.json"), combined)
+    return _write(output, combined)
 
 
 def bind_quality(packet, review_path, output):
-    """Bind advisory findings; semantic quality remains unresolved."""
+    """Bind validated independent agent judgments; disagreement remains unresolved."""
     public = _read(Path(packet) / "answers.json")
     private = _read(Path(packet) / "private-map.json")
     advice = _read(review_path)
     validate_packet(public, private)
-    validate_advice(public, advice)
+    validate_reviews(public, advice)
     return _write(output, {"contract": QUALITY_CONTRACT,
         "protocol_sha256": public[0]["protocol_sha256"], "policy": review_policy(),
         "labels": private, "reviews": advice["reviews"]})
@@ -168,10 +188,14 @@ def parser():
     command = commands.add_parser("mask", help="Create arm-masked answers plus a private binding map")
     command.add_argument("--run", required=True)
     command.add_argument("--output", required=True)
-    command = commands.add_parser("quality-template", help="Public-only advisory template; no pass/fail labels")
+    command = commands.add_parser("quality-template", help="Public-only independent-review template with unset semantic judgments")
     command.add_argument("--packet", required=True)
     command.add_argument("--output", required=True)
-    command = commands.add_parser("bind-quality", help="Bind advisory findings to frozen subjects")
+    command.add_argument("--slot", choices=review_policy()["slots"])
+    command = commands.add_parser("combine-reviews", help="Combine two independent responses; never alter judgments")
+    for flag in ("packet", "first", "second", "output"):
+        command.add_argument("--" + flag, required=True)
+    command = commands.add_parser("bind-quality", help="Bind independent semantic judgments to frozen subjects")
     command.add_argument("--packet", required=True)
     command.add_argument("--review", required=True)
     command.add_argument("--output", required=True)
@@ -211,7 +235,9 @@ def main(argv=None):
         elif args.command == "mask":
             value = report.mask(args.run, args.output)
         elif args.command == "quality-template":
-            value = {"quality_template": quality_template(args.packet, args.output)}
+            value = {"quality_template": quality_template(args.packet, args.output, args.slot)}
+        elif args.command == "combine-reviews":
+            value = {"reviews": combine_reviews(args.packet, args.first, args.second, args.output)}
         elif args.command == "bind-quality":
             value = {"quality": bind_quality(args.packet, args.review, args.output)}
         elif args.command == "human-template":

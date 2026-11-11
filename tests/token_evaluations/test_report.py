@@ -50,7 +50,7 @@ def run(tmp_path):
     (tmp_path / "control" / "attempts.jsonl").write_text("\n".join(map(json.dumps, rows)))
     masked = mask(tmp_path, tmp_path / "masked")
     labels = json.loads((tmp_path / "masked" / "private-map.json").read_text())
-    quality = {"contract": "colony.advisory-quality/1",
+    quality = {"contract": "colony.agent-quality/1",
                "protocol_sha256": digest(protocol), "policy": review_policy(), "labels": labels, "reviews": []}
     put(tmp_path / "quality.json", quality)
     return tmp_path, quality, masked
@@ -240,7 +240,7 @@ def test_parser_failure_keeps_complete_usage_in_report(run):
                for arm in ("no_colony", "colony"))
 
 
-@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "evidence_v4", "adjudicated_v5", "missing_version", "wrong_version", "missing_format"])
+@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "evidence_v4", "adjudicated_v5", "advisory_v6", "missing_version", "wrong_version", "missing_format"])
 def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading(run, change):
     root, _, _ = run
     frozen = json.loads((root / "run.json").read_text())
@@ -254,6 +254,8 @@ def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading
         frozen["protocol"]["contract"] = "colony.token-evaluation/4"
     elif change == "adjudicated_v5":
         frozen["protocol"]["contract"] = "colony.token-evaluation/5"
+    elif change == "advisory_v6":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/6"
     elif change == "missing_version":
         frozen["protocol"]["output"].pop("contract")
     elif change == "wrong_version":

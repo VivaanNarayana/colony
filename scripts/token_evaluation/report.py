@@ -14,7 +14,7 @@ from pathlib import Path
 from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
 from .output import instruction
 from .protocol import ATTEMPT_ID_PATTERN, CONTRACT, validate_contract, verify_active_collector
-from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_advice
+from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .receipt import validate_native_receipts
 from .usage import native_usage
@@ -321,7 +321,7 @@ def report(run_dir, quality_path, output_path):
     quality = _read(quality_path)
     _require(set(quality) == {"contract", "protocol_sha256", "policy", "labels", "reviews"}
              and quality["contract"] == QUALITY_CONTRACT and quality["policy"] == review_policy(),
-             "Advisory quality contract required; Boolean grades are not accepted")
+             "Agent quality contract required; bare Boolean grades are not accepted")
     _require(quality.get("protocol_sha256") == run.get("protocol_sha256"), "Protocol binding changed")
     reviews = quality["labels"]
     _require(len({r["id"] for r in reviews}) == len(reviews), "Duplicate quality")
@@ -330,16 +330,22 @@ def report(run_dir, quality_path, output_path):
     _require(len({r["case"] for r in reviews}) == len(reviews), "Duplicate masked case")
     for row in rows:
         review = lookup[row["id"]]
-        _require(set(review) == {"id", "case", *BINDINGS}, "Advisory bindings only; Boolean grades are not accepted")
+        _require(set(review) == {"id", "case", *BINDINGS}, "Identity bindings only; bare Boolean grades are not accepted")
         for field in BINDINGS:
             _require(review.get(field) == row[field], "Quality binding changed: " + field)
-        row.update(assess(row["text"], manifest["output"]))
-    # A missing review cannot pass. Nonempty advice is replayed against the actual
+    # A missing review cannot pass. Submitted judgments are replayed against the actual
     # frozen subject, closing the direct-report / changed-packet bypass.
-    _require(isinstance(quality["reviews"], list), "Advisory reviews must be a list")
+    _require(isinstance(quality["reviews"], list), "Agent reviews must be a list")
     if quality["reviews"]:
         public = [review_subject(root, run, manifest, row, lookup[row["id"]]["case"]) for row in rows]
-        validate_advice(public, {"contract": REVIEW_CONTRACT, "reviews": quality["reviews"]})
+        validate_reviews(public, {"contract": REVIEW_CONTRACT, "reviews": quality["reviews"]})
+    for row in rows:
+        case_id = lookup[row["id"]]["case"]
+        cases = [next(case for case in review["cases"] if case["case"] == case_id)
+                 for review in quality["reviews"]]
+        row.update(assess(row["text"], manifest["output"], cases))
+        row["answer_quality_successful"] &= row["state"] == "completed" and row["native_finished"]
+        row["successful"] = row["answer_quality_successful"]
     proofs = evaluate_mechanisms(root, manifest, rows)
     for row in rows:
         task = next(t for w in manifest["workloads"] if w["id"] == row["workload"]
@@ -409,7 +415,7 @@ def report(run_dir, quality_path, output_path):
             reduction[field] = 1 - arms["colony"]["total_usage"][field] / baseline if baseline else None
     result = {"contract": CONTRACT, "protocol_sha256": run["protocol_sha256"],
               "output": manifest["output"], "arms": arms, "attempts": rows,
-              "quality_policy": review_policy(), "advisory_reviews": quality["reviews"],
+              "quality_policy": review_policy(), "quality_reviews": quality["reviews"],
               "quality_artifact_sha256": digest(quality),
               "unresolved_quality_attempts": sum(r["quality_state"] == "unresolved" for r in rows),
               "certifying": False, "supported_product_win": "not_established", "billing": None,
@@ -429,7 +435,7 @@ def report(run_dir, quality_path, output_path):
                               "Unknown usage is not zero; no hypothetical future amortization.",
                               "Native receipts are declared counterproof, not cryptographic attestation.",
                               "Setup guidance is delivered manually; native loader fidelity is unverified.",
-                              "Semantic correctness and grounding remain unresolved; advisory agreement cannot pass quality.",
+                              "Semantic correctness and grounding are fallible independent agent judgments, not deterministic proofs.",
                               "Reviewer configuration and context separation are declared, not attested.",
                               "No-Colony initial empty-store proof means no memory configured."]}
     path = Path(output_path)

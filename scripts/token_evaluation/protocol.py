@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .output import validate_output
 
-CONTRACT = "colony.token-evaluation/6"
+CONTRACT = "colony.token-evaluation/7"
 ARMS = ("no_colony", "colony")
 ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}
@@ -29,7 +29,7 @@ def validate_contract(manifest):
             "Unsupported evaluation contract; use the original pinned collector for historical protocols")
     validate_output(manifest.get("output"))
     from .quality import review_policy
-    require(manifest.get("quality_review") == review_policy(), "Frozen advisory review policy required")
+    require(manifest.get("quality_review") == review_policy(), "Frozen agent review policy required")
 
 
 def collector_hashes():

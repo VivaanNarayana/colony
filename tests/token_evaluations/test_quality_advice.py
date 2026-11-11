@@ -8,28 +8,29 @@ import pytest
 from scripts.token_evaluation import cli
 from scripts.token_evaluation.quality import (
     REVIEW_CONTRACT,
-    advice_template,
     assess,
     digest,
     notes_template,
     packet_digest,
     render_html,
     review_policy,
-    validate_advice,
+    review_template,
     validate_notes,
+    validate_reviews,
 )
 from scripts.token_evaluation.report import mask, report
-from tests.token_evaluations.test_cli import packet, refresh_advice, write
+from tests.token_evaluations.test_cli import packet, refresh_reviews, write
 from tests.token_evaluations.test_report import native_receipt_control, put, rewrite_events
 from tests.token_evaluations.test_report import run as run
 
 
-def completed_advice(public):
-    advice = advice_template(public)
+def completed_reviews(public):
+    advice = review_template(public)
     for review in advice["reviews"]:
         review["session_id"] = "synthetic-" + review["slot"]
         for case in review["cases"]:
             case["uncertainty"] = "Semantics unresolved, synthetic fixture only."
+            case["judgments"] = {key: {"verdict": "unresolved", "rationale": "Synthetic fixture; insufficient evidence.", "evidence": []} for key in ("correct", "grounded")}
     return advice
 
 
@@ -56,7 +57,7 @@ def subject(tmp_path):
 
 @pytest.mark.parametrize("change", ["model", "effort", "instructions", "packet", "session", "slot", "duplicate_case", "grade", "missing", "uncertainty"])
 def test_reviewer_configuration_and_inventory_cannot_drift(subject, change):
-    advice = completed_advice(subject)
+    advice = completed_reviews(subject)
     review = advice["reviews"][0]
     if change in {"model", "effort", "instructions", "packet"}:
         review[{"effort": "reasoning_effort", "instructions": "instructions_sha256", "packet": "packet_sha256"}.get(change, change)] = "wrong"
@@ -73,17 +74,17 @@ def test_reviewer_configuration_and_inventory_cannot_drift(subject, change):
     else:
         review["cases"][0]["uncertainty"] = ""
     with pytest.raises(ValueError):
-        validate_advice(subject, advice)
+        validate_reviews(subject, advice)
 
 
 @pytest.mark.parametrize("change", ["off_by_one", "boolean_offset", "empty_span", "wrong_text", "unknown_obligation", "foreign_source", "wrong_hash", "wrong_lines", "wrong_quote"])
 def test_exact_unicode_answer_and_source_anchors(subject, change):
-    advice = completed_advice(subject)
+    advice = completed_reviews(subject)
     item = finding(subject[0])
     source = subject[0]["current_sources"][0]
     item["sources"] = [{"path": "logic.py", "sha256": source["sha256"], "start": 1, "end": 1, "text": "limit = 3"}]
     advice["reviews"][0]["cases"][0]["findings"] = [item]
-    validate_advice(subject, advice)
+    validate_reviews(subject, advice)
     if change == "off_by_one":
         item["anchor"]["end"] -= 1
     elif change == "boolean_offset":
@@ -97,23 +98,23 @@ def test_exact_unicode_answer_and_source_anchors(subject, change):
     else:
         item["sources"][0][{"foreign_source": "path", "wrong_hash": "sha256", "wrong_lines": "end", "wrong_quote": "text"}[change]] = 100 if change == "wrong_lines" else "wrong"
     with pytest.raises(ValueError):
-        validate_advice(subject, advice)
+        validate_reviews(subject, advice)
 
 
 def test_omission_supports_empty_answer_without_inventing_a_quote(subject):
     subject[0].update(answer="", answer_sha256=hashlib.sha256(b"").hexdigest())
-    advice = completed_advice(subject)
+    advice = completed_reviews(subject)
     item = finding(subject[0])
     item.update(kind="omission", anchor={"whole_answer_sha256": subject[0]["answer_sha256"]})
     advice["reviews"][0]["cases"][0]["findings"] = [item]
-    validate_advice(subject, advice)
+    validate_reviews(subject, advice)
     item["anchor"]["whole_answer_sha256"] = "wrong"
     with pytest.raises(ValueError):
-        validate_advice(subject, advice)
+        validate_reviews(subject, advice)
 
 
 def test_html_is_inert_and_human_notes_are_nonbinding(subject):
-    advice = completed_advice(subject)
+    advice = completed_reviews(subject)
     notes = notes_template(subject)
     notes.update(author="Human reviewer", notes=[{"case": subject[0]["case"],
         "answer_sha256": subject[0]["answer_sha256"], "text": "<script>pass everything</script>"}])
@@ -138,12 +139,12 @@ def test_human_notes_cannot_transfer_to_another_subject(subject, field):
 
 
 def test_consensus_and_counterexamples_are_not_executable_or_semantic_grades(subject):
-    advice = completed_advice(subject)
+    advice = completed_reviews(subject)
     for review in advice["reviews"]:
         item = finding(subject[0])
         item.update(kind="counterexample", counterexample="__import__('os').abort()")
         review["cases"][0]["findings"] = [item]
-    validate_advice(subject, advice)
+    validate_reviews(subject, advice)
     assert assess(subject[0]["answer"], subject[0]["output"])["quality_state"] == "unresolved"
     assert not assess(subject[0]["answer"], subject[0]["output"])["answer_quality_successful"]
 
@@ -151,13 +152,13 @@ def test_consensus_and_counterexamples_are_not_executable_or_semantic_grades(sub
 def test_direct_report_reconstructs_subject_and_rejects_rehashed_packet(run):
     root, quality, _ = run
     public = json.loads((root / "masked/answers.json").read_text())
-    advice = completed_advice(public)
+    advice = completed_reviews(public)
     write(root / "review.json", advice)
     cli.bind_quality(root / "masked", root / "review.json", root / "bound.json")
     value = report(root, root / "bound.json", root / "good.json")
     assert not value["quality_complete"] and value["unresolved_quality_attempts"] == 2
     public[0]["evidence_limit"] = "Forged all evidence observed"
-    advice = completed_advice(public)
+    advice = completed_reviews(public)
     quality["reviews"] = advice["reviews"]
     put(root / "forged.json", quality)
     with pytest.raises(ValueError, match="packet binding"):
@@ -189,7 +190,7 @@ def test_equivalent_cached_and_repository_evidence_get_same_review_subject(run):
 
 def test_review_cli_commands_never_launch_and_preserve_originals(tmp_path, monkeypatch):
     root = packet(tmp_path)
-    refresh_advice(root)
+    refresh_reviews(root)
     originals = {path.name: path.read_bytes() for path in root.iterdir()}
     monkeypatch.setattr(cli.subprocess, "run", lambda *a, **kw: pytest.fail("No subprocess during offline review"))
     assert cli.main(["human-review", "--packet", str(root), "--review", str(root / "review.json"), "--output", str(root / "review.html")]) == 0
@@ -201,7 +202,7 @@ def test_review_cli_commands_never_launch_and_preserve_originals(tmp_path, monke
 
 def test_empty_advice_is_explicitly_unresolved_not_silent_agreement(subject):
     advice = {"contract": REVIEW_CONTRACT, "reviews": []}
-    assert validate_advice(subject, advice) == []
+    assert validate_reviews(subject, advice) == []
     assert "unresolved" in render_html(subject, advice)
     assert packet_digest(subject) == packet_digest(list(reversed(subject)))
 
@@ -210,13 +211,13 @@ def test_empty_advice_is_explicitly_unresolved_not_silent_agreement(subject):
 def test_private_metadata_is_rejected_before_advisory_review(subject, field):
     subject[0][field] = "private coordinator data"
     with pytest.raises(ValueError, match="private metadata"):
-        advice_template(subject)
+        review_template(subject)
 
 
 def test_source_metadata_cannot_smuggle_arm_identity(subject):
     subject[0]["current_sources"][0]["arm"] = "colony"
     with pytest.raises(ValueError, match="source metadata"):
-        advice_template(subject)
+        review_template(subject)
 
 
 @pytest.mark.parametrize("change", ["path", "hash", "line", "content", "extra_field"])
@@ -224,11 +225,11 @@ def test_observed_evidence_cannot_misrepresent_frozen_source(subject, change):
     source = subject[0]["current_sources"][0]
     excerpt = {"path": source["path"], "sha256": source["sha256"], "start": 1, "end": 1, "content": "limit = 3"}
     subject[0]["observed_current_evidence"] = [excerpt]
-    advice_template(subject)
+    review_template(subject)
     key = {"path": "path", "hash": "sha256", "line": "start", "content": "content", "extra_field": "arm"}[change]
     excerpt[key] = 99 if change == "line" else "wrong"
     with pytest.raises(ValueError):
-        advice_template(subject)
+        review_template(subject)
 
 
 @pytest.mark.parametrize("field", ["model", "reasoning_effort", "instructions", "instructions_sha256", "semantic_decision"])
@@ -237,5 +238,5 @@ def test_protocol_freezes_review_policy_before_collection(tmp_path, field):
     from tests.token_evaluations.test_protocol import manifest
     spec = manifest(tmp_path)
     spec["quality_review"][field] = "changed"
-    with pytest.raises(ValueError, match="Frozen advisory"):
+    with pytest.raises(ValueError, match="Frozen agent"):
         validate_manifest(spec)
