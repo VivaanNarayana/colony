@@ -99,6 +99,57 @@ def test_injected_callable_has_no_unselected_implementation_bound(outer, unselec
     assert len(observed_sends) > outer * unselected_limit
 
 
+@pytest.mark.parametrize('outer,inner,pause', LIMITS)
+@pytest.mark.parametrize('final_raises', [False, True])
+def test_explicit_dependency_selection_supports_conditional_send_bound(
+    outer, inner, pause, final_raises,
+):
+    trace = []
+    failure = TemporaryFailure('last permitted send failed')
+    terminal = failure if final_raises else Outcome(False)
+    plan = ([failure] * (inner - 1) + [Outcome(True)]) * (outer - 1)
+    plan += [failure] * (inner - 1) + [terminal]
+    send = _sender(plan, trace)
+
+    def configured_driver():
+        # This call site selects the implementation. A definition elsewhere alone
+        # would not justify transferring its limit to an arbitrary injected callable.
+        return _drive(_retrying(send, inner), outer, pause, trace)
+
+    if final_raises:
+        with pytest.raises(TemporaryFailure) as caught:
+            configured_driver()
+        assert caught.value is failure
+    else:
+        assert configured_driver() is terminal
+    assert trace == _full_trace(outer, inner, pause)
+    assert sum(event == 'send' for event, _ in trace) == outer * inner
+    assert sum(event == 'wait' for event, _ in trace) == outer - 1
+
+
+@pytest.mark.parametrize('outer,unselected_limit,pause', LIMITS)
+@pytest.mark.parametrize('stop_after', [1, 2])
+def test_injected_dependency_preserves_outer_early_stop_but_not_inner_bound(
+    outer, unselected_limit, pause, stop_after,
+):
+    traces = []
+    for width in (1, unselected_limit + 2):
+        trace = []
+        terminal = Outcome(False)
+        plan = [Outcome(True)] * (width * (stop_after - 1)) + [terminal] * width
+        invoke = _fanout(_sender(plan, trace), width)
+        assert _drive(invoke, outer, pause, trace) is terminal
+        assert sum(event == 'invoke' for event, _ in trace) == stop_after
+        assert sum(event == 'wait' for event, _ in trace) == stop_after - 1
+        assert sum(event == 'send' for event, _ in trace) == stop_after * width
+        assert trace[-1][0] == 'send'  # No wait after the terminal result.
+        traces.append(trace)
+    assert [item for item in traces[0] if item[0] != 'send'] == [
+        item for item in traces[1] if item[0] != 'send'
+    ]
+    assert sum(event == 'send' for event, _ in traces[1]) > stop_after * unselected_limit
+
+
 def _full_trace(outer, inner, pause):
     expected = []
     for position in range(outer):
