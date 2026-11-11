@@ -58,21 +58,27 @@ Adaptive server instructions and setup-managed project guidance share the same p
   mismatch withholds saved answers; assess current local evidence. An outage or miss
   says nothing about other research tools' availability.
 - Empty literal searches do not establish semantic absence. Support the scope of a
-  negative claim with current source/search evidence. Plan limited tool calls around
-  uncovered scope instead of repeating empty searches. For a small finite scope that
-  fits the allowance, completing coverage may be cheaper than repeated term searches.
+  negative claim with current source/search evidence. Before spending calls on searches,
+  budget for uncovered relevant scope: even one unhelpful search can displace a needed
+  read. For a small finite scope that fits the allowance, completing coverage may be
+  cheaper than term searches.
   Reuse already observed current evidence. If coverage cannot be completed, report what
   remains unknown; narrowing the wording does not fulfill a task requiring full coverage.
   `evidence_scope: cited_files` covers the cited set, not necessarily the whole repository.
   No fixed read method or requirement to read every file is imposed. Keep answers and
   findings focused, retaining dependency qualifications, failed attempts and exceptional exits.
-- Publication is optional on writable connections: publish when asked to remember, or
-  when a new reusable finding would avoid substantial future investigation. Otherwise
-  skip simply restating an easily read assignment, including after a partial hit. A
-  single-file diagnosis can still be valuable; file count is not a publication rule.
+  Distinguish outer calls from internal attempts and returned responses from exceptions:
+  a dependency can recover failures before returning each response. Qualify assumptions
+  for additional claims or omit those claims; the same rule applies to published findings.
+- On writable connections, after substantive new research publish a concise reusable
+  behavior, diagnosis or procedure, including new research after a partial hit. Skip
+  simply restating an isolated assignment unless asked to remember it. A single-file
+  diagnosis can still be valuable; file count is not a publication rule. Publication
+  does not require predicting future queries or proving future savings.
   Use observed evidence to decide, without an extra lookup or research solely to publish.
   Keep at most one finding per question with applicability and trustworthy hashes already
-  obtained. Skip unchanged reuse. Read-only connections never publish.
+  obtained. Skip unchanged reuse and speculation, including when asked to remember.
+  Read-only connections never publish.
 
 These are best-effort agent instructions, not enforced routing or automatic capture.
 Delivery, budget-boundary and source-review counterexample tests do not demonstrate

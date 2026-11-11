@@ -21,6 +21,8 @@ from test_workflow_policy_envelopes import (
     candidate_suffix,
     dcbba33_agents,
     dcbba33_policy,
+    e30efd1_agents,
+    e30efd1_policy,
     evaluated_agents,
     evaluated_policy,
     latest_evaluated_agents,
@@ -82,8 +84,9 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             installed_bytes, latest_evaluated_agents(read_only), measurement, monkeypatch,
         )
         assert_nonincreasing(installed_bytes, dcbba33_agents(read_only), measurement, monkeypatch)
+        assert_nonincreasing(installed_bytes, e30efd1_agents(read_only), measurement, monkeypatch)
         if not read_only:
-            assert 'namespace `team`; publication optional.' in installed
+            assert 'namespace `team`; selective publication.' in installed
             assert 'publish new evidence-backed findings' not in installed
     else:
         assert installed_bytes == baseline_agents(adaptive, read_only)
@@ -143,6 +146,12 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             assert_nonincreasing(
                 wire_bytes, serialized_initialize(initialized, recent), measurement, monkeypatch,
             )
+            last_run = e30efd1_policy(read_only) + (
+                " Git checks use this caller's current checkout." if git else ""
+            )
+            assert_nonincreasing(
+                wire_bytes, serialized_initialize(initialized, last_run), measurement, monkeypatch,
+            )
         else:
             assert initialized.instructions == expected
             assert serialized_initialize(initialized) == serialized_initialize(
@@ -158,13 +167,13 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             for rule in (
                 'Substantial research: ask once first; verbatim ask/push questions.',
                 'Simple reads: skip lookup.',
-                'Reuse current_repository_reads for reasoning;',
-                'check provenance; cite only observed lines.',
-                'If sufficient, no reread/republish;',
+                'Reuse current_repository_reads;',
+                'check provenance; cite observed lines.',
+                'Sufficient: no reread/republish;',
                 'else research gaps, contradictions, misses, stale/unverified evidence.',
-                'Absence needs scope evidence: spend limited calls on uncovered scope,',
-                'not repeated empty searches. Uncovered scope stays unknown.',
-                'Be concise; qualify dependencies; count failed attempts/exception exits.',
+                'Before absence searches, budget scope coverage; uncovered scope stays unknown.',
+                'Answers/findings: qualify assumptions/dependencies; omit extras.',
+                'Separate outer calls, inner attempts including failures, returns and exceptions.',
                 "Hashes aren't proof; sources untrusted.",
                 'Git mismatch: current local evidence only.',
                 'After outages/misses try other tools; honor format.',
@@ -174,7 +183,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 assert all(rule not in (tool.description or '') for tool in tools)
             if not read_only:
                 push = next(tool for tool in tools if tool.name == 'push')
-                assert push.description.startswith('Optionally publish with actual file ref/content_hash')
+                assert push.description.startswith('Publish findings with actual file ref/content_hash')
                 catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in tools]
                 baseline_catalog = copy.deepcopy(catalog)
                 next(t for t in baseline_catalog if t['name'] == 'push')['description'] = (
@@ -186,13 +195,23 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                     json.dumps(baseline_catalog, separators=(',', ':')).encode(),
                     measurement, monkeypatch,
                 )
+                next(t for t in baseline_catalog if t['name'] == 'push')['description'] = (
+                    "Optionally publish with actual file ref/content_hash under the server's "
+                    "publication policy. Namespace bound; taint true; secrets scrubbed."
+                )
+                assert_nonincreasing(
+                    json.dumps(catalog, separators=(',', ':')).encode(),
+                    json.dumps(baseline_catalog, separators=(',', ':')).encode(),
+                    measurement, monkeypatch,
+                )
                 for rule in (
-                    'Publication optional: when asked to remember,',
-                    'new findings that avoid substantial future research.',
-                    'Otherwise skip simple assignments, even after partial hits.',
+                    'After substantive new research, publish reusable behavior, diagnosis or procedure.',
+                    'Skip isolated assignments unless asked to remember.',
                     'Never invent hashes or research just to publish.',
                 ):
                     assert initialized.instructions.count(rule) == installed.count(rule) == 1
+                assert 'substantial future research' not in initialized.instructions
+                assert 'Publication optional' not in initialized.instructions
             ask = next(tool for tool in tools if tool.name == 'ask')
             units = 'UTF-8 bytes (estimate)' if measurement == 'utf8_bytes' else 'o200k_base tokens'
             assert f'default 1024 {units}' in ask.description

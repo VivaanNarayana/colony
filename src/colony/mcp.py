@@ -377,7 +377,7 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Optionally publish with actual file ref/content_hash under the server's "
+                "Publish findings with actual file ref/content_hash under the server's "
                 "publication policy. Namespace bound; taint true; secrets scrubbed."
                 if context_budget is not None
                 else publish.__doc__
@@ -391,7 +391,7 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Optionally publish with actual file ref/content_hash under the server's "
+                "Publish findings with actual file ref/content_hash under the server's "
                 "publication policy. Client scrubs secrets; mark external content tainted."
                 if context_budget is not None
                 else None

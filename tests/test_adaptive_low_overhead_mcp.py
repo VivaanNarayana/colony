@@ -4,11 +4,13 @@ import asyncio
 import copy
 import hashlib
 import json
+import os
 from types import SimpleNamespace
 
 import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 from test_integration import running_team as running_team
+from test_workflow_policy_envelopes import assert_nonincreasing
 
 from colony import mcp
 from colony.context_budget import count_response, serialize_response
@@ -113,6 +115,7 @@ def test_adaptive_read_only_cannot_expose_mutations(response, tmp_path):
     assert {t.name for t in asyncio.run(server.list_tools())} == {"ask"}
     assert ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE in server.instructions
     assert "On writable connections" not in server.instructions
+    assert "After substantive new research, publish" not in server.instructions
     for tool in {"push", *mcp.MEMORY_TOOLS}:
         with pytest.raises(ToolError):
             asyncio.run(server.call_tool(tool, {}))
@@ -145,7 +148,14 @@ def test_adaptive_discovery_keeps_complete_policy_once(response, tmp_path, read_
 
 
 @pytest.mark.parametrize("workflow", [False, True])
-def test_adaptive_discovery_preserves_publication_schema_and_annotations(response, tmp_path, workflow):
+@pytest.mark.parametrize("measurement", ["utf8_bytes", "o200k_base"])
+def test_adaptive_discovery_preserves_publication_schema_and_annotations(
+    response, tmp_path, workflow, measurement, monkeypatch,
+):
+    if measurement == "o200k_base":
+        pytest.importorskip("tiktoken")
+        if not os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER"):
+            pytest.skip("Set COLONY_TEST_CONTEXT_TOKENIZER for pinned o200k cost checks")
     options = {"workflow_namespace": "team", "workflow_repo": tmp_path} if workflow else {}
     legacy = {
         tool.name: tool for tool in asyncio.run(mcp.create_mcp(tmp_path, **options).list_tools())
@@ -163,6 +173,23 @@ def test_adaptive_discovery_preserves_publication_schema_and_annotations(respons
     assert set(adaptive["ask"].inputSchema["properties"]) == {
         *legacy["ask"].inputSchema["properties"], "max_context_tokens"
     }
+    ending = ("Namespace bound; taint true; secrets scrubbed." if workflow
+              else "Client scrubs secrets; mark external content tainted.")
+    assert adaptive["push"].description == (
+        "Publish findings with actual file ref/content_hash under the server's "
+        "publication policy. " + ending
+    )
+    catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in adaptive.values()]
+    evaluated_catalog = copy.deepcopy(catalog)
+    next(t for t in evaluated_catalog if t["name"] == "push")["description"] = (
+        "Optionally publish with actual file ref/content_hash under the server's "
+        "publication policy. " + ending
+    )
+    assert_nonincreasing(
+        json.dumps(catalog, separators=(',', ':')).encode(),
+        json.dumps(evaluated_catalog, separators=(',', ':')).encode(),
+        measurement, monkeypatch,
+    )
 
 
 def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(response, tmp_path):

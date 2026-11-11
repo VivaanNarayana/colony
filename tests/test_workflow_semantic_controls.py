@@ -192,3 +192,31 @@ def test_terminal_result_stops_before_unused_allowance(outer, inner, pause):
     final = Outcome(False)
     assert _drive(_retrying(_sender([final], trace), inner), outer, pause, trace) is final
     assert trace == [('invoke', 0), ('send', 0)]
+
+
+@pytest.mark.parametrize('outer,inner,pause', [(2, 3, 0), (5, 4, 17), (7, 5, 31)])
+def test_identical_returned_responses_do_not_exclude_recovered_internal_failures(outer, inner, pause):
+    """Even a known dependency can recover failures before each observed response."""
+    outcome = Outcome(True)
+    results, traces = [], []
+    for failures_per_response in (0, inner - 1):
+        trace, returned = [], []
+        failure = TemporaryFailure('recovered before returning')
+        plan = ([failure] * failures_per_response + [outcome]) * outer
+        dependency = _retrying(_sender(plan, trace), inner)
+
+        def invoke(dependency=dependency, returned=returned):
+            response = dependency()
+            returned.append(response)
+            return response
+
+        assert _drive(invoke, outer, pause, trace) is outcome
+        assert trace == _full_trace(outer, failures_per_response + 1, pause)
+        results.append(returned)
+        traces.append(trace)
+    assert results[0] == results[1] == [outcome] * outer
+    assert [item for item in traces[0] if item[0] != 'send'] == [
+        item for item in traces[1] if item[0] != 'send'
+    ]
+    assert sum(event == 'send' for event, _ in traces[0]) == outer
+    assert sum(event == 'send' for event, _ in traces[1]) == outer * inner

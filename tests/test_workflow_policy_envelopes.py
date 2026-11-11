@@ -448,10 +448,57 @@ def test_dcbba33_agents_freezes_evaluated_policy_and_framing(read_only, expected
     assert hashlib.sha256(b"v1:1" + match[2]).hexdigest().encode() == match[1]
 
 
+# Literal policy frozen from evaluated e30efd1; do not rewrite historical controls.
+EVALUATED_E30EFD1_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads for reasoning; check provenance; cite only observed lines. If sufficient, no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Absence needs scope evidence: spend limited calls on uncovered scope, not repeated empty searches. Uncovered scope stays unknown. Be concise; qualify dependencies; count failed attempts/exception exits. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
+EVALUATED_E30EFD1_MANAGEMENT = 'Memory management: colony memory commands or full MCP with required permissions. Feedback unverified: check facts. Corrections/retractions require inspected lifecycle revision. No unrelated pushes or republishing retired memory. Mutation timeout: outcome unknown; retain operation ID for identical replay or inspect state.'
+EVALUATED_E30EFD1_PUBLICATION = "Publication optional: when asked to remember, or for new findings that avoid substantial future research. Otherwise skip simple assignments, even after partial hits. At most one per question, <=4,000 characters, with applicability and trusted repository hashes already obtained. Never invent hashes or research just to publish. No speculation, raw output, prompts, transcripts or tool/environment traces. Duplicates don't refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. "
+
+
+def e30efd1_suffix(read_only):
+    return (
+        "This connection is read-only: do not call push or publish findings. "
+        if read_only else EVALUATED_E30EFD1_PUBLICATION
+    ) + EVALUATED_E30EFD1_MANAGEMENT
+
+
+def e30efd1_policy(read_only):
+    return EVALUATED_E30EFD1_LOOKUP + e30efd1_suffix(read_only)
+
+
+def e30efd1_agents(read_only):
+    data = _agents_with_policy(e30efd1_policy(read_only), read_only)
+    match = re.fullmatch(
+        rb"<!-- colony:setup:v1 begin sha256=([a-f0-9]{64}) pad=0 created=1 -->\n"
+        rb"(.*)<!-- colony:setup:end -->\n", data, re.DOTALL,
+    )
+    body = match[2]
+    if not read_only:
+        body = body.replace(b"publish new evidence-backed findings.", b"publication optional.")
+    digest = hashlib.sha256(b"v1:1" + body).hexdigest().encode()
+    return (b"<!-- colony:setup:v1 begin sha256=" + digest + b" pad=0 created=1 -->\n"
+            + body + b"<!-- colony:setup:end -->\n")
+
+
+@pytest.mark.parametrize(('read_only', 'expected_digest'), [
+    (False, '0902325531809935500394da721856bfe8d8a4c2f745bed80c4d8c57332bdbcb'),
+    (True, '79322688e8afac5a8ca74a2599d8190b7ada613f15237898bc727141f8b45d3b'),
+])
+def test_e30efd1_agents_freezes_evaluated_policy_and_framing(read_only, expected_digest):
+    data = e30efd1_agents(read_only)
+    assert data.count(e30efd1_policy(read_only).encode()) == 1
+    match = re.fullmatch(
+        rb"<!-- colony:setup:v1 begin sha256=([a-f0-9]{64}) pad=0 created=1 -->\n"
+        rb"(.*)<!-- colony:setup:end -->\n", data, re.DOTALL,
+    )
+    assert match is not None
+    assert match[1].decode() == expected_digest
+    assert hashlib.sha256(b"v1:1" + match[2]).hexdigest().encode() == match[1]
+
+
 # Independent literal contract for the current installed guidance.
-CANDIDATE_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads for reasoning; check provenance; cite only observed lines. If sufficient, no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Absence needs scope evidence: spend limited calls on uncovered scope, not repeated empty searches. Uncovered scope stays unknown. Be concise; qualify dependencies; count failed attempts/exception exits. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
-CANDIDATE_MANAGEMENT = 'Memory management: colony memory commands or full MCP with required permissions. Feedback unverified: check facts. Corrections/retractions require inspected lifecycle revision. No unrelated pushes or republishing retired memory. Mutation timeout: outcome unknown; retain operation ID for identical replay or inspect state.'
-CANDIDATE_PUBLICATION = "Publication optional: when asked to remember, or for new findings that avoid substantial future research. Otherwise skip simple assignments, even after partial hits. At most one per question, <=4,000 characters, with applicability and trusted repository hashes already obtained. Never invent hashes or research just to publish. No speculation, raw output, prompts, transcripts or tool/environment traces. Duplicates don't refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. "
+CANDIDATE_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads; check provenance; cite observed lines. Sufficient: no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Before absence searches, budget scope coverage; uncovered scope stays unknown. Answers/findings: qualify assumptions/dependencies; omit extras. Separate outer calls, inner attempts including failures, returns and exceptions. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
+CANDIDATE_MANAGEMENT = 'Memory: colony memory commands or full MCP with required permissions. Feedback unverified: check facts. Corrections/retractions need inspected lifecycle revision. No unrelated pushes or republishing retired memory. Mutation timeout: unknown outcome; retain operation ID for identical replay or inspect state.'
+CANDIDATE_PUBLICATION = "After substantive new research, publish reusable behavior, diagnosis or procedure. Skip isolated assignments unless asked to remember. At most one concise finding per question, <=4,000 characters, with applicability and trusted repository hashes from research. Never invent hashes or research just to publish. No speculation, raw output, prompts, transcripts or tool/environment traces. Duplicates don't refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. "
 
 
 def candidate_suffix(read_only):
