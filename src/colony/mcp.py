@@ -310,11 +310,18 @@ def create_mcp(
                 budget = budget.model_copy(update={"max_tokens": max_context_tokens})
             return lookup(question, namespace, budget)
 
-        # Keep the complete policy in initialize instructions, rather than repeating it
-        # in every routine tool description. Schemas and result serialization stay fixed.
+        # Report this connection's actual units/default without changing the schema,
+        # budget, packing or retry behavior. The full policy remains in initialize.
+        budget_units = (
+            "UTF-8 bytes (estimate)"
+            if context_budget.encoding == "utf8_bytes"
+            else "o200k_base tokens"
+        )
         adaptive_ask.__doc__ = (
-            "Look up one focused repository question; returns saved findings and current "
-            "source evidence. Follow the server's research and reuse policy."
+            "Saved findings and current sources. max_context_tokens caps the full response: "
+            f"default {context_budget.max_tokens} {budget_units}; override 256..8192 within "
+            "your allowance. Size for needed sources before lookup. budget_limited isn't "
+            "proof of no match; no automatic retry. Follow server policy."
         )
         ask = adaptive_ask
     server.tool(

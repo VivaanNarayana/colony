@@ -230,6 +230,11 @@ not measured optimal profiles. The budget is a ceiling, not a target to fill.
 Without this option, legacy responses, setup defaults and tool schemas stay unchanged.
 Only adaptive MCP connections expose an optional `max_context_tokens` argument on
 `ask`, allowing an explicit larger or smaller request with the connection's encoding.
+The tool description reports that connection's default and units. Choose the allowance
+for the needed source evidence before the lookup, within your context limits. Despite
+the parameter name, `utf8_bytes` counts bytes; only `o200k_base` counts encoding tokens.
+`budget_limited` is not proof that no relevant finding exists. The tool does not retry
+or increase the allowance automatically, and an override does not change the default.
 
 Adaptive MCP connections expose only the routine `ask` and `push` tools (only `ask`
 for read-only workflows). Adaptive setup and server guidance allow a direct read of a

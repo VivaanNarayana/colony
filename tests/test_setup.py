@@ -659,8 +659,13 @@ def test_setup_selects_adaptive_policy_without_adding_management_connection(
         ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
     ) if adaptive else WORKFLOW_GUIDANCE
     assert policy in guidance
-    assert ("Stop research once requested facts and qualifications are supported."
-            in guidance) == adaptive
+    for rule in (
+        "Substantial research: ask once first; verbatim ask/push questions.",
+        "No reread/republish if sufficient;",
+        "Empty searches don't prove absence; support scope or qualify.",
+        "Keep answers/findings concise and qualified.",
+    ):
+        assert (rule in guidance) == adaptive
     if adaptive and read_only:
         assert "after meaningful new research publish" not in guidance
         assert "do not call push or publish findings" in guidance
