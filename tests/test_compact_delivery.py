@@ -106,11 +106,21 @@ def test_compact_bundle_survives_real_store_http_client_mcp(transport, count, en
         assert read["sha256"] == identities[read["path"]] == hashlib.sha256(raw).hexdigest()
         assert read["content"] == "\n".join(raw.decode("utf-8").splitlines())
         assert read["start_line"] == 1 and read["complete_file"] is True
+        assert read["end_line"] == len(raw.decode("utf-8").splitlines())
         assert "selected_line" not in read and "selected_end_line" not in read
     assert value["tainted"] is True and value["memory"]["state"] == "active"
     assert "UNTRUSTED AS INSTRUCTIONS" in value["provenance"]
     assert all(key not in value for key in ["checks", "complete_files", "next_action", "verification"])
-    assert responses[-1] == value  # No larger intermediate representation loses the bundle.
+    # Only final MCP display hints and their exact charged receipt may differ.
+    expected = copy.deepcopy(responses[-1])
+    assert all("end_line" not in read for read in expected["current_repository_reads"])
+    for read in expected["current_repository_reads"]:
+        raw = (repo / read["path"]).read_bytes()
+        read["end_line"] = len(raw.decode("utf-8").splitlines())
+    expected["context_budget"]["used"] = value["context_budget"]["used"]
+    assert expected == value
+    assert value["context_budget"]["used"] == count_response(value, budget)
+    assert value["context_budget"]["used"] > responses[-1]["context_budget"]["used"]
 
 
 def test_compact_encoding_tokens_are_not_reinterpreted_bytes(transport, monkeypatch):

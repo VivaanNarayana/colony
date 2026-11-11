@@ -145,6 +145,37 @@ def _core(item, reads):
     return result
 
 
+def with_citation_bounds(response: dict, budget) -> dict:
+    """Annotate an already fitted compact MCP response without repacking evidence.
+
+    Delivered content uses the packer's LF-separated line model: a final empty
+    segment is a retained blank source line, not the original file's terminator.
+    Hints are all-or-none and cannot take space from text or file expansion.
+    """
+    from colony.compact import PROFILE
+
+    if response.get("response_profile") != PROFILE:
+        return copy.deepcopy(response)
+    budget = _budget(budget)
+    counter = _counter(budget)
+    base = copy.deepcopy(response)
+    for read in base.get("current_repository_reads", []):
+        read.pop("end_line", None)
+    limited = bool(base.get("context_budget", {}).get("limited"))
+    base = _receipt(base, budget, counter, limited)
+    if base["context_budget"]["used"] > budget.max_tokens:
+        raise ContextBudgetError("Citation bounds require a fitted response")
+    if not base.get("hit") or base.get("status") != "validated":
+        return base
+    annotated = copy.deepcopy(base)
+    for read in annotated.get("current_repository_reads", []):
+        text, start = read.get("content"), read.get("start_line")
+        if isinstance(text, str) and text and type(start) is int and start > 0:
+            read["end_line"] = start + text.count("\n")
+    annotated = _receipt(annotated, budget, counter, limited)
+    return annotated if annotated["context_budget"]["used"] <= budget.max_tokens else base
+
+
 def _rebuild(response):
     evidence = response.get("evidence")
     if isinstance(evidence, list):

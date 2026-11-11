@@ -70,6 +70,10 @@ def compact_response(value: dict, *, packing: bool = False) -> dict:
     if "current_repository_reads" in result:
         _bound_reads(result["current_repository_reads"], result.get("sources", []))
         reads = result["current_repository_reads"]
+        # Optional display bounds are derived only after final MCP packing. Never
+        # trust upstream hints or let them displace evidence on a later pass.
+        for read in reads:
+            read.pop("end_line", None)
         # Describe delivered coverage, never semantic answer completeness. Recompute
         # after every packing pass: optional file expansion may have been removed.
         complete = {r["path"] for r in reads

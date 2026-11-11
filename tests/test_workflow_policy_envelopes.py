@@ -113,7 +113,7 @@ EVALUATED_682E036_LOOKUP = (
 )
 
 
-CANDIDATE_LOOKUP = (
+EVALUATED_DCBBA33_LOOKUP = (
     "Substantial research: ask once first; verbatim ask/push questions. "
     "Trivial reads: skip ask/push. "
     "Reuse current_repository_reads for new reasoning; check provenance, cite coordinates. "
@@ -412,7 +412,7 @@ def test_latest_evaluated_agents_freezes_682e036_policy_and_framing(read_only, e
     assert hashlib.sha256(b"v1:1" + match[2]).hexdigest().encode() == match[1]
 
 
-def candidate_suffix(read_only):
+def dcbba33_suffix(read_only):
     # Literal semantics-preserving compression; frozen historical suffixes stay intact.
     original = BASELINE_READ_ONLY_SUFFIX if read_only else BASELINE_WRITABLE_SUFFIX
     return original.replace(
@@ -422,3 +422,40 @@ def candidate_suffix(read_only):
         'permissions.',
     ).replace('Timed-out mutations have unknown outcome:',
               'Mutation timeouts leave outcome unknown:')
+
+
+def dcbba33_policy(read_only):
+    return EVALUATED_DCBBA33_LOOKUP + dcbba33_suffix(read_only)
+
+
+def dcbba33_agents(read_only):
+    return _agents_with_policy(dcbba33_policy(read_only), read_only)
+
+
+@pytest.mark.parametrize(('read_only', 'expected_digest'), [
+    (False, '3b04b85b9c3ebfafe2e8771e51bcc0f7018ee15572a79ac49169bcc6847969aa'),
+    (True, '7b3a12f62ebf066d36e308ec9c0910741a9d32c8304d11e031c746d56ea25d80'),
+])
+def test_dcbba33_agents_freezes_evaluated_policy_and_framing(read_only, expected_digest):
+    data = dcbba33_agents(read_only)
+    assert data.count(dcbba33_policy(read_only).encode()) == 1
+    match = re.fullmatch(
+        rb"<!-- colony:setup:v1 begin sha256=([a-f0-9]{64}) pad=0 created=1 -->\n"
+        rb"(.*)<!-- colony:setup:end -->\n", data, re.DOTALL,
+    )
+    assert match is not None
+    assert match[1].decode() == expected_digest
+    assert hashlib.sha256(b"v1:1" + match[2]).hexdigest().encode() == match[1]
+
+
+# Independent literal contract for the current installed guidance.
+CANDIDATE_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads for reasoning; check provenance; cite only observed lines. If sufficient, no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Absence needs scope evidence: spend limited calls on uncovered scope, not repeated empty searches. Uncovered scope stays unknown. Be concise; qualify dependencies; count failed attempts/exception exits. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
+CANDIDATE_MANAGEMENT = 'Memory management: colony memory commands or full MCP with required permissions. Feedback unverified: check facts. Corrections/retractions require inspected lifecycle revision. No unrelated pushes or republishing retired memory. Mutation timeout: outcome unknown; retain operation ID for identical replay or inspect state.'
+CANDIDATE_PUBLICATION = "Publication optional: when asked to remember, or for new findings that avoid substantial future research. Otherwise skip simple assignments, even after partial hits. At most one per question, <=4,000 characters, with applicability and trusted repository hashes already obtained. Never invent hashes or research just to publish. No speculation, raw output, prompts, transcripts or tool/environment traces. Duplicates don't refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. "
+
+
+def candidate_suffix(read_only):
+    return (
+        "This connection is read-only: do not call push or publish findings. "
+        if read_only else CANDIDATE_PUBLICATION
+    ) + CANDIDATE_MANAGEMENT

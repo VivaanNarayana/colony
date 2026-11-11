@@ -86,7 +86,10 @@ def test_explicit_override_delivers_all_cores_and_does_not_change_default(
     assert len(client[0]) == 1  # No automatic retry/escalation after a bounded miss.
     large = ask(server, max_context_tokens=8192)
     assert large["hit"] and large["evidence_scope"] == "cited_files"
-    assert large["current_repository_reads"] == original["current_repository_reads"]
+    assert large["current_repository_reads"] == [
+        {**read, "end_line": read["start_line"] + read["content"].count("\n")}
+        for read in original["current_repository_reads"]
+    ]
     assert large["sources"] == original["sources"]
     assert "content" not in large  # No saved prose substituted for source evidence.
     again = ask(server)
@@ -120,7 +123,10 @@ def test_default_units_can_change_fit_without_changing_evidence(client, tmp_path
         assert default["reason"] == "budget_limited"
     sufficient = ask(server, max_context_tokens=8192)
     assert sufficient["hit"] and sufficient["evidence_scope"] == "cited_files"
-    assert sufficient["current_repository_reads"] == packet["current_repository_reads"]
+    assert sufficient["current_repository_reads"] == [
+        {**read, "end_line": read["start_line"] + read["content"].count("\n")}
+        for read in packet["current_repository_reads"]
+    ]
     assert sufficient["sources"] == packet["sources"]
     assert sufficient["context_budget"]["used"] == count_response(
         sufficient, ContextBudget(max_tokens=8192, encoding=encoding),

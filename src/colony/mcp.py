@@ -285,10 +285,11 @@ def create_mcp(
 
     def render(response, budget, question):
         if budget is not None:
-            from colony.context_budget import fit_response, serialize_response
+            from colony.context_budget import fit_response, serialize_response, with_citation_bounds
 
             _deduplicate_adaptive_sources(response)
             response = fit_response(response, budget, question=question)
+            response = with_citation_bounds(response, budget)
             text = serialize_response(response)
         else:
             text = json.dumps(response, separators=(",", ":"), ensure_ascii=False)
@@ -376,7 +377,7 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Publish one finding with actual file ref/content_hash under the server's "
+                "Optionally publish with actual file ref/content_hash under the server's "
                 "publication policy. Namespace bound; taint true; secrets scrubbed."
                 if context_budget is not None
                 else publish.__doc__
@@ -390,7 +391,7 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Store one finding with actual file ref/content_hash under the server's "
+                "Optionally publish with actual file ref/content_hash under the server's "
                 "publication policy. Client scrubs secrets; mark external content tainted."
                 if context_budget is not None
                 else None

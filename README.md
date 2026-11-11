@@ -235,6 +235,11 @@ for the needed source evidence before the lookup, within your context limits. De
 the parameter name, `utf8_bytes` counts bytes; only `o200k_base` counts encoding tokens.
 `budget_limited` is not proof that no relevant finding exists. The tool does not retry
 or increase the allowance automatically, and an override does not change the default.
+Adaptive MCP can add exact inclusive `end_line` hints to delivered source reads when
+space remains after packing. These hints are fully charged and omitted if needed to
+preserve the fitted evidence. They do not certify answer correctness or repository-wide
+coverage. Publication is optional: prefer findings that avoid substantial future research;
+skip simple assignment lookups unless explicitly asked to remember them.
 
 Adaptive MCP connections expose only the routine `ask` and `push` tools (only `ask`
 for read-only workflows). Adaptive setup and server guidance allow a direct read of a

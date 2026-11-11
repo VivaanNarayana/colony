@@ -5,9 +5,14 @@ in answerability. Complete content is sufficient, but no particular read method
 or number of files is imposed on production or the evaluator by these controls.
 """
 
+import hashlib
 import json
 
 import pytest
+
+from colony.compact import PROFILE
+from colony.context_budget import fit_response, with_citation_bounds
+from colony.models import ContextBudget
 
 
 @pytest.mark.parametrize("query,record", [
@@ -41,3 +46,48 @@ def test_partial_or_stale_evidence_does_not_certify_current_scope(change):
     assert observed["README.md"] == current["README.md"]
     assert observed.get("options.json") != current["options.json"]
     assert json.loads(current["options.json"])["expiry_seconds"] == 47
+
+
+@pytest.mark.parametrize("queries", [["retention"], ["retention", "expiry"]])
+def test_more_empty_searches_and_unrelated_reads_still_leave_a_scope_gap(queries):
+    common = {"README.md": "Service runtime.\n", "loader.py": "from config import OPTIONS\n",
+              "worker.py": "def run(options):\n    return options\n"}
+    present = {**common, "config.json": '{"ttl_days": 19}'}
+    absent = {**common, "config.json": "{}"}
+
+    def observed(files):
+        searches = [[name for name, text in files.items() if q in text] for q in queries]
+        return sorted(files), {name: files[name] for name in common}, searches
+
+    assert observed(present) == observed(absent)
+    assert present["config.json"] != absent["config.json"]
+    # Calling this the "exposed repository" does not remove config.json from it.
+    assert "config.json" in observed(present)[0]
+
+
+@pytest.mark.parametrize("complete_scope", [False, True])
+@pytest.mark.parametrize("config", ['{"ttl_days": 19}', '{}'])
+def test_complete_cited_files_and_citation_hints_do_not_certify_repository_absence(
+    complete_scope, config,
+):
+    files = {"readme.txt": "Runtime notes", "options.json": config}
+    selected = files if complete_scope else {"readme.txt": files["readme.txt"]}
+    reads = [
+        {"path": path, "sha256": hashlib.sha256(text.encode()).hexdigest(),
+         "content": text, "start_line": 1, "complete_file": True}
+        for path, text in selected.items()
+    ]
+    response = {"response_profile": PROFILE, "status": "validated", "hit": True,
+                "match_kind": "evidence", "current_repository_reads": reads,
+                "sources": [{"ref": r["path"], "content_hash": r["sha256"]} for r in reads]}
+    budget = ContextBudget(max_tokens=8192)
+    result = with_citation_bounds(fit_response(response, budget), budget)
+    assert result["evidence_scope"] == "cited_files"  # Only the cited set is complete.
+    delivered = {r["path"]: r["content"] for r in result["current_repository_reads"]}
+    assert (set(delivered) == set(files)) == complete_scope
+    if complete_scope:
+        # A current cache bundle provides the same text as current file reads.
+        assert delivered == files
+        assert json.loads(delivered["options.json"]).get("ttl_days") == json.loads(config).get("ttl_days")
+    else:
+        assert "options.json" not in delivered  # Bounds do not fill evidence gaps.

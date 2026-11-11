@@ -23,6 +23,7 @@ def test_complete_bundle_survives_git_client_and_mcp(transport, count, ending):
     value = controls.ask_mcp(client, repo, budget, git=True)
     remote = responses[-1]
     assert remote["hit"] and len(remote["current_repository_reads"]) == count
+    assert all("end_line" not in r for r in remote["current_repository_reads"])
     assert value["response_profile"] == PROFILE and value["hit"] is True
     assert value["git"]["compatibility"] == "matched"
     assert value["evidence_scope"] == "cited_files"
@@ -35,3 +36,4 @@ def test_complete_bundle_survives_git_client_and_mcp(transport, count, ending):
         assert read["sha256"] == identities[read["path"]] == hashlib.sha256(raw).hexdigest()
         assert read["content"] == "\n".join(raw.decode("utf-8").splitlines())
         assert read["start_line"] == 1 and read["complete_file"] is True
+        assert read["end_line"] == len(raw.decode("utf-8").splitlines())

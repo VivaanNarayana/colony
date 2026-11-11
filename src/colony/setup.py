@@ -442,6 +442,8 @@ def setup_codex(
         mode = "read-only; never publish" if read_only else "publish new evidence-backed findings"
         policy = WORKFLOW_GUIDANCE
         if context_budget is not None:
+            if not read_only:
+                mode = "publication optional"
             policy = (
                 ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
             )
