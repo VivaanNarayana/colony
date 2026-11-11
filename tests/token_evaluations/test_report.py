@@ -340,7 +340,7 @@ def test_duplicate_quality_and_missing_attempt_rejected(run):
         report(root, root / "quality.json", root / "report.json")
 
 
-def native_receipt_control(root, quality):
+def native_receipt_control(root, quality, *, source_bytes=b"TIMEOUT = 1500\n"):
     """Fabricated receipt schema control only; never native measurements."""
     frozen = json.loads((root / "run.json").read_text())
     protocol = frozen["protocol"]
@@ -353,7 +353,6 @@ def native_receipt_control(root, quality):
     protocol.setdefault("research", {"max_calls": 6})
     frozen["run_dir"] = str(root.resolve())
     workload = protocol["workloads"][0]
-    source_bytes = b"TIMEOUT = 1500\n"
     source_files = {"settings.py": hashlib.sha256(source_bytes).hexdigest()}
     for arm in ("no_colony", "colony"):
         source = root / "workspaces" / arm / "gateway/v1/settings.py"

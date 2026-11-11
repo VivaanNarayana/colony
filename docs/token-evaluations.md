@@ -405,6 +405,12 @@ the research tool's existing authorization against the frozen snapshot and mappe
 to its canonical source key. Containment, allowlist, symlink/junction, hash, text
 and line checks still apply. Raw tool results and historical artifacts are not
 rewritten; Colony's canonical source-reference validation is unchanged.
+For semantic review, a current excerpt explicitly marked as a partial file may
+end mid-line at the producer's character budget. All delivered text, including
+that tail, must match the frozen source exactly. Only complete observed lines
+receive evidence credit; the clipped line and unseen suffix receive none. A
+malformed or stale read still rejects the entire read bundle. This normalization
+does not change repository-read validation or controlled mechanism proofs.
 Evidence after the last answer is excluded. For `all_agent_messages`, the excerpt
 union does not prove what was available before each earlier factual claim. The
 review instructions require unresolved grounding when the missing chronology is

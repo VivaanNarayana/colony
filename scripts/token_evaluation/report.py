@@ -251,7 +251,8 @@ def review_subject(run_dir, run, manifest, row, case):
                 spans += _research(item, source_root, current["files"])
             elif server == "colony" and item.get("tool") == "ask":
                 for value in _objects(item):
-                    spans += verify_current_reads(value.get("current_repository_reads"), source_root, current["files"])
+                    spans += verify_current_reads(value.get("current_repository_reads"), source_root, current["files"],
+                                                  allow_clipped_tail=True)
         # Normalize by evidence bytes, never credit tool names or number of calls.
         for relative, start, end in sorted({(s["path"], s["start"], s["end"]) for s in spans}):
             source = next(s for s in sources if s["path"] == relative)

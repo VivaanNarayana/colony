@@ -24,8 +24,12 @@ def _objects(item):
     return values
 
 
-def verify_current_reads(reads, snapshot_root, files):
-    """Return verified line spans, or [] if ANY claimed read is malformed/forged."""
+def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=False):
+    """Verify all bytes; semantic review may retain complete lines before a clipped tail.
+
+    The default mechanism/repository contract still requires complete line spans.
+    The opt-in never credits a partial line or tolerates a mismatching byte.
+    """
     if not isinstance(reads, list) or not reads:
         return []
     spans = []
@@ -56,13 +60,23 @@ def verify_current_reads(reads, snapshot_root, files):
             return []
         count = content.count('\n') + 1
         end = start + count - 1
-        if end > len(lines) or content != '\n'.join(lines[start - 1:end]):
+        if end > len(lines):
             return []
         if 'end' in read and read['end'] != end:
             return []
         if read.get('complete_file') and (start != 1 or end != len(lines)):
             return []
-        spans.append({'path': relative, 'start': start, 'end': end})
+        expected = '\n'.join(lines[start - 1:end])
+        if content != expected:
+            # The producer can stop mid-line at its character budget. Require
+            # every delivered byte (including the clipped tail) to match, and
+            # an explicit partial-file marker; never salvage forged text.
+            if not (allow_clipped_tail and read.get('complete_file') is False
+                    and expected.startswith(content)):
+                return []
+            end -= 1
+        if end >= start:
+            spans.append({'path': relative, 'start': start, 'end': end})
     return spans
 
 

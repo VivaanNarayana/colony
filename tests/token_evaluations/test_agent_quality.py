@@ -104,9 +104,9 @@ def test_approval_requires_complete_evidence_bound_judgments(supported_subject, 
         validate_reviews(supported_subject, submission)
 
 
-def build_reviewed_run(run, alteration=None):
+def build_reviewed_run(run, alteration=None, *, source_bytes=b"TIMEOUT = 1500\n"):
     root, quality, _ = run
-    native_receipt_control(root, quality)
+    native_receipt_control(root, quality, source_bytes=source_bytes)
     source = root / "workspaces/no_colony/gateway/v1/settings.py"
     read = {"path": "settings.py", "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
             "start": 1, "end": 1, "content": "TIMEOUT = 1500"}
