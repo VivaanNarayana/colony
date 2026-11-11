@@ -18,7 +18,12 @@ def put(path, value):
 @pytest.fixture
 def run(tmp_path):
     task = {"id": "trace", "phase": "learn", "expected_use": "optional",
-            "oracle": {"facts": {"timeout": 1500}}, "rubric": {"correct": "current facts"}}
+            "question": "Fixture question",
+            "oracle": {"facts": {"timeout": 1500},
+                       "citations": [{"path": "settings.py", "start": 1, "end": 1}],
+                       "evidence_policy": {"kind": "support"},
+                       "unsupported_claims_fail": True, "stale_snapshot_fails": True},
+            "rubric": {"correct": "current facts", "grounded": "observed current definition"}}
     protocol = {"contract": CONTRACT, "collector": {"files": collector_hashes()},
                 "track": "natural", "output": {"contract": OUTPUT_CONTRACT,
                 "format": "free_text", "answer_policy": "last_agent_message"},
@@ -105,7 +110,7 @@ def test_long_display_names_round_trip_with_generated_attempt_ids(run):
     assert all(len(row["id"]) <= 128 for row in value["attempts"])
 
 
-@pytest.mark.parametrize("field", ["answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"])
+@pytest.mark.parametrize("field", ["question_sha256", "answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"])
 def test_corrupted_quality_binding_rejected(run, field):
     root, quality, _ = run
     quality["labels"][0][field] = "0" * 64
@@ -240,7 +245,7 @@ def test_parser_failure_keeps_complete_usage_in_report(run):
                for arm in ("no_colony", "colony"))
 
 
-@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "missing_version", "wrong_version", "missing_format"])
+@pytest.mark.parametrize("change", ["legacy", "previous", "research_v3", "evidence_v4", "missing_version", "wrong_version", "missing_format"])
 def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading(run, change):
     root, _, _ = run
     frozen = json.loads((root / "run.json").read_text())
@@ -250,6 +255,8 @@ def test_report_and_mask_refuse_unbound_or_historical_contract_without_regrading
         frozen["protocol"]["contract"] = "colony.token-evaluation/2"
     elif change == "research_v3":
         frozen["protocol"]["contract"] = "colony.token-evaluation/3"
+    elif change == "evidence_v4":
+        frozen["protocol"]["contract"] = "colony.token-evaluation/4"
     elif change == "missing_version":
         frozen["protocol"]["output"].pop("contract")
     elif change == "wrong_version":
@@ -347,7 +354,14 @@ def native_receipt_control(root, quality):
     protocol.setdefault("research", {"max_calls": 6})
     frozen["run_dir"] = str(root.resolve())
     workload = protocol["workloads"][0]
-    workload["snapshots"] = [{"id": "v1", "files": {}}]
+    source_bytes = b"TIMEOUT = 1500\n"
+    source_files = {"settings.py": hashlib.sha256(source_bytes).hexdigest()}
+    for arm in ("no_colony", "colony"):
+        source = root / "workspaces" / arm / "gateway/v1/settings.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_bytes(source_bytes)
+        frozen["files"][source.relative_to(root).as_posix()] = source_files["settings.py"]
+    workload["snapshots"] = [{"id": "v1", "files": source_files}]
     workload["tasks"][0]["snapshot"] = "v1"
     task = workload["tasks"][0]
     task.setdefault("question", "Fixture question")
@@ -355,7 +369,7 @@ def native_receipt_control(root, quality):
     put(root / "run.json", frozen)
     quality["protocol_sha256"] = frozen["protocol_sha256"]
     for label in quality["labels"]:
-        label["source_sha256"] = digest({"snapshot": "v1", "files": {}})
+        label["source_sha256"] = digest({"snapshot": "v1", "files": source_files})
     put(root / "quality.json", quality)
     put(root / "preflight.json", {"synthetic_schema_control": True, "ok": True,
                                    "native_ready": True, "protocol_sha256": frozen["protocol_sha256"]})
@@ -381,10 +395,10 @@ def native_receipt_control(root, quality):
                           configuration=({"mode": "managed", "role": "a" if task["phase"] == "learn" else "b",
                                           "files": []} if arm == "colony" else None),
                           args=_client_args(protocol, root / "active" / arm / "gateway", team,
-                                            task, root, arm, env, {}, client_workspace=workspace))
+                                            task, root, arm, env, source_files, client_workspace=workspace))
         put(invocation_path, invocation)
         transitions.append({"arm": arm, "workload": "gateway", "task": "trace",
-                            "snapshot": "v1", "files_sha256": digest({})})
+                            "snapshot": "v1", "files_sha256": digest(source_files)})
     collection = {"native_evidence": True, "status": "complete",
                   "protocol_sha256": frozen["protocol_sha256"],
                   "preflight_sha256": hashlib.sha256((root / "preflight.json").read_bytes()).hexdigest(),
@@ -630,3 +644,32 @@ def test_mask_exposes_only_selected_current_sources(run):
     mask(root, root / "new-mask")
     public = json.loads((root / "new-mask" / "answers.json").read_text(encoding="utf-8"))
     assert all(row["current_sources"][0]["content"] == "current value" for row in public)
+
+
+@pytest.mark.parametrize("identity", ["a", "b"])
+@pytest.mark.parametrize("field", ["correct", "grounded", "format_compliant"])
+def test_each_independent_quality_failure_blocks_either_arm_without_dropping_cost(
+    run, identity, field,
+):
+    """Synthetic labels test symmetric enforcement, not semantic model grading."""
+    root, quality, _ = run
+    next(label for label in quality["labels"] if label["id"] == identity)[field] = False
+    native_receipt_control(root, quality)
+
+    def ask(events):
+        events.insert(1, {"type": "item.completed", "item": {
+            "id": "charged-lookup", "type": "mcp_tool_call", "server": "colony",
+            "tool": "ask", "arguments": {"question": "Fixture question"},
+            "status": "completed", "result": {"content": [{"type": "text",
+                "text": '{"hit": false, "reason": "no_relevant_trail"}'}]},
+        }})
+    rewrite_events(root, "b", ask)
+    result = report(root, root / "quality.json", root / "symmetric-failure.json")
+    selected = {row["id"]: row for row in result["attempts"]}
+    assert selected[identity]["answer_quality_successful"] is False
+    assert selected["b" if identity == "a" else "a"]["answer_quality_successful"] is True
+    assert result["adoption"] and result["tool_policy_compliant"]
+    assert not result["answer_quality_complete"] and not result["workflow_success"]
+    assert result["observed_token_reduction"] is None
+    assert all(result["arms"][arm]["total_usage"]["gross_tokens"] == 120
+               for arm in ("colony", "no_colony"))

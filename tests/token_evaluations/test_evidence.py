@@ -24,7 +24,7 @@ def trace(tmp_path):
     base.mkdir(parents=True)
     (base / 'a.py').write_bytes(text.encode())
     citations = [{'path': 'a.py', 'start': 1, 'end': 2}]
-    tasks = [{'id': name, 'snapshot': 'v1', 'oracle': {'citations': citations}} for name in ('learn', 'reuse', 'gap', 'stale')]
+    tasks = [{'id': name, 'snapshot': 'v1', 'oracle': {'citations': citations, 'evidence_policy': {'kind': 'support'}}} for name in ('learn', 'reuse', 'gap', 'stale')]
     manifest = {'workloads': [{'id': 'w', 'snapshots': [{'id': 'v1', 'files': files}], 'tasks': tasks}]}
     sources = [{'ref': 'a.py', 'content_hash': sha}]
     read = {'path': 'a.py', 'sha256': sha, 'start': 1, 'end': 2, 'content': text.rstrip('\n')}
@@ -239,7 +239,7 @@ def test_natural_publications_are_bound_to_evidence_instead_of_controlled_choice
         events['learn'][0]['item']['result']['content'][0]['text'] = json.dumps({**read, 'end': 1, 'content': 'alpha = 1'})
         events['learn'][-1]['item']['arguments']['content'] = 'alpha is 1'
         answer['content'] = 'alpha is 1'
-        reuse['oracle'] = {'citations': [{'path': 'a.py', 'start': 1, 'end': 1}]}
+        reuse['oracle'] = {'citations': [{'path': 'a.py', 'start': 1, 'end': 1}], 'evidence_policy': {'kind': 'support'}}
         answer['current_repository_reads'][0].update(end=1, content='alpha = 1')
         events['reuse'][0] = call('colony', 'ask', {'question': 'alpha beta'}, answer)
     else:
@@ -307,3 +307,4 @@ def test_resolved_colony_lifecycle_preserves_reuse_but_unresolved_call_withholds
 def test_uninspected_arm_does_not_report_zero_research_attempts(tmp_path):
     proof = evaluate_mechanisms(tmp_path, {}, [{'id': 'baseline', 'arm': 'no_colony'}])['baseline']
     assert proof['research_attempts'] is None and proof['unresolved_mcp_calls'] is None
+    assert proof['source_scope_covered'] is None

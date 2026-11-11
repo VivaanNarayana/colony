@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from .protocol import validate_evidence_policy
+
 
 def _objects(item):
     result = item.get('result') or {}
@@ -121,6 +123,39 @@ def _research(item, root, files):
     return spans
 
 
+def required_source_spans(task, snapshot, source_root):
+    """Resolve mechanical coverage, never infer that observed text proves a fact.
+
+    Support covers the task's required spans, not necessarily every file.
+    Absence covers the complete declared current corpus. Empty files contribute
+    no lines; an entirely empty obligation never earns vacuous reuse credit.
+    """
+    files = snapshot["files"]
+    policy = validate_evidence_policy(task["oracle"], files)
+    if policy["kind"] == "support":
+        return task["oracle"]["citations"]
+    original_root = Path(source_root).absolute()
+    if original_root.is_symlink() or (hasattr(original_root, "is_junction") and original_root.is_junction()):
+        raise ValueError("Linked evidence scope")
+    root = original_root.resolve()
+    required = []
+    for relative in policy["scope"]:
+        original = root / relative
+        if any(p.is_symlink() or (hasattr(p, "is_junction") and p.is_junction())
+               for p in (original, *original.parents) if p.is_relative_to(root)):
+            raise ValueError("Linked evidence scope")
+        path = original.resolve()
+        if not path.is_relative_to(root):
+            raise ValueError("Evidence scope outside frozen sources")
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != files[relative]:
+            raise ValueError("Evidence scope source changed")
+        lines = raw.decode("utf-8").splitlines()
+        if lines:
+            required.append({"path": relative, "start": 1, "end": len(lines)})
+    return required
+
+
 def evaluate_mechanisms(root, manifest, rows):
     """Evaluate retained events in task order, binding published identities to source reads.
 
@@ -132,10 +167,12 @@ def evaluate_mechanisms(root, manifest, rows):
     decisions, published, retrieved = {}, {}, set()
     for row in rows:
         decision = dict.fromkeys(('publication', 'hit', 'miss', 'stale', 'insufficient', 'useful_reuse'), False)
-        decision.update(successful_research=0, research_attempts=None, unresolved_mcp_calls=None, errors=[])
+        decision.update(successful_research=0, research_attempts=None, unresolved_mcp_calls=None,
+                        source_scope_covered=None, errors=[])
         decisions[row['id']] = decision
         if row['arm'] != 'colony':
             continue
+        decision['source_scope_covered'] = False
         workload = next(w for w in manifest['workloads'] if w['id'] == row['workload'])
         task = next(t for t in workload['tasks'] if t['id'] == row['task'])
         snapshot = next((s for s in workload['snapshots'] if s['id'] == task.get('snapshot')), None)
@@ -151,7 +188,12 @@ def evaluate_mechanisms(root, manifest, rows):
             record = next(r for r in records if r['id'] == row['id'])
             path = root / 'logs' / record.get('result', record)['events']
         research, current_partial, stale_seen = [], [], False
-        required = task.get('oracle', {}).get('citations', [])
+        scope_reads = []
+        try:
+            required = required_source_spans(task, snapshot, source_root)
+        except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError):
+            decision['errors'].append('invalid task evidence scope')
+            continue
         research_attempts, unresolved_calls = set(), set()
         for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines()):
             event = json.loads(line)
@@ -174,6 +216,7 @@ def evaluate_mechanisms(root, manifest, rows):
                 spans = _research(item, source_root, files)
                 if spans:
                     research += spans
+                    scope_reads += spans
                     decision['successful_research'] += 1
                     if current_partial and covers(current_partial + research, required):
                         decision['insufficient'] = True
@@ -221,6 +264,17 @@ def evaluate_mechanisms(root, manifest, rows):
                 elif expected_question is not None and args.get('question') != expected_question:
                     continue
                 decision['miss'] |= value.get('hit') is False and value.get('reason') == 'no_relevant_trail'
+                sources = value.get('sources')
+                reads = verify_current_reads(value.get('current_repository_reads'), source_root, files)
+                returned_map = {s.get('ref'): s.get('content_hash') for s in sources if isinstance(s, dict)} if isinstance(sources, list) else {}
+                if any(span['path'] not in returned_map for span in reads):
+                    reads = []
+                current_sources = (isinstance(sources, list) and bool(sources)
+                    and all(isinstance(source, dict) and source.get('ref') in files
+                            and source.get('content_hash') == files[source['ref']] for source in sources))
+                if (value.get('hit') is True and value.get('status') == 'validated'
+                        and current_sources and reads):
+                    scope_reads += reads
                 prior = published.get(identity)
                 if not prior or prior['attempt'] == row['id']:
                     continue
@@ -228,12 +282,7 @@ def evaluate_mechanisms(root, manifest, rows):
                     continue
                 if manifest.get('track') != 'natural' and task.get('memory_query') and args.get('question') != task['memory_query']:
                     continue
-                sources = value.get('sources')
                 prior_map = {s['ref']: s['content_hash'] for s in prior['sources']}
-                returned_map = {s.get('ref'): s.get('content_hash') for s in sources if isinstance(s, dict)} if isinstance(sources, list) else {}
-                reads = verify_current_reads(value.get('current_repository_reads'), source_root, files)
-                if any(span['path'] not in returned_map for span in reads):
-                    reads = []
                 changed = any(files.get(p) != sha for p, sha in prior_map.items())
                 linked = returned_map == prior_map
                 current_linked = (set(returned_map) == set(prior_map) and all(files.get(p) == sha for p, sha in returned_map.items()))
@@ -257,6 +306,7 @@ def evaluate_mechanisms(root, manifest, rows):
                              for s in reads for c in required):
                         current_partial = reads
                         research = []  # only research AFTER the partial retrieval fills its gaps
+        decision['source_scope_covered'] = covers(scope_reads, required)
         decision['research_attempts'] = len(research_attempts)
         decision['unresolved_mcp_calls'] = len(unresolved_calls)
         decision['useful_reuse'] = decision['hit'] and not research_attempts and not unresolved_calls
