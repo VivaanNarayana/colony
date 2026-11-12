@@ -210,7 +210,7 @@ def test_template_freezes_prospective_output_and_complete_collector(tmp_path, mo
     args = cli.parser().parse_args(["template", "--catalog", str(catalog),
         "--target-python", str(target), "--target-repo", str(tmp_path), "--revision", "main",
         "--client", str(client), "--model", "frozen", "--track", "controlled",
-        "--format", "json", "--output", str(frozen)])
+        "--format", "json", "--output", str(frozen), "--paired"])
     source = b"clean installed bytes"
     installed = {"colony/__init__.py": hashlib.sha256(source).hexdigest()}
     responses = iter([b"a" * 40 + b"\n", b"src/colony/__init__.py\n", source])

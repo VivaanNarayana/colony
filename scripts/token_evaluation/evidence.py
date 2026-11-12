@@ -222,7 +222,7 @@ def evaluate_mechanisms(root, manifest, rows):
         decision.update(successful_research=0, research_attempts=None, unresolved_mcp_calls=None,
                         source_scope_covered=None, errors=[])
         decisions[row['id']] = decision
-        if row['arm'] != 'colony':
+        if row['arm'] == 'no_colony':
             continue
         decision['source_scope_covered'] = False
         workload = next(w for w in manifest['workloads'] if w['id'] == row['workload'])
@@ -232,7 +232,7 @@ def evaluate_mechanisms(root, manifest, rows):
             decision['errors'].append('missing frozen snapshot')
             continue
         files = snapshot['files']
-        source_root = root / 'workspaces' / 'colony' / row['workload'] / snapshot['id']
+        source_root = root / 'workspaces' / row['arm'] / row['workload'] / snapshot['id']
         if row.get('events_path'):
             path = Path(row['events_path'])
         else:
@@ -284,7 +284,7 @@ def evaluate_mechanisms(root, manifest, rows):
                 except ValueError:
                     args = {}
             for value in _objects(item):
-                identity = (row['workload'], value.get('id'))
+                identity = (row['arm'], row['workload'], value.get('id'))
                 if tool == 'push':
                     sources = args.get('sources')
                     valid = (task.get('phase', 'learn') == 'learn'

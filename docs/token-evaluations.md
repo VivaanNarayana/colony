@@ -13,6 +13,48 @@ All commands preserve existing evidence: choose new output directories/files.
 Windows generated data must be on D:. Keep private credentials, logs and answers
 outside Git. Source fixtures may be read from the checkout.
 
+## Default three-group campaign (version /8)
+
+The default template freezes **one campaign with three groups**: the feature
+candidate (`colony`), a separately pinned Colony `main`, and **one** `no_colony`
+control. The unchanged two-lineage catalog has fourteen tasks, so collection is
+**14 candidate + 14 main + 14 No-Colony = 42 native sessions**, never two paired
+28-session runs. Each group includes four learning and ten reuse sessions.
+`max_attempts` must equal the full three-group schedule (42 for the full catalog);
+resource stops may produce a partial run but never retries or replacement sessions.
+
+Provide `--main-target-python`, `--main-target-repo` and `--main-revision` in
+addition to the candidate pins. Both installed runtimes are byte-checked against
+Git, independently preflighted and rechecked during collection. Main's
+`--main-mcp-arg`, `--main-setup-arg` and `--main-server-arg` options default to its
+supported defaults; candidate options remain separate. One frozen client, model,
+effort, task order, source transitions, output policy and resource budget apply to
+all groups. Group order rotates once per task. Candidate and main have separate
+authenticated teams/stores per lineage, writable learning and pull-only reuse;
+No-Colony has no memory server. Authorization additionally pins `main_revision`.
+
+Mask the **entire campaign once**. The public packet has all 42 cases under one
+protocol, with no group identities or costs. Start **two total fresh independent
+GPT-6.1 Sol/medium review sessions**: each judges both correctness and grounding
+for every case in that same packet. Do not create a separate reviewer pair per
+group or per comparison. Existing source-bound findings, disagreement handling,
+format, tool-policy, source-integrity and all-attempt accounting gates remain.
+
+Reports retain all three groups, complete learning/reuse/total usage and every
+failed/unresolved case. `primary_comparison` is candidate versus main over the
+full horizon; both must pass their strict checks before a lower gross total can
+pass acceptance. `comparisons` also reports candidate versus No-Colony and main
+versus the **same single** No-Colony control as informational comparisons. Their
+failed or incomplete quality gates stay visible; no control is duplicated or
+selected after results. Descriptive differences never imply qualified savings.
+
+`--paired` explicitly opts into a two-group diagnostic and cannot be combined
+with main pins. It is not the default feature-evaluation design. `/8` changes
+campaign structure, not semantic standards, tasks or product behavior. Historical
+`/7` and earlier runs must use their original pinned collectors; keep all original
+56-session paired results, reviews and costs unchanged. Do not select 42 old
+sessions, relabel them `/8`, or treat this update as permission to run new models.
+
 ## What is compared
 
 Freeze one track per manifest; do not pool tracks or change them after seeing results.
@@ -119,12 +161,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/7` and bind the shared instruction and
+New manifests use `colony.token-evaluation/8` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/7",
+  "contract": "colony.token-evaluation/8",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -136,7 +178,7 @@ structural check through `output.contract`:
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically, together with the frozen `quality_review` policy (GPT-6.1 Sol,
 medium reasoning, exact instructions and their hash). Missing or unknown contract identifiers fail before
-collection or scoring. Historical `/1`, `/2`, `/3`, `/4`, `/5` and `/6` manifests are rejected by this collector
+collection or scoring. Historical `/1`, `/2`, `/3`, `/4`, `/5`, `/6` and `/7` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -266,7 +308,7 @@ provisioned model snapshots; preflight never downloads models. Example commands
 below have placeholders and do not authorize or start native sessions.
 
 ```powershell
-python scripts/token_evaluation.py template --target-python D:/env/Scripts/python.exe --target-repo D:/source/colony --revision FULL_COMMIT_SHA --client C:/path/to/codex.exe --model EXPLICIT_MODEL --track controlled --workload gateway --output D:/evaluations/protocol.json
+python scripts/token_evaluation.py template --target-python D:/candidate-env/Scripts/python.exe --target-repo D:/source/colony --revision CANDIDATE_FULL_SHA --main-target-python D:/main-env/Scripts/python.exe --main-target-repo D:/source/colony --main-revision MAIN_FULL_SHA --client C:/path/to/codex.exe --model gpt-6-luna --effort low --track natural --format json --output D:/evaluations/protocol.json
 python scripts/token_evaluation.py prepare --manifest D:/evaluations/protocol.json --output D:/evaluations/run-001
 python scripts/token_evaluation.py preflight --run D:/evaluations/run-001
 ```
@@ -319,6 +361,7 @@ owner approves the exact frozen protocol, create a private authorization JSON:
 {
   "protocol_sha256": "FROM_RUN_JSON",
   "revision": "EXACT_TARGET_REVISION",
+  "main_revision": "EXACT_MAIN_REVISION",
   "model": "EXACT_MODEL",
   "limits": {"COPY": "the entire exact limits object from run.json"},
   "owner_intent": "The owner's explicit approval of this bounded run"
@@ -373,7 +416,7 @@ python scripts/token_evaluation.py inventory --run D:/evaluations/run-001
 python scripts/token_evaluation.py mask --run D:/evaluations/run-001 --output D:/evaluations/review-001
 ```
 
-The prospective `/7` contract implements **agent-based semantic quality review**.
+The `/8` campaign retains the `/7` **agent-based semantic quality review** policy.
 This replaces the advisory-only design in the earlier PR22 `/6` commit; `/6`
 artifacts are not reinterpreted. It uses the same benchmark questions, source
 snapshots, answer contract and accounting. The contract version records the
@@ -383,7 +426,7 @@ Two fresh, independent review sessions use **GPT-6.1 Sol (`gpt-6.1-sol`), medium
 reasoning**. Both `reviewer_a` and `reviewer_b` judge BOTH correctness and grounding
 for every masked case using the same frozen rubric and instructions. They do not
 see costs, arm identities, implementation discussion or each other's judgments.
-Give each session only the public `answers.json`, its own response template and
+For `/8`, use one 42-case packet and two sessions total. Give each session only the public `answers.json`, its own response template and
 the exact instructions embedded in `review_policy`. Do not mount the coordinator
 folder or expose the private map. Use context-separated subagents rather than
 reusing benchmark-answering or implementation sessions. Record each actual session

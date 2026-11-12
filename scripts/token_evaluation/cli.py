@@ -46,13 +46,10 @@ def _git(repo, *args):
                           check=True, timeout=30).stdout
 
 
-def template(args):
-    """Freeze explicit runtime/client/collector pins without launching a native session."""
-    catalog_path = Path(args.catalog).resolve(strict=True)
-    catalog = _read(catalog_path)
-    target_python = str(Path(args.target_python).resolve(strict=True))
-    target_repo = Path(args.target_repo).resolve(strict=True)
-    revision = _git(target_repo, "rev-parse", "--verify", args.revision + "^{commit}").decode().strip()
+def _target(python, repo, revision, mcp_args, setup_args, server_args):
+    target_python = str(Path(python).resolve(strict=True))
+    target_repo = Path(repo).resolve(strict=True)
+    revision = _git(target_repo, "rev-parse", "--verify", revision + "^{commit}").decode().strip()
     names = _git(target_repo, "ls-tree", "-r", "--name-only", revision, "--", "src/colony").decode().splitlines()
     expected = {name.removeprefix("src/"): hashlib.sha256(
         _git(target_repo, "cat-file", "blob", revision + ":" + name)).hexdigest()
@@ -64,6 +61,25 @@ def template(args):
                                          text=True, check=True, timeout=30).stdout)
     if not expected or installed != expected:
         raise ValueError("Installed target Python sources must exactly match the declared Git revision; use a clean LF export/install")
+    return {"revision": revision, "python": target_python, "runtime_hashes": installed,
+            "mcp_args": mcp_args, "setup_args": setup_args, "server_args": server_args}
+
+
+def template(args):
+    """Freeze explicit runtime/client/collector pins without launching a native session."""
+    catalog_path = Path(args.catalog).resolve(strict=True)
+    catalog = _read(catalog_path)
+    target = _target(args.target_python, args.target_repo, args.revision,
+                     getattr(args, "mcp_arg", []), getattr(args, "setup_arg", []), getattr(args, "server_arg", []))
+    main_flags = [getattr(args, key, None) for key in ("main_target_python", "main_target_repo", "main_revision")]
+    if args.paired:
+        if any(main_flags):
+            raise ValueError("Paired mode cannot also declare main")
+        main_target = None
+    else:
+        if not all(main_flags):
+            raise ValueError("Default three-arm campaign requires --main-target-python, --main-target-repo and --main-revision; --paired is explicit opt-in")
+        main_target = _target(*main_flags, args.main_mcp_arg, args.main_setup_arg, args.main_server_arg)
     executable = str(Path(args.client).resolve(strict=True))
     version = subprocess.run([executable, "--version"], capture_output=True, text=True,
                              check=True, timeout=15).stdout.strip()
@@ -80,12 +96,11 @@ def template(args):
                 task["expected_use"] = "optional"
     value = {
         "contract": CONTRACT, "track": args.track, "quality_review": review_policy(),
-        "target": {"revision": revision, "python": target_python, "runtime_hashes": installed,
-                   "mcp_args": args.mcp_arg, "setup_args": args.setup_arg, "server_args": args.server_arg},
+        "target": target,
         "client": {"executable": executable, "sha256": _sha(executable), "version": version,
                    "model": args.model, "effort": args.effort},
         "collector": {"files": collector_hashes()},
-        "limits": {"max_attempts": 2 * sum(len(w["tasks"]) for w in workloads),
+        "limits": {"max_attempts": (2 if args.paired else 3) * sum(len(w["tasks"]) for w in workloads),
                    "session_seconds": args.session_seconds, "wall_seconds": args.wall_seconds,
                    "gross_token_stop": args.gross_token_stop, "disk_bytes": args.disk_bytes,
                    "min_free_bytes": args.min_free_bytes, "retries": 0},
@@ -94,6 +109,8 @@ def template(args):
                    "format": args.format},
         "provenance": catalog.get("provenance"), "workloads": workloads,
     }
+    if main_target is not None:
+        value["main_target"] = main_target
     validate_manifest(value)
     return {"manifest": _write(args.output, value), "protocol_sha256": digest(value),
             "native_sessions_started": 0}
@@ -163,6 +180,11 @@ def parser():
     command.add_argument("--catalog", default=str(Path(__file__).resolve().parents[2] / "tests/token_evaluations/fixtures/catalog.json"))
     for flag in ("target-python", "target-repo", "revision", "client", "model", "output"):
         command.add_argument("--" + flag, required=True)
+    command.add_argument("--paired", action="store_true", help="Explicit two-arm diagnostic; default is candidate/main/one No-Colony")
+    for flag in ("main-target-python", "main-target-repo", "main-revision"):
+        command.add_argument("--" + flag)
+    for flag in ("main-mcp-arg", "main-setup-arg", "main-server-arg"):
+        command.add_argument("--" + flag, action="append", default=[])
     command.add_argument("--track", choices=("natural", "controlled"), required=True)
     command.add_argument("--workload", action="append", help="Select a declared lineage; default both")
     command.add_argument("--effort", choices=("minimal", "low", "medium", "high", "xhigh"), default="low")

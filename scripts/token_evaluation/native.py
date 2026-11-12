@@ -15,8 +15,11 @@ from colony.onboard_io import private_directory, write_new
 from . import runtime
 from .output import instruction
 from .protocol import (
-    ARMS,
+    arm_order,
+    arm_protocol,
+    cohort_root,
     digest,
+    evaluation_arms,
     planned_attempt_ids,
     validate_authorization,
     validate_contract,
@@ -108,26 +111,30 @@ def preflight_live(run_dir):
                                  text=True, timeout=15, check=True, env=env).stdout.strip()
         if version != client["version"]:
             raise ValueError("Native client version drift")
-        for workload in protocol["workloads"]:
-            snapshot = workload["snapshots"][0]
-            repo = check_root / "active" / workload["id"]
-            _copy_snapshot(run, "colony", workload, snapshot, repo)
-            team = runtime.provision(check_root, protocol, workload, repo)
-            with runtime.server(team, protocol, env):
-                checks = runtime.mcp_preflight(team, protocol, repo, env)
-                configs = [runtime.configure(team, protocol, repo, read_only=role)
-                           for role in (False, True)]
-                metadata = []
-                for phase in ("learn", "reuse"):
-                    task = {"phase": phase}
-                    args = _client_args(protocol, repo, team, task, check_root, "colony", env, snapshot["files"])
-                    metadata.append(_client_metadata(args, env))
-                _check_snapshot(repo, snapshot)
-                if not checks["ok"] or runtime.trail_count(team) != 0:
-                    raise ValueError("Preflight must not seed learning store")
-                receipt["workloads"].append({"id": workload["id"], "empty_store": True,
-                                             "mcp": checks, "configuration": configs,
-                                             "client_metadata": metadata})
+        for arm in evaluation_arms(protocol):
+            if arm == "no_colony":
+                continue
+            selected = arm_protocol(protocol, arm)
+            for workload in protocol["workloads"]:
+                snapshot = workload["snapshots"][0]
+                repo = check_root / "active" / arm / workload["id"]
+                _copy_snapshot(run, arm, workload, snapshot, repo)
+                team = runtime.provision(cohort_root(check_root, arm), selected, workload, repo)
+                with runtime.server(team, selected, env):
+                    checks = runtime.mcp_preflight(team, selected, repo, env)
+                    configs = [runtime.configure(team, selected, repo, read_only=role)
+                               for role in (False, True)]
+                    metadata = []
+                    for phase in ("learn", "reuse"):
+                        task = {"phase": phase}
+                        args = _client_args(protocol, repo, team, task, check_root, arm, env, snapshot["files"])
+                        metadata.append(_client_metadata(args, env))
+                    _check_snapshot(repo, snapshot)
+                    if not checks["ok"] or runtime.trail_count(team) != 0:
+                        raise ValueError("Preflight must not seed learning store")
+                    receipt["workloads"].append({"id": workload["id"], "arm": arm, "empty_store": True,
+                                                 "mcp": checks, "configuration": configs,
+                                                 "client_metadata": metadata})
         receipt.update(ok=True, native_ready=True)
     except (OSError, ValueError, RuntimeError, TimeoutError, subprocess.SubprocessError) as exc:
         receipt["errors"].append(type(exc).__name__ + ": " + str(exc))
@@ -179,6 +186,7 @@ def _wall_remaining(deadline):
 
 
 def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, client_workspace=None):
+    protocol = arm_protocol(protocol, arm)
     client = protocol["client"]
     args = [client["executable"], "exec", "--ignore-user-config", "--ignore-rules",
             "--ephemeral", "--json", "--color", "never", "-s", "read-only",
@@ -196,7 +204,7 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
                     "--files", json.dumps(list(source_files))],
                 "mcp_servers.repository.required": True,
                 "mcp_servers.repository.default_tools_approval_mode": "approve"}
-    if arm == "colony":
+    if arm != "no_colony":
         role = "a" if task["phase"] == "learn" else "b"
         mcp_args = ["-I", "-m", "colony.cli", "--home", team["homes"][role], "mcp",
                     "--workflow-namespace", "bench", "--workflow-repo", str(repo),
@@ -209,7 +217,7 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
                          "mcp_servers.colony.tools.push.approval_mode": "approve"})
     forwarded = [k for k in env if k in {"TEMP", "TMP", "HOME", "USERPROFILE", "XDG_CACHE_HOME", "HF_HOME", "FASTEMBED_CACHE_PATH", "COLONY_MODEL_CACHE", "PYTHONPYCACHEPREFIX", "TIKTOKEN_CACHE_DIR", "COLONY_EMBED_MODEL_DIR", "COLONY_RANK_MODEL_DIR", "COLONY_CONTEXT_TOKENIZER", "COLONY_TEST_CONTEXT_TOKENIZER", "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"}]
     settings["mcp_servers.repository.env_vars"] = forwarded
-    if arm == "colony":
+    if arm != "no_colony":
         settings["mcp_servers.colony.env_vars"] = forwarded
     for key, value in settings.items():
         args += ["-c", key + "=" + json.dumps(value)]
@@ -288,23 +296,28 @@ def execute_live(run_dir, authorization, auth_home):
             active_snapshots = {}
             for workload in protocol["workloads"]:
                 snapshot = workload["snapshots"][0]
-                for arm in ARMS:
+                for arm in evaluation_arms(protocol):
                     repo = root / "active" / arm / workload["id"]
                     _copy_snapshot(run, arm, workload, snapshot, repo)
                     active_snapshots[(arm, workload["id"])] = snapshot
-                repo = root / "active/colony" / workload["id"]
-                team = runtime.provision(root, protocol, workload, repo)
-                servers.enter_context(runtime.server(team, protocol, env))
-                checks = runtime.mcp_preflight(team, protocol, repo, env)
-                empty[workload["id"]] = runtime.trail_count(team) == 0
-                _save(control / (workload["id"] + "-mcp-preflight.json"), checks)
-                if checks.get("ok") is not True or not empty[workload["id"]]:
-                    raise ValueError("Execution team requires authenticated MCP preflight and empty store")
-                teams[workload["id"]] = team
+                for arm in evaluation_arms(protocol):
+                    if arm == "no_colony":
+                        continue
+                    selected = arm_protocol(protocol, arm)
+                    repo = root / "active" / arm / workload["id"]
+                    team = runtime.provision(cohort_root(root, arm), selected, workload, repo)
+                    servers.enter_context(runtime.server(team, selected, env))
+                    checks = runtime.mcp_preflight(team, selected, repo, env)
+                    key = f"{arm}/{workload['id']}" if "main_target" in protocol else workload["id"]
+                    empty[key] = runtime.trail_count(team) == 0
+                    _save(control / (arm + "-" + workload["id"] + "-mcp-preflight.json"), checks)
+                    if checks.get("ok") is not True or not empty[key]:
+                        raise ValueError("Execution team requires authenticated MCP preflight and empty store")
+                    teams[(arm, workload["id"])] = team
             for wi, workload in enumerate(protocol["workloads"]):
                 for ti, task in enumerate(workload["tasks"]):
                     snapshot = next(s for s in workload["snapshots"] if s["id"] == task["snapshot"])
-                    for arm in (ARMS if (wi + ti) % 2 == 0 else tuple(reversed(ARMS))):
+                    for arm in arm_order(protocol, wi, ti):
                         _verify(run)
                         _resources(root, limits, deadline)
                         observed = inventory(root)
@@ -319,8 +332,9 @@ def execute_live(run_dir, authorization, auth_home):
                         active_snapshots[(arm, workload["id"])] = snapshot
                         transitions.append({"arm": arm, "workload": workload["id"], "task": task["id"],
                                             "snapshot": snapshot["id"], "files_sha256": digest(snapshot["files"])})
-                        team = teams[workload["id"]]
-                        config = runtime.configure(team, protocol, repo, task["phase"] != "learn") if arm == "colony" else None
+                        team = teams.get((arm, workload["id"]))
+                        selected = arm_protocol(protocol, arm)
+                        config = runtime.configure(team, selected, repo, task["phase"] != "learn") if arm != "no_colony" else None
                         guidance = ""
                         if config:
                             guidance = "\n".join(Path(x["path"]).read_text(encoding="utf-8") for x in config["files"] if Path(x["path"]).name.startswith("AGENTS"))
@@ -375,11 +389,13 @@ def execute_live(run_dir, authorization, auth_home):
     except BaseException as exc:
         error = type(exc).__name__ + ": " + str(exc)
     ledger = inventory(root)
-    expected = 2 * sum(len(w["tasks"]) for w in protocol["workloads"])
+    expected = len(evaluation_arms(protocol)) * sum(len(w["tasks"]) for w in protocol["workloads"])
     receipt = {"status": "complete" if error is None and len(rows) == expected else "partial",
                "native_evidence": True, "protocol_sha256": run["protocol_sha256"],
                "preflight_sha256": _sha(root / "preflight.json"), "attempts": len(rows),
-               "initial_empty_stores": {"no_colony": True, "colony": bool(empty) and all(empty.values())},
+               "initial_empty_stores": {arm: (True if arm == "no_colony" else bool(empty) and all(
+                   empty.get(f"{arm}/{w['id']}" if "main_target" in protocol else w["id"]) is True
+                   for w in protocol["workloads"])) for arm in evaluation_arms(protocol)},
                "empty_store_proofs": empty, "transitions": transitions, "error": error,
                "inventory": ledger, "billing": None, "certifying": False}
     _save(root / "collection.json", receipt)
