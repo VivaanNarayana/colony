@@ -9,6 +9,7 @@ import pytest
 from scripts.token_evaluation import native, runner
 from scripts.token_evaluation.output import JSON_INSTRUCTION, OUTPUT_CONTRACT
 from scripts.token_evaluation.protocol import CONTRACT, attempt_id, collector_hashes
+from scripts.token_evaluation.quality import review_policy
 
 
 @pytest.mark.parametrize('track', ['controlled', 'natural'])
@@ -16,7 +17,7 @@ from scripts.token_evaluation.protocol import CONTRACT, attempt_id, collector_ha
 @pytest.mark.parametrize('phase', ['learn', 'reuse'])
 @pytest.mark.parametrize('max_calls', [1, 6, 12])
 def test_prompt_forcing_and_path_hints_respect_track_and_optional_tasks(track, expected_use, phase, max_calls):
-    protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
+    protocol = {'contract': CONTRACT, 'quality_review': review_policy(), 'output': {'contract': OUTPUT_CONTRACT,
                 'format': 'json', 'answer_policy': 'last_agent_message'},
                 'research': {'max_calls': max_calls}, 'track': track}
     task = {'phase': phase, 'expected_use': expected_use, 'question': 'What is the timeout?',
@@ -55,7 +56,7 @@ def test_prompt_forcing_and_path_hints_respect_track_and_optional_tasks(track, e
 @pytest.mark.parametrize('track', ['natural', 'controlled'])
 def test_catalog_tasks_share_research_contract_with_only_declared_arm_differences(track):
     catalog = json.loads((Path(__file__).parent / 'fixtures/catalog.json').read_text())
-    protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
+    protocol = {'contract': CONTRACT, 'quality_review': review_policy(), 'output': {'contract': OUTPUT_CONTRACT,
                 'format': 'json', 'answer_policy': 'last_agent_message'},
                 'research': {'max_calls': 6}, 'track': track}
     for workload in catalog['workloads']:
@@ -94,7 +95,7 @@ def test_metadata_parses_actual_overrides_without_model_or_mcp(tmp_path, monkeyp
 
 def setup_run(tmp_path, monkeypatch):
     protocol = {'limits': {'wall_seconds': 60, 'max_attempts': 2, 'gross_token_stop': 100, 'session_seconds': 5}, 'workloads': [{'id': 'w', 'snapshots': [{'id': 'v1', 'files': {}}], 'tasks': [{'id': 't', 'snapshot': 'v1', 'phase': 'learn', 'question': 'q'}]}], 'client': {'model': 'm', 'sha256': 'a'}, 'target': {'revision': 'r'}, 'research': {'max_calls': 1}, 'output': {'format': 'json', 'answer_policy': 'last_agent_message'}, 'track': 'controlled'}
-    protocol.update(contract=CONTRACT, collector={'files': collector_hashes()})
+    protocol.update(contract=CONTRACT, quality_review=review_policy(), collector={'files': collector_hashes()})
     protocol['output']['contract'] = OUTPUT_CONTRACT
     run = {'protocol': protocol, 'protocol_sha256': 'digest', 'run_dir': str(tmp_path.resolve())}
     for name in ('control', 'logs', 'auth', 'private'):
@@ -405,7 +406,7 @@ def test_grading_metadata_never_becomes_agent_hints(track):
     """Prospective rubric corrections must not supply solutions to either arm."""
     from copy import deepcopy
     catalog = json.loads((Path(__file__).parent / 'fixtures/catalog.json').read_bytes())
-    protocol = {'contract': CONTRACT, 'output': {'contract': OUTPUT_CONTRACT,
+    protocol = {'contract': CONTRACT, 'quality_review': review_policy(), 'output': {'contract': OUTPUT_CONTRACT,
                 'format': 'json', 'answer_policy': 'last_agent_message'},
                 'research': {'max_calls': 6}, 'track': track}
     for workload in catalog['workloads']:
