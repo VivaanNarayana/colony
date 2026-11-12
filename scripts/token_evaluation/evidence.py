@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .protocol import validate_evidence_policy
+from .redaction import redacted_source_lines
 from .research import Research
 
 
@@ -24,11 +25,12 @@ def _objects(item):
     return values
 
 
-def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=False):
+def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=False, allow_redaction=False):
     """Verify all bytes; semantic review may retain complete lines before a clipped tail.
 
     The default mechanism/repository contract still requires complete line spans.
-    The opt-in never credits a partial line or tolerates a mismatching byte.
+    Semantic opt-ins accept only exact raw or pinned scrubbed representations;
+    partial or redacted lines never earn evidence credit.
     """
     if not isinstance(reads, list) or not reads:
         return []
@@ -64,19 +66,36 @@ def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=Fals
             return []
         if 'end' in read and read['end'] != end:
             return []
-        if read.get('complete_file') and (start != 1 or end != len(lines)):
+        representations = [(lines, set())]
+        if allow_redaction:
+            scrubbed = redacted_source_lines(raw.decode('utf-8'))
+            if scrubbed is not None:
+                representations.append(scrubbed)
+        for rendered, redacted in representations:
+            if end > len(rendered) or (read.get('complete_file') and (start != 1 or end != len(rendered))):
+                continue
+            expected = '\n'.join(rendered[start - 1:end])
+            complete_end = end
+            if content != expected:
+                # Verify every delivered character, including the clipped tail.
+                if not (allow_clipped_tail and read.get('complete_file') is False
+                        and expected.startswith(content)):
+                    continue
+                complete_end -= 1
+            # Credit complete unchanged runs only AFTER validating the whole
+            # representation. Never salvage valid-looking lines from a forgery.
+            begin = None
+            for number in range(start, complete_end + 2):
+                eligible = (number <= complete_end and number - 1 not in redacted
+                            and rendered[number - 1] == lines[number - 1])
+                if eligible and begin is None:
+                    begin = number
+                elif not eligible and begin is not None:
+                    spans.append({'path': relative, 'start': begin, 'end': number - 1})
+                    begin = None
+            break
+        else:
             return []
-        expected = '\n'.join(lines[start - 1:end])
-        if content != expected:
-            # The producer can stop mid-line at its character budget. Require
-            # every delivered byte (including the clipped tail) to match, and
-            # an explicit partial-file marker; never salvage forged text.
-            if not (allow_clipped_tail and read.get('complete_file') is False
-                    and expected.startswith(content)):
-                return []
-            end -= 1
-        if end >= start:
-            spans.append({'path': relative, 'start': start, 'end': end})
     return spans
 
 

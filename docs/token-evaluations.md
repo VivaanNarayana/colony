@@ -411,6 +411,14 @@ that tail, must match the frozen source exactly. Only complete observed lines
 receive evidence credit; the clipped line and unseen suffix receive none. A
 malformed or stale read still rejects the entire read bundle. This normalization
 does not change repository-read validation or controlled mechanism proofs.
+Legitimate source redaction is recognized using evaluator-owned rendering rules
+included in the collector hashes, with parity tests against the actual producer.
+The entire delivered excerpt must match either raw source or the exact supported
+scrubbed representation; arbitrary markers or mixed representations fail closed.
+Only complete, unchanged line runs receive credit. Redacted lines, including
+blank placeholders in multiline redactions, receive none. An unsafe line mapping
+is rejected. A verified redacted-only read contributes no lines without discarding
+other valid reads. The same observed-line requirement applies to both arms.
 Evidence after the last answer is excluded. For `all_agent_messages`, the excerpt
 union does not prove what was available before each earlier factual claim. The
 review instructions require unresolved grounding when the missing chronology is
