@@ -176,8 +176,7 @@ def test_adaptive_discovery_preserves_publication_schema_and_annotations(
     ending = ("Namespace bound; taint true; secrets scrubbed." if workflow
               else "Client scrubs secrets; mark external content tainted.")
     assert adaptive["push"].description == (
-        "Publish findings with actual file ref/content_hash under the server's "
-        "publication policy. " + ending
+        "Push only findings passing the publication rules, with actual ref/content_hash. " + ending
     )
     catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in adaptive.values()]
     evaluated_catalog = copy.deepcopy(catalog)

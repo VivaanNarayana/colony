@@ -377,8 +377,8 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Publish findings with actual file ref/content_hash under the server's "
-                "publication policy. Namespace bound; taint true; secrets scrubbed."
+                "Push only findings passing the publication rules, with actual ref/content_hash. "
+                "Namespace bound; taint true; secrets scrubbed."
                 if context_budget is not None
                 else publish.__doc__
                 + " Workflow mode requires repository file evidence and <=4,000 characters; "
@@ -391,8 +391,8 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Publish findings with actual file ref/content_hash under the server's "
-                "publication policy. Client scrubs secrets; mark external content tainted."
+                "Push only findings passing the publication rules, with actual ref/content_hash. "
+                "Client scrubs secrets; mark external content tainted."
                 if context_budget is not None
                 else None
             ),
