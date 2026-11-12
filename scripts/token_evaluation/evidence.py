@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 
 from .protocol import validate_evidence_policy
+from .redaction import redacted_source_lines
+from .research import Research
 
 
 def _objects(item):
@@ -23,8 +25,14 @@ def _objects(item):
     return values
 
 
-def verify_current_reads(reads, snapshot_root, files):
-    """Return verified line spans, or [] if ANY claimed read is malformed/forged."""
+def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=False, allow_redaction=False,
+                         allow_blank_file=False):
+    """Verify all bytes; semantic review may retain complete lines before a clipped tail.
+
+    The default mechanism/repository contract still requires complete line spans.
+    Semantic opt-ins accept only exact raw or pinned scrubbed representations;
+    partial or redacted lines never earn evidence credit.
+    """
     if not isinstance(reads, list) or not reads:
         return []
     spans = []
@@ -51,17 +59,53 @@ def verify_current_reads(reads, snapshot_root, files):
             return []
         lines = raw.decode('utf-8').splitlines()
         start, content = read.get('start_line', read.get('start')), read.get('content')
-        if type(start) is not int or start < 1 or not isinstance(content, str) or not content:
+        if type(start) is not int or start < 1 or not isinstance(content, str):
+            return []
+        if not content:
+            # Joining the producer's single blank source line yields "". Verify
+            # that exact complete-file case; empty prefixes of other files are
+            # not evidence. A valid blank read contributes no useful coverage.
+            if (allow_blank_file and read.get('complete_file') is True and start == 1
+                    and lines == [''] and ('end' not in read or
+                    (type(read['end']) is int and read['end'] == 1))):
+                continue
             return []
         count = content.count('\n') + 1
         end = start + count - 1
-        if end > len(lines) or content != '\n'.join(lines[start - 1:end]):
+        if end > len(lines):
             return []
         if 'end' in read and read['end'] != end:
             return []
-        if read.get('complete_file') and (start != 1 or end != len(lines)):
+        representations = [(lines, set())]
+        if allow_redaction:
+            scrubbed = redacted_source_lines(raw.decode('utf-8'))
+            if scrubbed is not None:
+                representations.append(scrubbed)
+        for rendered, redacted in representations:
+            if end > len(rendered) or (read.get('complete_file') and (start != 1 or end != len(rendered))):
+                continue
+            expected = '\n'.join(rendered[start - 1:end])
+            complete_end = end
+            if content != expected:
+                # Verify every delivered character, including the clipped tail.
+                if not (allow_clipped_tail and read.get('complete_file') is False
+                        and expected.startswith(content)):
+                    continue
+                complete_end -= 1
+            # Credit complete unchanged runs only AFTER validating the whole
+            # representation. Never salvage valid-looking lines from a forgery.
+            begin = None
+            for number in range(start, complete_end + 2):
+                eligible = (number <= complete_end and number - 1 not in redacted
+                            and rendered[number - 1] == lines[number - 1])
+                if eligible and begin is None:
+                    begin = number
+                elif not eligible and begin is not None:
+                    spans.append({'path': relative, 'start': begin, 'end': number - 1})
+                    begin = None
+            break
+        else:
             return []
-        spans.append({'path': relative, 'start': start, 'end': end})
     return spans
 
 
@@ -97,7 +141,15 @@ def _research(item, root, files):
                     or type(value.get('end')) is not int
                     or value['end'] >= args.get('start', 1) + args.get('lines', 120)):
                 return []
-            got = verify_current_reads([value], root, files)
+            # Research.read returns the requested spelling, including accepted
+            # aliases. Reuse its authorization before translating to the frozen
+            # source identity; never normalize away a link or escape first.
+            try:
+                research = Research(Path(root), files=files)
+                canonical = research._path(value['path']).relative_to(research.root).as_posix()
+            except (OSError, ValueError, RuntimeError):
+                return []
+            got = verify_current_reads([{**value, 'path': canonical}], root, files)
         elif item.get('tool') == 'fixture_search':
             query = args.get('query')
             if not isinstance(query, str) or not query or not isinstance(value.get('matches'), list):

@@ -15,12 +15,13 @@ from scripts.token_evaluation.protocol import (
     validate_authorization,
     validate_manifest,
 )
+from scripts.token_evaluation.quality import review_policy
 
 
 def manifest(tmp_path):
     workloads = json.loads((Path(__file__).parent / 'fixtures/catalog.json').read_text())['workloads'][:1]
     workloads[0]['source_root'] = str(tmp_path)
-    return {'contract': CONTRACT, 'track': 'controlled', 'target': {'revision': 'a' * 40, 'python': str(tmp_path / 'python.exe'), 'runtime_hashes': {'colony/a.py': 'b' * 64}},
+    return {'contract': CONTRACT, 'quality_review': review_policy(), 'track': 'controlled', 'target': {'revision': 'a' * 40, 'python': str(tmp_path / 'python.exe'), 'runtime_hashes': {'colony/a.py': 'b' * 64}},
             'client': {'executable': str(tmp_path / 'codex.exe'), 'sha256': 'c' * 64, 'model': 'frozen', 'version': 'frozen', 'effort': 'low'},
             'limits': {'max_attempts': 128, 'session_seconds': 10, 'wall_seconds': 60, 'gross_token_stop': 100, 'disk_bytes': 10000, 'min_free_bytes': 1, 'retries': 0},
             'collector': {'files': collector_hashes()},
