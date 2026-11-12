@@ -25,7 +25,8 @@ def _objects(item):
     return values
 
 
-def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=False, allow_redaction=False):
+def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=False, allow_redaction=False,
+                         allow_blank_file=False):
     """Verify all bytes; semantic review may retain complete lines before a clipped tail.
 
     The default mechanism/repository contract still requires complete line spans.
@@ -58,7 +59,16 @@ def verify_current_reads(reads, snapshot_root, files, *, allow_clipped_tail=Fals
             return []
         lines = raw.decode('utf-8').splitlines()
         start, content = read.get('start_line', read.get('start')), read.get('content')
-        if type(start) is not int or start < 1 or not isinstance(content, str) or not content:
+        if type(start) is not int or start < 1 or not isinstance(content, str):
+            return []
+        if not content:
+            # Joining the producer's single blank source line yields "". Verify
+            # that exact complete-file case; empty prefixes of other files are
+            # not evidence. A valid blank read contributes no useful coverage.
+            if (allow_blank_file and read.get('complete_file') is True and start == 1
+                    and lines == [''] and ('end' not in read or
+                    (type(read['end']) is int and read['end'] == 1))):
+                continue
             return []
         count = content.count('\n') + 1
         end = start + count - 1

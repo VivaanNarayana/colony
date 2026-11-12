@@ -419,6 +419,11 @@ Only complete, unchanged line runs receive credit. Redacted lines, including
 blank placeholders in multiline redactions, receive none. An unsafe line mapping
 is rejected. A verified redacted-only read contributes no lines without discarding
 other valid reads. The same observed-line requirement applies to both arms.
+A complete single-blank-line file renders as an empty string. Semantic extraction
+accepts that exact case only after verifying the source identity, full-file marker
+and bounds. It contributes no evidence but preserves valid sibling reads. Empty
+claims about nonblank, zero-byte or partially read files still reject the bundle;
+default repository and mechanism verification retain their empty-content checks.
 Evidence after the last answer is excluded. For `all_agent_messages`, the excerpt
 union does not prove what was available before each earlier factual claim. The
 review instructions require unresolved grounding when the missing chronology is

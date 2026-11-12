@@ -340,7 +340,7 @@ def test_duplicate_quality_and_missing_attempt_rejected(run):
         report(root, root / "quality.json", root / "report.json")
 
 
-def native_receipt_control(root, quality, *, source_bytes=b"TIMEOUT = 1500\n"):
+def native_receipt_control(root, quality, *, source_bytes=b"TIMEOUT = 1500\n", extra_sources=None):
     """Fabricated receipt schema control only; never native measurements."""
     frozen = json.loads((root / "run.json").read_text())
     protocol = frozen["protocol"]
@@ -353,12 +353,14 @@ def native_receipt_control(root, quality, *, source_bytes=b"TIMEOUT = 1500\n"):
     protocol.setdefault("research", {"max_calls": 6})
     frozen["run_dir"] = str(root.resolve())
     workload = protocol["workloads"][0]
-    source_files = {"settings.py": hashlib.sha256(source_bytes).hexdigest()}
+    sources = {"settings.py": source_bytes, **(extra_sources or {})}
+    source_files = {name: hashlib.sha256(raw).hexdigest() for name, raw in sources.items()}
     for arm in ("no_colony", "colony"):
-        source = root / "workspaces" / arm / "gateway/v1/settings.py"
-        source.parent.mkdir(parents=True, exist_ok=True)
-        source.write_bytes(source_bytes)
-        frozen["files"][source.relative_to(root).as_posix()] = source_files["settings.py"]
+        for name, raw in sources.items():
+            source = root / "workspaces" / arm / "gateway/v1" / name
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_bytes(raw)
+            frozen["files"][source.relative_to(root).as_posix()] = source_files[name]
     workload["snapshots"] = [{"id": "v1", "files": source_files}]
     workload["tasks"][0]["snapshot"] = "v1"
     task = workload["tasks"][0]
