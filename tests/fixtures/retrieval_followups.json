@@ -1,0 +1,143 @@
+[
+  {
+    "case": "baseline-gateway",
+    "lineage": "gateway",
+    "question": "Trace a production request with no overrides through this gateway. If all responses are 503, how many requests occur and which timeout does each use? Cite configuration precedence and retry termination.",
+    "content": "For production with empty overrides, settings.py:1-5 merges DEFAULTS | environment | overrides, yielding timeout_ms=1500 and attempts=3. handler.py:5-7 passes these to fetch. client.py:1-5 makes three GET /inventory calls, each with timeout_ms=1500, when every response is 503; it returns the third response because attempt == attempts - 1. It also returns immediately on any non-503. transport.py:1-13 only retries ConnectionError (at most two sends per get); a returned 503 exits get immediately, so all-503 responses without connection errors produce three sends, not six. Applies to this implementation and no request overrides; connection errors can change send counts.",
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "transport.py",
+        "content_hash": "4cef382fc12aa6e81ca9edb4e358b7e0cc705803c19bdbc4bb24dddb152faae0",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "client.py",
+        "content_hash": "82392c88397c196cdda08bad9523f6d4e1cb35f0cf994c813d3423f6f93ce12b",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "settings.py",
+        "content_hash": "8f5098e2b1698b9fcebae18f94641fb150ff0a1f17056224b8d48858bb5db648",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "handler.py",
+        "content_hash": "ac05d5ca1c0c2add2c3afeff6d1d6ca3e8e4d21bbccbb7d76b8d07451a7a4b19",
+        "symbol": null,
+        "contains": null
+      }
+    ],
+    "followup": "For the same production setup, summarize the maximum inventory request count and effective per-request timeout, with evidence."
+  },
+  {
+    "case": "baseline-worker",
+    "lineage": "worker",
+    "question": "Trace a priority-queue job with no per-job overrides. If the backend always returns retryable results, how many submissions and waits occur, and what is the wait duration? Cite policy precedence, propagation and termination.",
+    "content": "For a priority-queue job with empty per-job overrides and a backend that returns retryable results, dispatch makes 4 backend.submit calls and 3 sleep calls, each with delay_ms=250 (750 ms total configured wait). policy.py:1-6 merges DEFAULT_POLICY | QUEUE_POLICY.get(queue,{}) | job_overrides, so priority attempts=4/delay_ms=250 override defaults 2/100, and job overrides would take final precedence. dispatcher.py:5-7 passes these values to execute. executor.py:1-6 iterates range(attempts), submits each iteration, and returns on the final attempt even if retryable, before sleeping; waits follow only the first three submissions. backend.py:1-13 has a separate three-attempt wire loop for ConnectionError only; returning a retryable result exits submit immediately, so it does not multiply submissions in this scenario.",
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "executor.py",
+        "content_hash": "4c7fda5050957dbb4f7766560f015d67e146f43b85d5222577124e4b1c5be9a1",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "backend.py",
+        "content_hash": "84499736bf4604a09a7cf00993fa6d6c419a07d10c0c0f283aec29f62a1ad451",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "policy.py",
+        "content_hash": "8b43f2f84d67d383de9b4385765c4b5a374e7ee38fc89f682a789e6dcf0d04eb",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "dispatcher.py",
+        "content_hash": "e454752f6d29f834159226843efae1016f0e6877ba4c45c99f9aa0f904707ecf",
+        "symbol": null,
+        "contains": null
+      }
+    ],
+    "followup": "For the same priority job setup, summarize the maximum backend submissions and intervening wait schedule, with current evidence."
+  },
+  {
+    "case": "candidate-gateway",
+    "lineage": "gateway",
+    "question": "Trace a production request with no overrides through this gateway. If all responses are 503, how many requests occur and which timeout does each use? Cite configuration precedence and retry termination.",
+    "content": "For production with empty overrides, there are 3 /inventory requests, each with timeout_ms=1500, assuming every send returns an HTTP 503. settings.py:1-5 merges DEFAULTS | environment | overrides (rightmost wins): production replaces default timeout 900 with 1500 and leaves attempts=3. handler.py:5-7 passes these values to fetch. client.py:1-5 loops range(attempts), returning on non-503 or the final attempt, so the third 503 is returned. transport.py:7-13 returns any HTTP response immediately; its CONNECT_ATTEMPTS=2 (line 1) applies only to ConnectionError, not 503 responses, so does not multiply the three requests. Connection errors can cause extra sends or an exception exit; that is outside the all-responses-503 scenario.",
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "transport.py",
+        "content_hash": "4cef382fc12aa6e81ca9edb4e358b7e0cc705803c19bdbc4bb24dddb152faae0",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "client.py",
+        "content_hash": "82392c88397c196cdda08bad9523f6d4e1cb35f0cf994c813d3423f6f93ce12b",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "settings.py",
+        "content_hash": "8f5098e2b1698b9fcebae18f94641fb150ff0a1f17056224b8d48858bb5db648",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "handler.py",
+        "content_hash": "ac05d5ca1c0c2add2c3afeff6d1d6ca3e8e4d21bbccbb7d76b8d07451a7a4b19",
+        "symbol": null,
+        "contains": null
+      }
+    ],
+    "followup": "For the same production setup, summarize the maximum inventory request count and effective per-request timeout, with evidence."
+  },
+  {
+    "case": "candidate-worker",
+    "lineage": "worker",
+    "question": "Trace a priority-queue job with no per-job overrides. If the backend always returns retryable results, how many submissions and waits occur, and what is the wait duration? Cite policy precedence, propagation and termination.",
+    "content": "For a priority-queue job with empty per-job overrides, policy.py:1-6 merges defaults, queue policy, then job overrides (rightmost wins). Priority therefore selects attempts=4 and delay_ms=250. dispatcher.py:5-7 passes these values to execute with backend, job ID and sleep. executor.py:1-6 loops over range(attempts), submits once per iteration, and returns if the result is nonretryable OR the iteration is the last; sleep(delay_ms) occurs only otherwise. Assuming submissions return retryable results and submit/sleep do not raise, this produces 4 submissions, 3 waits of 250 ms each (750 ms total scheduled wait), returning the fourth result without a final wait. The sleep callback receives the raw value 250; the parameter is named delay_ms.",
+    "sources": [
+      {
+        "kind": "file",
+        "ref": "executor.py",
+        "content_hash": "4c7fda5050957dbb4f7766560f015d67e146f43b85d5222577124e4b1c5be9a1",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "policy.py",
+        "content_hash": "8b43f2f84d67d383de9b4385765c4b5a374e7ee38fc89f682a789e6dcf0d04eb",
+        "symbol": null,
+        "contains": null
+      },
+      {
+        "kind": "file",
+        "ref": "dispatcher.py",
+        "content_hash": "e454752f6d29f834159226843efae1016f0e6877ba4c45c99f9aa0f904707ecf",
+        "symbol": null,
+        "contains": null
+      }
+    ],
+    "followup": "For the same priority job setup, summarize the maximum backend submissions and intervening wait schedule, with current evidence."
+  }
+]
