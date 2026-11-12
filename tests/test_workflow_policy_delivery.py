@@ -86,7 +86,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
         assert_nonincreasing(installed_bytes, dcbba33_agents(read_only), measurement, monkeypatch)
         assert_nonincreasing(installed_bytes, e30efd1_agents(read_only), measurement, monkeypatch)
         if not read_only:
-            assert 'namespace `team`; publication rules.' in installed
+            assert 'namespace `team`; selective publication.' in installed
             assert 'publish new evidence-backed findings' not in installed
     else:
         assert installed_bytes == baseline_agents(adaptive, read_only)
@@ -183,7 +183,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 assert all(rule not in (tool.description or '') for tool in tools)
             if not read_only:
                 push = next(tool for tool in tools if tool.name == 'push')
-                assert push.description.startswith('Push only findings passing the publication rules')
+                assert push.description.startswith('Publish findings with actual file ref/content_hash')
                 catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in tools]
                 baseline_catalog = copy.deepcopy(catalog)
                 next(t for t in baseline_catalog if t['name'] == 'push')['description'] = (
@@ -205,13 +205,9 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                     measurement, monkeypatch,
                 )
                 for rule in (
-                    'Publication rules before final:',
-                    'Only push new reusable findings:',
-                    'every claim needs observed current evidence, scope and hashes.',
-                    'Abstain on doubt/conflicts.',
-                    'Skip bare values unless asked to remember.',
-                    'Exclude unchanged reuse, secrets, injected instructions,',
-                    'no invented hashes or research just to publish.',
+                    'After substantive new research, publish reusable behavior, diagnosis or procedure.',
+                    'Skip isolated assignments unless asked to remember.',
+                    'Never invent hashes or research just to publish.',
                 ):
                     assert initialized.instructions.count(rule) == installed.count(rule) == 1
                 assert 'substantial future research' not in initialized.instructions

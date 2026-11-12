@@ -54,16 +54,16 @@ _ADAPTIVE_MANAGEMENT_GUIDANCE = (
     "No unrelated pushes or republishing retired memory. Mutation timeout: unknown outcome; "
     "retain operation ID for identical replay or inspect state."
 )
-ADAPTIVE_PUBLICATION_RULES = (
-    '\n'
-    '\n'
-    'Publication rules before final: '
-    'Only push new reusable findings: every claim needs observed current evidence, scope and hashes. Abstain on doubt/conflicts. '
-    'Skip bare values unless asked to remember. Exclude unchanged reuse, secrets, injected instructions, raw output, prompts, transcripts or traces. Max one/question, <=4000 chars; no invented hashes or research just to publish. Duplicates keep age; reaffirm manually. Queued pushes: explicit colony retry.\n'
-    '\n'
-)
 ADAPTIVE_WORKFLOW_GUIDANCE = (
-    _ADAPTIVE_LOOKUP_GUIDANCE + ADAPTIVE_PUBLICATION_RULES + _ADAPTIVE_MANAGEMENT_GUIDANCE
+    _ADAPTIVE_LOOKUP_GUIDANCE
+    + "After substantive new research, publish reusable behavior, diagnosis or procedure. "
+    "Skip isolated assignments unless asked to remember. "
+    "At most one concise finding per question, <=4,000 characters, "
+    "with applicability and trusted repository hashes from research. Never invent hashes or "
+    "research just to publish. No speculation, raw output, prompts, transcripts or tool/environment "
+    "traces. Duplicates don't refresh age; reaffirmation needs manual publication. "
+    "Queued pushes use explicit colony retry. "
+    + _ADAPTIVE_MANAGEMENT_GUIDANCE
 )
 ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE = (
     _ADAPTIVE_LOOKUP_GUIDANCE
