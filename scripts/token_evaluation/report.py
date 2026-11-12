@@ -23,6 +23,8 @@ from .protocol import (
 from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .receipt import validate_native_receipts
+from .tool_receipts import collect as collect_tool_receipts
+from .tool_receipts import digest as receipt_digest
 from .usage import native_usage
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "gross_tokens",
@@ -200,7 +202,9 @@ def _load(run_dir):
         workload = next(w for w in manifest["workloads"] if w["id"] == key[1])
         current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
         _require(isinstance(task.get("question"), str), "Missing frozen review question")
-        rows.append({"id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
+        event_values = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        receipt_projection = collect_tool_receipts(event_values, current["files"] if current else {})
+        rows.append({"tool_receipts_sha256": receipt_digest(receipt_projection), "id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
                      "state": state, "seconds": seconds, "phase": task["phase"],
                      "question_sha256": hashlib.sha256(task["question"].encode("utf-8")).hexdigest(),
                      "output_sha256": digest({"output": manifest["output"],
@@ -230,6 +234,7 @@ def review_subject(run_dir, run, manifest, row, case):
     task = next(t for t in workload["tasks"] if t["id"] == row["task"])
     current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
     sources, observed = [], []
+    receipt_projection = collect_tool_receipts([], {})
     if current:
         source_root = Path(run_dir).resolve() / "workspaces" / "no_colony" / row["workload"] / current["id"]
         for relative, expected_hash in current["files"].items():
@@ -243,6 +248,7 @@ def review_subject(run_dir, run, manifest, row, case):
                       if json.loads(line)["id"] == row["id"])
         events = [json.loads(line) for line in (Path(run_dir) / "logs" / record.get("result", record)["events"])
                   .read_text(encoding="utf-8").splitlines()]
+        receipt_projection = collect_tool_receipts(events, current["files"])
         # Only evidence delivered before the selected final answer is available.
         final = max((n for n, event in enumerate(events) if event.get("type") == "item.completed"
                      and event.get("item", {}).get("type") == "agent_message"), default=0)
@@ -263,7 +269,15 @@ def review_subject(run_dir, run, manifest, row, case):
             source = next(s for s in sources if s["path"] == relative)
             observed.append({"path": relative, "sha256": source["sha256"], "start": start, "end": end,
                              "content": "\n".join(source["content"].splitlines()[start - 1:end])})
-    return {"case": case, "answer": row["text"], "current_sources": sources,
+    if not current:
+        journal = Path(run_dir) / "control" / "attempts.jsonl"
+        record = next(json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()
+                      if json.loads(line)["id"] == row["id"])
+        path = Path(run_dir) / "logs" / record.get("result", record)["events"]
+        events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        receipt_projection = collect_tool_receipts(events, {})
+    _require(receipt_digest(receipt_projection) == row["tool_receipts_sha256"], "Tool receipt binding changed")
+    return {**receipt_projection, "case": case, "answer": row["text"], "current_sources": sources,
             "observed_current_evidence": observed,
             "evidence_limit": "Verified current excerpts before the final answer; not proof of semantic grounding or earlier-message chronology.",
             "question": task["question"], "oracle": task["oracle"], "rubric": task["rubric"],
@@ -456,6 +470,9 @@ def report(run_dir, quality_path, output_path):
               "certifying": False, "supported_product_win": "not_established", "billing": None,
               "native_evidence": native, "harness_complete": True, "quality_complete": quality_complete,
               "answer_quality_complete": answer_quality_complete,
+              "task_completion_complete": all(r["quality_obligations"]["complete"] == "passed" for r in rows),
+              "correctness_complete": all(r["quality_obligations"]["correct"] == "passed" for r in rows),
+              "grounding_complete": all(r["quality_obligations"]["grounded"] == "passed" for r in rows),
               "mechanism_complete": mechanism_complete, "workflow_success": quality_complete,
               "controlled_mechanism_pass": controlled_pass,
               "adoption": adoption, "adoption_context": manifest["track"],

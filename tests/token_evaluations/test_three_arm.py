@@ -20,6 +20,7 @@ from scripts.token_evaluation.protocol import (
 )
 from scripts.token_evaluation.quality import review_template, validate_reviews
 from scripts.token_evaluation.report import mask, report
+from scripts.token_evaluation.rubrics import split_workload_rubrics
 from tests.token_evaluations.test_agent_quality import build_reviewed_run, judgments, set_verdict
 from tests.token_evaluations.test_evidence import trace as trace
 from tests.token_evaluations.test_protocol import manifest
@@ -32,6 +33,7 @@ def test_full_catalog_has_exactly42_distinct_attempts_and_one_control(tmp_path):
     workloads = json.loads((Path(__file__).parent / 'fixtures/catalog.json').read_text())['workloads']
     for workload in workloads:
         workload['source_root'] = str(tmp_path)
+    split_workload_rubrics(workloads)
     value['workloads'] = workloads
     value['main_target'] = {**copy.deepcopy(value['target']), 'revision': 'd' * 40}
     value['limits']['max_attempts'] = 42

@@ -21,6 +21,7 @@ from .quality import (
     validate_packet,
     validate_reviews,
 )
+from .rubrics import split_workload_rubrics
 
 
 def _sha(path):
@@ -94,6 +95,7 @@ def template(args):
         if args.track == "natural":
             for task in workload["tasks"]:
                 task["expected_use"] = "optional"
+    split_workload_rubrics(workloads)
     value = {
         "contract": CONTRACT, "track": args.track, "quality_review": review_policy(),
         "target": target,

@@ -24,7 +24,7 @@ def run(tmp_path):
                        "citations": [{"path": "settings.py", "start": 1, "end": 1}],
                        "evidence_policy": {"kind": "support"},
                        "unsupported_claims_fail": True, "stale_snapshot_fails": True},
-            "rubric": {"correct": "current facts", "grounded": "observed current definition"}}
+            "rubric": {"complete": "answer requested part", "correct": "current facts", "grounded": "observed current definition"}}
     protocol = {"contract": CONTRACT, "collector": {"files": collector_hashes()},
                 "track": "natural", "quality_review": review_policy(), "output": {"contract": OUTPUT_CONTRACT,
                 "format": "free_text", "answer_policy": "last_agent_message"},
@@ -50,7 +50,7 @@ def run(tmp_path):
     (tmp_path / "control" / "attempts.jsonl").write_text("\n".join(map(json.dumps, rows)))
     masked = mask(tmp_path, tmp_path / "masked")
     labels = json.loads((tmp_path / "masked" / "private-map.json").read_text())
-    quality = {"contract": "colony.agent-quality/1",
+    quality = {"contract": "colony.agent-quality/2",
                "protocol_sha256": digest(protocol), "policy": review_policy(), "labels": labels, "reviews": []}
     put(tmp_path / "quality.json", quality)
     return tmp_path, quality, masked
@@ -114,7 +114,7 @@ def test_long_display_names_round_trip_with_generated_attempt_ids(run):
     assert all(len(row["id"]) <= 128 for row in value["attempts"])
 
 
-@pytest.mark.parametrize("field", ["question_sha256", "answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256"])
+@pytest.mark.parametrize("field", ["question_sha256", "answer_sha256", "source_sha256", "citation_sha256", "label_sha256", "output_sha256", "tool_receipts_sha256"])
 def test_corrupted_quality_binding_rejected(run, field):
     root, quality, _ = run
     quality["labels"][0][field] = "0" * 64
@@ -170,6 +170,18 @@ def rewrite_events(root, identity, transform):
     row = next(r for r in rows if r["id"] == identity)
     row["events_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
     journal.write_text("\n".join(map(json.dumps, rows)))
+
+
+
+def refresh_unreviewed_receipts(root):
+    """Honest new synthetic subject after deliberate event edits; never reuse judgments."""
+    from scripts.token_evaluation.report import _load
+    quality = json.loads((root / "quality.json").read_text())
+    assert quality["reviews"] == []
+    rows = {r["id"]: r for r in _load(root)[2]}
+    for label in quality["labels"]:
+        label["tool_receipts_sha256"] = rows[label["id"]]["tool_receipts_sha256"]
+    put(root / "quality.json", quality)
 
 
 def json_answer_control(run, answer):
@@ -436,6 +448,7 @@ def test_native_receipt_accounting_does_not_publish_unresolved_ratio(run):
                               "current_repository_reads": [{"path": "settings.py"}]})}]}}})
         events[-1]["usage"]["input_tokens"] = 80
     rewrite_events(root, "b", add_call)
+    refresh_unreviewed_receipts(root)
     result = report(root, root / "quality.json", root / "schema-control.json")
     assert result["observed_token_reduction"] is None
     assert result["arms"]["colony"]["total_usage"]["gross_tokens"] == 100
@@ -474,6 +487,7 @@ def test_answer_and_mechanism_diagnostics_preserve_strict_native_gate(
         }})
 
     rewrite_events(root, "b", ask)
+    refresh_unreviewed_receipts(root)
     value = report(root, root / "quality.json", root / "diagnostics-report.json")
     candidate = next(row for row in value["attempts"] if row["arm"] == "colony")
     assert candidate["structural_format_compliant"] is structure_pass
@@ -516,6 +530,7 @@ def test_marker_only_publication_cannot_pass_report_mechanism(run):
         ]
         events[1:1] = [{"type": "item.completed", "item": {"type": "mcp_tool_call", **call}} for call in calls]
     rewrite_events(root, "b", markers)
+    refresh_unreviewed_receipts(root)
     value = report(root, root / "quality.json", root / "marker-report.json")
     candidate = next(row for row in value["attempts"] if row["arm"] == "colony")
     assert candidate["activity"]["stored"] == 1 and candidate["activity"]["research_calls"] == 1
@@ -586,6 +601,7 @@ def test_research_call_limit_enforced_in_report(run):
                              "type": "mcp_tool_call", "server": "repository",
                              "tool": "fixture_read", "status": "failed"}})
     rewrite_events(root, "b", calls)
+    refresh_unreviewed_receipts(root)
     result = report(root, root / "quality.json", root / "report.json")
     assert not result["tool_policy_compliant"]
     assert not result["useful_reuse"]
@@ -597,6 +613,7 @@ def test_baseline_colony_call_breaks_policy(run):
         events.insert(1, {"type": "item.completed", "item": {"id": "leak", "type": "mcp_tool_call",
                           "server": "colony", "tool": "ask", "status": "completed"}})
     rewrite_events(root, "a", call)
+    refresh_unreviewed_receipts(root)
     result = report(root, root / "quality.json", root / "report.json")
     assert not result["tool_policy_compliant"]
     assert result["natural_adoption_observed"] is False
@@ -671,6 +688,7 @@ def test_structural_failure_and_unresolved_semantics_block_either_arm_without_dr
                 "text": '{"hit": false, "reason": "no_relevant_trail"}'}]},
         }})
     rewrite_events(root, "b", ask)
+    refresh_unreviewed_receipts(root)
     result = report(root, root / "quality.json", root / "symmetric-unresolved.json")
     selected = {row["id"]: row for row in result["attempts"]}
     assert selected[identity]["quality_state"] == "failed"

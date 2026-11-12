@@ -7,8 +7,9 @@ import re
 from pathlib import Path
 
 from .output import validate_output
+from .rubrics import DIMENSIONS
 
-CONTRACT = "colony.token-evaluation/8"
+CONTRACT = "colony.token-evaluation/9"
 ARMS = ("no_colony", "colony")
 THREE_ARMS = ("no_colony", "main", "colony")
 
@@ -233,7 +234,8 @@ def _validate_manifest(manifest):
             require(oracle.get("unsupported_claims_fail") is True
                     and oracle.get("stale_snapshot_fails") is True,
                     "Unsupported claims and stale evidence must fail")
-            for field in ("correct", "grounded"):
+            require(set(task["rubric"]) == set(DIMENSIONS), "Freeze separate completion, correctness and grounding rubrics")
+            for field in DIMENSIONS:
                 _text(task["rubric"].get(field), "task " + field + " rubric")
             citations = oracle.get("citations")
             snapshot = next(s for s in snapshots if s["id"] == task["snapshot"])
