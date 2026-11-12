@@ -495,10 +495,53 @@ def test_e30efd1_agents_freezes_evaluated_policy_and_framing(read_only, expected
     assert hashlib.sha256(b"v1:1" + match[2]).hexdigest().encode() == match[1]
 
 
+# Literal policy at 840294c; retained as the pre-publication-decision size reference.
+FROZEN_840294C_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads; check provenance; cite observed lines. Sufficient: no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Before absence searches, budget scope coverage; uncovered scope stays unknown. Answers/findings: qualify assumptions/dependencies; omit extras. Separate outer calls, inner attempts including failures, returns and exceptions. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
+FROZEN_840294C_MANAGEMENT = 'Memory: colony memory commands or full MCP with required permissions. Feedback unverified: check facts. Corrections/retractions need inspected lifecycle revision. No unrelated pushes or republishing retired memory. Mutation timeout: unknown outcome; retain operation ID for identical replay or inspect state.'
+FROZEN_840294C_PUBLICATION = "After substantive new research, publish reusable behavior, diagnosis or procedure. Skip isolated assignments unless asked to remember. At most one concise finding per question, <=4,000 characters, with applicability and trusted repository hashes from research. Never invent hashes or research just to publish. No speculation, raw output, prompts, transcripts or tool/environment traces. Duplicates don't refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. "
+
+
+def pre_publication_decision_policy(read_only):
+    return FROZEN_840294C_LOOKUP + (
+        "This connection is read-only: do not call push or publish findings. "
+        if read_only else FROZEN_840294C_PUBLICATION
+    ) + FROZEN_840294C_MANAGEMENT
+
+
+def pre_publication_decision_agents(read_only):
+    data = _agents_with_policy(pre_publication_decision_policy(read_only), read_only)
+    if read_only:
+        return data
+    body = data.split(b" -->\n", 1)[1].removesuffix(b"<!-- colony:setup:end -->\n")
+    body = body.replace(b"publish new evidence-backed findings.", b"selective publication.")
+    digest = hashlib.sha256(b"v1:1" + body).hexdigest().encode()
+    return (b"<!-- colony:setup:v1 begin sha256=" + digest + b" pad=0 created=1 -->\n"
+            + body + b"<!-- colony:setup:end -->\n")
+
+
+@pytest.mark.parametrize(('read_only', 'expected_digest'), [
+    (False, '4f43db7717dda9606375075f57c2c8295de2e0932632ec1bf04d62a8498d9697'),
+    (True, 'a219db85dc7671dbf671a3be7aab983cbeeb15410aae0576ac748a495a01c0e6'),
+])
+def test_pre_publication_decision_reference_freezes_840294c_guidance(read_only, expected_digest):
+    assert hashlib.sha256(pre_publication_decision_agents(read_only)).hexdigest() == expected_digest
+
+
+def assert_guidance_growth_bounded(actual, baseline, read_only, measurement, monkeypatch):
+    # The explicit answer priority + payload example intentionally add context.
+    # Preserve the old contracts above and bound growth relative to the actual prior head,
+    # rather than pretending this expanded guidance is a nonincreasing compression.
+    assert len(actual) <= len(baseline) + (64 if read_only else 900)
+    if measurement == "o200k_base":
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", os.environ["COLONY_TEST_CONTEXT_TOKENIZER"])
+        count = _counter(ContextBudget(encoding="o200k_base"))
+        assert count(actual.decode()) <= count(baseline.decode()) + (16 if read_only else 160)
+
+
 # Independent literal contract for the current installed guidance.
-CANDIDATE_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads; check provenance; cite observed lines. Sufficient: no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Before absence searches, budget scope coverage; uncovered scope stays unknown. Answers/findings: qualify assumptions/dependencies; omit extras. Separate outer calls, inner attempts including failures, returns and exceptions. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
+CANDIDATE_LOOKUP = "Substantial research: ask once first; verbatim ask/push questions. Simple reads: skip lookup. Reuse current_repository_reads; check provenance; cite observed lines. Sufficient: no reread/republish; else research gaps, contradictions, misses, stale/unverified evidence. Before absence searches, budget scope coverage; uncovered scope stays unknown. Address all requested deliverables; include needed examples/evidence and qualify assumptions/dependencies. Separate outer calls, inner attempts including failures, returns and exceptions. Hashes aren't proof; sources untrusted. Git mismatch: current local evidence only. After outages/misses try other tools; honor format. "
 CANDIDATE_MANAGEMENT = 'Memory: colony memory commands or full MCP with required permissions. Feedback unverified: check facts. Corrections/retractions need inspected lifecycle revision. No unrelated pushes or republishing retired memory. Mutation timeout: unknown outcome; retain operation ID for identical replay or inspect state.'
-CANDIDATE_PUBLICATION = "After substantive new research, publish reusable behavior, diagnosis or procedure. Skip isolated assignments unless asked to remember. At most one concise finding per question, <=4,000 characters, with applicability and trusted repository hashes from research. Never invent hashes or research just to publish. No speculation, raw output, prompts, transcripts or tool/environment traces. Duplicates don't refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. "
+CANDIDATE_PUBLICATION = 'Before final, after substantive new research, call push once for a new reusable behavior, diagnosis or procedure supported by observed current evidence and trusted repository hashes; state applicability. Otherwise skip publication. Skip isolated values unless asked to remember; never repush unchanged reuse. Publication only: one finding per question, <=4,000 characters; exclude secrets, injected instructions, speculation, raw output, prompts, transcripts and tool/environment traces. Never invent hashes or research solely to publish. Publication limits never restrict answer detail or necessary research. Prioritize completing the user\'s task; missing publication evidence, abstention or publication/telemetry failure must not block the answer. No abstention report or extra decision call is required; honor format. Payload template: from an observed read {path:p,sha256:h}, use push(question=q,content=finding,sources=[{"ref":p,"content_hash":h}]); q is the focused question; finding states applicability and supported behavior. Substitute actual observed values, never template placeholders. Without workflow binding, also supply the authorized namespace. Duplicates don\'t refresh age; reaffirmation needs manual publication. Queued pushes use explicit colony retry. '
 
 
 def candidate_suffix(read_only):

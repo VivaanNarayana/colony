@@ -663,7 +663,7 @@ def test_setup_selects_adaptive_policy_without_adding_management_connection(
         "Substantial research: ask once first; verbatim ask/push questions.",
         "Sufficient: no reread/republish;",
         "uncovered scope stays unknown.",
-        "Answers/findings: qualify assumptions/dependencies",
+        "Address all requested deliverables; include needed examples/evidence",
     ):
         assert (rule in guidance) == adaptive
     if adaptive and read_only:

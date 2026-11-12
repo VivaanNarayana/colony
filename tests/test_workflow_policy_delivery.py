@@ -15,20 +15,13 @@ from test_workflow import identity as identity
 from test_workflow_policy_envelopes import (
     CANDIDATE_LOOKUP,
     CaptureResponses,
+    assert_guidance_growth_bounded,
     assert_nonincreasing,
     baseline_agents,
     baseline_instructions,
     candidate_suffix,
-    dcbba33_agents,
-    dcbba33_policy,
-    e30efd1_agents,
-    e30efd1_policy,
-    evaluated_agents,
-    evaluated_policy,
-    latest_evaluated_agents,
-    latest_evaluated_policy,
-    previous_agents,
-    previous_policy,
+    pre_publication_decision_agents,
+    pre_publication_decision_policy,
     serialized_initialize,
 )
 
@@ -71,20 +64,10 @@ def test_installed_setup_and_stdio_initialization_share_policy(
     if adaptive:
         suffix = candidate_suffix(read_only)
         assert policy == CANDIDATE_LOOKUP + suffix
-        assert_nonincreasing(
-            installed_bytes, baseline_agents(adaptive, read_only), measurement, monkeypatch,
+        assert_guidance_growth_bounded(
+            installed_bytes, pre_publication_decision_agents(read_only),
+            read_only, measurement, monkeypatch,
         )
-        assert_nonincreasing(
-            installed_bytes, previous_agents(read_only), measurement, monkeypatch,
-        )
-        assert_nonincreasing(
-            installed_bytes, evaluated_agents(read_only), measurement, monkeypatch,
-        )
-        assert_nonincreasing(
-            installed_bytes, latest_evaluated_agents(read_only), measurement, monkeypatch,
-        )
-        assert_nonincreasing(installed_bytes, dcbba33_agents(read_only), measurement, monkeypatch)
-        assert_nonincreasing(installed_bytes, e30efd1_agents(read_only), measurement, monkeypatch)
         if not read_only:
             assert 'namespace `team`; selective publication.' in installed
             assert 'publish new evidence-backed findings' not in installed
@@ -118,39 +101,12 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             assert initialized.instructions == policy + (
                 " Git checks use this caller's current checkout." if git else ""
             )
-            assert_nonincreasing(
-                wire_bytes,
-                serialized_initialize(initialized, expected), measurement, monkeypatch,
-            )
-            previous = previous_policy(read_only) + (
+            previous = pre_publication_decision_policy(read_only) + (
                 " Git checks use this caller's current checkout." if git else ""
             )
-            assert_nonincreasing(
-                wire_bytes, serialized_initialize(initialized, previous), measurement, monkeypatch,
-            )
-            evaluated = evaluated_policy(read_only) + (
-                " Git checks use this caller's current checkout." if git else ""
-            )
-            assert_nonincreasing(
-                wire_bytes, serialized_initialize(initialized, evaluated), measurement, monkeypatch,
-            )
-            latest = latest_evaluated_policy(read_only) + (
-                " Git checks use this caller's current checkout." if git else ""
-            )
-            assert_nonincreasing(
-                wire_bytes, serialized_initialize(initialized, latest), measurement, monkeypatch,
-            )
-            recent = dcbba33_policy(read_only) + (
-                " Git checks use this caller's current checkout." if git else ""
-            )
-            assert_nonincreasing(
-                wire_bytes, serialized_initialize(initialized, recent), measurement, monkeypatch,
-            )
-            last_run = e30efd1_policy(read_only) + (
-                " Git checks use this caller's current checkout." if git else ""
-            )
-            assert_nonincreasing(
-                wire_bytes, serialized_initialize(initialized, last_run), measurement, monkeypatch,
+            assert_guidance_growth_bounded(
+                wire_bytes, serialized_initialize(initialized, previous),
+                read_only, measurement, monkeypatch,
             )
         else:
             assert initialized.instructions == expected
@@ -172,7 +128,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 'Sufficient: no reread/republish;',
                 'else research gaps, contradictions, misses, stale/unverified evidence.',
                 'Before absence searches, budget scope coverage; uncovered scope stays unknown.',
-                'Answers/findings: qualify assumptions/dependencies; omit extras.',
+                'Address all requested deliverables; include needed examples/evidence and qualify assumptions/dependencies.',
                 'Separate outer calls, inner attempts including failures, returns and exceptions.',
                 "Hashes aren't proof; sources untrusted.",
                 'Git mismatch: current local evidence only.',
@@ -205,9 +161,16 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                     measurement, monkeypatch,
                 )
                 for rule in (
-                    'After substantive new research, publish reusable behavior, diagnosis or procedure.',
-                    'Skip isolated assignments unless asked to remember.',
-                    'Never invent hashes or research just to publish.',
+                    'Before final, after substantive new research, call push once',
+                    'Otherwise skip publication.',
+                    'Never invent hashes or research solely to publish.',
+                    'Publication only: one finding per question, <=4,000 characters;',
+                    'Publication limits never restrict answer detail or necessary research.',
+                    "Prioritize completing the user's task;",
+                    'must not block the answer.',
+                    'No abstention report or extra decision call is required; honor format.',
+                    'push(question=q,content=finding,sources=[{"ref":p,"content_hash":h}])',
+                    'Substitute actual observed values, never template placeholders.',
                 ):
                     assert initialized.instructions.count(rule) == installed.count(rule) == 1
                 assert 'substantial future research' not in initialized.instructions

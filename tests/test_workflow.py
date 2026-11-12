@@ -9,10 +9,11 @@ from pathlib import Path
 import httpx
 import pytest
 from cryptography.fernet import Fernet
+from mcp.server.fastmcp.exceptions import ToolError
 
 from colony.client import Client
 from colony.mcp import create_mcp
-from colony.models import Grant, Scope, Source
+from colony.models import ContextBudget, Grant, Scope, Source
 from colony.security import generate_keys, issue, private_write
 from colony.workflow import Workflow, configure_workflow
 
@@ -125,6 +126,71 @@ def test_workflow_bounds_and_requires_file_evidence_without_reread(identity, mon
 
     monkeypatch.setattr(type(repo), "read_bytes", no_reread)
     assert len(workflow.finding("q", "x" * 4000, sources).content) == 4000
+
+
+@pytest.mark.parametrize("outcome", ["stored", "queued", "denied"])
+def test_adaptive_publication_template_and_failures_leave_research_available(
+    identity, monkeypatch, outcome,
+):
+    """Exercise the documented payload and no server-side completion gate; no model calls."""
+    client, repo, sources = identity
+    source = sources[0]
+    observed = {
+        "path": source.ref,
+        "sha256": source.content_hash,
+        "content": (repo / source.ref).read_text(),
+    }
+    sent = []
+
+    def request(self, route, payload):
+        assert route == "/trails"
+        sent.append(payload)
+        if outcome == "queued":
+            raise httpx.ConnectError("offline")
+        if outcome == "denied":
+            response = httpx.Response(403, request=httpx.Request("POST", "http://localhost/trails"))
+            raise httpx.HTTPStatusError("denied", request=response.request, response=response)
+        return {"id": payload["id"], "stored": True}
+
+    def no_source_reread(path):
+        assert path != repo / source.ref, "Publication must reuse the observed hash"
+        return original_read_bytes(path)
+
+    original_read_bytes = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", no_source_reread)
+    monkeypatch.setattr(Client, "request", request)
+    monkeypatch.setattr(Client, "ask", lambda *args, **kwargs: {
+        "hit": False, "reason": "no_relevant_trail",
+    })
+    server = create_mcp(
+        client.home, workflow_namespace="team", workflow_repo=repo,
+        context_budget=ContextBudget(),
+    )
+    payload = {
+        "question": "How is the timeout configured?",
+        "content": "In this fixture, settings.py supplies TIMEOUT = 30.",
+        "sources": [{"ref": observed["path"], "content_hash": observed["sha256"]}],
+    }
+    # Missing evidence or an oversized finding stays a publication error; it does not
+    # create a session requirement to publish or disable subsequent research tools.
+    for invalid in ({**payload, "sources": []}, {**payload, "content": "x" * 4001}):
+        with pytest.raises(ToolError, match="file evidence|4,000"):
+            call(server, "push", **invalid)
+    assert sent == []
+    if outcome == "denied":
+        with pytest.raises(ToolError, match="denied"):
+            call(server, "push", **payload)
+    else:
+        receipt = json.loads(call(server, "push", **payload)[0].text)
+        assert receipt["stored"] is (outcome == "stored")
+        assert bool(receipt.get("queued")) is (outcome == "queued")
+    assert len(sent) == 1
+    assert sent[0]["sources"][0]["ref"] == observed["path"]
+    assert sent[0]["sources"][0]["content_hash"] == observed["sha256"]
+    assert sent[0]["content"] == payload["content"]
+    assert sent[0]["tainted"] is True
+    assert json.loads(call(server, "ask", question="Continue research")[0].text)["hit"] is False
+    assert {tool.name for tool in asyncio.run(server.list_tools())} == {"ask", "push"}
 
 
 def test_workflow_mcp_namespace_read_only_and_manual_compatibility(identity, monkeypatch):

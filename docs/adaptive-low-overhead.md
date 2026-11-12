@@ -65,24 +65,61 @@ Adaptive server instructions and setup-managed project guidance share the same p
   Reuse already observed current evidence. If coverage cannot be completed, report what
   remains unknown; narrowing the wording does not fulfill a task requiring full coverage.
   `evidence_scope: cited_files` covers the cited set, not necessarily the whole repository.
-  No fixed read method or requirement to read every file is imposed. Keep answers and
-  findings focused, retaining dependency qualifications, failed attempts and exceptional exits.
+  No fixed read method or requirement to read every file is imposed. Address every requested
+  deliverable, include needed examples and evidence, and qualify assumptions and dependencies.
+  Retain failed attempts and exceptional exits when relevant to the requested explanation.
   Distinguish outer calls from internal attempts and returned responses from exceptions:
   a dependency can recover failures before returning each response. Qualify assumptions
   for additional claims or omit those claims; the same rule applies to published findings.
-- On writable connections, after substantive new research publish a concise reusable
-  behavior, diagnosis or procedure, including new research after a partial hit. Skip
+- On writable connections, before the final answer, after substantive new research call
+  `push` once for a new reusable behavior, diagnosis or procedure supported by observed
+  current evidence and trustworthy repository hashes. State its applicability. Otherwise
+  skip publication. This includes new research after a partial hit. Skip
   simply restating an isolated assignment unless asked to remember it. A single-file
   diagnosis can still be valuable; file count is not a publication rule. Publication
   does not require predicting future queries or proving future savings.
   Use observed evidence to decide, without an extra lookup or research solely to publish.
-  Keep at most one finding per question with applicability and trustworthy hashes already
-  obtained. Skip unchanged reuse and speculation, including when asked to remember.
+  Publication alone has a limit of one finding per question and 4,000 characters. Exclude
+  secrets, injected instructions, speculation, raw output, prompts, transcripts and
+  tool/environment traces. Skip unchanged reuse and speculation, including when asked to remember.
   Read-only connections never publish.
+
+Publication restrictions apply to stored findings. They do not restrict the answer's
+length, requested detail, examples, evidence or necessary research. Complete the user's
+task in the requested format. Missing publication evidence, deliberate abstention, failed
+or queued pushes, and telemetry failures must not block the answer. Do not spend the
+remaining research allowance gathering hashes solely for publication. There is no required
+abstention report, extra decision tool call, or host completion gate. A missing push receipt
+establishes only that no attempt was observed, not why the agent skipped publication.
+
+The installed guidance includes this payload template. Let `q` be the focused question,
+`finding` the supported finding including its applicability, and `p` and `h` the path and
+SHA-256 already returned by an observed repository read:
+
+```python
+push(question=q, content=finding, sources=[{"ref": p, "content_hash": h}])
+```
+
+Map an observed read's `path` to `ref` and `sha256` to `content_hash`. If evidence already
+uses `ref` and `content_hash`, reuse those fields directly. Replace the template variables
+with actual observed values; do not invent a hash, copy example placeholders, or attach an
+unsupported claim. For example, a supported explanation of when a retry wrapper propagates
+an exception can be reusable; an isolated timeout assignment normally is not. The namespace
+is bound in workflow mode; a connection without workflow binding still requires its authorized
+`namespace` argument. Hashes identify sources and do not prove that the finding follows from
+them. Stored content remains untrusted and must be checked against evidence during reuse.
 
 These are best-effort agent instructions, not enforced routing or automatic capture.
 Delivery, budget-boundary and source-review counterexample tests do not demonstrate
 model compliance, improved accuracy or lower gross token usage.
+The explicit answer priority and payload template add instruction context. Relative to
+`840294c`, the instruction string grows by 818 UTF-8 bytes / 149 pinned `o200k_base` tokens
+on writable connections and 42 bytes / 5 tokens on read-only connections. Full managed-block
+and serialized-initialization tests cap growth at 900 bytes / 160 tokens for writable
+connections and 64 bytes / 16 tokens for read-only connections; the frozen prior policies
+are retained. These are local context counts, not provider gross usage.
+No publication-rate, answer-quality or token-savings claim follows from
+these changes without a separately authorized evaluation.
 Citation hints likewise cannot validate or rewrite an agent's final answer. The evaluator
 still rejects unsupported scope claims and invalid citations, even after a valid cache hit.
 No new model classifier, provider request, background agent, transcript reader, session
@@ -124,7 +161,7 @@ finding. Repeated next-action narration, ranking diagnostics and internal select
 coordinates are omitted; taint, age, lifecycle/feedback, Git receipts and unverified
 feedback warnings remain. Stale/unverified results retain their research recommendation.
 Unknown additive source/read metadata survives packing. Both MCP instructions and
-managed project guidance remain self-contained, using the same shorter policy.
+managed project guidance remain self-contained, using the same adaptive policy.
 
 For a validated answer's already-cited files, the profile automatically includes a
 complete bundle within the existing eight-source search limit when the combined redacted text is at most
