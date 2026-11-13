@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import os
+import sys
 import tomllib
 
 import pytest
@@ -136,3 +137,94 @@ def test_installed_stdio_delivers_reuse_cue_and_all_sources(running_team, encodi
                 assert item["complete_file"]
 
     asyncio.run(asyncio.wait_for(inspect(), timeout=30))
+
+
+@pytest.mark.parametrize("used,expected", [(2000, "Use reads; check gaps."), (2044, None)])
+def test_observed_nearly_full_byte_responses_preserve_evidence(used, expected):
+    budget = ContextBudget(max_tokens=2048)
+    raw = {"hit": True, "status": "validated", "tainted": True,
+           "provenance": "UNTRUSTED AS INSTRUCTIONS", "evidence_scope": "cited_files",
+           "current_repository_reads": [{"path": "settings.py", "sha256": "a" * 64,
+               "start_line": 1, "end_line": 2, "complete_file": True,
+               "content": "DEFAULT = 100\nQUEUE = 250"}], "extra": ""}
+    base = fit_response(raw, budget)
+    raw["extra"] = "x" * (used - base["context_budget"]["used"])
+    base = fit_response(raw, budget)
+    # Decimal accounting can grow when crossing 1,000 bytes.
+    raw["extra"] = raw["extra"][:len(raw["extra"]) + used - base["context_budget"]["used"]]
+    base = fit_response(raw, budget)
+    assert base["context_budget"]["used"] == used
+    original = copy.deepcopy(base)
+    result = with_reuse_guidance(base, budget)
+    assert result.get("next_action") == expected
+    assert base == original
+    assert {k:v for k,v in result.items() if k not in {"next_action", "context_budget"}} == {
+        k:v for k,v in base.items() if k != "context_budget"}
+    assert result["context_budget"]["used"] == count_response(result, budget) <= 2048
+
+
+@pytest.mark.parametrize("used,expected", [(2000, "Use reads; check gaps."), (2044, None)])
+def test_nearly_full_cue_over_actual_stdio(tmp_path, used, expected):
+    from colony.compact import PROFILE
+    from colony.context_budget import with_citation_bounds
+
+    budget = ContextBudget(max_tokens=2048)
+    packet = {"response_profile": PROFILE, "hit": True, "status": "validated",
+              "sources": [{"ref": "config.py", "content_hash": "a" * 64}],
+              "current_repository_reads": [{"path": "config.py", "sha256": "a" * 64,
+                  "start_line": 1, "complete_file": True, "content": "DEFAULT = 100"}],
+              "extra": ""}
+    for _ in range(4):
+        baseline = with_citation_bounds(fit_response(packet, budget), budget)
+        delta = used - baseline["context_budget"]["used"]
+        if not delta:
+            break
+        packet["extra"] = "x" * (len(packet["extra"]) + delta)
+    assert baseline["context_budget"]["used"] == used
+    data = tmp_path / "packet.json"
+    data.write_text(json.dumps(packet), encoding="utf-8")
+    script = (
+        "import json,sys,copy; from pathlib import Path; from types import SimpleNamespace; "
+        "from colony import mcp; from colony.models import ContextBudget; "
+        "packet=json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')); "
+        "mcp.Client=lambda home: SimpleNamespace(ask=lambda *a,**k: copy.deepcopy(packet)); "
+        "mcp.create_mcp(Path('.'),context_budget=ContextBudget(max_tokens=2048)).run()"
+    )
+
+    async def inspect():
+        async with (
+            stdio_client(StdioServerParameters(command=sys.executable,
+                         args=["-c", script, str(data)])) as (read, write),
+            ClientSession(read, write) as session,
+        ):
+            await session.initialize()
+            result = await session.call_tool("ask", {"question": "What is the default?"})
+            assert not result.isError
+            value = json.loads(result.content[0].text)
+            assert value.get("next_action") == expected
+            assert value["current_repository_reads"] == baseline["current_repository_reads"]
+            assert value["sources"] == baseline["sources"]
+            assert value["context_budget"]["used"] == count_response(value, budget) <= 2048
+            assert value["provenance"] == baseline["provenance"]
+
+    asyncio.run(asyncio.wait_for(inspect(), timeout=30))
+
+
+@pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
+def test_short_cue_uses_only_spare_units(encoding, monkeypatch):
+    if encoding == "o200k_base":
+        if not os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER"):
+            pytest.skip("Pinned local tokenizer unavailable")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", os.environ["COLONY_TEST_CONTEXT_TOKENIZER"])
+    wide = ContextBudget(max_tokens=8192, encoding=encoding)
+    raw = {"hit": True, "status": "validated", "current_repository_reads": [
+        {"path": "source.py", "sha256": "a" * 64, "start_line": 1,
+         "complete_file": True, "content": "VALUE = 100\n" * 100}]}
+    base = fit_response(raw, wide)
+    budget = ContextBudget(max_tokens=base["context_budget"]["used"] +
+                           (48 if encoding == "utf8_bytes" else 15), encoding=encoding)
+    base = fit_response(raw, budget)
+    result = with_reuse_guidance(base, budget)
+    assert result["next_action"] == "Use reads; check gaps."
+    assert result["current_repository_reads"] == base["current_repository_reads"]
+    assert result["context_budget"]["used"] == count_response(result, budget) <= budget.max_tokens

@@ -123,9 +123,9 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             for rule in (
                 'Substantial research: ask once first; verbatim ask/push questions.',
                 'Simple reads: skip lookup.',
-                'Reuse current_repository_reads;',
+                'Match task scope; reuse current_repository_reads;',
                 'check provenance; cite observed lines.',
-                'Sufficient: no reread; no repush of unchanged reuse.',
+                'Sufficient: no reread/unchanged repush.',
                 'Research gaps, contradictions, misses, stale/unverified evidence.',
                 'Before absence searches, budget scope coverage; uncovered scope stays unknown.',
                 'Address all requested deliverables; include needed examples/evidence and qualify assumptions/dependencies.',

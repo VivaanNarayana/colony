@@ -7,8 +7,9 @@ files from whole-repository coverage and notes that saved prose may be withheld.
 
 The cue uses only spare response budget. It never repacks, drops, clips or replaces
 source excerpts, identities, line bounds, trust markers or lifecycle state. Its
-bytes/tokens are included in the final receipt. If it does not fit, the original
-fitted evidence is returned. Misses, stale/unverified results and responses without
+bytes/tokens are included in the final receipt. If the full cue does not fit, a shorter "Use reads; check gaps." cue is tried.
+If neither fits, the original fitted evidence is returned. A nearly full response
+with only four bytes free remains unchanged; no evidence is traded for a cue. Misses, stale/unverified results and responses without
 current source reads never receive a cue to reuse them. The text is generated
 locally; source-supplied `next_action` text is discarded.
 
@@ -36,3 +37,16 @@ budget units, tight budgets, untrusted injected guidance, and setup/stdio policy
 delivery. They establish interface behavior, not that a model will obey the cue or
 that it saves tokens. Historical campaign protocols, logs, reviews and outcomes
 remain frozen. A new native evaluation requires separate authorization.
+
+Adaptive publication validates source shapes before attempting a write. Errors name
+only the invalid source index and fixed field, without echoing rejected input.
+An explicit correction must use observed evidence and keep supporting sources, or
+remove their dependent claims. No source is silently removed or rewritten and no
+retry is automatic. Successful hash validation does not certify claim support.
+Other publication failures retain their existing handling; they cannot gate answers.
+
+The installed lookup policy explicitly asks the agent to match the question's scope
+before reuse (for example, pre-override defaults versus a queue-specific value).
+This is guidance, not a semantic answer validator. All requested deliverables,
+necessary research, answer detail and format retain priority. Offline tests check
+source/error contracts and policy delivery, not model compliance or token savings.

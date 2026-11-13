@@ -661,7 +661,7 @@ def test_setup_selects_adaptive_policy_without_adding_management_connection(
     assert policy in guidance
     for rule in (
         "Substantial research: ask once first; verbatim ask/push questions.",
-        "Sufficient: no reread; no repush of unchanged reuse.",
+        "Sufficient: no reread/unchanged repush.",
         "uncovered scope stays unknown.",
         "Address all requested deliverables; include needed examples/evidence",
     ):

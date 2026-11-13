@@ -189,13 +189,17 @@ def with_reuse_guidance(response: dict, budget) -> dict:
         raise ContextBudgetError("Reuse guidance requires a fitted response")
     if not base.get("hit") or base.get("status") != "validated" or not base.get("current_repository_reads"):
         return base
-    annotated = copy.deepcopy(base)
-    annotated["next_action"] = (
+    for cue in (
         "Use current excerpts for covered claims; read only gaps or conflicting evidence. "
-        "Saved prose may be withheld; cited-file coverage is not whole-repository coverage."
-    )
-    annotated = _receipt(annotated, budget, counter, limited)
-    return annotated if annotated["context_budget"]["used"] <= budget.max_tokens else base
+        "Saved prose may be withheld; cited-file coverage is not whole-repository coverage.",
+        "Use reads; check gaps.",
+    ):
+        annotated = copy.deepcopy(base)
+        annotated["next_action"] = cue
+        annotated = _receipt(annotated, budget, counter, limited)
+        if annotated["context_budget"]["used"] <= budget.max_tokens:
+            return annotated
+    return base
 
 
 def _rebuild(response):

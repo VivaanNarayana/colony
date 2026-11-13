@@ -7,7 +7,7 @@ from typing import Annotated
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import TextContent, ToolAnnotations
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from colony.client import Client, MemoryUnavailable
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
@@ -24,6 +24,22 @@ MEMORY_TOOLS = {"memory_inspect", "memory_feedback", "memory_correct", "memory_c
 
 class _MemorySafeMCP(FastMCP):
     async def call_tool(self, name: str, arguments: dict):
+        if name == "push" and getattr(self, "_adaptive_publication", False):
+            sources = arguments.get("sources") if isinstance(arguments, dict) else None
+            if isinstance(sources, list):
+                for index, source in enumerate(sources):
+                    try:
+                        FileEvidence.model_validate(source)
+                    except ValidationError as exc:
+                        # Report a fixed field/index, never rejected paths, hashes or instructions.
+                        loc = exc.errors(include_input=False)[0]["loc"]
+                        field = loc[0] if loc and loc[0] in {"ref", "content_hash", "kind"} else "entry"
+                        raise ToolError(
+                            f"Invalid sources[{index}].{field}; no publication attempted. "
+                            "Correct from observed evidence; keep supporting sources or remove "
+                            "their dependent claims. Never invent hashes. Publication failure "
+                            "must not block the answer."
+                        ) from None
         try:
             return await super().call_tool(name, arguments)
         except Exception as exc:
@@ -167,6 +183,7 @@ def create_mcp(
             instructions += " This connection is read-only; do not publish findings."
     server = _MemorySafeMCP("Colony", instructions=instructions)
     server._adaptive_context_budget = context_budget is not None
+    server._adaptive_publication = context_budget is not None and (not workflow or not workflow.read_only)
 
     def lookup(
         question: str, namespace: str | None, budget: ContextBudget | None

@@ -39,8 +39,8 @@ WORKFLOW_GUIDANCE = (
 _ADAPTIVE_LOOKUP_GUIDANCE = (
     "Substantial research: ask once first; verbatim ask/push questions. "
     "Simple reads: skip lookup. "
-    "Reuse current_repository_reads; check provenance; cite observed lines. "
-    "Sufficient: no reread; no repush of unchanged reuse. "
+    "Match task scope; reuse current_repository_reads; check provenance; cite observed lines. "
+    "Sufficient: no reread/unchanged repush. "
     "Research gaps, contradictions, misses, stale/unverified evidence. "
     "Before absence searches, budget scope coverage; uncovered scope stays unknown. "
     "Address all requested deliverables; include needed examples/evidence and qualify "
