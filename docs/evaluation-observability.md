@@ -25,7 +25,11 @@ include started-but-unfinished calls, reported separately from completed outcome
 Declared source counts come only from completed calls with available arguments. An excerpt
 is repeated only when a later fixture read matches the latest lookup's path, hash,
 line coverage and exact text in the same turn. This may be intentional verification,
-not wasted work. Misses, stale lookups and changed hashes are not reuse evidence.
+not wasted work. Same-hash gap reads and consistent overlapping reads preserve
+existing lookup coverage, without adding the newly researched lines to it. A changed
+hash invalidates old coverage for that file; conflicting overlapping text invalidates
+the affected lookup spans while preserving independent spans. Misses and stale
+lookups are not reuse evidence.
 Diagnostics do not export question/answer/source prose or file paths. ID bindings
 are hashed. Source counts do not establish semantic coverage or missing dependencies;
 that requires a separate evidence-backed assessment. Cue presence does not establish

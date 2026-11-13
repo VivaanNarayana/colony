@@ -94,6 +94,24 @@ def excerpt(value, lookup=False):
     return path, sha, start, end, lines
 
 
+def consistent_coverage(previous, observed):
+    """Retain lookup spans consistent with this read; never add research coverage."""
+    _, sha, start, end, lines = observed
+    retained = []
+    for old in previous:
+        _, old_sha, old_start, old_end, old_lines = old
+        if old_sha != sha:
+            continue
+        first, last = max(start, old_start), min(end, old_end)
+        if first <= last and (
+            lines[first - start : last - start + 1]
+            != old_lines[first - old_start : last - old_start + 1]
+        ):
+            continue
+        retained.append(old)
+    return retained
+
+
 def analyze_bytes(source):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
@@ -211,15 +229,15 @@ def analyze_bytes(source):
             record = None if error else excerpt(value)
             if record:
                 path, sha, start, end, lines = record
+                retained = consistent_coverage(covered.get(path, []), record)
                 repeated = any(
                     sha == old_sha
                     and old_start <= start <= end <= old_end
                     and lines == old_lines[start - old_start : end - old_start + 1]
-                    for _, old_sha, old_start, old_end, old_lines in covered.get(path, [])
+                    for _, old_sha, old_start, old_end, old_lines in retained
                 )
                 counts["repeated_observed_excerpts"] += repeated
-                if not repeated:
-                    covered.pop(path, None)
+                covered[path] = retained
         elif server == "colony" and tool == "push":
             counts["publication_completed"] += 1
             counts["publication_errors"] += error

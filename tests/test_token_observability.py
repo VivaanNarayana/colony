@@ -277,3 +277,100 @@ def test_started_but_unfinished_publications_remain_observed_attempts():
     assert counts["publication_attempts"] == 2
     assert counts["publication_completed"] == counts["publication_incomplete"] == 1
     assert counts["publication_stored"] == 1
+
+
+@pytest.mark.parametrize(
+    "start,content",
+    [
+        (3, "NEW_GAP = 1"),
+        (1, "DEFAULT = 100\nQUEUE = 250\nNEW_GAP = 1"),
+        (2, "QUEUE = 250\nNEW_GAP = 1"),
+    ],
+)
+def test_same_hash_gap_or_extended_read_preserves_lookup_coverage(start, content):
+    events = turn(
+        [
+            tool("ask", lookup()),
+            tool("fixture_read", read(start=start, content=content), "gap", "repository"),
+            tool("fixture_read", read(), "repeat", "repository"),
+            tool("fixture_read", read(start=start, content=content), "gap-again", "repository"),
+        ]
+    )
+    counts = analyze_bytes(raw(events))["observations"]
+    assert counts["research_reads"] == 3
+    # New research never becomes lookup coverage; only the original excerpt repeats.
+    assert counts["repeated_observed_excerpts"] == 1
+
+
+def test_gap_before_lookup_excerpt_preserves_coverage():
+    value = lookup()
+    value["current_repository_reads"][0]["start_line"] = 3
+    value["current_repository_reads"][0]["end_line"] = 4
+    counts = analyze_bytes(
+        raw(
+            turn(
+                [
+                    tool("ask", value),
+                    tool("fixture_read", read(start=1, content="OTHER = 1"), "gap", "repository"),
+                    tool("fixture_read", read(start=3), "repeat", "repository"),
+                ]
+            )
+        )
+    )["observations"]
+    assert counts["repeated_observed_excerpts"] == 1
+
+
+def test_conflicting_overlap_invalidates_only_affected_lookup_span():
+    value = lookup()
+    value["current_repository_reads"].append(
+        {
+            "path": "config.py",
+            "sha256": "a" * 64,
+            "start_line": 5,
+            "end_line": 5,
+            "content": "SAFE = 1",
+        }
+    )
+    counts = analyze_bytes(
+        raw(
+            turn(
+                [
+                    tool("ask", value),
+                    tool(
+                        "fixture_read",
+                        read(start=2, content="QUEUE = 999"),
+                        "conflict",
+                        "repository",
+                    ),
+                    tool("fixture_read", read(), "invalidated", "repository"),
+                    tool(
+                        "fixture_read",
+                        read(start=5, content="SAFE = 1"),
+                        "unaffected",
+                        "repository",
+                    ),
+                ]
+            )
+        )
+    )["observations"]
+    assert counts["repeated_observed_excerpts"] == 1
+
+
+def test_changed_hash_on_gap_read_invalidates_old_lookup_coverage():
+    counts = analyze_bytes(
+        raw(
+            turn(
+                [
+                    tool("ask", lookup()),
+                    tool(
+                        "fixture_read",
+                        read(start=3, content="NEW_GAP = 1", sha="b" * 64),
+                        "changed",
+                        "repository",
+                    ),
+                    tool("fixture_read", read(), "old-again", "repository"),
+                ]
+            )
+        )
+    )["observations"]
+    assert counts["repeated_observed_excerpts"] == 0
