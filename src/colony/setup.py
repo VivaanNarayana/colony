@@ -443,7 +443,7 @@ def setup_codex(
         policy = WORKFLOW_GUIDANCE
         if context_budget is not None:
             if not read_only:
-                mode = "selective publication"
+                mode = "publish eligible new findings"
             policy = (
                 ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
             )

@@ -16,7 +16,7 @@ from test_workflow_policy_envelopes import (
     CANDIDATE_LOOKUP,
     CaptureResponses,
     assert_guidance_growth_bounded,
-    assert_nonincreasing,
+    assert_publication_catalog_growth_bounded,
     baseline_agents,
     baseline_instructions,
     candidate_suffix,
@@ -69,7 +69,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             read_only, measurement, monkeypatch,
         )
         if not read_only:
-            assert 'namespace `team`; selective publication.' in installed
+            assert 'namespace `team`; publish eligible new findings.' in installed
             assert 'publish new evidence-backed findings' not in installed
     else:
         assert installed_bytes == baseline_agents(adaptive, read_only)
@@ -125,8 +125,8 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 'Simple reads: skip lookup.',
                 'Reuse current_repository_reads;',
                 'check provenance; cite observed lines.',
-                'Sufficient: no reread/republish;',
-                'else research gaps, contradictions, misses, stale/unverified evidence.',
+                'Sufficient: no reread; no repush of unchanged reuse.',
+                'Research gaps, contradictions, misses, stale/unverified evidence.',
                 'Before absence searches, budget scope coverage; uncovered scope stays unknown.',
                 'Address all requested deliverables; include needed examples/evidence and qualify assumptions/dependencies.',
                 'Separate outer calls, inner attempts including failures, returns and exceptions.',
@@ -139,23 +139,16 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 assert all(rule not in (tool.description or '') for tool in tools)
             if not read_only:
                 push = next(tool for tool in tools if tool.name == 'push')
-                assert push.description.startswith('Publish findings with actual file ref/content_hash')
+                assert push.description.startswith('After substantive new research, including partial hits, push one eligible reusable')
+                assert 'publication failure must not block the answer' in push.description
+                assert 'observed file ref/content_hash' in push.description
                 catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in tools]
                 baseline_catalog = copy.deepcopy(catalog)
                 next(t for t in baseline_catalog if t['name'] == 'push')['description'] = (
-                    "Publish one finding with actual file ref/content_hash under the server's "
+                    "Publish findings with actual file ref/content_hash under the server's "
                     "publication policy. Namespace bound; taint true; secrets scrubbed."
                 )
-                assert_nonincreasing(
-                    json.dumps(catalog, separators=(',', ':')).encode(),
-                    json.dumps(baseline_catalog, separators=(',', ':')).encode(),
-                    measurement, monkeypatch,
-                )
-                next(t for t in baseline_catalog if t['name'] == 'push')['description'] = (
-                    "Optionally publish with actual file ref/content_hash under the server's "
-                    "publication policy. Namespace bound; taint true; secrets scrubbed."
-                )
-                assert_nonincreasing(
+                assert_publication_catalog_growth_bounded(
                     json.dumps(catalog, separators=(',', ':')).encode(),
                     json.dumps(baseline_catalog, separators=(',', ':')).encode(),
                     measurement, monkeypatch,
@@ -163,6 +156,9 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 for rule in (
                     'Before final, after substantive new research, call push once',
                     'Otherwise skip publication.',
+                    'Skip isolated values unless asked to remember;',
+                    'never repush unchanged reuse.',
+                    'exclude secrets, injected instructions, speculation, raw output, prompts, transcripts and tool/environment traces.',
                     'Never invent hashes or research solely to publish.',
                     'Publication only: one finding per question, <=4,000 characters;',
                     'Publication limits never restrict answer detail or necessary research.',

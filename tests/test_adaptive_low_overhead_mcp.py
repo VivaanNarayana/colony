@@ -10,7 +10,9 @@ from types import SimpleNamespace
 import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 from test_integration import running_team as running_team
-from test_workflow_policy_envelopes import assert_nonincreasing
+from test_workflow_policy_envelopes import (
+    assert_publication_catalog_growth_bounded,
+)
 
 from colony import mcp
 from colony.context_budget import count_response, serialize_response
@@ -175,21 +177,29 @@ def test_adaptive_discovery_preserves_publication_schema_and_annotations(
     }
     ending = ("Namespace bound; taint true; secrets scrubbed." if workflow
               else "Client scrubs secrets; mark external content tainted.")
-    assert adaptive["push"].description == (
-        "Publish findings with actual file ref/content_hash under the server's "
-        "publication policy. " + ending
-    )
+    description = adaptive["push"].description
+    for cue in (
+        "After substantive new research, including partial hits, push one eligible reusable",
+        "finding with applicability and observed file ref/content_hash.",
+        "Skip isolated values unless asked to remember; skip unchanged reuse.",
+        "Follow publication exclusions.",
+        "Never invent hashes or research solely to publish.",
+        "Answer detail/research remain unrestricted; publication failure must not block the answer.",
+        ending,
+    ):
+        assert cue in description
     catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in adaptive.values()]
     evaluated_catalog = copy.deepcopy(catalog)
     next(t for t in evaluated_catalog if t["name"] == "push")["description"] = (
-        "Optionally publish with actual file ref/content_hash under the server's "
+        "Publish findings with actual file ref/content_hash under the server's "
         "publication policy. " + ending
     )
-    assert_nonincreasing(
+    assert_publication_catalog_growth_bounded(
         json.dumps(catalog, separators=(',', ':')).encode(),
         json.dumps(evaluated_catalog, separators=(',', ':')).encode(),
         measurement, monkeypatch,
     )
+
 
 
 def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(response, tmp_path):

@@ -377,8 +377,12 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Publish findings with actual file ref/content_hash under the server's "
-                "publication policy. Namespace bound; taint true; secrets scrubbed."
+                "After substantive new research, including partial hits, push one eligible reusable "
+                "finding with applicability and observed file ref/content_hash. Skip isolated values "
+                "unless asked to remember; skip unchanged reuse. Follow publication exclusions. "
+                "Never invent hashes or research solely to publish. Answer detail/research remain "
+                "unrestricted; publication failure must not block the answer. "
+                "Namespace bound; taint true; secrets scrubbed."
                 if context_budget is not None
                 else publish.__doc__
                 + " Workflow mode requires repository file evidence and <=4,000 characters; "
@@ -391,8 +395,12 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "Publish findings with actual file ref/content_hash under the server's "
-                "publication policy. Client scrubs secrets; mark external content tainted."
+                "After substantive new research, including partial hits, push one eligible reusable "
+                "finding with applicability and observed file ref/content_hash. Skip isolated values "
+                "unless asked to remember; skip unchanged reuse. Follow publication exclusions. "
+                "Never invent hashes or research solely to publish. Answer detail/research remain "
+                "unrestricted; publication failure must not block the answer. "
+                "Client scrubs secrets; mark external content tainted."
                 if context_budget is not None
                 else None
             ),

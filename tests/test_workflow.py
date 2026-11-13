@@ -1,10 +1,12 @@
 import asyncio
 import hashlib
 import json
+import runpy
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -505,3 +507,61 @@ def test_adaptive_mcp_and_setup_share_selective_policy(identity, read_only):
     if read_only:
         assert "after meaningful new research publish" not in server.instructions
         assert "do not call push or publish findings" in server.instructions
+
+
+def test_supported_worker_behavior_payload_uses_observed_sources(identity, monkeypatch):
+    """Offline positive example, not a test that an agent chooses to publish."""
+    client, repo, _ = identity
+    fixtures = Path(__file__).parent / "token_evaluations/fixtures/worker/v1"
+    observed = []
+    for name in ("policy.py", "executor.py"):
+        data = (fixtures / name).read_bytes()
+        (repo / name).write_bytes(data)
+        observed.append({"ref": name, "content_hash": hashlib.sha256(data).hexdigest()})
+    policy = runpy.run_path(str(repo / "policy.py"))["policy"]
+    execute = runpy.run_path(str(repo / "executor.py"))["execute"]
+    assert policy("ordinary", {})["delay_ms"] == 100  # Isolated value: normally skip.
+    options = policy("priority", {})
+    assert policy("priority", {"attempts": 1})["attempts"] == 1
+    submissions, waits = [], []
+    result = SimpleNamespace(retryable=True)
+
+    def submit(job_id):
+        submissions.append(job_id)
+        return result
+
+    assert execute(SimpleNamespace(submit=submit), "job", **options, sleep=waits.append) is result
+    assert submissions == ["job"] * 4 and waits == [250] * 3
+    sent = []
+    monkeypatch.setattr(Client, "push", lambda self, trail, **kw: sent.append(trail) or {
+        "stored": True,
+    })
+    server = create_mcp(client.home, workflow_namespace="team", workflow_repo=repo,
+                        context_budget=ContextBudget())
+    receipt = json.loads(call(server, "push", question="How does priority retry terminate?",
+                             content="In this worker, priority jobs without job overrides use "
+                             "four outer submissions and three 250 ms waits when all results "
+                             "are retryable; the final result is returned without another wait.",
+                             sources=observed)[0].text)
+    assert receipt["stored"] and len(sent) == 1 and sent[0].tainted
+    assert {s.ref: s.content_hash for s in sent[0].sources} == {
+        s["ref"]: s["content_hash"] for s in observed
+    }
+
+
+def test_gateway_counterexample_keeps_inner_failures_in_claim_scope():
+    """Offline negative example: three returned 503s need not mean three sends."""
+    fixtures = Path(__file__).parent / "token_evaluations/fixtures/gateway/v1"
+    transport = runpy.run_path(str(fixtures / "transport.py"))["RetryingTransport"]
+    fetch = runpy.run_path(str(fixtures / "client.py"))["fetch"]
+    sends = []
+    response = SimpleNamespace(status=503)
+
+    def send(path, timeout_ms):
+        sends.append((path, timeout_ms))
+        if len(sends) % 2:
+            raise ConnectionError("recovered inside transport")
+        return response
+
+    assert fetch(transport(send), 1500, 3) is response
+    assert len(sends) == 6  # Unsupported whole-answer copy must not become a memory.
