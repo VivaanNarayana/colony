@@ -285,11 +285,17 @@ def create_mcp(
 
     def render(response, budget, question):
         if budget is not None:
-            from colony.context_budget import fit_response, serialize_response, with_citation_bounds
+            from colony.context_budget import (
+                fit_response,
+                serialize_response,
+                with_citation_bounds,
+                with_reuse_guidance,
+            )
 
             _deduplicate_adaptive_sources(response)
             response = fit_response(response, budget, question=question)
             response = with_citation_bounds(response, budget)
+            response = with_reuse_guidance(response, budget)
             text = serialize_response(response)
         else:
             text = json.dumps(response, separators=(",", ":"), ensure_ascii=False)
@@ -321,7 +327,8 @@ def create_mcp(
         adaptive_ask.__doc__ = (
             "Saved findings and current sources. max_context_tokens caps the full response: "
             f"default {context_budget.max_tokens} {budget_units}; override 256..8192 within "
-            "your allowance. Size for needed sources before lookup. budget_limited isn't "
+            "your allowance. Use the focused task question, without retrieval instructions. "
+            "Size for needed sources before lookup. budget_limited isn't "
             "proof of no match; no automatic retry. Follow server policy."
         )
         ask = adaptive_ask

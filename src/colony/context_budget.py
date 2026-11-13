@@ -176,6 +176,28 @@ def with_citation_bounds(response: dict, budget) -> dict:
     return annotated if annotated["context_budget"]["used"] <= budget.max_tokens else base
 
 
+def with_reuse_guidance(response: dict, budget) -> dict:
+    """Spend spare bytes on a trusted cue; never repack or evict source evidence."""
+    budget = _budget(budget)
+    counter = _counter(budget)
+    base = copy.deepcopy(response)
+    # Do not propagate caller/source-supplied instructions as host guidance.
+    base.pop("next_action", None)
+    limited = bool(base.get("context_budget", {}).get("limited"))
+    base = _receipt(base, budget, counter, limited)
+    if base["context_budget"]["used"] > budget.max_tokens:
+        raise ContextBudgetError("Reuse guidance requires a fitted response")
+    if not base.get("hit") or base.get("status") != "validated" or not base.get("current_repository_reads"):
+        return base
+    annotated = copy.deepcopy(base)
+    annotated["next_action"] = (
+        "Use current excerpts for covered claims; read only gaps or conflicting evidence. "
+        "Saved prose may be withheld; cited-file coverage is not whole-repository coverage."
+    )
+    annotated = _receipt(annotated, budget, counter, limited)
+    return annotated if annotated["context_budget"]["used"] <= budget.max_tokens else base
+
+
 def _rebuild(response):
     evidence = response.get("evidence")
     if isinstance(evidence, list):

@@ -66,12 +66,13 @@ ADAPTIVE_WORKFLOW_GUIDANCE = (
     "tool/environment traces. Never invent hashes or research solely to publish. "
     "Publication limits never restrict answer detail or necessary research. Prioritize completing "
     "the user's task; missing publication evidence, abstention or publication/telemetry failure "
-    "must not block the answer. No abstention report or extra decision call is required; honor format. "
-    'Payload template: from an observed read {path:p,sha256:h}, use '
+    "must not block the answer. No abstention report or decision call required. "
+    'Payload: from observed {path:p,sha256:h}, use '
     'push(question=q,content=finding,sources=[{"ref":p,"content_hash":h}]); '
-    "q is the focused question; finding states applicability and supported behavior. "
-    "Substitute actual observed values, never template placeholders. "
-    "Without workflow binding, also supply the authorized namespace. "
+    "q: focused question. Include all supporting observed ref/hash pairs "
+    "(config/caller/loop) or narrow claims. Skip restatements. "
+    "Use observed values, never placeholders. "
+    "Without workflow binding, supply authorized namespace. "
     "Duplicates don't refresh age; reaffirmation needs manual publication. "
     "Queued pushes use explicit colony retry. "
     + _ADAPTIVE_MANAGEMENT_GUIDANCE

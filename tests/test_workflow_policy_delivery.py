@@ -164,9 +164,11 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                     'Publication limits never restrict answer detail or necessary research.',
                     "Prioritize completing the user's task;",
                     'must not block the answer.',
-                    'No abstention report or extra decision call is required; honor format.',
+                    'No abstention report or decision call required.',
                     'push(question=q,content=finding,sources=[{"ref":p,"content_hash":h}])',
-                    'Substitute actual observed values, never template placeholders.',
+                    'Use observed values, never placeholders.',
+                    'Include all supporting observed ref/hash pairs (config/caller/loop) or narrow claims.',
+                    'Skip restatements.',
                 ):
                     assert initialized.instructions.count(rule) == installed.count(rule) == 1
                 assert 'substantial future research' not in initialized.instructions
