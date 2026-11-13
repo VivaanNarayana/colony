@@ -9,7 +9,7 @@ from pathlib import Path
 from .output import validate_output
 from .rubrics import DIMENSIONS
 
-CONTRACT = "colony.token-evaluation/9"
+CONTRACT = "colony.token-evaluation/10"
 ARMS = ("no_colony", "colony")
 THREE_ARMS = ("no_colony", "main", "colony")
 

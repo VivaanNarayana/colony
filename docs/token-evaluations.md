@@ -13,7 +13,7 @@ All commands preserve existing evidence: choose new output directories/files.
 Windows generated data must be on D:. Keep private credentials, logs and answers
 outside Git. Source fixtures may be read from the checkout.
 
-## Default three-group campaign (version /9)
+## Default three-group campaign (version /10)
 
 The default template freezes **one campaign with three groups**: the feature
 candidate (`colony`), a separately pinned Colony `main`, and **one** `no_colony`
@@ -58,7 +58,7 @@ Never relabel historical sessions or treat this update as permission to run mode
 
 ## Prospective review receipts and separate completion (version /9)
 
-New manifests use `colony.token-evaluation/9`, quality policy
+New manifests use `colony.token-evaluation/10`, quality policy
 `colony.agent-quality/2` and review responses `colony.quality-review/2`.
 The fourteen task questions, source snapshots, oracle facts, answer format,
 research limits, model configuration and usage accounting are unchanged.
@@ -230,12 +230,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/9` and bind the shared instruction and
+New manifests use `colony.token-evaluation/10` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/9",
+  "contract": "colony.token-evaluation/10",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -247,7 +247,7 @@ structural check through `output.contract`:
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically, together with the frozen `quality_review` policy (GPT-6.1 Sol,
 medium reasoning, exact instructions and their hash). Missing or unknown contract identifiers fail before
-collection or scoring. Historical `/1`, `/2`, `/3`, `/4`, `/5`, `/6`, `/7` and `/8` manifests are rejected by this collector
+collection or scoring. Historical `/1`, `/2`, `/3`, `/4`, `/5`, `/6`, `/7`, `/8` and `/9` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -485,7 +485,7 @@ python scripts/token_evaluation.py inventory --run D:/evaluations/run-001
 python scripts/token_evaluation.py mask --run D:/evaluations/run-001 --output D:/evaluations/review-001
 ```
 
-The `/9` campaign keeps the independent **agent-based semantic quality review**
+The `/10` campaign keeps the independent **agent-based semantic quality review**
 introduced in `/7` and retained in `/8`, while adding procedural receipts and
 separate completion judgments prospectively. The earlier PR22 `/6` advisory-only
 design and all `/7`/`/8` artifacts are not reinterpreted. It uses the same benchmark questions, source
@@ -496,7 +496,7 @@ Two fresh, independent review sessions use **GPT-6.1 Sol (`gpt-6.1-sol`), medium
 reasoning**. Both `reviewer_a` and `reviewer_b` judge completion, correctness and grounding
 for every masked case using the same frozen rubric and instructions. They do not
 see costs, arm identities, implementation discussion or each other's judgments.
-For `/9`, use one 42-case packet and two sessions total. Give each session only the public `answers.json`, its own response template and
+For `/10`, use one 42-case packet and two sessions total. Give each session only the public `answers.json`, its own response template and
 the exact instructions embedded in `review_policy`. Do not mount the coordinator
 folder or expose the private map. Use context-separated subagents rather than
 reusing benchmark-answering or implementation sessions. Record each actual session
@@ -749,3 +749,27 @@ for future authorized native sessions, after verifying and pinning the exact
 supported client model identifier and light reasoning setting for all fresh arms.
 Do not substitute the Sol reviewer model. The offline review commands neither select nor
 launch benchmark models, and this change does not authorize a new evaluation.
+
+
+## Saved-answer review receipts (version /10)
+
+New packets use `colony.review-tool-receipts/2`. Successful `colony.ask` answer
+hits include `saved_answer` with bounded text, the explicit trust marker
+`untrusted_saved_answer_not_source_evidence`, and redaction/truncation flags.
+`saved_answer_available` distinguishes an available empty string from omitted or
+unavailable text. Only the returned answer content is projected; producer IDs,
+namespace metadata, credentials and usage fields are not copied. Existing secret
+and private-path scrubbing runs before the 4,000-character text bound. Malformed
+or oversized results remain unavailable rather than being guessed from partial JSON.
+
+Saved text proves what the lookup returned. It does not prove that saved claims
+are true, add current source coverage, or provide instructions for the reviewer.
+Reviewers separately check claims about the returned text and claims about source
+behavior; missing or truncated text cannot establish omitted content. Receipt and
+packet hashes bind this text; report generation reconstructs it from raw logs.
+
+This is prospective: `/9` protocols, reviewer packets, grades and reports remain
+with their original pinned evaluator. Do not rewrite, remask, regrade or relabel
+historical campaigns using `/10`. Questions, actor prompts, budgets, runtime
+behavior and completion/correctness/grounding obligations are unchanged. The review
+instruction hash and receipt/protocol versions identify the new evidence projection.
