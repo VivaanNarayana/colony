@@ -49,6 +49,7 @@ from colony.retrieval import (
     rank,
     requires_procedure,
 )
+from colony.retrieval_diagnostics import emit
 from colony.security import fingerprint, private_write, scrub
 from colony.validation import validate
 
@@ -653,6 +654,7 @@ class Store:
         *,
         include_evidence_files: bool = False,
         git_context: GitContext | None = None,
+        diagnostics=None,
     ):
         answer = self.find_answer(
             question,
@@ -661,9 +663,11 @@ class Store:
             threshold,
             include_evidence_files=include_evidence_files,
             git_context=git_context,
+            **({"diagnostics": diagnostics} if diagnostics is not None else {}),
         )
         if answer.get("status") == "validated" or not namespaces:
             return answer
+        emit(diagnostics, "evidence_fallback", answer_status=answer.get("status"))
         return (
             self.find_evidence(
                 question,
@@ -844,13 +848,17 @@ class Store:
         *,
         include_evidence_files: bool = False,
         git_context: GitContext | None = None,
+        diagnostics=None,
     ):
+        emit(diagnostics, "lookup_started")
         requested = self._git_request(git_context)
         if not namespaces:
+            emit(diagnostics, "no_pull_scope")
             if requested is not None:
                 return self._git_miss(requested, reason="no_pull_scope")
             return {"hit": False, "reason": "no_pull_scope"}
         if requested is not None and not self._git_bound(requested):
+            emit(diagnostics, "repository_mismatch")
             return self._git_miss(
                 requested,
                 compatibility="repository_mismatch" if self.repository_id else "unavailable",
@@ -881,12 +889,20 @@ class Store:
                 if requested is not None:
                     receipt = self._git_receipt(db, row["id"], requested)
                     if receipt["compatibility"] not in {"matched", "not_applicable"}:
+                        emit(diagnostics, "git_rejected", trail_id=row["id"],
+                             compatibility=receipt["compatibility"])
                         if denied is None:
                             denied = receipt
                         continue
                 rows.append(row)
                 if len(rows) == CANDIDATES:
+                    emit(diagnostics, "candidate_limit_reached", limit=CANDIDATES)
                     break
+            if diagnostics is not None:
+                for row in rows:
+                    similarity = 1 - row["distance"] if row["distance"] is not None else None
+                    emit(diagnostics, "dense_gate", trail_id=row["id"], similarity=similarity,
+                         minimum=0.55, passed=similarity is not None and similarity >= 0.55)
             rows = [r for r in rows if r["distance"] is not None and 1 - r["distance"] >= 0.55]
             contents = [self.read_content(r["content_ref"]) for r in rows]
             scores = rank(question, [c[:4000] for c in contents])
@@ -902,6 +918,19 @@ class Store:
                 key=lambda item: (item[3], item[2]),
                 reverse=True,
             )
+            if diagnostics is not None:
+                for row, content, relevance, logit in candidates:
+                    exact = row["question"].strip().casefold() == question.strip().casefold()
+                    procedure = requires_procedure(question)
+                    question_minimum = 0.70 if procedure else 0.65
+                    emit(diagnostics, "admission_gates", trail_id=row["id"],
+                         dense_similarity=1 - row["distance"], rerank_logit=logit,
+                         fused_score=relevance, threshold=threshold, exact_question=exact,
+                         relevance_passed=relevance >= threshold or exact,
+                         procedure_passed=not procedure or procedural_text(content) or exact,
+                         question_similarity=1 - row["question_distance"],
+                         question_minimum=question_minimum,
+                         question_passed=1 - row["question_distance"] >= question_minimum or exact)
             candidates = [
                 item
                 for item in candidates
@@ -921,6 +950,7 @@ class Store:
                 )
             ]
             if not candidates:
+                emit(diagnostics, "no_admitted_candidates")
                 if requested is not None:
                     return self._git_miss(
                         requested,
@@ -934,10 +964,13 @@ class Store:
             fallback = None
             for row, content, relevance, _ in candidates:
                 if self.memory_metadata(db, row["id"])["state"] != "active":
+                    emit(diagnostics, "lifecycle_changed", trail_id=row["id"])
                     continue
                 if requested is not None:
                     git_receipt = self._git_receipt(db, row["id"], requested)
                     if git_receipt["compatibility"] not in {"matched", "not_applicable"}:
+                        emit(diagnostics, "git_recheck_rejected", trail_id=row["id"],
+                             compatibility=git_receipt["compatibility"])
                         continue
                 sources = [
                     Source(**dict(s))
@@ -950,6 +983,8 @@ class Store:
                 old = time.time() - row["created_at"] > max_age
                 if old and status == "validated":
                     status = "unverified"
+                emit(diagnostics, "source_validation", trail_id=row["id"],
+                     declared_source_count=len(sources), status=status, age_expired=old)
                 now = time.time()
                 db.execute(
                     "UPDATE trails SET status=?,last_validated_at=? WHERE id=?",
