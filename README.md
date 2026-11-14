@@ -179,6 +179,131 @@ Git-aware mode adds bounded local reads, Git subprocesses, capability requests a
 tool receipts. It introduces no model-provider calls; its effect on research tokens and
 end-to-end time is unmeasured, and no savings claim is made.
 
+## Adaptive context budgets (experimental, opt-in)
+
+Adaptive mode packs the existing selected evidence into a bounded response. It keeps
+complete selected paragraphs and Markdown code blocks, including fenced and indented
+commands and separate sections of the same file. Markdown blocks retain their heading
+ancestry as original source text;
+overlapping required spans are combined so separately selected facts remain present.
+Indented prose continuations remain with their paragraph. A selected passage that
+overlaps a code block retains the complete block, including its closing marker.
+Uncertain container continuations, including ordinary paragraphs, fences and thematic breaks,
+use a conservative complete-file fallback. List labels remain attached across blank lines;
+large cited files can therefore produce a budget-limited miss.
+List or blockquote heading scopes conservatively retain the original source from the
+start of the file through the selected block.
+Known shell extensions, conventional startup/configuration names (such as `.bashrc`,
+`.bash_profile`, `.profile`, `.zshrc` and `.envrc`), and files with a shebang require
+their entire source, since blank lines alone cannot identify safe command boundaries.
+Startup names are recognized by basename even in subdirectories. These conservative spans can
+increase response size or require a budget-limited miss. Compact mode omits optional
+surrounding section text even when more would fit. Explicit complete-file requests may
+restore a whole file when it fits.
+Adaptive MCP also negotiates a compact wire profile with compatible servers, packing
+the final representation before transport. Validated saved-answer lookups automatically
+include complete already-cited bundles within the existing eight-source search limit
+and 2,800 redacted characters. Splitting a small dependency chain across more than four
+files no longer excludes its configuration or callers merely because of file count.
+If that bundle exceeds the budget, one local evidence-only fallback may return verified
+source excerpts from the same finding and cited sources, without the saved answer.
+Every required source unit and the complete response must fit; otherwise the result
+remains a safe miss. Explicitly selected passages retain focused selection.
+Compact responses describe actual delivered coverage with `evidence_scope`: `cited_files`
+means every cited file is delivered completely; `partial` means the response does not
+establish complete coverage of all cited files. Neither value establishes that the finding cites every dependency or answers
+the current question. The field is included in the response budget.
+Ordinary CLI/HTTP requests keep their response layout. See
+[adaptive low-overhead behavior](docs/adaptive-low-overhead.md) for the profile contract.
+Retrieval models, ranking, permissions, source validation and Git compatibility rules
+are unchanged. There is no extra summarizer, automatic provider retry or model-provider call.
+
+```sh
+colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/project --repository-id project --context-budget 3072
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --repository-id project --context-budget 3072
+colony --home /absolute/private/agent-home mcp --workflow-namespace team --workflow-repo /absolute/project --context-budget 3072
+```
+
+`--context-budget` without a number selects 3072; explicit limits are integers from
+256 through 8192. Values such as 2048, 3072 and 4096 are starting points to evaluate,
+not measured optimal profiles. The budget is a ceiling, not a target to fill.
+Without this option, legacy responses, setup defaults and tool schemas stay unchanged.
+Only adaptive MCP connections expose an optional `max_context_tokens` argument on
+`ask`, allowing an explicit larger or smaller request with the connection's encoding.
+The tool description reports that connection's default and units. Choose the allowance
+for the needed source evidence before the lookup, within your context limits. Despite
+the parameter name, `utf8_bytes` counts bytes; only `o200k_base` counts encoding tokens.
+`budget_limited` is not proof that no relevant finding exists. The tool does not retry
+or increase the allowance automatically, and an override does not change the default.
+Adaptive MCP can add exact inclusive `end_line` hints to delivered source reads when
+space remains after packing. These hints are fully charged and omitted if needed to
+preserve the fitted evidence. They do not certify answer correctness or repository-wide
+coverage. After substantive new research, publish a concise reusable behavior, diagnosis
+or procedure using evidence already obtained; skip isolated assignments unless explicitly
+asked to remember them. Unchanged reuse does not need publication.
+
+Adaptive MCP connections expose only the routine `ask` and `push` tools (only `ask`
+for read-only workflows). Adaptive setup and server guidance allow a direct read of a
+known small file/range, reserve lookups for substantial or repeated research, and skip
+trivial or unchanged publications. This is best-effort agent guidance, not an automatic
+router. Explicit memory management remains available through `colony memory` commands
+or a separately configured full non-adaptive MCP connection; ordinary adaptive setup
+does not install that second connection. See [adaptive low-overhead behavior](docs/adaptive-low-overhead.md).
+
+The default `utf8_bytes` accounting counts UTF-8 bytes of the canonical JSON payload.
+It is labelled `utf8_bytes_estimate`, not an exact model-token count or a universal
+token bound. This conservative size-based mode works without an optional tokenizer.
+For exact counts under the declared `o200k_base` encoding, install `colony-memory[budgets]`
+and explicitly prepare the tokenizer on each server/client host that will count replies:
+
+- Obtain the [official o200k_base data](https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken)
+  outside request handling and keep it at an absolute local path.
+- Verify SHA-256 `446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d`.
+- Set `COLONY_CONTEXT_TOKENIZER` to that file and add `--context-encoding o200k_base`
+  alongside `--context-budget`. Server and client paths may differ; the verified data
+  and encoding must match. The optional package supports tiktoken 0.14.x.
+
+The runtime reads at most 8 MiB, verifies the hash and constructs the encoding locally.
+It never calls a downloading tokenizer loader. Missing, changed or unavailable requested
+encoding data fails explicitly; it does not silently switch to estimates. The encoding
+name is not inferred from an agent's model and does not establish provider billing counts.
+
+HTTP clients send optional `context_budget` in `/ask`, for example
+`{"max_tokens":2048,"encoding":"utf8_bytes"}`. Authenticated `/capabilities` advertises
+the version, available encodings and supported limits. New clients refuse unsupported
+servers without retrying an unbudgeted lookup. `/health` is unchanged.
+
+Every adaptive response includes a `context_budget` receipt with `version`, `encoding`,
+`max_tokens`, `used`, `measurement` and `limited`. `used` includes that receipt itself,
+the answer, evidence, hashes, citations and required provenance/warnings. It measures
+canonical compact JSON with UTF-8 text and sorted keys. Adaptive CLI prints exactly
+those UTF-8 bytes; adaptive HTTP and MCP use the same serialization. HTTP/JSON-RPC framing,
+agent prompts, tool definitions, reasoning, future calls and entire-conversation limits
+are outside this response budget. This is not a monetary or whole-workflow cost estimate.
+
+Selected evidence retains original source text, hashes and absolute line citations;
+`selected_line` and `selected_end_line` identify indivisible source blocks. Redaction
+happens before selection. Git-aware callers rebuild complete local lines from verified
+files and reapply the budget; MCP applies it again after its final response formatting.
+Trailing empty lines remain part of a selected span. If any required excerpt cannot be
+rebuilt, an adaptive Git-aware lookup withholds the hit instead of returning partial evidence.
+A whole file is labelled complete only when all its text is included.
+
+If a full authored answer cannot fit with its evidence, adaptive mode can return a
+validated evidence-only result rather than a cut-off answer or command. If required
+blocks or the minimal safe receipt cannot fit, it returns `hit: false` with
+`reason: "budget_limited"`. `limited: true` records omitted surrounding context or a
+withheld answer. Neither a fitting packet nor a false limited flag certifies answer
+sufficiency or truth; assess the facts and research gaps using normal tools. One
+caller's budget does not mark a memory stale or change its lifecycle for other callers.
+
+Adaptive mode remains experimental until a matched native-agent comparison establishes
+its workflow effect. Smaller serialized packets alone do not show lower total tokens:
+misses and additional research can offset reductions. Any savings claim must include
+learning, lookup, publication, retry and failure costs, with correctness and grounding
+reviewed on the same tasks. Provider-free tests and local tokenizer counts are response
+accounting evidence, not measured end-to-end agent savings.
+
 ## Quick start
 
 Python 3.11–3.13 with SQLite extension support is required. Run from this checkout:
@@ -328,12 +453,14 @@ configuration must be trusted, and nested instructions or instruction-size limit
 affect which guidance is loaded. See the official [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp)
 and [project instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
-Installed guidance requests one lookup before substantive repository research. Sufficient
-current evidence can answer directly without another read or push. Misses, stale evidence,
-contradictions, and missing facts use the agent's existing research tools. After learning
-a reusable new fact, the agent can publish one concise answer with real file fingerprints
-already obtained during research. New facts after a partial hit also qualify. Routine
-progress, speculation, unchanged reused answers, and transcripts do not.
+Without a context budget, installed guidance requests one lookup before substantive
+repository research. Adaptive setup instead permits a direct known small-file/range read,
+selective lookups for repeated or multistep research, and publication of durable findings
+from meaningful new research. Sufficient current evidence can answer directly without
+another read or push. Misses, stale evidence, contradictions and missing facts use the
+agent's existing research tools. Publications require real file fingerprints already
+obtained during research; routine progress, speculation, unchanged reuse and transcripts
+do not qualify. A read-only connection never publishes.
 
 This is **agent guidance, not enforced interception of every research action**. Colony
 does not read session transcripts, summarize sessions, install hooks, or call a model
@@ -347,7 +474,7 @@ same identity and local project produce the same trail ID, including across rest
 offline retries. Source ordering does not create duplicates. Changed answers or hashes
 produce new IDs. This does not detect paraphrases or refresh an unchanged trail's age;
 use the existing manual push path to explicitly reaffirm an aged finding. Manual
-CLI/API and `colony mcp` without workflow options retain their schemas and random IDs.
+Non-adaptive CLI/API and `colony mcp` without workflow options retain their schemas and random IDs.
 
 Server outages allow research to continue; findings use the existing encrypted queue and
 explicit `retry`. Authentication/scope errors remain errors. Existing pattern redaction
@@ -403,8 +530,10 @@ that the corrected prose is true.
   status. Revision checks reject conflicting simultaneous changes. Normal pushes, delayed push
   retries, server restarts, and reindexing do not reactivate retired IDs or reset their age.
 
-MCP adds `memory_inspect`, `memory_feedback`, `memory_correct`, and `memory_change` for manual
-and writable workflow connections. Workflow namespace binding applies to every operation.
+Full non-adaptive MCP adds `memory_inspect`, `memory_feedback`, `memory_correct`, and
+`memory_change` for manual and writable workflow connections. Adaptive routine connections
+omit these management tools; use the existing CLI commands or explicitly configure a full
+connection for requested management work. Workflow namespace binding applies to every operation.
 The existing read-only workflow connection continues to expose only `ask`; pull-only users can
 inspect through the CLI or HTTP. The HTTP endpoints are `POST /memory/inspect`, `/memory/feedback`,
 `/memory/correct`, and `/memory/change`. Feedback and history notes are bounded to 1,000 characters,
@@ -549,7 +678,7 @@ cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuris
 correctness probabilities. Exact stored questions remain eligible. Repository checks run
 in rank order until a validated candidate is found. If none passes, the best candidate
 retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
-Compact validated hits include at most two current evidence excerpts, totaling 2,800 characters,
+Focused validated hits include at most two current evidence excerpts, totaling 2,800 characters,
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
 not a truth certificate; incomplete or contradictory answers still require research.

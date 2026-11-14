@@ -7,9 +7,35 @@ import re
 from pathlib import Path
 
 from .output import validate_output
+from .rubrics import DIMENSIONS
 
-CONTRACT = "colony.token-evaluation/7"
+CONTRACT = "colony.token-evaluation/10"
 ARMS = ("no_colony", "colony")
+THREE_ARMS = ("no_colony", "main", "colony")
+
+
+def evaluation_arms(manifest):
+    return THREE_ARMS if "main_target" in manifest else ARMS
+
+
+def arm_protocol(manifest, arm):
+    """Use one frozen client/workload policy and the selected runtime only."""
+    return {**manifest, "target": manifest["main_target"]} if arm == "main" else manifest
+
+
+def arm_order(manifest, workload_index, task_index):
+    arms = evaluation_arms(manifest)
+    offset = workload_index + task_index
+    if len(arms) == 2:
+        return arms if offset % 2 == 0 else tuple(reversed(arms))
+    offset %= len(arms)
+    return arms[offset:] + arms[:offset]
+
+
+def cohort_root(root, arm):
+    return root / "cohorts" / "main" if arm == "main" else root
+
+
 ATTEMPT_ID_PATTERN = r"[a-zA-Z0-9_-]{1,128}"
 SCENARIOS = {"cold_learning", "useful_hit", "miss", "stale", "insufficient", "direct_read"}
 USES = {"optional", "required_publication", "required_hit", "required_miss", "required_stale", "required_insufficient"}
@@ -49,7 +75,7 @@ def verify_active_collector(manifest):
 def attempt_id(workload, task, arm):
     """Bounded identifier from an unambiguous tuple, independent of display-name length."""
     require(all(isinstance(value, str) and re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", value)
-                for value in (workload, task)) and arm in ARMS, "Invalid attempt components")
+                for value in (workload, task)) and arm in THREE_ARMS, "Invalid attempt components")
     return "attempt-" + digest([workload, task, arm])
 
 
@@ -58,7 +84,7 @@ def planned_attempt_ids(manifest):
     plan, identifiers = {}, set()
     for workload in manifest["workloads"]:
         for task in workload["tasks"]:
-            for arm in ARMS:
+            for arm in evaluation_arms(manifest):
                 key = (workload["id"], task["id"], arm)
                 identity = attempt_id(*key)
                 require(isinstance(identity, str) and re.fullmatch(ATTEMPT_ID_PATTERN, identity),
@@ -135,22 +161,24 @@ def _validate_manifest(manifest):
     require(manifest.get("track") in {"natural", "controlled"}, "Unknown evaluation track")
     for key in ("target", "client", "limits", "research", "output"):
         require(isinstance(manifest.get(key), dict), "Missing " + key)
-    target, client = manifest["target"], manifest["client"]
-    require(re.fullmatch(r"[a-f0-9]{40}", target.get("revision", "")), "Pin a full target revision")
-    require(Path(target.get("python", "")).is_absolute(), "Target Python must be absolute")
-    hashes = target.get("runtime_hashes")
-    require(isinstance(hashes, dict) and hashes, "Pin target runtime hashes")
-    for name, value in hashes.items():
-        relative(name)
-        require(name.endswith(".py") and re.fullmatch(r"[a-f0-9]{64}", value), "Invalid runtime fingerprint")
-    budget_flags = {"--context-budget": True, "--context-encoding": True, "--evidence-files": False, "--compact": False}
-    _flags(target.get("mcp_args", []), budget_flags)
-    _flags(target.get("setup_args", []), {"--context-budget": True, "--context-encoding": True})
-    def context_options(args):
-        return {args[i]: args[i + 1] for i in range(len(args)) if args[i] in {"--context-budget", "--context-encoding"}}
-    require(context_options(target.get("mcp_args", [])) == context_options(target.get("setup_args", [])),
-            "Setup and MCP context options must match")
-    _flags(target.get("server_args", []), {"--models": True, "--max-age": True})
+    client = manifest["client"]
+    for target in ([manifest["target"], manifest["main_target"]] if "main_target" in manifest else [manifest["target"]]):
+        require(isinstance(target, dict), "Invalid target runtime")
+        require(re.fullmatch(r"[a-f0-9]{40}", target.get("revision", "")), "Pin a full target revision")
+        require(Path(target.get("python", "")).is_absolute(), "Target Python must be absolute")
+        hashes = target.get("runtime_hashes")
+        require(isinstance(hashes, dict) and hashes, "Pin target runtime hashes")
+        for name, value in hashes.items():
+            relative(name)
+            require(name.endswith(".py") and re.fullmatch(r"[a-f0-9]{64}", value), "Invalid runtime fingerprint")
+        budget_flags = {"--context-budget": True, "--context-encoding": True, "--evidence-files": False, "--compact": False}
+        _flags(target.get("mcp_args", []), budget_flags)
+        _flags(target.get("setup_args", []), {"--context-budget": True, "--context-encoding": True})
+        def context_options(args):
+            return {args[i]: args[i + 1] for i in range(len(args)) if args[i] in {"--context-budget", "--context-encoding"}}
+        require(context_options(target.get("mcp_args", [])) == context_options(target.get("setup_args", [])),
+                "Setup and MCP context options must match")
+        _flags(target.get("server_args", []), {"--models": True, "--max-age": True})
     require(Path(client.get("executable", "")).is_absolute() and re.fullmatch(r"[a-f0-9]{64}", client.get("sha256", "")), "Pin native client executable")
     for key in ("model", "version", "effort"):
         _text(client.get(key), "client " + key)
@@ -206,7 +234,8 @@ def _validate_manifest(manifest):
             require(oracle.get("unsupported_claims_fail") is True
                     and oracle.get("stale_snapshot_fails") is True,
                     "Unsupported claims and stale evidence must fail")
-            for field in ("correct", "grounded"):
+            require(set(task["rubric"]) == set(DIMENSIONS), "Freeze separate completion, correctness and grounding rubrics")
+            for field in DIMENSIONS:
                 _text(task["rubric"].get(field), "task " + field + " rubric")
             citations = oracle.get("citations")
             snapshot = next(s for s in snapshots if s["id"] == task["snapshot"])
@@ -239,7 +268,10 @@ def _validate_manifest(manifest):
                 learning[tid] = task
         require(phases == sorted(phases) and "reuse" in phases, "Freeze finite learn-then-reuse horizon")
         tasks_total += len(tasks)
-    require(tasks_total * 2 <= limits["max_attempts"], "Attempt budget cannot complete the paired schedule")
+    if "main_target" in manifest:
+        require(tasks_total * 3 == limits["max_attempts"], "Attempt budget must exactly match the three-arm schedule")
+    else:
+        require(tasks_total * 2 <= limits["max_attempts"], "Attempt budget cannot complete the paired schedule")
     planned_attempt_ids(manifest)
     # JSON round-trip rejects hidden non-serializable inputs/nonfinite numbers.
     json.dumps(manifest, allow_nan=False)
@@ -258,6 +290,8 @@ def validate_authorization(value, run):
     expected = {"protocol_sha256": run["protocol_sha256"],
                 "revision": protocol["target"]["revision"],
                 "model": protocol["client"]["model"], "limits": protocol["limits"]}
+    if "main_target" in protocol:
+        expected["main_revision"] = protocol["main_target"]["revision"]
     require(isinstance(value, dict) and all(value.get(k) == v for k, v in expected.items()),
             "Authorization does not bind exact protocol, target, model and limits")
     intent = value.get("owner_intent")

@@ -81,6 +81,7 @@ def validate_native_receipts(root, run, manifest, rows):
     paths from run.run_dir while reading prompt bytes in the replay directory.
     """
     from .native import _client_args
+    from .protocol import arm_order, arm_protocol, cohort_root
 
     root = Path(root).resolve()
     launch = run.get("run_dir")
@@ -91,7 +92,7 @@ def validate_native_receipts(root, run, manifest, rows):
     for wi, workload in enumerate(manifest["workloads"]):
         for ti, task in enumerate(workload["tasks"]):
             tasks[(workload["id"], task["id"])] = (workload, task)
-            arms = ("no_colony", "colony") if (wi + ti) % 2 == 0 else ("colony", "no_colony")
+            arms = arm_order(manifest, wi, ti)
             expected.extend((arm, workload["id"], task["id"]) for arm in arms)
     _require([(r["arm"], r["workload"], r["task"]) for r in rows] == expected,
              "joint attempt order changed")
@@ -119,12 +120,12 @@ def validate_native_receipts(root, run, manifest, rows):
             _require((config is None if row["arm"] == "no_colony" else
                       isinstance(config, dict) and config.get("mode") == "managed"
                       and config.get("role") == role), "configuration role changed")
-            team = {"homes": {r: str(launch / "private" / row["workload"] / "team" / ("agent-" + r))
+            team = {"homes": {r: str(cohort_root(launch, row["arm"]) / "private" / row["workload"] / "team" / ("agent-" + r))
                               for r in ("a", "b")}}
             env = {"CODEX_HOME": str(launch / "private/client"), **dict.fromkeys(names, "")}
             expected_args = _client_args(manifest, repo, team, task, launch, row["arm"], env,
                                          snapshot["files"], client_workspace=workspace)
             _require(args == expected_args, "arguments differ from the frozen configuration")
-            _prompt(root, invocation, manifest, task, row["arm"])
+            _prompt(root, invocation, arm_protocol(manifest, row["arm"]), task, row["arm"])
         except (OSError, KeyError, TypeError, StopIteration):
             raise ValueError("Native receipt is incomplete or malformed") from None

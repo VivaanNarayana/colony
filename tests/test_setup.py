@@ -632,3 +632,74 @@ def test_windows_custom_protected_dacl_survives_install_and_uninstall(project):
     setup.setup_codex(home, repo, "uninstall")
     assert descriptor_bytes() == original
     assert config.read_bytes() == b"# private configuration\n"
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+@pytest.mark.parametrize("read_only", [False, True])
+def test_setup_selects_adaptive_policy_without_adding_management_connection(
+    project, adaptive, read_only
+):
+    from colony.models import ContextBudget
+    from colony.workflow import (
+        ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE,
+        ADAPTIVE_WORKFLOW_GUIDANCE,
+        WORKFLOW_GUIDANCE,
+    )
+
+    repo, home = project
+    budget = ContextBudget(max_tokens=512) if adaptive else None
+    install(project, context_budget=budget, read_only=read_only)
+    config = tomllib.loads((repo / ".codex/config.toml").read_text(encoding="utf-8"))
+    assert set(config["mcp_servers"]) == {"colony"}
+    args = config["mcp_servers"]["colony"]["args"]
+    assert ("--context-budget" in args) == adaptive
+    assert ("--workflow-read-only" in args) == read_only
+    guidance = (repo / "AGENTS.md").read_text(encoding="utf-8")
+    policy = (
+        ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
+    ) if adaptive else WORKFLOW_GUIDANCE
+    assert policy in guidance
+    for rule in (
+        "Substantial research: ask once first; verbatim ask/push questions.",
+        "Sufficient: no reread/unchanged repush.",
+        "uncovered scope stays unknown.",
+        "Address all requested deliverables; include needed examples/evidence",
+    ):
+        assert (rule in guidance) == adaptive
+    if adaptive and read_only:
+        assert "after meaningful new research publish" not in guidance
+        assert "do not call push or publish findings" in guidance
+    assert not install(project, context_budget=budget, read_only=read_only)["changed"]
+    before = tree(repo)
+    status = setup.setup_codex(home, repo, "status")
+    assert status["installed"] and not status["partial"] and not status["shadowed"]
+    assert tree(repo) == before
+
+
+def test_reinstall_switches_owned_guidance_and_restores_unmanaged_bytes(project):
+    from colony.models import ContextBudget
+    from colony.workflow import ADAPTIVE_WORKFLOW_GUIDANCE, WORKFLOW_GUIDANCE
+
+    repo, home = project
+    config = repo / ".codex/config.toml"
+    config.parent.mkdir()
+    original_config = b'# preserved comment\r\n[mcp_servers.other]\r\ncommand="other"\r\n'
+    original_agents = b"# Existing project instructions\r\n"
+    config.write_bytes(original_config)
+    agents = repo / "AGENTS.md"
+    agents.write_bytes(original_agents)
+    install(project)
+    assert WORKFLOW_GUIDANCE in agents.read_text(encoding="utf-8")
+    legacy = tree(repo)
+    preview = install(project, context_budget=ContextBudget(max_tokens=2048), dry_run=True)
+    assert preview["changed"] and tree(repo) == legacy
+    install(project, context_budget=ContextBudget(max_tokens=2048))
+    adaptive = agents.read_text(encoding="utf-8")
+    assert ADAPTIVE_WORKFLOW_GUIDANCE in adaptive and WORKFLOW_GUIDANCE not in adaptive
+    servers = tomllib.loads(config.read_text(encoding="utf-8"))["mcp_servers"]
+    assert set(servers) == {"other", "colony"} and servers["other"]["command"] == "other"
+    install(project)
+    assert tree(repo) == legacy
+    setup.setup_codex(home, repo, "uninstall")
+    assert config.read_bytes() == original_config
+    assert agents.read_bytes() == original_agents

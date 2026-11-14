@@ -13,13 +13,20 @@ from pathlib import Path
 
 from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
 from .output import instruction
-from .protocol import ATTEMPT_ID_PATTERN, CONTRACT, validate_contract, verify_active_collector
+from .protocol import (
+    ATTEMPT_ID_PATTERN,
+    CONTRACT,
+    evaluation_arms,
+    validate_contract,
+    verify_active_collector,
+)
 from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .receipt import validate_native_receipts
+from .tool_receipts import collect as collect_tool_receipts
+from .tool_receipts import digest as receipt_digest
 from .usage import native_usage
 
-ARMS = ("no_colony", "colony")
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "gross_tokens",
           "uncached_input_plus_output")
 
@@ -151,7 +158,7 @@ def _load(run_dir):
         _require(frozen.is_relative_to(root) and _sha(frozen) == expected_hash, "Frozen source changed")
     _require(isinstance(manifest, dict), "Missing frozen protocol")
     tasks = {(w["id"], t["id"]): t for w in manifest["workloads"] for t in w["tasks"]}
-    expected = {(arm, *key) for arm in ARMS for key in tasks}
+    expected = {(arm, *key) for arm in evaluation_arms(manifest) for key in tasks}
     records = [json.loads(line) for line in (root / "control" / "attempts.jsonl").read_text(encoding="utf-8").splitlines()]
     invocations, results = {}, {}
     for record in records:
@@ -195,7 +202,9 @@ def _load(run_dir):
         workload = next(w for w in manifest["workloads"] if w["id"] == key[1])
         current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
         _require(isinstance(task.get("question"), str), "Missing frozen review question")
-        rows.append({"id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
+        event_values = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        receipt_projection = collect_tool_receipts(event_values, current["files"] if current else {})
+        rows.append({"tool_receipts_sha256": receipt_digest(receipt_projection), "id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
                      "state": state, "seconds": seconds, "phase": task["phase"],
                      "question_sha256": hashlib.sha256(task["question"].encode("utf-8")).hexdigest(),
                      "output_sha256": digest({"output": manifest["output"],
@@ -208,7 +217,7 @@ def _load(run_dir):
         _require(_sha(path) == result["events_sha256"], "Events changed while reading")
     _require(seen == expected, "Missing scheduled tasks")
     for workload in manifest["workloads"]:
-        for arm in ARMS:
+        for arm in evaluation_arms(manifest):
             observed_order = [r["task"] for r in rows
                               if r["arm"] == arm and r["workload"] == workload["id"]]
             _require(observed_order == [t["id"] for t in workload["tasks"]],
@@ -225,6 +234,7 @@ def review_subject(run_dir, run, manifest, row, case):
     task = next(t for t in workload["tasks"] if t["id"] == row["task"])
     current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
     sources, observed = [], []
+    receipt_projection = collect_tool_receipts([], {})
     if current:
         source_root = Path(run_dir).resolve() / "workspaces" / "no_colony" / row["workload"] / current["id"]
         for relative, expected_hash in current["files"].items():
@@ -238,6 +248,7 @@ def review_subject(run_dir, run, manifest, row, case):
                       if json.loads(line)["id"] == row["id"])
         events = [json.loads(line) for line in (Path(run_dir) / "logs" / record.get("result", record)["events"])
                   .read_text(encoding="utf-8").splitlines()]
+        receipt_projection = collect_tool_receipts(events, current["files"])
         # Only evidence delivered before the selected final answer is available.
         final = max((n for n, event in enumerate(events) if event.get("type") == "item.completed"
                      and event.get("item", {}).get("type") == "agent_message"), default=0)
@@ -258,7 +269,15 @@ def review_subject(run_dir, run, manifest, row, case):
             source = next(s for s in sources if s["path"] == relative)
             observed.append({"path": relative, "sha256": source["sha256"], "start": start, "end": end,
                              "content": "\n".join(source["content"].splitlines()[start - 1:end])})
-    return {"case": case, "answer": row["text"], "current_sources": sources,
+    if not current:
+        journal = Path(run_dir) / "control" / "attempts.jsonl"
+        record = next(json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()
+                      if json.loads(line)["id"] == row["id"])
+        path = Path(run_dir) / "logs" / record.get("result", record)["events"]
+        events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        receipt_projection = collect_tool_receipts(events, {})
+    _require(receipt_digest(receipt_projection) == row["tool_receipts_sha256"], "Tool receipt binding changed")
+    return {**receipt_projection, "case": case, "answer": row["text"], "current_sources": sources,
             "observed_current_evidence": observed,
             "evidence_limit": "Verified current excerpts before the final answer; not proof of semantic grounding or earlier-message chronology.",
             "question": task["question"], "oracle": task["oracle"], "rubric": task["rubric"],
@@ -295,14 +314,14 @@ def report(run_dir, quality_path, output_path):
         _require(preflight.get("ok") is True and preflight.get("native_ready") is True
                  and preflight.get("protocol_sha256") == run["protocol_sha256"],
                  "Preflight was not ready for this protocol")
-        _require(collection.get("initial_empty_stores") == {"no_colony": True, "colony": True},
+        _require(collection.get("initial_empty_stores") == {arm: True for arm in evaluation_arms(manifest)},
                  "Initial empty store proof missing")
         transitions = collection.get("transitions", [])
         expected_transitions = {}
         for workload in manifest["workloads"]:
             snapshots = {snapshot["id"]: snapshot["files"] for snapshot in workload["snapshots"]}
             for task in workload["tasks"]:
-                for arm in ARMS:
+                for arm in evaluation_arms(manifest):
                     expected_transitions[(arm, workload["id"], task["id"])] = (
                         task["snapshot"], digest(snapshots[task["snapshot"]]))
         observed_transitions = {}
@@ -358,7 +377,7 @@ def report(run_dir, quality_path, output_path):
                  "required_insufficient": "insufficient"}.get(task.get("expected_use"))
         row["expected_use_verified"] = (row["arm"] == "no_colony" or
             manifest["track"] == "natural" or field is None or proof[field])
-        if row["arm"] == "colony" and manifest["track"] == "controlled":
+        if row["arm"] != "no_colony" and manifest["track"] == "controlled":
             if task.get("expected_use") == "required_hit":
                 row["expected_use_verified"] &= (proof["useful_reuse"]
                                                 and row["activity"]["research_calls"] == 0)
@@ -366,7 +385,7 @@ def report(run_dir, quality_path, output_path):
                 row["expected_use_verified"] &= proof["miss"]
         row["successful"] &= row["expected_use_verified"]
     arms = {}
-    for arm in ARMS:
+    for arm in evaluation_arms(manifest):
         selected = [r for r in rows if r["arm"] == arm]
         successes = sum(all(r["successful"] for r in selected if r["workload"] == w["id"])
                         for w in manifest["workloads"])
@@ -390,7 +409,7 @@ def report(run_dir, quality_path, output_path):
                           r["activity"]["research_calls"] <= manifest.get("research", {}).get("max_calls", 6)
                           for r in rows)
     for row in rows:
-        row["useful_reuse"] = (native and row["arm"] == "colony" and row["phase"] == "reuse"
+        row["useful_reuse"] = (native and row["arm"] != "no_colony" and row["phase"] == "reuse"
             and row["successful"] and proofs[row["id"]]["useful_reuse"]
             and any(prior["id"] == proofs[row["id"]].get("published_attempt")
                     and prior["successful"] for prior in rows)
@@ -403,7 +422,7 @@ def report(run_dir, quality_path, output_path):
     mechanism_complete = (all(r["expected_use_verified"] for r in rows)
                           if manifest["track"] == "controlled" else None)
     quality_complete = all(r["successful"] for r in rows)
-    usage_complete = all(arms[a]["total_usage"] is not None for a in ARMS)
+    usage_complete = all(arms[a]["total_usage"] is not None for a in evaluation_arms(manifest))
     controlled_pass = (native and collection.get("status") == "complete"
         and manifest["track"] == "controlled" and quality_complete and usage_complete
         and adoption and policy_compliant and all(r["expected_use_verified"] for r in rows))
@@ -414,14 +433,46 @@ def report(run_dir, quality_path, output_path):
         for field in ("gross_tokens", "uncached_input_plus_output"):
             baseline = arms["no_colony"]["total_usage"][field]
             reduction[field] = 1 - arms["colony"]["total_usage"][field] / baseline if baseline else None
+    comparisons = {}
+    if "main_target" in manifest:
+        for name, baseline, candidate in (("candidate_vs_main", "main", "colony"),
+                                           ("candidate_vs_no_colony", "no_colony", "colony"),
+                                           ("main_vs_no_colony", "no_colony", "main")):
+            selected = [r for r in rows if r["arm"] in {baseline, candidate}]
+            strict = (native and collection.get("status") == "complete"
+                      and all(r["successful"] and r["usage_complete"] for r in selected)
+                      and all(r["activity"]["unapproved_calls"] == 0
+                              and r["activity"]["research_calls"] <= manifest["research"]["max_calls"]
+                              and (r["arm"] != "no_colony" or r["activity"]["colony_calls"] == 0)
+                              for r in selected)
+                      and any(r["activity"]["colony_calls"] for r in selected if r["arm"] == candidate))
+            base = arms[baseline]["known_usage"]["gross_tokens"]
+            actual = arms[candidate]["known_usage"]["gross_tokens"]
+            comparisons[name] = {"baseline": baseline, "candidate": candidate,
+                "informational": baseline == "no_colony", "quality_qualified": strict,
+                "gross_token_difference": actual - base,
+                "descriptive_gross_reduction": 1 - actual / base if base else None,
+                "qualified_gross_reduction": 1 - actual / base if strict and base else None,
+                "acceptance_pass": strict and actual < base}
+        primary = comparisons["candidate_vs_main"]
+        reduction = ({"gross_tokens": primary["qualified_gross_reduction"],
+                      "uncached_input_plus_output": 1 - arms["colony"]["known_usage"]["uncached_input_plus_output"]
+                      / arms["main"]["known_usage"]["uncached_input_plus_output"]
+                      if arms["main"]["known_usage"]["uncached_input_plus_output"] else None}
+                     if primary["quality_qualified"] else None)
     result = {"contract": CONTRACT, "protocol_sha256": run["protocol_sha256"],
               "output": manifest["output"], "arms": arms, "attempts": rows,
+              "comparisons": comparisons,
+              "primary_comparison": comparisons.get("candidate_vs_main"),
               "quality_policy": review_policy(), "quality_reviews": quality["reviews"],
               "quality_artifact_sha256": digest(quality),
               "unresolved_quality_attempts": sum(r["quality_state"] == "unresolved" for r in rows),
               "certifying": False, "supported_product_win": "not_established", "billing": None,
               "native_evidence": native, "harness_complete": True, "quality_complete": quality_complete,
               "answer_quality_complete": answer_quality_complete,
+              "task_completion_complete": all(r["quality_obligations"]["complete"] == "passed" for r in rows),
+              "correctness_complete": all(r["quality_obligations"]["correct"] == "passed" for r in rows),
+              "grounding_complete": all(r["quality_obligations"]["grounded"] == "passed" for r in rows),
               "mechanism_complete": mechanism_complete, "workflow_success": quality_complete,
               "controlled_mechanism_pass": controlled_pass,
               "adoption": adoption, "adoption_context": manifest["track"],

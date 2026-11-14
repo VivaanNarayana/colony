@@ -13,7 +13,12 @@ from contextlib import suppress
 from pathlib import Path
 
 from colony.client import Client
-from colony.workflow import WORKFLOW_GUIDANCE
+from colony.models import ContextBudget
+from colony.workflow import (
+    ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE,
+    ADAPTIVE_WORKFLOW_GUIDANCE,
+    WORKFLOW_GUIDANCE,
+)
 
 _TAG = b"colony:setup"
 _WINDOWS = os.name == "nt"
@@ -324,10 +329,19 @@ def setup_codex(
     dry_run: bool = False,
     read_only: bool = False,
     repository_id: str | None = None,
+    context_budget: ContextBudget | None = None,
 ) -> dict:
     """Preview/apply owned project config and guidance; status/removal need no identity."""
     if action not in {"install", "status", "uninstall"}:
         raise ValueError("Unsupported setup action")
+    if context_budget is not None:
+        from colony.context_budget import count_response
+
+        try:
+            context_budget = ContextBudget.model_validate(context_budget)
+        except (TypeError, ValueError):
+            raise ValueError("Invalid context budget configuration") from None
+        count_response({}, context_budget)
     repo = _safe_path(repo)
     if not repo.is_dir():
         raise ValueError("Project directory does not exist")
@@ -402,6 +416,15 @@ def setup_codex(
             arguments.append("--workflow-read-only")
         if repository_id is not None:
             arguments.extend(["--workflow-repository-id", repository_id])
+        if context_budget is not None:
+            arguments.extend(
+                [
+                    "--context-budget",
+                    str(context_budget.max_tokens),
+                    "--context-encoding",
+                    context_budget.encoding,
+                ]
+            )
         table = (
             "[mcp_servers.colony]\ncommand = "
             + json.dumps(str(executable), ensure_ascii=False)
@@ -417,7 +440,14 @@ def setup_codex(
         if instruction_owners and instruction_owners[0] != effective:
             raise ValueError("Instructions are shadowed; remove existing setup before reinstalling")
         mode = "read-only; never publish" if read_only else "publish new evidence-backed findings"
-        guidance = f"Colony workflow: namespace `{namespace}`; {mode}.\n\n{WORKFLOW_GUIDANCE}"
+        policy = WORKFLOW_GUIDANCE
+        if context_budget is not None:
+            if not read_only:
+                mode = "publish eligible new findings"
+            policy = (
+                ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
+            )
+        guidance = f"Colony workflow: namespace `{namespace}`; {mode}.\n\n{policy}"
         if read_only:
             guidance += "\n\nThis connection is read-only. Do not call push or publish findings."
         outputs[effective] = _render(

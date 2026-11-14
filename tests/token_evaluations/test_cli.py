@@ -12,6 +12,8 @@ from scripts.token_evaluation import cli
 from scripts.token_evaluation.output import OUTPUT_CONTRACT, instruction
 from scripts.token_evaluation.protocol import CONTRACT, collector_hashes
 from scripts.token_evaluation.quality import review_policy, review_template
+from scripts.token_evaluation.tool_receipts import collect as collect_tool_receipts
+from scripts.token_evaluation.tool_receipts import digest as receipt_digest
 
 
 def write(path, value):
@@ -24,7 +26,7 @@ def refresh_reviews(root):
         review["session_id"] = "fixture-session-" + review["slot"]
         for case in review["cases"]:
             case["uncertainty"] = "Synthetic advisory fixture; semantics unresolved."
-            case["judgments"] = {key: {"verdict": "unresolved", "rationale": "Synthetic fixture; insufficient evidence.", "evidence": []} for key in ("correct", "grounded")}
+            case["judgments"] = {key: {"verdict": "unresolved", "rationale": "Synthetic fixture; insufficient evidence.", "evidence": []} for key in ("complete", "correct", "grounded")}
     write(root / "review.json", advice)
 
 
@@ -32,18 +34,21 @@ def packet(tmp_path):
     value = {"case": "random", "answer": "current fact", "protocol_sha256": "protocol",
              "observed_current_evidence": [], "evidence_limit": "Synthetic review fixture",
              "question": "State the current fact.", "snapshot": "v1",
-             "current_sources": [], "oracle": {}, "rubric": {}, "review_policy": review_policy(),
+             "current_sources": [], "oracle": {}, "rubric": {"complete": "Requested parts", "correct": "Asserted facts", "grounded": "Observed support"}, "review_policy": review_policy(),
              "answer_sha256": hashlib.sha256(b"current fact").hexdigest(),
              "question_sha256": hashlib.sha256(b"State the current fact.").hexdigest(),
              "source_sha256": cli.digest({"snapshot": "v1", "files": {}}),
              "citation_sha256": cli.digest({}), "label_sha256": cli.digest({})}
+    value["label_sha256"] = cli.digest(value["rubric"])
+    projection = collect_tool_receipts([], {})
+    value.update(**projection, tool_receipts_sha256=receipt_digest(projection))
     value.update(output={"contract": OUTPUT_CONTRACT, "format": "free_text",
                          "answer_policy": "last_agent_message"}, output_instruction="")
     value["output_sha256"] = cli.digest({key: value[key] for key in ("output", "output_instruction")})
     write(tmp_path / "answers.json", [value])
     write(tmp_path / "private-map.json", [{"id": "work-task-colony", **{k: value[k] for k in
         ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
-         "label_sha256", "output_sha256")}}])
+         "label_sha256", "output_sha256", "tool_receipts_sha256")}}])
     refresh_reviews(tmp_path)
     return tmp_path
 
@@ -99,13 +104,14 @@ def test_bind_rejects_changed_grading_source_or_oracle(tmp_path):
     root = packet(tmp_path)
     answer = json.loads((root / "answers.json").read_text())[0]
     answer.update(current_sources=[{"path": "source.py", "sha256": hashlib.sha256(b"source").hexdigest(),
-                                    "content": "source"}], snapshot="v1", oracle={}, rubric={})
+                                    "content": "source"}], snapshot="v1", oracle={})
     answer["source_sha256"] = cli.digest({"snapshot": "v1", "files": {"source.py": answer["current_sources"][0]["sha256"]}})
-    answer["citation_sha256"] = answer["label_sha256"] = cli.digest({})
+    answer["citation_sha256"] = cli.digest({})
+    answer["label_sha256"] = cli.digest(answer["rubric"])
     write(root / "answers.json", [answer])
     write(root / "private-map.json", [{"id": "work-task-colony", **{k: answer[k] for k in
         ("case", "answer_sha256", "question_sha256", "source_sha256", "citation_sha256",
-         "label_sha256", "output_sha256")}}])
+         "label_sha256", "output_sha256", "tool_receipts_sha256")}}])
     refresh_reviews(root)
     cli.bind_quality(root, root / "review.json", root / "good-quality.json")
     answer["current_sources"][0]["content"] = "wrong source"
@@ -210,7 +216,7 @@ def test_template_freezes_prospective_output_and_complete_collector(tmp_path, mo
     args = cli.parser().parse_args(["template", "--catalog", str(catalog),
         "--target-python", str(target), "--target-repo", str(tmp_path), "--revision", "main",
         "--client", str(client), "--model", "frozen", "--track", "controlled",
-        "--format", "json", "--output", str(frozen)])
+        "--format", "json", "--output", str(frozen), "--paired"])
     source = b"clean installed bytes"
     installed = {"colony/__init__.py": hashlib.sha256(source).hexdigest()}
     responses = iter([b"a" * 40 + b"\n", b"src/colony/__init__.py\n", source])
