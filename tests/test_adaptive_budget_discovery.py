@@ -103,7 +103,7 @@ def test_explicit_override_delivers_all_cores_and_does_not_change_default(
         assert result["context_budget"]["used"] == used <= maximum
 
 
-def test_default_units_can_change_fit_without_changing_evidence(client, tmp_path, encoding):
+def test_configured_units_can_change_fit_without_changing_evidence(client, tmp_path, encoding):
     packet = bundle()
     for name, text in {"limits.py": "TIMEOUT = 31", "adapter.py": "def send(x):\n    return x"}.items():
         digest = hashlib.sha256(text.encode()).hexdigest()
@@ -113,7 +113,7 @@ def test_default_units_can_change_fit_without_changing_evidence(client, tmp_path
             "content": text, "complete_file": True,
         })
     client[1].update(packet)
-    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(encoding=encoding))
+    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048, encoding=encoding))
     default = ask(server)
     assert default["context_budget"]["max_tokens"] == 2048
     assert len(client[0]) == 1
@@ -136,7 +136,7 @@ def test_default_units_can_change_fit_without_changing_evidence(client, tmp_path
 
 @pytest.mark.parametrize("invalid", [255, 8193, "4096", True, 4096.0])
 def test_override_rejection_occurs_before_lookup(client, tmp_path, invalid):
-    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
+    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))
     with pytest.raises(ToolError):
         ask(server, max_context_tokens=invalid)
     assert not client[0]

@@ -166,7 +166,7 @@ def test_adaptive_publication_template_and_failures_leave_research_available(
     })
     server = create_mcp(
         client.home, workflow_namespace="team", workflow_repo=repo,
-        context_budget=ContextBudget(),
+        context_budget=ContextBudget(max_tokens=2048),
     )
     payload = {
         "question": "How is the timeout configured?",
@@ -537,7 +537,7 @@ def test_supported_worker_behavior_payload_uses_observed_sources(identity, monke
         "stored": True,
     })
     server = create_mcp(client.home, workflow_namespace="team", workflow_repo=repo,
-                        context_budget=ContextBudget())
+                        context_budget=ContextBudget(max_tokens=2048))
     receipt = json.loads(call(server, "push", question="How does priority retry terminate?",
                              content="In this worker, priority jobs without job overrides use "
                              "four outer submissions and three 250 ms waits when all results "

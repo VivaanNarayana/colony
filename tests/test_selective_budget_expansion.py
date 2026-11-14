@@ -202,7 +202,7 @@ def test_actual_nonvalidated_lookup_withholds_prose_and_preserves_legacy(transpo
         with database.connect() as db:
             db.execute("UPDATE trails SET created_at=0 WHERE id=?", (trail.id,))
     server = mcp.create_mcp(client.home, workflow_namespace="team", workflow_repo=repo,
-                            workflow_read_only=True, context_budget=ContextBudget())
+                            workflow_read_only=True, context_budget=ContextBudget(max_tokens=2048))
     text = asyncio.run(server.call_tool("ask", {"question": trail.question}))[0].text
     value = json.loads(text)
     assert value["hit"] and value["status"] == value["content_withheld"] == status

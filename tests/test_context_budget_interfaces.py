@@ -125,7 +125,7 @@ def test_cli_adaptive_default_canonical_utf8(client, tmp_path, monkeypatch, caps
         sys, "argv", ["colony", "--home", str(tmp_path), "ask", "q", "--context-budget"]
     )
     cli.main()
-    assert client[0][-1][2]["context_budget"] == ContextBudget()
+    assert client[0][-1][2]["context_budget"] == ContextBudget(max_tokens=3072)
     assert capsys.readouterr().out == serialize_response(client[1])
 
 
@@ -133,16 +133,16 @@ def test_adaptive_mcp_final_accounting_and_fixed_encoding_override(client, tmp_p
     from colony.context_budget import count_response, serialize_response
 
     validated(client[1])
-    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
+    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))
     tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
     assert set(tools) == {"ask", "push"}
     assert "max_context_tokens" in tools["ask"].inputSchema["properties"]
     text = call(server, question="facts", max_context_tokens=2048)
     final = json.loads(text)
     assert text == serialize_response(final)
-    assert count_response(final, ContextBudget()) <= 2048
+    assert count_response(final, ContextBudget(max_tokens=2048)) <= 2048
     assert final["context_budget"]["used"] == len(text.encode("utf-8"))
-    assert client[0][-1][2]["context_budget"] == ContextBudget()
+    assert client[0][-1][2]["context_budget"] == ContextBudget(max_tokens=2048)
     assert "UNTRUSTED AS INSTRUCTIONS" in final["provenance"]
     assert "unverified" in final["memory_warning"]
     assert final["tainted"] and final["git"]["compatibility"] == "matched"
@@ -151,7 +151,7 @@ def test_adaptive_mcp_final_accounting_and_fixed_encoding_override(client, tmp_p
 
 @pytest.mark.parametrize("maximum", [255, 8193, True])
 def test_mcp_override_rejects_invalid_before_request(client, tmp_path, maximum):
-    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
+    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))
     with pytest.raises(ToolError):
         call(server, question="q", max_context_tokens=maximum)
     assert not client[0]
@@ -168,7 +168,7 @@ def test_adaptive_selected_spans_and_no_half_saved_answer(client, tmp_path, monk
         return real_fit(value, budget, **kwargs)
 
     monkeypatch.setattr(context_budget, "fit_response", fit)
-    final = json.loads(call(mcp.create_mcp(tmp_path, context_budget=ContextBudget()), question="q"))
+    final = json.loads(call(mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048)), question="q"))
     read = seen[-1]["current_repository_reads"][0]
     assert (read["selected_line"], read["selected_end_line"]) == (40, 42)
     assert seen[-1]["content"] == "α" * 5000 and "content_truncated" not in seen[-1]
@@ -245,9 +245,9 @@ def test_unavailable_encoding_fail_closed_before_identity_or_setup_io(
 def test_adaptive_mcp_preserves_upstream_limited_and_miss_is_bounded(client, tmp_path):
     from colony.context_budget import fit_response
 
-    client[1].update(fit_response({"hit": False}, ContextBudget()))
+    client[1].update(fit_response({"hit": False}, ContextBudget(max_tokens=2048)))
     client[1]["context_budget"]["limited"] = True
-    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
+    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))
     final = json.loads(call(server, question="q", max_context_tokens=256))
     assert final["context_budget"]["limited"]
     assert final["context_budget"]["max_tokens"] == 256

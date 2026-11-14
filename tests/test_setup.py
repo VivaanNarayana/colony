@@ -691,9 +691,9 @@ def test_reinstall_switches_owned_guidance_and_restores_unmanaged_bytes(project)
     install(project)
     assert WORKFLOW_GUIDANCE in agents.read_text(encoding="utf-8")
     legacy = tree(repo)
-    preview = install(project, context_budget=ContextBudget(), dry_run=True)
+    preview = install(project, context_budget=ContextBudget(max_tokens=2048), dry_run=True)
     assert preview["changed"] and tree(repo) == legacy
-    install(project, context_budget=ContextBudget())
+    install(project, context_budget=ContextBudget(max_tokens=2048))
     adaptive = agents.read_text(encoding="utf-8")
     assert ADAPTIVE_WORKFLOW_GUIDANCE in adaptive and WORKFLOW_GUIDANCE not in adaptive
     servers = tomllib.loads(config.read_text(encoding="utf-8"))["mcp_servers"]

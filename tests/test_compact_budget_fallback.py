@@ -184,13 +184,13 @@ def test_malformed_identity_never_triggers_budget_fallback(transport, monkeypatc
     client, repo, database, _ = transport
     trail = publish_bundle(client, repo)
     answer = database.find_answer(trail.question, ["team"], 604800, 0.60,
-                                  context_budget=ContextBudget(), compact_bundle=True)
+                                  context_budget=ContextBudget(max_tokens=2048), compact_bundle=True)
     conflicting = copy.deepcopy(answer["sources"][0])
     conflicting["content_hash"] = "0" * 64
     answer["sources"].append(conflicting)
     monkeypatch.setattr(database, "find_answer", lambda *args, **kwargs: copy.deepcopy(answer))
     monkeypatch.setattr(database, "find_evidence", lambda *args, **kwargs: pytest.fail("invalid evidence fallback"))
-    value = ask(client, trail, ContextBudget())
+    value = ask(client, trail, ContextBudget(max_tokens=2048))
     assert not value["hit"] and value["reason"] == "invalid_evidence"
 
 

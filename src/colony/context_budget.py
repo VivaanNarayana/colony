@@ -258,6 +258,16 @@ def fit_response(response: dict, budget, *, question="") -> dict:
     except (KeyError, TypeError, ValueError):
         return miss()
     shortened = any(result[key] != items for key, items in originals.items())
+    saved_answer = None
+    if compact and result.get("status") == "validated" and result.get("match_kind") == "answer" and any(
+        item.get("complete_file") is True and item != result[key][index]
+        for key, items in originals.items() for index, item in enumerate(items)
+    ):
+        # A saved interpretation must not displace nominated current source text.
+        # Keep it only if it fits after required units and complete-file expansions.
+        saved_answer = {key: result[key] for key in ("content", "content_truncated") if key in result}
+        result["match_kind"] = "evidence"
+        result.pop("content_truncated", None)
     _rebuild(result)
     minimal = measured(result, limited or shortened)
     if not fits(minimal):
@@ -288,4 +298,9 @@ def fit_response(response: dict, budget, *, question="") -> dict:
             trial = measured(trial, minimal["context_budget"]["limited"])
             if fits(trial):
                 minimal = trial
+    if saved_answer is not None:
+        trial = copy.deepcopy(minimal)
+        trial.update(saved_answer, match_kind="answer")
+        trial = measured(trial, limited or shortened)
+        minimal = trial if fits(trial) else measured(minimal, True)
     return minimal

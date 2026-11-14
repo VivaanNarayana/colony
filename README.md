@@ -219,13 +219,13 @@ Retrieval models, ranking, permissions, source validation and Git compatibility 
 are unchanged. There is no extra summarizer, automatic provider retry or model-provider call.
 
 ```sh
-colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/project --repository-id project --context-budget 2048
-colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --repository-id project --context-budget 2048
-colony --home /absolute/private/agent-home mcp --workflow-namespace team --workflow-repo /absolute/project --context-budget 2048
+colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/project --repository-id project --context-budget 3072
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --repository-id project --context-budget 3072
+colony --home /absolute/private/agent-home mcp --workflow-namespace team --workflow-repo /absolute/project --context-budget 3072
 ```
 
-`--context-budget` without a number selects 2048; explicit limits are integers from
-256 through 8192. Values such as 512, 1024 and 2048 are starting points to evaluate,
+`--context-budget` without a number selects 3072; explicit limits are integers from
+256 through 8192. Values such as 2048, 3072 and 4096 are starting points to evaluate,
 not measured optimal profiles. The budget is a ceiling, not a target to fill.
 Without this option, legacy responses, setup defaults and tool schemas stay unchanged.
 Only adaptive MCP connections expose an optional `max_context_tokens` argument on

@@ -196,7 +196,7 @@ def test_compact_scope_is_still_authenticated(transport):
     client, repo, _, _ = transport
     publish(client, repo)
     with pytest.raises(httpx.HTTPStatusError) as denied:
-        client.ask("Explain values", "private", context_budget=ContextBudget(), response_profile=PROFILE)
+        client.ask("Explain values", "private", context_budget=ContextBudget(max_tokens=2048), response_profile=PROFILE)
     assert denied.value.response.status_code == 403
 
 
@@ -290,7 +290,7 @@ def test_compact_malformed_bindings_fail_closed(mutation):
         raw["current_repository_reads"] = [None]
     else:
         raw["sources"] = [None]
-    result = fit_response(raw, ContextBudget())
+    result = fit_response(raw, ContextBudget(max_tokens=2048))
     assert not result["hit"] and result["reason"] == "invalid_evidence"
     assert "data" not in serialize_response(result)
 

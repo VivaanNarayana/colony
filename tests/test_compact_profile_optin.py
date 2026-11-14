@@ -53,7 +53,7 @@ def test_public_client_rejects_every_unnegotiated_non_null_marker(caller, monkey
 
     monkeypatch.setattr(client, 'request', request)
     monkeypatch.setattr(git_client, '_local_reads', lambda *a, **k: pytest.fail('unnegotiated reads'))
-    options = {} if mode == 'no_budget' else {'context_budget': ContextBudget()}
+    options = {} if mode == 'no_budget' else {'context_budget': ContextBudget(max_tokens=2048)}
     if mode == 'not_advertised':
         options['response_profile'] = PROFILE
     result = client.ask('PUBLIC?', 'team', repo=repo, repository_id='project', **options)
@@ -64,7 +64,7 @@ def test_public_client_rejects_every_unnegotiated_non_null_marker(caller, monkey
     if mode == 'no_budget':
         assert 'context_budget' not in calls[-1][1] and 'context_budget' not in result
     else:
-        assert result['context_budget']['used'] == count_response(result, ContextBudget()) <= 2048
+        assert result['context_budget']['used'] == count_response(result, ContextBudget(max_tokens=2048)) <= 2048
 
 
 @pytest.mark.parametrize('marker', ['absent', None])
@@ -97,7 +97,7 @@ def test_direct_git_verifier_rejects_profiles_without_budget(caller, monkeypatch
 def test_direct_git_verifier_rejects_unknown_profile_even_with_budget(caller):
     _, repo, context, answer, _ = caller
     answer['response_profile'] = 'unknown/1'
-    result = git_client.verify_lookup(answer, repo, context, context_budget=ContextBudget())
+    result = git_client.verify_lookup(answer, repo, context, context_budget=ContextBudget(max_tokens=2048))
     assert result == {'hit': False, 'reason': 'git_local_evidence_not_verified'}
 
 
@@ -110,10 +110,10 @@ def test_public_client_rejects_missing_or_mismatched_negotiated_profile(caller, 
         answer['response_profile'] = marker
     monkeypatch.setattr(client, 'request', lambda route, payload: copy.deepcopy(
         capabilities if route == '/capabilities' else answer))
-    result = client.ask('PUBLIC?', 'team', context_budget=ContextBudget(), response_profile=PROFILE)
+    result = client.ask('PUBLIC?', 'team', context_budget=ContextBudget(max_tokens=2048), response_profile=PROFILE)
     assert not result['hit'] and result['reason'] == 'context_budget_invalid_profile'
     assert result['response_profile'] == PROFILE
-    assert result['context_budget']['used'] == count_response(result, ContextBudget()) <= 2048
+    assert result['context_budget']['used'] == count_response(result, ContextBudget(max_tokens=2048)) <= 2048
 
 
 @pytest.fixture

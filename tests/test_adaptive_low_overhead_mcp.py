@@ -90,7 +90,7 @@ def ask(server, **kwargs):
 @pytest.mark.parametrize("workflow", [False, True])
 def test_adaptive_routine_tools_and_explicit_legacy_management(response, tmp_path, workflow):
     options = {"workflow_namespace": "team", "workflow_repo": tmp_path} if workflow else {}
-    adaptive = mcp.create_mcp(tmp_path, context_budget=ContextBudget(), **options)
+    adaptive = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048), **options)
     legacy = mcp.create_mcp(tmp_path, **options)
     adaptive_tools = {t.name for t in asyncio.run(adaptive.list_tools())}
     assert adaptive_tools == {"ask", "push"}
@@ -112,7 +112,7 @@ def test_adaptive_read_only_cannot_expose_mutations(response, tmp_path):
         workflow_namespace="team",
         workflow_repo=tmp_path,
         workflow_read_only=True,
-        context_budget=ContextBudget(),
+        context_budget=ContextBudget(max_tokens=2048),
     )
     assert {t.name for t in asyncio.run(server.list_tools())} == {"ask"}
     assert ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE in server.instructions
@@ -124,7 +124,7 @@ def test_adaptive_read_only_cannot_expose_mutations(response, tmp_path):
 
 
 def test_adaptive_policy_applies_without_workflow_and_legacy_policy_stays(response, tmp_path):
-    adaptive = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
+    adaptive = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))
     assert ADAPTIVE_WORKFLOW_GUIDANCE in adaptive.instructions
     legacy = mcp.create_mcp(tmp_path, workflow_namespace="team", workflow_repo=tmp_path)
     assert WORKFLOW_GUIDANCE in legacy.instructions
@@ -140,7 +140,7 @@ def test_adaptive_discovery_keeps_complete_policy_once(response, tmp_path, read_
         workflow_repo=tmp_path,
         workflow_read_only=read_only,
         workflow_repository_id="project" if git_aware else None,
-        context_budget=ContextBudget(),
+        context_budget=ContextBudget(max_tokens=2048),
     )
     policy = ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
     # The shared policy remains self-contained even with smaller tool descriptions.
@@ -165,7 +165,7 @@ def test_adaptive_discovery_preserves_publication_schema_and_annotations(
     adaptive = {
         tool.name: tool
         for tool in asyncio.run(
-            mcp.create_mcp(tmp_path, context_budget=ContextBudget(), **options).list_tools()
+            mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048), **options).list_tools()
         )
     }
     assert adaptive["push"].inputSchema == legacy["push"].inputSchema
@@ -203,7 +203,7 @@ def test_adaptive_discovery_preserves_publication_schema_and_annotations(
 
 def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(response, tmp_path):
     before = copy.deepcopy(response)
-    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget())
+    server = mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))
     text = ask(server)
     packet = json.loads(text)
     assert packet["sources"] == [{"ref": "runbook.md", "content_hash": "b" * 64}]
@@ -228,7 +228,7 @@ def test_adaptive_exact_identity_dedup_preserves_answer_source_and_safety(respon
         "file_fingerprints_match": True, "source_reads_current": True
     }
     assert text == serialize_response(packet)
-    assert packet["context_budget"]["used"] == count_response(packet, ContextBudget()) <= 2048
+    assert packet["context_budget"]["used"] == count_response(packet, ContextBudget(max_tokens=2048)) <= 2048
     assert response == before
     legacy = json.loads(ask(mcp.create_mcp(tmp_path)))
     assert legacy["sources"] == response["sources"]
@@ -279,7 +279,7 @@ def test_real_adaptive_mcp_retains_publication_source_binding(running_team):
 )
 def test_adaptive_retains_source_selection_and_unknown_metadata(response, tmp_path, change):
     response["sources"][0].update(change)
-    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget())))
+    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))))
     assert packet["sources"] == response["sources"]
 
 
@@ -290,16 +290,16 @@ def test_adaptive_retains_entire_source_list_without_complete_identity_coverage(
     extra = copy.deepcopy(response["sources"][0])
     extra.update(ref="other.md" if missing_read else "runbook.md", content_hash="c" * 64)
     response["sources"].append(extra)
-    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget())))
+    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))))
     assert packet["sources"] == response["sources"]
 
 
 def test_no_read_or_nonvalidated_response_keeps_sources(response, tmp_path):
     response["evidence"] = []
-    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget())))
+    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))))
     assert packet["sources"] == response["sources"]
     response["status"] = "stale"
-    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget())))
+    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))))
     assert packet["sources"] == response["sources"]
 
 
@@ -307,7 +307,7 @@ def test_no_read_or_nonvalidated_response_keeps_sources(response, tmp_path):
 def test_dedup_unknown_ref_without_hash_cannot_match_absent_identity(
     response, tmp_path, include_null_hash
 ):
-    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget())))
+    packet = json.loads(ask(mcp.create_mcp(tmp_path, context_budget=ContextBudget(max_tokens=2048))))
     unknown = {"ref": "unknown.md"}
     if include_null_hash:
         unknown["content_hash"] = None

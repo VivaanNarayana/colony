@@ -35,7 +35,7 @@ def test_new_guidance_and_catalog_do_not_grow_from_reviewed_head(identity, read_
     count = _counter(ContextBudget(encoding=encoding))
     assert count(new) <= count(old)
     server = create_mcp(client.home, workflow_namespace="team", workflow_repo=repo,
-                        workflow_read_only=read_only, context_budget=ContextBudget())
+                        workflow_read_only=read_only, context_budget=ContextBudget(max_tokens=2048))
     tools = [t.model_dump(by_alias=True, exclude_none=True) for t in asyncio.run(server.list_tools())]
     old_tools = copy.deepcopy(tools)
     if not read_only:
@@ -50,7 +50,7 @@ def test_new_guidance_and_catalog_do_not_grow_from_reviewed_head(identity, read_
     assert count(json.dumps({"instructions": new, "tools": tools})) <= count(json.dumps(
         {"instructions": old, "tools": old_tools}))
     setup_codex(client.home, repo, "install", namespace="team", read_only=read_only,
-                context_budget=ContextBudget())
+                context_budget=ContextBudget(max_tokens=2048))
     guidance = (repo / "AGENTS.md").read_text(encoding="utf8")
     for invariant in (
         "Address all requested deliverables; include needed examples/evidence",
@@ -79,6 +79,6 @@ def test_help_names_default_byte_units_without_changing_limits(command, capsys):
         parser().parse_args(command)
     assert stopped.value.code == 0
     help_text = " ".join(capsys.readouterr().out.split())
-    assert "default 2048 UTF-8 bytes" in help_text
+    assert "default 3072 UTF-8 bytes" in help_text
     assert "encoding tokens with --context-encoding o200k_base" in help_text
-    assert ContextBudget().max_tokens == 2048 and ContextBudget().encoding == "utf8_bytes"
+    assert ContextBudget().max_tokens == 3072 and ContextBudget().encoding == "utf8_bytes"

@@ -6,14 +6,16 @@ workflow overhead; a smaller response alone does not establish total-token savin
 
 The [selective expansion follow-up](pr15-selective-expansion.md) documents bounded
 primary-file salvage, publication scope, stale-prose withholding and regression
-guards. Budget defaults and strict answer-quality requirements remain unchanged.
+guards. The later [evidence-first follow-up](pr15-evidence-first.md) prioritizes
+source expansion over saved prose and changes the opt-in default to 3,072 units.
+Explicit limits and strict answer-quality requirements remain intact.
 
 ## Enable the adaptive path
 
 Use the existing context-budget option; there is no second adaptive workflow mode:
 
 ```sh
-colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --repository-id project --context-budget 2048
+colony --home /absolute/private/agent-home setup codex install --repo /absolute/project --ns team --repository-id project --context-budget 3072
 ```
 
 Start a fresh trusted agent session to load the managed configuration and guidance.

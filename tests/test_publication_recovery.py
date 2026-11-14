@@ -20,7 +20,7 @@ def test_invalid_source_then_explicit_correction_keeps_all_sources(transport, wo
         path.write_text("VALUE = 100\n", encoding="utf-8")
         sources.append({"ref": name, "content_hash": hashlib.sha256(path.read_bytes()).hexdigest()})
     options = {"workflow_namespace": "team", "workflow_repo": repo} if workflow else {}
-    server = mcp.create_mcp(client.home, context_budget=ContextBudget(), **options)
+    server = mcp.create_mcp(client.home, context_budget=ContextBudget(max_tokens=2048), **options)
     payload = {"namespace": "team", "question": "Explain config propagation",
                "content": "Config is passed by caller into loop.", "sources": sources}
     bad = copy.deepcopy(payload)
@@ -50,7 +50,7 @@ def test_unknown_publication_failure_never_retries(transport, monkeypatch):
         calls.append(trail)
         raise RuntimeError("Unknown outcome")
     monkeypatch.setattr(mcp.Client, "push", fail)
-    server = mcp.create_mcp(client.home, context_budget=ContextBudget())
+    server = mcp.create_mcp(client.home, context_budget=ContextBudget(max_tokens=2048))
     with pytest.raises(ToolError):
         asyncio.run(server.call_tool("push", {"namespace":"team", "question":"q", "content":"finding"}))
     assert len(calls) == 1

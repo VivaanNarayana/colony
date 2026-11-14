@@ -70,16 +70,16 @@ def test_client_refuses_unsupported_budget_without_legacy_request(caller, monkey
         return data
 
     monkeypatch.setattr(client, "request", request)
-    result = client.ask("timeout", "team", context_budget=ContextBudget())
+    result = client.ask("timeout", "team", context_budget=ContextBudget(max_tokens=2048))
     assert result["hit"] is False and result["reason"] == "context_budget_unsupported"
     assert calls == ["/capabilities"]
-    assert count_response(result, ContextBudget()) <= 2048
+    assert count_response(result, ContextBudget(max_tokens=2048)) <= 2048
 
 
 @pytest.mark.parametrize("mode", ["missing", "used", "encoding", "version", "limit", "measurement"])
 def test_client_rejects_unbounded_or_mislabelled_server_receipt(caller, monkeypatch, mode):
     client, _, _ = caller
-    budget = ContextBudget()
+    budget = ContextBudget(max_tokens=2048)
     answer = fit_response({"hit": False, "reason": "no_relevant_trail"}, budget)
     if mode == "missing":
         answer.pop("context_budget")
@@ -158,7 +158,7 @@ def test_git_aware_budget_limited_miss_survives_verification(caller, monkeypatch
     context = GitContext(repository_id="project", state="non_git")
     monkeypatch.setattr(git_context, "capture", lambda *args: context)
     monkeypatch.setattr(git_client, "capture", lambda *args: context)
-    budget = ContextBudget()
+    budget = ContextBudget(max_tokens=2048)
     answer = fit_response(
         {"hit": False, "reason": "budget_limited", "context_budget": {"limited": True}}, budget
     )
@@ -564,7 +564,7 @@ def test_adaptive_verification_withholds_answer_if_any_required_hint_is_rejected
             },
         ],
     }
-    adaptive = git_client.verify_lookup(result, repo, context, context_budget=ContextBudget())
+    adaptive = git_client.verify_lookup(result, repo, context, context_budget=ContextBudget(max_tokens=2048))
     assert not adaptive["hit"] and adaptive["reason"] == "git_local_evidence_not_verified"
     assert "content" not in adaptive and "evidence" not in adaptive
     # Legacy dedup/skip behavior remains unchanged when no budget was requested.

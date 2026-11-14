@@ -83,9 +83,9 @@ def _context_budget_flags(command):
     command.add_argument(
         "--context-budget",
         nargs="?",
-        const=2048,
+        const=3072,
         type=_budget_tokens,
-        help="Cap the full response (256..8192; default 2048 UTF-8 bytes, "
+        help="Cap the full response (256..8192; default 3072 UTF-8 bytes, "
              "or encoding tokens with --context-encoding o200k_base)",
     )
     command.add_argument(

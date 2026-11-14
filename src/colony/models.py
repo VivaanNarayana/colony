@@ -33,7 +33,7 @@ class ContextBudget(Model):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     version: Literal["colony.context-budget/1"] = "colony.context-budget/1"
-    max_tokens: StrictInt = Field(default=2048, ge=256, le=8192)
+    max_tokens: StrictInt = Field(default=3072, ge=256, le=8192)
     encoding: Literal["utf8_bytes", "o200k_base"] = "utf8_bytes"
 
 
