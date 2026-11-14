@@ -401,9 +401,9 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "After substantive new research, including partial hits, push one eligible reusable "
-                "finding with applicability and observed file ref/content_hash. Skip isolated values "
-                "unless asked to remember; skip unchanged reuse. Follow publication exclusions. "
+                "Push one new reusable finding from the requested task with "
+                "applicability and observed file ref/content_hash. Skip isolated values "
+                "unless asked to remember; no task expansion to justify publication or unchanged reuse. "
                 "Never invent hashes or research solely to publish. Answer detail/research remain "
                 "unrestricted; publication failure must not block the answer. "
                 "Namespace bound; taint true; secrets scrubbed."
@@ -419,9 +419,9 @@ def create_mcp(
         server.tool(
             name="push",
             description=(
-                "After substantive new research, including partial hits, push one eligible reusable "
-                "finding with applicability and observed file ref/content_hash. Skip isolated values "
-                "unless asked to remember; skip unchanged reuse. Follow publication exclusions. "
+                "Push one new reusable finding from the requested task with "
+                "applicability and observed file ref/content_hash. Skip isolated values "
+                "unless asked to remember; no task expansion to justify publication or unchanged reuse. "
                 "Never invent hashes or research solely to publish. Answer detail/research remain "
                 "unrestricted; publication failure must not block the answer. "
                 "Client scrubs secrets; mark external content tainted."

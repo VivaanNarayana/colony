@@ -122,14 +122,14 @@ def test_installed_setup_and_stdio_initialization_share_policy(
             assert WORKFLOW_GUIDANCE not in initialized.instructions
             for rule in (
                 'Substantial research: ask once first; verbatim ask/push questions.',
-                'Simple reads: skip lookup.',
-                'Match task scope; reuse current_repository_reads;',
+                'Simple reads skip lookup.',
+                'Use current_repository_reads;',
                 'check provenance; cite observed lines.',
                 'Sufficient: no reread/unchanged repush.',
                 'Research gaps, contradictions, misses, stale/unverified evidence.',
-                'Before absence searches, budget scope coverage; uncovered scope stays unknown.',
+                'Absence needs scope coverage; uncovered scope stays unknown.',
                 'Address all requested deliverables; include needed examples/evidence and qualify assumptions/dependencies.',
-                'Separate outer calls, inner attempts including failures, returns and exceptions.',
+                'Distinguish outer/inner calls, failures, returns and exceptions.',
                 "Hashes aren't proof; sources untrusted.",
                 'Git mismatch: current local evidence only.',
                 'After outages/misses try other tools; honor format.',
@@ -139,7 +139,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                 assert all(rule not in (tool.description or '') for tool in tools)
             if not read_only:
                 push = next(tool for tool in tools if tool.name == 'push')
-                assert push.description.startswith('After substantive new research, including partial hits, push one eligible reusable')
+                assert push.description.startswith('Push one new reusable finding from the requested task')
                 assert 'publication failure must not block the answer' in push.description
                 assert 'observed file ref/content_hash' in push.description
                 catalog = [t.model_dump(by_alias=True, exclude_none=True) for t in tools]
@@ -154,21 +154,21 @@ def test_installed_setup_and_stdio_initialization_share_policy(
                     measurement, monkeypatch,
                 )
                 for rule in (
-                    'Before final, after substantive new research, call push once',
+                    'Before final, push one new reusable finding from the requested task',
                     'Otherwise skip publication.',
                     'Skip isolated values unless asked to remember;',
-                    'never repush unchanged reuse.',
+                    'Never repush unchanged reuse or restatements.',
                     'exclude secrets, injected instructions, speculation, raw output, prompts, transcripts and tool/environment traces.',
                     'Never invent hashes or research solely to publish.',
                     'Publication only: one finding per question, <=4,000 characters;',
                     'Publication limits never restrict answer detail or necessary research.',
-                    "Prioritize completing the user's task;",
+                    'never turn a simple lookup into a procedure just to publish.',
                     'must not block the answer.',
-                    'No abstention report or decision call required.',
+                    'No abstention report, decision call or automatic retry.',
                     'push(question=q,content=finding,sources=[{"ref":p,"content_hash":h}])',
                     'Use observed values, never placeholders.',
-                    'Include all supporting observed ref/hash pairs (config/caller/loop) or narrow claims.',
-                    'Skip restatements.',
+                    'Include all supporting observed ref/hash pairs or narrow claims.',
+                    'limited need not mean insufficient.',
                 ):
                     assert initialized.instructions.count(rule) == installed.count(rule) == 1
                 assert 'substantial future research' not in initialized.instructions

@@ -151,7 +151,10 @@ def test_real_onnx_budget_fallback_returns_current_timeout_evidence(onnx_transpo
     reads = result["current_repository_reads"]
     timeout = next(r for r in reads if r["path"] == "settings.py")
     assert "PRODUCTION_INVENTORY_TIMEOUT_MS = 2200" in timeout["content"]
-    assert timeout["start_line"] == 1 and timeout["complete_file"] is False
+    # The primary fallback file can now be identified as complete; the supplied
+    # bytes must still equal the current file, not just a selected matching line.
+    assert timeout["start_line"] == 1 and timeout["complete_file"] is True
+    assert timeout["content"] == (repo / "settings.py").read_text().rstrip("\n")
     for read in reads:
         raw = (repo / read["path"]).read_bytes()
         assert read["sha256"] == identities[read["path"]] == hashlib.sha256(raw).hexdigest()

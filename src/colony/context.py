@@ -405,6 +405,7 @@ def excerpts(
     whole_files: bool = False,
     adaptive: bool = False,
     compact_bundle: bool = False,
+    expand_first_file: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
     if (
@@ -478,7 +479,11 @@ def excerpts(
             first, last = _source_unit(ref, cache[ref], line)
             if any(r == ref and first <= b and last >= a for r, a, b in occupied):
                 continue
-            item = _adaptive_excerpt(ref, cache[ref], (first, last), whole_files)
+            # Only compact same-finding budget salvage nominates this optional
+            # expansion. Spend space on the primary selected file, not every file
+            # that happens to fit. The original units remain mandatory below.
+            expand = expand_first_file and not selected
+            item = _adaptive_excerpt(ref, cache[ref], (first, last), whole_files or expand)
             selected.append(item)
             occupied.append((ref, first, last))
             continue

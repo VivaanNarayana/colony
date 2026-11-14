@@ -276,7 +276,8 @@ def fit_response(response: dict, budget, *, question="") -> dict:
     if not fits(minimal):
         return miss()
     # Compact responses stop at the required cores even if more text would fit.
-    # Only an explicit whole-file read opts into restoring its complete span.
+    # Explicit whole-file reads or the primary compact salvage file can nominate
+    # a complete span. All required cores have already fitted before any expansion.
     for key, items in originals.items():
         for index, item in enumerate(items):
             if item.get("complete_file") is not True:

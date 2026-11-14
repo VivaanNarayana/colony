@@ -47,6 +47,12 @@ def compact_response(value: dict, *, packing: bool = False) -> dict:
     """
     result = copy.deepcopy(value)
     result["response_profile"] = PROFILE
+    if result.get("status") in {"stale", "unverified"} and "content" in result:
+        # Keep identity, lifecycle and research status, but do not repeatedly send
+        # obsolete saved prose as though it were usable current source evidence.
+        result.pop("content")
+        result.pop("content_truncated", None)
+        result["content_withheld"] = result["status"]
     if "evidence" in result:
         evidence = result.pop("evidence")
         if not isinstance(evidence, list):

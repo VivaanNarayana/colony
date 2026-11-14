@@ -179,10 +179,9 @@ def test_adaptive_discovery_preserves_publication_schema_and_annotations(
               else "Client scrubs secrets; mark external content tainted.")
     description = adaptive["push"].description
     for cue in (
-        "After substantive new research, including partial hits, push one eligible reusable",
-        "finding with applicability and observed file ref/content_hash.",
-        "Skip isolated values unless asked to remember; skip unchanged reuse.",
-        "Follow publication exclusions.",
+        "Push one new reusable finding from the requested task",
+        "applicability and observed file ref/content_hash.",
+        "Skip isolated values unless asked to remember; no task expansion to justify publication or unchanged reuse.",
         "Never invent hashes or research solely to publish.",
         "Answer detail/research remain unrestricted; publication failure must not block the answer.",
         ending,

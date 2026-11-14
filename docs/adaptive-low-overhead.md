@@ -4,6 +4,10 @@ Adaptive context budgets are opt-in and experimental. The adaptive MCP path uses
 smaller routine tool set and selective agent guidance. These changes target complete
 workflow overhead; a smaller response alone does not establish total-token savings.
 
+The [selective expansion follow-up](pr15-selective-expansion.md) documents bounded
+primary-file salvage, publication scope, stale-prose withholding and regression
+guards. Budget defaults and strict answer-quality requirements remain unchanged.
+
 ## Enable the adaptive path
 
 Use the existing context-budget option; there is no second adaptive workflow mode:

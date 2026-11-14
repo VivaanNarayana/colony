@@ -744,6 +744,7 @@ class Store:
                 question, namespaces, max_age, git_context=git_context,
                 context_budget=context_budget, restricted_trail_id=answer["id"],
                 required_source_identities=identities,
+                expand_first_file=True,
             )
             if (
                 fallback is None
@@ -774,6 +775,7 @@ class Store:
         compact_bundle: bool = False,
         restricted_trail_id: str | None = None,
         required_source_identities: frozenset[tuple[str, str]] | None = None,
+        expand_first_file: bool = False,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
@@ -893,6 +895,9 @@ class Store:
                         question,
                         preferred=preferred,
                         whole_files=include_evidence_files,
+                        **({"expand_first_file": True} if expand_first_file
+                           and context_budget is not None and restricted_trail_id is not None
+                           and required_source_identities is not None else {}),
                         **({"adaptive": True} if context_budget is not None else {}),
                     )
                     if evidence:

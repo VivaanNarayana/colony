@@ -85,7 +85,8 @@ def _context_budget_flags(command):
         nargs="?",
         const=2048,
         type=_budget_tokens,
-        help="Opt in to a bounded response (256..8192 tokens; default 2048)",
+        help="Cap the full response (256..8192; default 2048 UTF-8 bytes, "
+             "or encoding tokens with --context-encoding o200k_base)",
     )
     command.add_argument(
         "--context-encoding",
