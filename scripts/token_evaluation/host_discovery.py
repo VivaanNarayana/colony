@@ -3,17 +3,27 @@ from .adapters import task_mode
 from .protocol import arm_protocol, evaluation_arms, require
 
 
+def required_host_features(protocol):
+    """Use one host configuration across all arms of a task-adapter campaign."""
+    if any(task_mode(arm_protocol(protocol, arm)) for arm in evaluation_arms(protocol)
+           if arm != 'no_colony'):
+        return {'mcp_tool_list_changed': True}
+    return {}
+
+
 def validate_host_discovery(protocol):
-    if not any(task_mode(arm_protocol(protocol, arm)) for arm in evaluation_arms(protocol)
-               if arm != 'no_colony'):
+    features = required_host_features(protocol)
+    if not features:
         return None
     proof = protocol.get('host_discovery')
     require(isinstance(proof, dict), 'Task mode requires pinned native-host tool-refresh evidence')
-    require(proof.get('contract') == 'colony.native-host-discovery/1'
+    require(proof.get('contract') == 'colony.native-host-discovery/2'
             and proof.get('client_sha256') == protocol['client']['sha256']
             and proof.get('client_version') == protocol['client']['version']
             and proof.get('observer') == 'native_client',
             'Tool-refresh evidence must bind this native client; SDK evidence is insufficient')
+    require(proof.get('client_features') == features,
+            'Tool-refresh evidence must bind the required native host features')
     events = proof.get('events')
     require(isinstance(events, list) and 3 <= len(events) <= 32, 'Missing native-host discovery trace')
     # The transcript is a retained declaration, like native invocation receipts,

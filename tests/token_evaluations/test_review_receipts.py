@@ -241,7 +241,7 @@ def test_end_to_end_receipts_are_bound_and_reconstructed_from_raw_log(run, forge
 
 
 def test_prospective_contract_rejects_legacy_packets_without_upgrading_them(subject):
-    assert CONTRACT == "colony.token-evaluation/11"
+    assert CONTRACT == "colony.token-evaluation/12"
     before = copy.deepcopy(subject)
     legacy = {"contract": "colony.token-evaluation/9"}
     with pytest.raises(ValueError, match="original pinned collector"):

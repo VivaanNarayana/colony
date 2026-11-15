@@ -14,7 +14,7 @@ from colony.onboard_io import private_directory, write_new
 
 from . import runtime
 from .adapters import task_args, task_mode
-from .host_discovery import validate_host_discovery
+from .host_discovery import required_host_features, validate_host_discovery
 from .output import instruction
 from .protocol import (
     arm_order,
@@ -148,14 +148,17 @@ def _client_metadata(args, env):
     """Parse the exact feature/config overrides without starting a model or MCP."""
     command = [args[0], "features", "list"]
     for i, value in enumerate(args[:-1]):
-        if value in {"-c", "--disable"}:
+        if value in {"-c", "--disable", "--enable"}:
             command.extend(args[i:i + 2])
     result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=15, check=True)
     features = {parts[0]: parts[-1] for line in result.stdout.splitlines() if len(parts := line.split()) >= 3}
     disabled = [args[i + 1] for i, value in enumerate(args[:-1]) if value == "--disable"]
-    if features.get("code_mode_host") != "true" or any(features.get(name) != "false" for name in disabled):
+    enabled = [args[i + 1] for i, value in enumerate(args[:-1]) if value == "--enable"]
+    if (features.get("code_mode_host") != "true"
+            or any(features.get(name) != "false" for name in disabled)
+            or any(features.get(name) != "true" for name in enabled)):
         raise ValueError("Native feature isolation/Code Mode host metadata mismatch")
-    return {"config_accepted": True, "code_mode_host": True, "disabled": disabled,
+    return {"config_accepted": True, "code_mode_host": True, "disabled": disabled, "enabled": enabled,
             "features_sha256": hashlib.sha256(result.stdout.encode()).hexdigest(), "native_sessions": 0}
 
 
@@ -189,11 +192,14 @@ def _wall_remaining(deadline):
 
 
 def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, client_workspace=None):
+    host_features = required_host_features(protocol)
     protocol = arm_protocol(protocol, arm)
     client = protocol["client"]
     args = [client["executable"], "exec", "--ignore-user-config", "--ignore-rules",
             "--ephemeral", "--json", "--color", "never", "-s", "read-only",
             "--skip-git-repo-check", "-C", str(client_workspace or repo), "-m", client["model"]]
+    for feature in host_features:
+        args += ["--enable", feature]
     for feature in ("apps", "plugins", "browser_use", "computer_use", "multi_agent", "memories", "shell_tool", "hooks", "image_generation"):
         args += ["--disable", feature]
     # Code Mode/host remain enabled. Never repeat the earlier disabled-host failure.

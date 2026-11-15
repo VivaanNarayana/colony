@@ -64,14 +64,17 @@ def test_native_host_gate_rejects_sdk_or_mismatched_discovery_evidence(tmp_path)
     with pytest.raises(ValueError, match='pinned native-host'):
         validate_host_discovery(spec)
 
-    spec['host_discovery'] = {'contract': 'colony.native-host-discovery/1',
+    spec['host_discovery'] = {'contract': 'colony.native-host-discovery/2',
+        'client_features': {'mcp_tool_list_changed': True},
         'client_sha256': spec['client']['sha256'], 'client_version': spec['client']['version'],
         'observer': 'native_client', 'events': [
             {'connection': 'test', 'type': 'tools/list', 'tools': ['read', 'research']},
             {'connection': 'test', 'type': 'notifications/tools/list_changed'},
             {'connection': 'test', 'type': 'tools/list', 'tools': ['read', 'research', 'publish']}]}
     assert validate_host_discovery(spec)
-    for key, value in [('observer', 'sdk'), ('client_sha256', 'different')]:
+    for key, value in [('observer', 'sdk'), ('client_sha256', 'different'),
+                       ('contract', 'colony.native-host-discovery/1'),
+                       ('client_features', {}), ('client_features', {'mcp_tool_list_changed': False})]:
         changed = copy.deepcopy(spec)
         changed['host_discovery'][key] = value
         with pytest.raises(ValueError):

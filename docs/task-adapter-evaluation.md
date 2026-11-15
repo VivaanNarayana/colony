@@ -1,6 +1,6 @@
 # Prospective task-adapter evaluation
 
-Contract `colony.token-evaluation/11` requires an explicit `--adapter ordinary|task`
+Contract `colony.token-evaluation/12` requires an explicit `--adapter ordinary|task`
 and, for a three-arm campaign, `--main-adapter ordinary|task`. The choice, target
 revision, options, collector, client and workload bytes are frozen together. Old
 contracts require their original pinned collectors; do not upgrade or regrade
@@ -49,10 +49,11 @@ binds it to the executable SHA-256 and version. The required shape is:
 
 ```json
 {
-  "contract": "colony.native-host-discovery/1",
+  "contract": "colony.native-host-discovery/2",
   "client_sha256": "<actual pinned executable SHA-256>",
   "client_version": "<actual pinned version>",
   "observer": "native_client",
+  "client_features": {"mcp_tool_list_changed": true},
   "events": [
     {"connection": "<same task connection>", "type": "tools/list", "tools": ["read", "research"]},
     {"connection": "<same task connection>", "type": "notifications/tools/list_changed"},
@@ -69,6 +70,16 @@ is auditable evidence, not cryptographic process attestation. Producing native-h
 observability/integration is separate work; this evaluator consumes the evidence
 and does not fabricate it. Missing or mismatched evidence blocks task-mode native
 collection before a worker starts. Ordinary-mode collection is unaffected.
+
+The pinned native client ships `mcp_tool_list_changed` disabled by default.
+For a campaign containing either task-adapter arm, the launcher explicitly enables
+this feature for every arm, including No-Colony, to hold host configuration constant.
+Local preflight passes the same overrides to `features list` and rejects missing or
+disabled required features before launching workers. Feature metadata alone is not
+proof: the native same-connection discovery trace is still required and now records
+the feature configuration. The original `/11` collectors and results stay frozen;
+replay them with their original code. No product publication rules, evidence checks,
+answer obligations, prompts, or grading thresholds change in this host fix.
 
 ## Evidence and interpretation
 
