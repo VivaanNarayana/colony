@@ -1,5 +1,14 @@
 # Memory-use token evaluations
 
+## Task-adapter coverage in prospective runs
+
+New `/11` runs explicitly select ordinary or task MCP per target. See
+[task-adapter evaluation](task-adapter-evaluation.md) for fixture boundaries,
+native-host discovery evidence, adaptive option forwarding and interpretation.
+Historical `/10` runs retain their original collector, configuration and conclusions.
+The `/10` command examples below require explicit `--adapter ordinary` and
+`--main-adapter ordinary` when creating a new ordinary-mode `/11` protocol.
+
 This developer-only harness asks whether actual shared memory helps a fresh agent
 complete source-grounded work. It adds no Colony runtime behavior, dependencies,
 defaults or CI campaign. Ordinary tests use synthetic events and local code, never

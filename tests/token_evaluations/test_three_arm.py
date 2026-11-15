@@ -94,7 +94,7 @@ def test_template_defaults_to_three_groups_and_requires_explicit_main(tmp_path, 
     client = tmp_path / 'client.exe'
     client.write_bytes(b'local-only-metadata')
     args = cli.parser().parse_args(['template', '--catalog', str(catalog),
-        '--target-python', 'candidate', '--target-repo', 'repo', '--revision', 'candidate',
+        '--adapter', 'ordinary', '--main-adapter', 'ordinary', '--target-python', 'candidate', '--target-repo', 'repo', '--revision', 'candidate',
         '--main-target-python', 'main-python', '--main-target-repo', 'repo', '--main-revision', 'main',
         '--client', str(client), '--model', 'gpt-6-luna', '--track', 'natural',
         '--output', str(tmp_path / 'protocol.json')])

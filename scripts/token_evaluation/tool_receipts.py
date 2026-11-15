@@ -15,10 +15,11 @@ SAVED_ANSWER_TRUST = "untrusted_saved_answer_not_source_evidence"
 MAX_PATHS = 16
 TOOLS = {
     "repository.fixture_files", "repository.fixture_read", "repository.fixture_search",
-    "colony.ask", "colony.push",
+    "colony.ask", "colony.push", "colony.read", "colony.research", "colony.publish",
+    "colony.fixture_files", "colony.fixture_search",
 }
 LIMITS = {
-    "contract": "colony.review-tool-receipts/2",
+    "contract": "colony.review-tool-receipts/3",
     "max_receipts": MAX_RECEIPTS,
     "max_text_chars": MAX_TEXT,
     "max_saved_answer_chars": MAX_SAVED_ANSWER,
@@ -68,14 +69,15 @@ def _arguments(item, files):
     tool = item["tool"]
     for key in (("question",) if tool in {"ask", "push"} else
                 ("query",) if tool == "fixture_search" else
-                ("path", "start", "lines") if tool == "fixture_read" else ()):
+                ("path", "start", "lines") if tool == "fixture_read" else
+                ("path", "start", "end", "offset") if tool == "read" else ()):
         value = raw.get(key)
         if key == "path":
             path = _path(value, files)
             if path is not None:
                 args[key] = path
-        elif key in {"start", "lines"}:
-            if type(value) is int and 1 <= value <= 1_000_000:
+        elif key in {"start", "lines", "end", "offset"}:
+            if type(value) is int and (0 if key == "offset" else 1) <= value <= 1_000_000:
                 args[key] = value
         elif isinstance(value, str):
             args[key] = scrub(value)
@@ -128,15 +130,18 @@ def _outcome(item, files):
             count += len(matches)
         out.update(result_available=True, empty=len(blocks) == 0, match_count=count,
                    returned_paths=paths[:MAX_PATHS], paths_truncated=len(paths) > MAX_PATHS)
-    elif tool == "fixture_read" and len(values) == 1:
+    elif tool in {"fixture_read", "read"} and len(values) == 1:
         value = values[0]
+        if tool == "read":
+            value = {**value, "start": value.get("start_line"), "end": value.get("end_line")}
+            out["evidence_reference_available"] = isinstance(value.get("evidence_ref"), str)
         path = _path(value.get("path"), files)
         if path is not None:
             out.update(result_available=True, returned_paths=[path], paths_truncated=False)
             for key in ("start", "end"):
                 if type(value.get(key)) is int and 0 <= value[key] <= 1_000_000:
                     out["reported_" + key] = value[key]
-    elif tool in {"ask", "push"} and len(values) == 1:
+    elif tool in {"ask", "push", "research", "publish"} and len(values) == 1:
         value = values[0]
         for key in ("hit", "stored", "duplicate", "queued"):
             if type(value.get(key)) is bool:
@@ -150,7 +155,7 @@ def _outcome(item, files):
             if isinstance(value.get(key), str):
                 out[key] = value[key] if value[key] in allowed else "other"
         out["result_available"] = len(out) > 2
-        if tool == "ask":
+        if tool in {"ask", "research"}:
             text = value.get("content")
             available = (value.get("hit") is True and value.get("match_kind") == "answer"
                          and isinstance(text, str))
@@ -209,11 +214,12 @@ def validate(receipts, limits, files):
         require(isinstance(args, dict) and isinstance(outcome, dict))
         tool = receipt["tool"].split(".")[1]
         allowed_args = ({"question"} if tool in {"ask", "push"} else {"query"} if tool == "fixture_search"
-                        else {"path", "start", "lines"} if tool == "fixture_read" else set())
+                        else {"path", "start", "lines"} if tool == "fixture_read"
+                        else {"path", "start", "end", "offset"} if tool == "read" else set())
         require(set(args) <= allowed_args)
         for key, value in args.items():
-            if key in {"start", "lines"}:
-                require(type(value) is int and 1 <= value <= 1_000_000)
+            if key in {"start", "lines", "end", "offset"}:
+                require(type(value) is int and (0 if key == "offset" else 1) <= value <= 1_000_000)
             else:
                 require(isinstance(value, str) and scrub(value) == value)
                 if key == "path":
@@ -221,14 +227,16 @@ def validate(receipts, limits, files):
         base = {"is_error", "result_available", "arguments_available", "arguments_truncated"}
         extra = ({"returned_paths", "paths_truncated"} if tool == "fixture_files" else
                  {"returned_paths", "paths_truncated", "empty", "match_count"} if tool == "fixture_search" else
-                 {"returned_paths", "paths_truncated", "reported_start", "reported_end"} if tool == "fixture_read" else
+                 {"returned_paths", "paths_truncated", "reported_start", "reported_end"} if tool in {"fixture_read", "read"} else
                  {"hit", "stored", "duplicate", "queued", "reason", "status", "match_kind"})
-        if tool == "ask":
+        if tool == "read":
+            extra |= {"evidence_reference_available"}
+        if tool in {"ask", "research"}:
             extra |= {"saved_answer_available", "saved_answer"}
         require(base <= set(outcome) <= base | extra | {"error"})
         for key, value in outcome.items():
             if key == "saved_answer":
-                require(tool == "ask" and outcome.get("saved_answer_available") is True
+                require(tool in {"ask", "research"} and outcome.get("saved_answer_available") is True
                         and outcome.get("hit") is True and outcome.get("match_kind") == "answer"
                         and not outcome["is_error"] and outcome["result_available"])
                 require(isinstance(value, dict) and set(value) == {"text", "trust", "redacted", "truncated"})

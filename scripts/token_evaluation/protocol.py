@@ -9,7 +9,7 @@ from pathlib import Path
 from .output import validate_output
 from .rubrics import DIMENSIONS
 
-CONTRACT = "colony.token-evaluation/10"
+CONTRACT = "colony.token-evaluation/11"
 ARMS = ("no_colony", "colony")
 THREE_ARMS = ("no_colony", "main", "colony")
 
@@ -164,6 +164,9 @@ def _validate_manifest(manifest):
     client = manifest["client"]
     for target in ([manifest["target"], manifest["main_target"]] if "main_target" in manifest else [manifest["target"]]):
         require(isinstance(target, dict), "Invalid target runtime")
+        require(target.get("adapter") in {"ordinary", "task"}, "Explicit target adapter required")
+        if target["adapter"] == "task":
+            require(manifest["track"] == "natural", "Task adapter currently requires natural adoption")
         require(re.fullmatch(r"[a-f0-9]{40}", target.get("revision", "")), "Pin a full target revision")
         require(Path(target.get("python", "")).is_absolute(), "Target Python must be absolute")
         hashes = target.get("runtime_hashes")
@@ -173,6 +176,8 @@ def _validate_manifest(manifest):
             require(name.endswith(".py") and re.fullmatch(r"[a-f0-9]{64}", value), "Invalid runtime fingerprint")
         budget_flags = {"--context-budget": True, "--context-encoding": True, "--evidence-files": False, "--compact": False}
         _flags(target.get("mcp_args", []), budget_flags)
+        if target["adapter"] == "task":
+            _flags(target.get("mcp_args", []), {"--context-budget": True, "--context-encoding": True})
         _flags(target.get("setup_args", []), {"--context-budget": True, "--context-encoding": True})
         def context_options(args):
             return {args[i]: args[i + 1] for i in range(len(args)) if args[i] in {"--context-budget", "--context-encoding"}}
@@ -227,6 +232,17 @@ def _validate_manifest(manifest):
             if manifest["track"] == "natural":
                 require(task["expected_use"] == "optional", "Natural adoption cannot force memory calls")
             _text(task.get("question"), "task question")
+            if "host_intent" in task:
+                intent = task["host_intent"]
+                require(isinstance(intent, dict) and set(intent) <= {"direct_path", "remember"},
+                        "Invalid trusted host intent")
+                if "remember" in intent:
+                    require(type(intent["remember"]) is bool, "Remember intent must be Boolean")
+                    require(not intent["remember"] or "remember" in task["question"].lower(),
+                            "Remember intent requires an explicit public request")
+                if "direct_path" in intent:
+                    path = relative(intent["direct_path"])
+                    require(path in task["question"], "Direct path must be explicit in the public question")
             require(isinstance(task.get("oracle"), dict) and isinstance(task.get("rubric"), dict), "Freeze independent quality oracle/rubric")
             oracle = task["oracle"]
             require(isinstance(oracle.get("facts"), dict) and oracle["facts"],
@@ -239,6 +255,8 @@ def _validate_manifest(manifest):
                 _text(task["rubric"].get(field), "task " + field + " rubric")
             citations = oracle.get("citations")
             snapshot = next(s for s in snapshots if s["id"] == task["snapshot"])
+            if task.get("host_intent", {}).get("direct_path"):
+                require(task["host_intent"]["direct_path"] in snapshot["files"], "Unknown direct source path")
             policy = validate_evidence_policy(oracle, snapshot["files"])
             if "research_hints" in task:
                 hints = task["research_hints"]

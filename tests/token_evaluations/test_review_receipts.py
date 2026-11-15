@@ -241,7 +241,7 @@ def test_end_to_end_receipts_are_bound_and_reconstructed_from_raw_log(run, forge
 
 
 def test_prospective_contract_rejects_legacy_packets_without_upgrading_them(subject):
-    assert CONTRACT == "colony.token-evaluation/10"
+    assert CONTRACT == "colony.token-evaluation/11"
     before = copy.deepcopy(subject)
     legacy = {"contract": "colony.token-evaluation/9"}
     with pytest.raises(ValueError, match="original pinned collector"):
@@ -252,7 +252,7 @@ def test_prospective_contract_rejects_legacy_packets_without_upgrading_them(subj
         validate_reviews(subject, advice)
     assert subject == before
     assert "tool_receipts_sha256" in BINDINGS
-    assert LIMITS["contract"] == "colony.review-tool-receipts/2"
+    assert LIMITS["contract"] == "colony.review-tool-receipts/3"
 
 
 def test_missing_completion_is_not_defaulted_to_a_pass(subject):
