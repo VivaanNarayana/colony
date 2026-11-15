@@ -9,14 +9,24 @@ ordinary Workflow/Client publication. The model never has to copy a hash.
 Use one instance per host task. It binds the repository, namespace, principal,
 Git repository identity and read-only policy. References expire after 15 minutes
 by default, cannot move between instances, and are destroyed by `close()`.
+Pull and push permissions may be separate scope entries for the same namespace.
 Permission checks run again at resolution; the server remains authoritative for
 revocation. A reference cannot be registered by submitting model-supplied text.
 
 Reads preserve line numbers when scrubbing multi-line secrets. The default
 256-reference capacity bounds bookkeeping; subsequent reads still return source
-text without a reference. Individual reads are capped at 16 KB of UTF-8 text;
-request smaller line ranges for larger files. Neither bound limits answer length
-or the number of necessary research operations. Invalid reads return fixed errors.
+text without a reference. Individual reads are capped at 16 KB of UTF-8 text.
+Oversized ranges, including single long lines, return a page without splitting
+UTF-8 characters. Only paged reads add `start_offset`, `end_offset` (exclusive),
+and `next_offset` (`null` on the last page). Continue with
+`read(path, start, end, offset=page["next_offset"])` until `next_offset` is null.
+Offsets count characters in the **scrubbed**, newline-normalized selected line
+range; retain the same path/start/end on continuation. `start_line`/`end_line`
+identify that selected range; offsets identify the exact observed portion.
+Each page binds its own current file hash and is not a complete-file observation.
+File changes invalidate earlier references; pagination is not a frozen snapshot.
+Short reads keep their existing response shape and require no continuation call.
+Neither bound limits answer length or necessary research. Invalid reads return fixed errors.
 
 References establish observed source identity and span, not semantic support.
 Callers must keep published claims within observed evidence, retain applicability,
