@@ -14,6 +14,16 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
+`read` accepts an optional integer `offset` (default 0). Large selected ranges,
+including single long lines, return bounded pages with `next_offset`; continue
+with that offset and the same path/start/end until it is null. Offsets count
+characters in the scrubbed, newline-normalized selected range, not raw bytes.
+For the host's direct path, path can remain omitted on continuation. Short reads
+have no continuation fields and need no extra call. Partial pages are marked
+`complete_file: false`; file changes invalidate earlier evidence references.
+Reading all pages is not required unless the task needs them. Paging never
+triggers lookup or publication and imposes no limit on necessary research.
+
 This integration does not intercept arbitrary tools or change a desktop host's
 task dispatcher. Hosts must launch it with the actual task question and route
 their explicit direct reads to it. Existing MCP/setup connections are unchanged;
@@ -34,9 +44,14 @@ a usable adapter, not an automatic installation into Codex's task dispatcher.
 
 `publish` accepts `content`, `applicability`, `evidence_refs`, and `kind` (behavior
 or value). The original bound question is supplied by the host, not retyped by the
-model. Value-only publication requires explicit remember intent. After one attempt
-the tool is hidden; guessed direct invocation is also guarded. Failure returns a
-fixed result and leaves reads/research available. No retry, extra model call,
+model. Value-only publication requires explicit remember intent. Stored
+`applicability + "\n" + content` must total at most 4,000 characters, including
+the newline. An oversized candidate returns `finding_too_large` before consuming
+the attempt or touching storage; the caller can shorten the memory and resubmit.
+This limit never applies to the user's answer or necessary research. After an
+attempt passes the size preflight, the tool is hidden; guessed direct invocation
+is also guarded. Failure returns a fixed result and leaves reads/research
+available. No automatic retry, extra model call,
 mandatory abstention message or final-answer gate is introduced. A failed network
 operation can have an unknown outcome; use the ordinary client's explicit retry
 or inspection path rather than submitting another candidate automatically.

@@ -22,10 +22,12 @@ def test_oversized_read_can_be_split_without_losing_content(identity):
     client, repo, _ = identity
     (repo / "large.txt").write_text("x" * 9000 + "\n" + "y" * 9000, encoding="utf8")
     session = EvidenceSession(Workflow(client, "team", repo))
-    with pytest.raises(EvidenceError, match="smaller line ranges"):
-        session.read("large.txt")
-    a, b = session.read("large.txt", 1, 1), session.read("large.txt", 2, 2)
-    assert a["content"] + "\n" + b["content"] == (repo / "large.txt").read_text()
+    a = session.read("large.txt")
+    b = session.read("large.txt", offset=a["next_offset"])
+    assert a["content"] + b["content"] == (repo / "large.txt").read_text()
+    assert len(a["content"].encode("utf-8")) <= 16000
+    assert b["next_offset"] is None
+    assert not a["complete_file"] and not b["complete_file"]
     assert len(session.resolve([a["evidence_ref"], b["evidence_ref"]])) == 1
 
 

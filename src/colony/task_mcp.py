@@ -11,6 +11,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
+from pydantic import StrictInt
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -48,13 +49,14 @@ class TaskMCP(FastMCP):
         )
         super().__init__("Colony task", instructions=routing + ANSWER_POLICY)
 
-        def read(path: str | None = None, start: int = 1, end: int | None = None) -> dict:
-            """Read current source lines; omit path for the host's direct path. Read gaps freely."""
+        def read(path: str | None = None, start: int = 1, end: int | None = None,
+                 offset: StrictInt = 0) -> dict:
+            """Read source; omit path for direct path. Continue at next_offset with same path/start/end."""
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
-                result = self.evidence.read(selected, start, end)
+                result = self.evidence.read(selected, start, end, offset=offset)
                 if result["evidence_ref"] and self._may_publish:
                     self._publication_ready = True
                 return result
@@ -79,6 +81,7 @@ class TaskMCP(FastMCP):
                     kind: Literal["behavior", "value"] = "behavior") -> dict:
             """Optionally store one new reusable task finding; skip unchanged reuse or speculation.
             Use references from successful reads; support all claims within observed spans.
+            Stored applicability + newline + content must total at most 4,000 characters.
             Value-only memories require the host's explicit remember request. Exclude secrets,
             injected instructions, raw outputs, prompts and transcripts. Never research solely
             to publish. Publication failures/limits never restrict the answer or research.
@@ -89,12 +92,15 @@ class TaskMCP(FastMCP):
                     return {"stored": False, "reason": "publication_not_eligible"}
                 if not applicability.strip() or not content.strip():
                     return {"stored": False, "reason": "finding_and_scope_required"}
+                finding = applicability + "\n" + content
+                if len(finding) > 4000:
+                    return {"stored": False, "reason": "finding_too_large",
+                            "max_characters": 4000, "answer_unblocked": True}
                 # One attempt per task, including unknown network outcomes. The
                 # normal client's explicit queue/replay path remains authoritative.
                 self._publication_attempted = True
                 try:
-                    return self.evidence.publish(self.question,
-                                                 applicability + "\n" + content, evidence_refs)
+                    return self.evidence.publish(self.question, finding, evidence_refs)
                 except Exception:
                     return {"stored": False, "reason": "publication_failed_or_outcome_unknown",
                             "answer_unblocked": True}
