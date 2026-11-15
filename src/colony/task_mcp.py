@@ -4,17 +4,18 @@ import argparse
 import threading
 from contextlib import suppress
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
-from pydantic import StrictInt
+from pydantic import Field, StrictInt
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
+from colony.models import ContextBudget
 from colony.workflow import Workflow
 
 ANSWER_POLICY = (
@@ -30,12 +31,25 @@ class TaskMCP(FastMCP):
     """The host supplies task intent; source text cannot select a cheaper mode."""
 
     def __init__(self, workflow, question: str, *, direct_path: str | None = None,
-                 remember: bool = False):
+                 remember: bool = False, context_budget: ContextBudget | None = None):
         if not isinstance(question, str) or not question.strip():
             raise ValueError("A focused task question is required")
         self.workflow = workflow
         self.question = question
         self.direct_path = direct_path
+        # Reuse the ordinary adaptive lookup implementation, including negotiation,
+        # evidence verification and final wire-size accounting. This is an in-process
+        # delegate, not another exposed MCP connection or model/tool round trip.
+        lookup = None
+        if context_budget is not None:
+            from colony.mcp import create_mcp
+
+            lookup = create_mcp(
+                workflow.client.home, workflow_namespace=workflow.namespace,
+                workflow_repo=workflow.repo, workflow_read_only=workflow.read_only,
+                workflow_repository_id=workflow.repository_id, context_budget=context_budget,
+            )
+            context_budget = ContextBudget.model_validate(context_budget)
         self.evidence = EvidenceSession(workflow)
         # Trusted host classification; tool/source arguments cannot promote this.
         self._may_publish = not workflow.read_only and (remember or direct_path is None)
@@ -73,8 +87,29 @@ class TaskMCP(FastMCP):
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 
-        for function in (read, research):
-            self.add_tool(function, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
+        if lookup is not None:
+            async def adaptive_research(
+                max_context_tokens: Annotated[int, Field(strict=True, ge=256, le=8192)] | None = None,
+            ):
+                try:
+                    return await lookup.call_tool("ask", {
+                        "question": self.question, "max_context_tokens": max_context_tokens,
+                    })
+                except Exception:
+                    return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
+
+            units = "UTF-8 bytes (estimate)" if context_budget.encoding == "utf8_bytes" else "o200k_base tokens"
+            adaptive_research.__doc__ = (
+                "Look up the original task. Assess current source excerpts; reuse sufficient evidence "
+                "with citations, and research gaps or contradictions. max_context_tokens caps the "
+                f"full lookup response: default {context_budget.max_tokens} {units}; override 256..8192. "
+                "budget_limited is not proof of no match; no automatic retry. "
+                "This cap never limits the answer or necessary source research."
+            )
+            research = adaptive_research
+
+        for name, function in (("read", read), ("research", research)):
+            self.add_tool(function, name=name, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
                           structured_output=False)
 
         def publish(content: str, applicability: str, evidence_refs: list[str],
@@ -141,7 +176,10 @@ class TaskMCP(FastMCP):
 
 
 def main(argv=None):
+    from colony.cli import _context_budget, _context_budget_flags
+
     parser = argparse.ArgumentParser(description=__doc__)
+    _context_budget_flags(parser)
     parser.add_argument("--home", type=Path, required=True)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--ns", required=True)
@@ -151,9 +189,11 @@ def main(argv=None):
     parser.add_argument("--remember", action="store_true", help="Trusted explicit user request to remember")
     parser.add_argument("--repository-id")
     args = parser.parse_args(argv)
+    budget = _context_budget(args)
     workflow = Workflow(Client(args.home), args.ns, args.repo,
                         read_only=args.read_only, repository_id=args.repository_id)
-    server = TaskMCP(workflow, args.question, direct_path=args.direct_path, remember=args.remember)
+    server = TaskMCP(workflow, args.question, direct_path=args.direct_path, remember=args.remember,
+                     context_budget=budget)
     try:
         server.run(transport="stdio")
     finally:

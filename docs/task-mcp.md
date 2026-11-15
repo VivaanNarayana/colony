@@ -65,5 +65,14 @@ they do not solve poisoned-memory admission. The normal untrusted-memory and
 source-validation protections remain in force.
 
 The adapter makes no additional model calls and adds no answer cap.
-Legacy lookup representation is retained on main; this adapter does not copy
-PR15's adaptive packing or change retrieval. End-to-end gross savings are unproven.
+On PR15, opt into adaptive lookup with `--context-budget 3072
+--context-encoding utf8_bytes`. The Python API accepts `context_budget=ContextBudget(...)`.
+Adaptive `research` uses the same negotiation, source verification, packing and
+wire-response cap as ordinary adaptive `ask`, with the task question bound by the
+host. Its optional `max_context_tokens` override has the same 256..8192 range and
+configured units. No automatic retry or budget escalation occurs. This is a
+lookup-response limit, never an answer-length or source-research limit. Missing,
+limited or unavailable memories leave source reads and fuller answers available.
+Direct reads, continuation offsets and publication eligibility are unchanged.
+Without a budget, the legacy lookup interface and representation are unchanged.
+This does not change retrieval. End-to-end gross savings remain unproven.
