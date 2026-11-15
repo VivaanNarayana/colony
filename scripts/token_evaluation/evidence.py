@@ -8,6 +8,8 @@ from pathlib import Path
 from .protocol import validate_evidence_policy
 from .redaction import redacted_source_lines
 from .research import Research
+from .adapters import research_call
+from .task_evidence import verified_page, lookup_value, handle
 
 
 def _objects(item):
@@ -240,6 +242,8 @@ def evaluate_mechanisms(root, manifest, rows):
             record = next(r for r in records if r['id'] == row['id'])
             path = root / 'logs' / record.get('result', record)['events']
         research, current_partial, stale_seen = [], [], False
+        references = {}
+        task_pages = {}
         scope_reads = []
         try:
             required = required_source_spans(task, snapshot, source_root)
@@ -255,7 +259,7 @@ def evaluate_mechanisms(root, manifest, rows):
                 call_id = item.get('id')
                 if not isinstance(call_id, str) or not call_id:
                     call_id = ('line', line_number)
-                if str(item.get('server', '')).lower() == 'repository':
+                if research_call(str(item.get('server', '')).lower(), item.get('tool')):
                     research_attempts.add(call_id)
                 if event_type == 'item.completed':
                     unresolved_calls.discard(call_id)
@@ -264,8 +268,16 @@ def evaluate_mechanisms(root, manifest, rows):
             if event.get('type') != 'item.completed' or item.get('type') != 'mcp_tool_call':
                 continue
             server, tool = str(item.get('server', '')).lower(), item.get('tool')
-            if server == 'repository':
-                spans = _research(item, source_root, files)
+            if research_call(server, tool):
+                spans = []
+                if tool == 'read':
+                    for value in _objects(item):
+                        got, source = verified_page(item, value, source_root, files, task, pages=task_pages)
+                        spans += got
+                        if source and handle(value):
+                            references[handle(value)] = source
+                else:
+                    spans = _research(item, source_root, files)
                 if spans:
                     research += spans
                     scope_reads += spans
@@ -284,8 +296,19 @@ def evaluate_mechanisms(root, manifest, rows):
                 except ValueError:
                     args = {}
             for value in _objects(item):
+                if tool == 'research':
+                    value = lookup_value(value)
+                    args = {**args, 'question': task['question']}
+                if tool == 'publish':
+                    refs = args.get('evidence_refs')
+                    valid_refs = isinstance(refs, list) and bool(refs) and all(
+                        isinstance(r, str) and r in references for r in refs)
+                    content, scope = args.get('content'), args.get('applicability')
+                    args = {**args, 'question': task['question'],
+                            'sources': [references[r] for r in refs] if valid_refs else [],
+                            'content': scope + '\n' + content if isinstance(scope, str) and isinstance(content, str) else None}
                 identity = (row['arm'], row['workload'], value.get('id'))
-                if tool == 'push':
+                if tool in {'push', 'publish'}:
                     sources = args.get('sources')
                     valid = (task.get('phase', 'learn') == 'learn'
                         and value.get('stored') is True and isinstance(value.get('id'), str)
@@ -307,7 +330,7 @@ def evaluate_mechanisms(root, manifest, rows):
                         published[identity] = {'sources': sources, 'question': args['question'],
                             'content': args['content'], 'snapshot': snapshot['id'], 'attempt': row['id'], 'task': row['task']}
                         decision['publication'] = True
-                if tool != 'ask':
+                if tool not in {'ask', 'research'}:
                     continue
                 expected_question = task.get('memory_query', task.get('question'))
                 if manifest.get('track') == 'natural':

@@ -82,6 +82,9 @@ def validate_native_receipts(root, run, manifest, rows):
     """
     from .native import _client_args
     from .protocol import arm_order, arm_protocol, cohort_root
+    from .host_discovery import validate_host_discovery
+
+    validate_host_discovery(manifest)
 
     root = Path(root).resolve()
     launch = run.get("run_dir")
@@ -102,7 +105,7 @@ def validate_native_receipts(root, run, manifest, rows):
             invocation = json.loads((root / "control" / (row["id"] + "-invocation.json")).read_text(encoding="utf-8"))
             args = invocation.get("args")
             settings = _settings(args)
-            names = settings.get("mcp_servers.repository.env_vars")
+            names = settings.get("mcp_servers.repository.env_vars", settings.get('mcp_servers.colony.env_vars'))
             _require(isinstance(names, list) and all(isinstance(n, str) for n in names)
                      and len(names) == len(set(names))
                      and _REQUIRED_FORWARDED <= set(names) <= _FORWARDED,
@@ -118,7 +121,8 @@ def validate_native_receipts(root, run, manifest, rows):
             role = "a" if task["phase"] == "learn" else "b"
             config = invocation.get("configuration")
             _require((config is None if row["arm"] == "no_colony" else
-                      isinstance(config, dict) and config.get("mode") == "managed"
+                      isinstance(config, dict) and config.get("mode") ==
+                      ('task' if arm_protocol(manifest, row['arm'])['target'].get('adapter') == 'task' else 'managed')
                       and config.get("role") == role), "configuration role changed")
             team = {"homes": {r: str(cohort_root(launch, row["arm"]) / "private" / row["workload"] / "team" / ("agent-" + r))
                               for r in ("a", "b")}}

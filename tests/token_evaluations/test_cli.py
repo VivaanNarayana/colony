@@ -214,7 +214,7 @@ def test_template_freezes_prospective_output_and_complete_collector(tmp_path, mo
     client.write_bytes(b"provider-free-metadata-client")
     frozen = tmp_path / "protocol.json"
     args = cli.parser().parse_args(["template", "--catalog", str(catalog),
-        "--target-python", str(target), "--target-repo", str(tmp_path), "--revision", "main",
+        "--adapter", "ordinary", "--target-python", str(target), "--target-repo", str(tmp_path), "--revision", "main",
         "--client", str(client), "--model", "frozen", "--track", "controlled",
         "--format", "json", "--output", str(frozen), "--paired"])
     source = b"clean installed bytes"

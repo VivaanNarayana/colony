@@ -68,10 +68,15 @@ def _target(python, repo, revision, mcp_args, setup_args, server_args):
 
 def template(args):
     """Freeze explicit runtime/client/collector pins without launching a native session."""
-    catalog_path = Path(args.catalog).resolve(strict=True)
+    catalog = getattr(args, 'catalog', None)
+    if catalog is None:
+        name = 'task-adapter-catalog.json' if 'task' in (args.adapter, args.main_adapter) else 'catalog.json'
+        catalog = Path(__file__).resolve().parents[2] / 'tests/token_evaluations/fixtures' / name
+    catalog_path = Path(catalog).resolve(strict=True)
     catalog = _read(catalog_path)
     target = _target(args.target_python, args.target_repo, args.revision,
                      getattr(args, "mcp_arg", []), getattr(args, "setup_arg", []), getattr(args, "server_arg", []))
+    target['adapter'] = args.adapter
     main_flags = [getattr(args, key, None) for key in ("main_target_python", "main_target_repo", "main_revision")]
     if args.paired:
         if any(main_flags):
@@ -81,6 +86,9 @@ def template(args):
         if not all(main_flags):
             raise ValueError("Default three-arm campaign requires --main-target-python, --main-target-repo and --main-revision; --paired is explicit opt-in")
         main_target = _target(*main_flags, args.main_mcp_arg, args.main_setup_arg, args.main_server_arg)
+        if args.main_adapter is None:
+            raise ValueError('Explicit --main-adapter required')
+        main_target['adapter'] = args.main_adapter
     executable = str(Path(args.client).resolve(strict=True))
     version = subprocess.run([executable, "--version"], capture_output=True, text=True,
                              check=True, timeout=15).stdout.strip()
@@ -113,6 +121,10 @@ def template(args):
     }
     if main_target is not None:
         value["main_target"] = main_target
+    if args.host_discovery:
+        value['host_discovery'] = _read(args.host_discovery)
+        from .host_discovery import validate_host_discovery
+        validate_host_discovery(value)
     validate_manifest(value)
     return {"manifest": _write(args.output, value), "protocol_sha256": digest(value),
             "native_sessions_started": 0}
@@ -179,10 +191,13 @@ def parser():
     result = argparse.ArgumentParser(description=__doc__)
     commands = result.add_subparsers(dest="command", required=True)
     command = commands.add_parser("template", help="Freeze explicit pins; only local version/import/Git reads")
-    command.add_argument("--catalog", default=str(Path(__file__).resolve().parents[2] / "tests/token_evaluations/fixtures/catalog.json"))
+    command.add_argument("--catalog", help='Custom frozen catalog; task mode defaults to the prospective explicit-path catalog')
     for flag in ("target-python", "target-repo", "revision", "client", "model", "output"):
         command.add_argument("--" + flag, required=True)
     command.add_argument("--paired", action="store_true", help="Explicit two-arm diagnostic; default is candidate/main/one No-Colony")
+    command.add_argument('--adapter', choices=('ordinary', 'task'), required=True)
+    command.add_argument('--main-adapter', choices=('ordinary', 'task'))
+    command.add_argument('--host-discovery', help='Retained native-client tool-refresh trace; required by task-mode launch preflight')
     for flag in ("main-target-python", "main-target-repo", "main-revision"):
         command.add_argument("--" + flag)
     for flag in ("main-mcp-arg", "main-setup-arg", "main-server-arg"):

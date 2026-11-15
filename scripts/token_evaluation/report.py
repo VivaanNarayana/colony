@@ -11,11 +11,13 @@ import re
 import secrets
 from pathlib import Path
 
+from .adapters import allowed_tool, research_call
 from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
 from .output import instruction
 from .protocol import (
     ATTEMPT_ID_PATTERN,
     CONTRACT,
+    arm_protocol,
     evaluation_arms,
     validate_contract,
     verify_active_collector,
@@ -23,6 +25,7 @@ from .protocol import (
 from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .receipt import validate_native_receipts
+from .task_evidence import lookup_value, verified_page
 from .tool_receipts import collect as collect_tool_receipts
 from .tool_receipts import digest as receipt_digest
 from .usage import native_usage
@@ -66,10 +69,11 @@ def extract_answer(events_path, policy):
             "phase_guaranteed": bool(phases) and all(p is not None for p in phases)}
 
 
-def activity(events_path):
+def activity(events_path, adapter='ordinary'):
     """Observe exact completed MCP calls and every JSON content block; never infer reuse."""
     counts = dict.fromkeys(("colony_calls", "research_calls", "hits", "misses", "stored",
-                            "claimed_current_reads", "stale", "miss_or_research_advice", "claimed_validated_hits", "safe_refusals", "claimed_evidence_hits", "cache_misses", "unapproved_calls"), 0)
+                            "claimed_current_reads", "stale", "miss_or_research_advice", "claimed_validated_hits", "safe_refusals", "claimed_evidence_hits", "cache_misses", "unapproved_calls",
+                            "task_adapter_calls", "task_read_attempts", "task_publish_attempts", "task_reference_results"), 0)
     seen, completed = {}, set()
     for number, line in enumerate(Path(events_path).read_text(encoding="utf-8").splitlines()):
         event = json.loads(line)
@@ -94,12 +98,14 @@ def activity(events_path):
             continue
         server, tool = str(item.get("server", "")).lower(), item.get("tool")
         colony = server == "colony"
-        allowed = ((colony and tool in {"ask", "push"}) or
-                   (server == "repository" and tool in {"fixture_files", "fixture_read", "fixture_search"}))
+        allowed = allowed_tool(server, tool, adapter)
         if first:
             counts["unapproved_calls"] += not allowed
             counts["colony_calls"] += colony
-            counts["research_calls"] += server == "repository"
+            counts["research_calls"] += research_call(server, tool)
+            counts['task_adapter_calls'] += colony and tool in {'read', 'research', 'publish'}
+            counts['task_read_attempts'] += colony and tool == 'read'
+            counts['task_publish_attempts'] += colony and tool == 'publish'
         if identity in completed:
             if event.get("type") == "item.completed":
                 raise ValueError("Duplicate completed tool call")
@@ -121,7 +127,10 @@ def activity(events_path):
                 continue
             if not isinstance(value, dict):
                 continue
-            if tool == "ask":
+            if tool == 'read':
+                counts['task_reference_results'] += isinstance(value.get('evidence_ref'), str)
+            if tool in {"ask", "research"}:
+                value = lookup_value(value) if tool == 'research' else value
                 counts["hits"] += value.get("hit") is True
                 counts["claimed_validated_hits"] += (value.get("hit") is True
                     and value.get("status") == "validated"
@@ -139,7 +148,7 @@ def activity(events_path):
                     and value.get("match_kind") == "evidence"
                     and bool(value.get("current_repository_reads")))
                 counts["miss_or_research_advice"] += (value.get("hit") is False or value.get("recommendation") == "research")
-            if tool == "push":
+            if tool in {"push", "publish"}:
                 counts["stored"] += value.get("stored") is True
     return counts
 
@@ -211,7 +220,10 @@ def _load(run_dir):
                                               "output_instruction": instruction(manifest["output"])}),
                      "source_sha256": digest({"snapshot": task.get("snapshot"), "files": current["files"] if current else {}}),
                      "citation_sha256": digest(task["oracle"]),
-                     "label_sha256": digest(task["rubric"]), **answer, "activity": activity(path), **native_usage(path)})
+                     "label_sha256": digest(task["rubric"]), **answer,
+                     "activity": activity(path, 'ordinary' if invocation['arm'] == 'no_colony' else
+                                          arm_protocol(manifest, invocation['arm']).get('target', {}).get('adapter', 'ordinary')),
+                     **native_usage(path)})
         # native_usage hashes all agent messages; preserve declared answer selection.
         rows[-1].update(answer)
         _require(_sha(path) == result["events_sha256"], "Events changed while reading")
@@ -253,15 +265,21 @@ def review_subject(run_dir, run, manifest, row, case):
         final = max((n for n, event in enumerate(events) if event.get("type") == "item.completed"
                      and event.get("item", {}).get("type") == "agent_message"), default=0)
         spans = []
+        task_pages = {}
         for event in events[:final]:
             item = event.get("item", {})
             if event.get("type") != "item.completed" or item.get("type") != "mcp_tool_call":
                 continue
             server = str(item.get("server", "")).lower()
-            if server == "repository":
-                spans += _research(item, source_root, current["files"])
-            elif server == "colony" and item.get("tool") == "ask":
+            if server == 'colony' and item.get('tool') == 'read':
                 for value in _objects(item):
+                    spans += verified_page(item, value, source_root, current['files'], task, pages=task_pages)[0]
+            elif research_call(server, item.get('tool')):
+                spans += _research(item, source_root, current["files"])
+            elif server == "colony" and item.get("tool") in {"ask", "research"}:
+                for value in _objects(item):
+                    if item['tool'] == 'research':
+                        value = lookup_value(value)
                     spans += verify_current_reads(value.get("current_repository_reads"), source_root, current["files"],
                                                   allow_clipped_tail=True, allow_redaction=True, allow_blank_file=True)
         # Normalize by evidence bytes, never credit tool names or number of calls.
@@ -461,6 +479,12 @@ def report(run_dir, quality_path, output_path):
                       if arms["main"]["known_usage"]["uncached_input_plus_output"] else None}
                      if primary["quality_qualified"] else None)
     result = {"contract": CONTRACT, "protocol_sha256": run["protocol_sha256"],
+              'adapter_selection': {arm: ('none' if arm == 'no_colony' else
+                    arm_protocol(manifest, arm).get('target', {}).get('adapter', 'ordinary')) for arm in evaluation_arms(manifest)},
+              'task_adapter_observations': {arm: {
+                  key: sum(r['activity'][key] for r in rows if r['arm'] == arm)
+                  for key in ('task_adapter_calls', 'task_read_attempts', 'task_publish_attempts', 'task_reference_results')
+              } for arm in evaluation_arms(manifest)},
               "output": manifest["output"], "arms": arms, "attempts": rows,
               "comparisons": comparisons,
               "primary_comparison": comparisons.get("candidate_vs_main"),
