@@ -213,6 +213,10 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
                     "--files", json.dumps(list(source_files))],
                 "mcp_servers.repository.required": True,
                 "mcp_servers.repository.default_tools_approval_mode": "approve"}
+    if host_features:
+        # The client emits the known experimental-feature banner as an error item.
+        # Suppress that banner at its source; never relax generic error/tool checks.
+        settings["suppress_unstable_features_warning"] = True
     if arm != "no_colony":
         role = "a" if task["phase"] == "learn" else "b"
         mcp_args = ["-I", "-m", "colony.cli", "--home", team["homes"][role], "mcp",

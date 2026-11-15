@@ -1,6 +1,6 @@
 # Prospective task-adapter evaluation
 
-Contract `colony.token-evaluation/12` requires an explicit `--adapter ordinary|task`
+Contract `colony.token-evaluation/13` requires an explicit `--adapter ordinary|task`
 and, for a three-arm campaign, `--main-adapter ordinary|task`. The choice, target
 revision, options, collector, client and workload bytes are frozen together. Old
 contracts require their original pinned collectors; do not upgrade or regrade
@@ -77,9 +77,17 @@ this feature for every arm, including No-Colony, to hold host configuration cons
 Local preflight passes the same overrides to `features list` and rejects missing or
 disabled required features before launching workers. Feature metadata alone is not
 proof: the native same-connection discovery trace is still required and now records
-the feature configuration. The original `/11` collectors and results stay frozen;
+the feature configuration. The original `/11` and `/12` collectors and results stay frozen;
 replay them with their original code. No product publication rules, evidence checks,
 answer obligations, prompts, or grading thresholds change in this host fix.
+
+The native client labels its experimental-feature startup banner as an `error`
+item. Contract `/13` sets the client's `suppress_unstable_features_warning=true`
+for the same task campaigns on every arm. This suppresses that known banner at
+its source rather than exempting arbitrary error items in the evaluator. Real
+errors and unapproved calls retain their existing treatment. The first `/12`
+refresh-enabled campaign retains its raw banners, policy flags, and grades;
+it must not be silently regenerated using this prospective configuration.
 
 ## Evidence and interpretation
 

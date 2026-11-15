@@ -24,6 +24,7 @@ def test_refresh_configuration_is_shared_across_all_campaign_arms(tmp_path, cand
                                tmp_path, arm, {'CODEX_HOME': 'private'}, ['settings.py'])
     enabled = [args[i + 1] for i, arg in enumerate(args[:-1]) if arg == '--enable']
     assert enabled == (['mcp_tool_list_changed'] if 'task' in (candidate, main) else [])
+    assert ('suppress_unstable_features_warning=true' in args) == ('task' in (candidate, main))
     assert spec == before
 
 
@@ -56,8 +57,9 @@ def test_paired_task_campaign_enables_refresh_and_old_protocol_requires_original
     assert required_host_features(spec) == {}
     spec['target']['adapter'] = 'task'
     assert required_host_features(spec) == {'mcp_tool_list_changed': True}
-    with pytest.raises(ValueError, match='original pinned collector'):
-        validate_contract({**spec, 'contract': 'colony.token-evaluation/11'})
+    for version in (11, 12):
+        with pytest.raises(ValueError, match='original pinned collector'):
+            validate_contract({**spec, 'contract': f'colony.token-evaluation/{version}'})
 
 
 @pytest.mark.parametrize('last_tools', [None, ['read', 'research']])
