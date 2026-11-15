@@ -4,8 +4,19 @@ import json
 import re
 from pathlib import Path
 
+from pydantic import BaseModel, StrictInt, ValidationError
+
 from .redaction import redacted_source_lines
 from .research import Research
+
+
+class _ReadArguments(BaseModel):
+    """Frozen producer signature, independent of the installed target's code."""
+
+    path: str | None = None
+    start: int = 1
+    end: int | None = None
+    offset: StrictInt = 0
 
 
 def arguments(item):
@@ -13,16 +24,37 @@ def arguments(item):
     if isinstance(value, str):
         try:
             value = json.loads(value)
-        except ValueError:
-            return {}
-    return value if isinstance(value, dict) else {}
+        except (ValueError, RecursionError):
+            return None
+    if not isinstance(value, dict):
+        return None
+    value = value.copy()
+    # FastMCP pre-parses non-scalar JSON strings for these non-str annotations
+    # before Pydantic validates them (notably nullable path/end "null"). Keep
+    # scalar strings intact: StrictInt offsets must never gain coercion here.
+    for name in _ReadArguments.model_fields:
+        if isinstance(value.get(name), str):
+            try:
+                decoded = json.loads(value[name])
+            except RecursionError:
+                return None
+            except ValueError:
+                continue
+            if not isinstance(decoded, (str, int, float)):
+                value[name] = decoded
+    try:
+        return _ReadArguments.model_validate(value)
+    except ValidationError:
+        return None
 
 
 def verified_page(item, value, root, files, task, *, pages=None):
     """Credit fully delivered, unchanged lines only, never redacted or partial lines."""
     args = arguments(item)
-    path = args.get('path', task.get('host_intent', {}).get('direct_path'))
-    start, end, offset = args.get('start', 1), args.get('end'), args.get('offset', 0)
+    if args is None:
+        return [], None
+    path = args.path if args.path is not None else task.get('host_intent', {}).get('direct_path')
+    start, end, offset = args.start, args.end, args.offset
     if (value.get('path') != path or type(start) is not int or start < 1
             or type(offset) is not int or offset < 0 or (end is not None and type(end) is not int)):
         return [], None
@@ -39,7 +71,7 @@ def verified_page(item, value, root, files, task, *, pages=None):
             return [], None
         lines, redacted = rendered
         end = len(lines) if end is None else end
-        if (end < start and lines) or end > len(lines) or (not lines and (start != 1 or args.get('end') is not None)):
+        if (end < start and lines) or end > len(lines) or (not lines and (start != 1 or args.end is not None)):
             return [], None
         span = '\n'.join(lines[start - 1:end])
         if offset and offset >= len(span):
