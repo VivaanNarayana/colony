@@ -6,6 +6,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from pydantic import StrictInt
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -36,13 +37,14 @@ class TaskMCP(FastMCP):
         )
         super().__init__("Colony task", instructions=routing + ANSWER_POLICY)
 
-        def read(path: str | None = None, start: int = 1, end: int | None = None) -> dict:
-            """Read current source lines; omit path for the host's direct path. Read gaps freely."""
+        def read(path: str | None = None, start: int = 1, end: int | None = None,
+                 offset: StrictInt = 0) -> dict:
+            """Read source; omit path for direct path. Continue at next_offset with same path/start/end."""
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
-                return self.evidence.read(selected, start, end)
+                return self.evidence.read(selected, start, end, offset=offset)
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 

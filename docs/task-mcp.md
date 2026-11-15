@@ -14,6 +14,16 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
+`read` accepts an optional integer `offset` (default 0). Large selected ranges,
+including single long lines, return bounded pages with `next_offset`; continue
+with that offset and the same path/start/end until it is null. Offsets count
+characters in the scrubbed, newline-normalized selected range, not raw bytes.
+For the host's direct path, path can remain omitted on continuation. Short reads
+have no continuation fields and need no extra call. Partial pages are marked
+`complete_file: false`; file changes invalidate earlier evidence references.
+Reading all pages is not required unless the task needs them. Paging never
+triggers lookup or publication and imposes no limit on necessary research.
+
 This integration does not intercept arbitrary tools or change a desktop host's
 task dispatcher. Hosts must launch it with the actual task question and route
 their explicit direct reads to it. Existing MCP/setup connections are unchanged;
