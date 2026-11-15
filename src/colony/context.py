@@ -1,5 +1,6 @@
 """Bounded, scrubbed excerpts of a trail's current, fingerprinted evidence."""
 
+import ast
 import hashlib
 import re
 from pathlib import Path
@@ -296,7 +297,42 @@ def _markdown_code_units(lines):
         index += 1
 
 
-def _source_unit(ref, lines, line):
+def _python_spans(lines):
+    """Parse scrubbed source, never execute it; retain original line coordinates."""
+    try:
+        nodes = ast.parse("\n".join(lines)).body
+    except (SyntaxError, ValueError, RecursionError):
+        # Unsupported grammar or redaction can make parsing impossible. Let the
+        # packer withhold an oversized whole source instead of guessing its scope.
+        return [(1, len(lines))]
+    spans, previous_end = [], 0
+    for node in nodes:
+        first, last = node.lineno, node.end_lineno
+        if getattr(node, "decorator_list", None):
+            # A parenthesized decorator's AST expression can start AFTER its @.
+            # Between top-level statements, the first root @ begins this unit.
+            first = next((i + 1 for i in range(previous_end, first)
+                          if lines[i].lstrip(" \t\f").startswith("@")), None)
+            if first is None:
+                return [(1, len(lines))]
+        spans.append((first, last))
+        previous_end = last
+    return spans
+
+
+def _python_unit(lines, line, spans):
+    first, last = _paragraph_unit(lines, min(line - 1, len(lines) - 1))
+    enclosing = [(a, b) for a, b in spans if a <= last and b >= first]
+    if enclosing:
+        return min(first, enclosing[0][0]), max(last, enclosing[-1][1])
+    if any(text[:1].isspace() and text.strip() for text in lines[first - 1:last]):
+        # AST positions exclude trailing comments inside suites. Do not present
+        # an orphan indented comment as independent of its enclosing scope.
+        return 1, len(lines)
+    return first, last
+
+
+def _source_unit(ref, lines, line, *, python_spans=None):
     # Shell syntax can cross blank lines through heredocs, substitutions and
     # compound commands. Without a parser, the complete script is the safe unit.
     # Any shebang conservatively applies the same rule to unknown extensions.
@@ -318,6 +354,8 @@ def _source_unit(ref, lines, line):
         ".cmd",
     } or lines[0].startswith("#!"):
         return 1, len(lines)
+    if Path(ref).suffix.lower() in {".py", ".pyi"}:
+        return _python_unit(lines, line, _python_spans(lines) if python_spans is None else python_spans)
     if Path(ref).suffix.lower() in {".md", ".markdown"}:
         index = min(line - 1, len(lines) - 1)
         units = list(_markdown_code_units(lines))
@@ -461,6 +499,7 @@ def excerpts(
                 for q, a, s in zip(query_coverage, claim_coverage, scores, strict=True)
             ]
     selected, occupied, cache, budget = [], [], {}, 2800
+    python_scopes = {}
     best = max(scores, default=0)
     by_ref = {s.ref: s for s in sources}
     for index in sorted(range(len(scores)), key=scores.__getitem__, reverse=True):
@@ -476,8 +515,16 @@ def excerpts(
         if adaptive:
             # Count distinct original units before expanding or merging scopes;
             # merging two envelopes must not make room for a third ranked unit.
-            first, last = _source_unit(ref, cache[ref], line)
-            if any(r == ref and first <= b and last >= a for r, a, b in occupied):
+            if (Path(ref).suffix.lower() in {".py", ".pyi"}
+                    and not cache[ref][0].startswith("#!") and ref not in python_scopes):
+                python_scopes[ref] = _python_spans(cache[ref])
+            first, last = _source_unit(ref, cache[ref], line, python_spans=python_scopes.get(ref))
+            # Expanded Python scopes can overlap while their original ranked
+            # paragraphs differ. Keep both selection slots until the final merge;
+            # deduplication must not admit a third, unrelated ranked passage.
+            unit = (_paragraph_unit(cache[ref], line - 1)
+                    if ref in python_scopes else (first, last))
+            if any(r == ref and unit[0] <= b and unit[1] >= a for r, a, b in occupied):
                 continue
             # Only compact same-finding budget salvage nominates this optional
             # expansion. Spend space on the primary selected file, not every file
@@ -485,7 +532,7 @@ def excerpts(
             expand = expand_first_file and not selected
             item = _adaptive_excerpt(ref, cache[ref], (first, last), whole_files or expand)
             selected.append(item)
-            occupied.append((ref, first, last))
+            occupied.append((ref, *unit))
             continue
         start, text = context_window(ref, cache[ref], line, core.count("\n") + 1)
         limit = min(2400, budget)
