@@ -124,3 +124,21 @@ def test_deeply_nested_input_cannot_break_observation_or_echo_source():
     result = summary(trace, stream)
     assert result['metadata_dropped'] == 1
     assert trace.ready and trace.refreshed
+
+
+def test_log_close_failure_does_not_change_child_exit_or_bytes(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    import scripts.native_host_trace as module
+
+    class BadClose(io.StringIO):
+        def close(self):
+            raise OSError('private close failure')
+
+    output = io.BytesIO()
+    with monkeypatch.context() as patch:
+        patch.setattr(module, 'open', lambda *a, **k: BadClose(), raising=False)
+        patch.setattr(sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(b'{}\n')))
+        patch.setattr(sys, 'stdout', SimpleNamespace(buffer=output))
+        code = module.relay([sys.executable, '-c',
+            'import sys;sys.stdout.buffer.write(sys.stdin.buffer.read())'], tmp_path / 'trace', True)
+    assert code == 0 and output.getvalue() == b'{}\n'

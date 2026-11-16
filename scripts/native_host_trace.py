@@ -148,7 +148,10 @@ def relay(command, output, eligible):
                 process.wait()
         trace.finish()
         if stream is not None:
-            stream.close()
+            try:
+                stream.close()
+            except (OSError, ValueError):
+                pass
 
 
 if __name__ == '__main__':
