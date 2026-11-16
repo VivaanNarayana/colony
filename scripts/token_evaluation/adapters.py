@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 
+from .read_contract import read_units
+
 
 def task_mode(protocol):
     return protocol.get('target', {}).get('adapter', 'ordinary') == 'task'
@@ -26,6 +28,12 @@ def task_args(protocol, repo, team, task, files):
 
 def research_call(server, tool):
     return server == 'repository' or (server == 'colony' and tool in {'read', 'fixture_files', 'fixture_search'})
+
+
+def research_units(server, tool, arguments):
+    if server == 'colony' and tool == 'read':
+        return read_units(arguments)
+    return int(research_call(server, tool))
 
 
 def allowed_tool(server, tool, adapter='ordinary'):

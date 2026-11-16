@@ -1,57 +1,17 @@
 """Verify task read pages against frozen bytes; handles never certify truth."""
 import hashlib
-import json
 import re
 from pathlib import Path
 
-from pydantic import BaseModel, StrictInt, ValidationError
-
+from .read_contract import arguments, split_reads
 from .redaction import redacted_source_lines
 from .research import Research
 
 
-class _ReadArguments(BaseModel):
-    """Frozen producer signature, independent of the installed target's code."""
-
-    path: str | None = None
-    start: int = 1
-    end: int | None = None
-    offset: StrictInt = 0
-
-
-def arguments(item):
-    value = item.get('arguments', {})
-    if isinstance(value, str):
-        try:
-            value = json.loads(value)
-        except (ValueError, RecursionError):
-            return None
-    if not isinstance(value, dict):
-        return None
-    value = value.copy()
-    # FastMCP pre-parses non-scalar JSON strings for these non-str annotations
-    # before Pydantic validates them (notably nullable path/end "null"). Keep
-    # scalar strings intact: StrictInt offsets must never gain coercion here.
-    for name in _ReadArguments.model_fields:
-        if isinstance(value.get(name), str):
-            try:
-                decoded = json.loads(value[name])
-            except RecursionError:
-                return None
-            except ValueError:
-                continue
-            if not isinstance(decoded, (str, int, float)):
-                value[name] = decoded
-    try:
-        return _ReadArguments.model_validate(value)
-    except ValidationError:
-        return None
-
-
-def verified_page(item, value, root, files, task, *, pages=None):
+def verified_page(item, value, root, files, task, *, pages=None, bounded_page=False):
     """Credit fully delivered, unchanged lines only, never redacted or partial lines."""
     args = arguments(item)
-    if args is None:
+    if args is None or args.batch is not None:
         return [], None
     path = args.path if args.path is not None else task.get('host_intent', {}).get('direct_path')
     start, end, offset = args.start, args.end, args.offset
@@ -77,6 +37,12 @@ def verified_page(item, value, root, files, task, *, pages=None):
         if offset and offset >= len(span):
             return [], None
         content = span[offset:offset + 16000].encode('utf-8')[:16000].decode('utf-8', errors='ignore')
+        if bounded_page:
+            delivered = value.get('content')
+            if (not isinstance(delivered, str) or not content.startswith(delivered)
+                    or (content and not delivered) or len(delivered.encode('utf-8')) > 16000):
+                return [], None
+            content = delivered
         stop = offset + len(content)
         complete = start == 1 and end == len(lines) and offset == 0 and stop == len(span)
         if (value.get('content') != content or type(value.get('start_line')) is not int
@@ -112,6 +78,44 @@ def verified_page(item, value, root, files, task, *, pages=None):
         return spans, {'ref': canonical, 'content_hash': digest}
     except (OSError, ValueError, TypeError, KeyError, UnicodeError):
         return [], None
+
+
+def verified_reads(item, value, root, files, task, *, pages=None):
+    """Verify each batch span and the aggregate cap before granting any evidence."""
+    args = arguments(item)
+    entries = split_reads(item, value)
+    if args is None or not entries:
+        return []
+    batch = args.batch is not None
+    if batch:
+        size, handles = 0, set()
+        for _, result in entries:
+            if 'error' in result:
+                if (set(result) != {'error', 'evidence_ref'} or result['evidence_ref'] is not None
+                        or not isinstance(result['error'], str)):
+                    return []
+                continue
+            if not isinstance(result.get('content'), str):
+                return []
+            try:
+                size += len(result['content'].encode('utf-8'))
+            except UnicodeError:
+                return []
+            ref = handle(result)
+            if ref and ref in handles:
+                return []
+            if ref:
+                handles.add(ref)
+        if size > 16000:
+            return []
+    verified = []
+    for child, result in entries:
+        if 'error' in result:
+            continue
+        spans, source = verified_page(child, result, root, files, task,
+                                      pages=pages, bounded_page=batch)
+        verified.append((spans, source, result))
+    return verified
 
 
 def lookup_value(value):

@@ -1,5 +1,46 @@
 # Memory-use token evaluations
 
+## Batch reads in prospective runs (version /15)
+
+Version `/15` supports the task adapter's ordered `read(batch=[...])` results.
+The existing shared research allowance counts **each requested entry**, including
+failed paths, duplicate paths and continuation pages. Listing and search still
+cost one unit. Reservation happens before validation or source access: a batch
+larger than the remaining allowance is rejected in full and exhausts that
+allowance. Reports retain all requested units, including entries denied by the
+limit. Malformed or empty requests cost at least one unit. Lifecycle updates
+are counted once per entry, and unfinished attempts remain visible.
+
+`research_calls`, `task_read_attempts` and mechanism `research_attempts` therefore
+count entry attempts; `colony_calls` and `task_adapter_calls` count physical MCP
+calls. A batch does not multiply native token usage. Gross tokens remain all
+input plus output tokens, including cached input, failures and incomplete attempts.
+Workers are told the per-entry rule. Answer requirements and publication policy
+are unchanged; this adds no completion gate or extra worker tool call.
+
+Grounding independently verifies each requested path/range/offset against the
+frozen source bytes and scrubber, including the aggregate 16 KB batch content
+limit. Only fully delivered, unredacted lines earn coverage; verified continuation
+pages can complete a line. Reordered/mismatched results cannot substitute another
+source. Publication references must come from prior verified source reads.
+Reviewer receipt contract `/4` projects each entry with its zero-based
+`batch_index`, `batch_size` and the original parent event hash. Failed or missing
+results remain explicit. Receipts omit source content and raw handles and remain
+procedural observations, separate from grounding and task completion. The
+64-receipt bound applies to entries, with omitted entries reported.
+
+The optional metadata observer recognizes references returned inside batches;
+it still cannot establish model visibility, deliberate abstention or grounding.
+No host completion integration is added. The installed target controls batch
+availability: a legacy target retains its single-read schema.
+
+Historical `/14` and earlier protocols, traces, grades and reports must use their
+original pinned collector. They are not migrated or relabeled. Regression tests
+use synthetic events and local MCP calls, never worker/reviewer model sessions.
+Run `tests/token_evaluations/test_batch_adapter_integration.py` against both the
+legacy target and a batch-capable installed target (or a read-only source export
+on `PYTHONPATH`); skips on a legacy target do not validate the batch transport.
+
 ## Task-adapter coverage in prospective runs
 
 New `/11` runs explicitly select ordinary or task MCP per target. See

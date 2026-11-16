@@ -142,7 +142,14 @@ class Trace:
                                 data.update(value)
                     failed = bool(result.get('isError') or 'error' in msg)
                     if operation == 'read':
-                        referenced = not failed and isinstance(data.get('evidence_ref'), str) and bool(data['evidence_ref'])
+                        entries = data.get('results', [data])
+                        if (not isinstance(entries, list) or not 1 <= len(entries) <= 8
+                                or any(not isinstance(entry, dict) for entry in entries)):
+                            entries = []
+                            self.dropped += 1
+                        referenced = not failed and any('error' not in entry
+                            and isinstance(entry.get('evidence_ref'), str) and bool(entry['evidence_ref'])
+                            for entry in entries)
                         self.ready |= self.eligible and referenced
                         self.emit({'event': 'source_read', 'reference_returned': bool(referenced)})
                     else:

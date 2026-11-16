@@ -52,7 +52,7 @@ def test_wrapper_preserves_child_and_trusted_intent(tmp_path, arm, phase, direct
 
 def test_observer_pinned_and_historical_collectors_required(tmp_path):
     assert str(observer_path()) in collector_hashes()
-    for version in (11, 12, 13):
+    for version in (11, 12, 13, 14):
         with pytest.raises(ValueError, match='original pinned collector'):
             validate_contract({**manifest(tmp_path), 'contract': f'colony.token-evaluation/{version}'})
 

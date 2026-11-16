@@ -86,6 +86,22 @@ def test_failed_or_unmatched_reads_do_not_claim_readiness():
     assert summary(trace, stream)['status'] == 'no_referenced_read'
 
 
+@pytest.mark.parametrize('results,ready,dropped', [
+    ([{'error': 'SECRET', 'evidence_ref': None}, {'evidence_ref': 'PRIVATE_REFERENCE'}], True, 0),
+    ([{'error': 'SECRET', 'evidence_ref': 'PRIVATE_REFERENCE'}], False, 0),
+    ([{'evidence_ref': None}], False, 0), ([], False, 1), ([None], False, 1),
+    ([{'evidence_ref': 'PRIVATE_REFERENCE'}] * 9, False, 1),
+])
+def test_batch_readiness_is_bounded_metadata_not_source_evidence(results, ready, dropped):
+    stream = io.StringIO()
+    trace = Trace(stream, True)
+    observe(trace, 'request', id=1, method='tools/call', params={'name': 'read'})
+    response(trace, 1, {'results': results})
+    value = summary(trace, stream)
+    assert value['status'] == ('ready_refresh_unobserved' if ready else 'no_referenced_read')
+    assert value['metadata_dropped'] == dropped
+
+
 @pytest.mark.parametrize('blocked_log', [False, True])
 def test_real_child_transport_is_unchanged_even_when_trace_unwritable(tmp_path, blocked_log):
     script = Path(__file__).resolve().parents[1] / 'scripts/native_host_trace.py'

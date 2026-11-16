@@ -5,11 +5,11 @@ import hashlib
 import json
 from pathlib import Path
 
+from .adapters import research_call, research_units
 from .protocol import validate_evidence_policy
 from .redaction import redacted_source_lines
 from .research import Research
-from .adapters import research_call
-from .task_evidence import verified_page, lookup_value, handle
+from .task_evidence import handle, lookup_value, verified_reads
 
 
 def _objects(item):
@@ -250,17 +250,22 @@ def evaluate_mechanisms(root, manifest, rows):
         except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError):
             decision['errors'].append('invalid task evidence scope')
             continue
-        research_attempts, unresolved_calls = set(), set()
+        research_attempts, unresolved_calls = {}, set()
+        turn = 0
         for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines()):
             event = json.loads(line)
             item = event.get('item', {})
             event_type = event.get('type')
+            if event_type == 'turn.started':
+                turn += 1
             if item.get('type') == 'mcp_tool_call' and event_type in {'item.started', 'item.updated', 'item.completed'}:
                 call_id = item.get('id')
                 if not isinstance(call_id, str) or not call_id:
                     call_id = ('line', line_number)
+                call_id = (turn, call_id)
                 if research_call(str(item.get('server', '')).lower(), item.get('tool')):
-                    research_attempts.add(call_id)
+                    units = research_units(str(item.get('server', '')).lower(), item.get('tool'), item.get('arguments'))
+                    research_attempts[call_id] = max(research_attempts.get(call_id, 0), units)
                 if event_type == 'item.completed':
                     unresolved_calls.discard(call_id)
                 else:
@@ -270,18 +275,21 @@ def evaluate_mechanisms(root, manifest, rows):
             server, tool = str(item.get('server', '')).lower(), item.get('tool')
             if research_call(server, tool):
                 spans = []
+                successes = 0
                 if tool == 'read':
                     for value in _objects(item):
-                        got, source = verified_page(item, value, source_root, files, task, pages=task_pages)
-                        spans += got
-                        if source and handle(value):
-                            references[handle(value)] = source
+                        for got, source, page in verified_reads(item, value, source_root, files, task, pages=task_pages):
+                            spans += got
+                            successes += bool(got)
+                            if source and handle(page):
+                                references[handle(page)] = source
                 else:
                     spans = _research(item, source_root, files)
+                    successes = bool(spans)
                 if spans:
                     research += spans
                     scope_reads += spans
-                    decision['successful_research'] += 1
+                    decision['successful_research'] += successes
                     if current_partial and covers(current_partial + research, required):
                         decision['insufficient'] = True
                     if stale_seen and covers(research, required):
@@ -382,7 +390,7 @@ def evaluate_mechanisms(root, manifest, rows):
                         current_partial = reads
                         research = []  # only research AFTER the partial retrieval fills its gaps
         decision['source_scope_covered'] = covers(scope_reads, required)
-        decision['research_attempts'] = len(research_attempts)
+        decision['research_attempts'] = sum(research_attempts.values())
         decision['unresolved_mcp_calls'] = len(unresolved_calls)
         decision['useful_reuse'] = decision['hit'] and not research_attempts and not unresolved_calls
     return decisions
