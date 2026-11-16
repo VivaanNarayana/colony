@@ -130,7 +130,13 @@ def test_log_close_failure_does_not_change_child_exit_or_bytes(monkeypatch, tmp_
     from types import SimpleNamespace
     import scripts.native_host_trace as module
 
-    class BadClose(io.StringIO):
+    class BadClose:
+        def write(self, value):
+            pass
+
+        def flush(self):
+            pass
+
         def close(self):
             raise OSError('private close failure')
 
