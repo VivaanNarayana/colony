@@ -1,17 +1,72 @@
 """Opt-in transparent stdio observer. Metadata only; never a model or completion hook."""
 import argparse
 import json
+import queue
 import subprocess
 import sys
 import threading
 
 
+EVENT_LIMIT = 256
+
+
+class MetadataSink:
+    """Only serialized allowlisted metadata enters this bounded daemon writer."""
+
+    def __init__(self, output):
+        self.items = queue.Queue(maxsize=EVENT_LIMIT + 1)  # Events plus final summary.
+        self.closed = threading.Event()
+        self.failed = threading.Event()
+        self.worker = threading.Thread(target=self._write, args=(output,), daemon=True)
+        self.worker.start()
+
+    def write(self, value):
+        if self.closed.is_set() or self.failed.is_set():
+            raise OSError('Diagnostics unavailable')
+        try:
+            self.items.put_nowait(value)
+        except queue.Full:
+            self.failed.set()
+            raise OSError('Diagnostics capacity exceeded') from None
+
+    def flush(self):
+        pass  # The writer owns all filesystem operations, including open/close.
+
+    def close(self):
+        self.closed.set()
+        self.worker.join(timeout=0.2)
+
+    def _write(self, output):
+        stream = None
+        try:
+            stream = open(output, 'x', encoding='utf-8')
+            while not self.failed.is_set():
+                try:
+                    value = self.items.get(timeout=0.05)
+                except queue.Empty:
+                    if self.closed.is_set():
+                        break
+                    continue
+                stream.write(value)
+                stream.flush()
+        except (OSError, ValueError):
+            self.failed.set()
+        finally:
+            if stream is not None:
+                try:
+                    stream.close()
+                except (OSError, ValueError):
+                    self.failed.set()
+
+
 class Trace:
-    def __init__(self, stream, eligible, limit=256):
+    def __init__(self, stream, eligible, limit=EVENT_LIMIT):
         self.stream, self.eligible, self.limit = stream, eligible, limit
         self.pending = {}
         self.events = self.dropped = self.attempts = self.outcomes = 0
         self.ready = self.notified = self.refreshed = False
+        self.generation = 0
+        self.finished = False
         self.lock = threading.Lock()
 
     def emit(self, value, final=False):
@@ -28,6 +83,8 @@ class Trace:
 
     def observe(self, direction, raw):
         with self.lock:
+            if self.finished:
+                return
             try:
                 if len(raw) > 1 << 20:
                     self.dropped += 1
@@ -53,13 +110,15 @@ class Trace:
                         if len(self.pending) >= 64 or ident in self.pending:
                             self.dropped += 1
                         else:
-                            self.pending[ident] = operation
+                            self.pending[ident] = (operation, self.generation)
                     return
                 if msg.get('method') == 'notifications/tools/list_changed':
                     self.notified = True
+                    self.generation += 1
+                    self.refreshed = False
                     self.emit({'event': 'tools_list_changed'})
                     return
-                operation = self.pending.pop(ident, None)
+                operation, generation = self.pending.pop(ident, (None, 0))
                 result = msg.get('result', {})
                 if not isinstance(result, dict):
                     raise ValueError()
@@ -67,9 +126,10 @@ class Trace:
                     names = {t.get('name') for t in result.get('tools', []) if isinstance(t, dict)
                              and isinstance(t.get('name'), str)}
                     present = 'publish' in names
-                    self.refreshed |= self.notified and present
+                    after_notification = generation > 0 and generation == self.generation
+                    self.refreshed |= after_notification and present and 'error' not in msg
                     self.emit({'event': 'tool_catalog', 'publish_present': present,
-                               'after_notification': self.notified})
+                               'after_notification': after_notification})
                 elif operation in {'read', 'publish'}:
                     data = {}
                     for block in result.get('content', []):
@@ -94,6 +154,9 @@ class Trace:
 
     def finish(self):
         with self.lock:
+            if self.finished:
+                return
+            self.finished = True
             status = ('attempted_with_receipt' if self.attempts else
                       'not_eligible' if not self.eligible else
                       'refreshed_with_publish_no_attempt' if self.ready and self.refreshed else
@@ -109,13 +172,14 @@ class Trace:
 
 
 def relay(command, output, eligible):
-    try:
-        stream = open(output, 'x', encoding='utf-8')
-    except OSError:
-        stream = None
+    stream = MetadataSink(output)
     trace = Trace(stream, eligible)
-    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                               stderr=sys.stderr, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    try:
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=sys.stderr, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    except BaseException:
+        stream.close()
+        raise
 
     def requests():
         try:
@@ -134,9 +198,11 @@ def relay(command, output, eligible):
     threading.Thread(target=requests, daemon=True).start()
     try:
         for line in iter(process.stdout.readline, b''):
+            # Record the notification generation before the host can react to it.
+            # Observation only enqueues metadata; it never performs filesystem I/O.
+            trace.observe('response', line)
             sys.stdout.buffer.write(line)
             sys.stdout.buffer.flush()
-            trace.observe('response', line)
         return process.wait()
     finally:
         if process.poll() is None:
@@ -147,11 +213,7 @@ def relay(command, output, eligible):
                 process.kill()
                 process.wait()
         trace.finish()
-        if stream is not None:
-            try:
-                stream.close()
-            except (OSError, ValueError):
-                pass
+        stream.close()
 
 
 if __name__ == '__main__':

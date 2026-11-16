@@ -11,12 +11,21 @@ booleans. It never logs source text, question, arguments, evidence handles, auth
 or arbitrary errors. It caps events and pending correlations and reports dropped
 metadata. Existing files are never replaced. Missing/unwritable diagnostics do
 not block the task; the caller must report absent diagnostics as unavailable.
+File open, write, flush and close run in one daemon writer, outside the transport
+lock. Its nonblocking queue holds at most 256 allowlisted events plus one summary;
+raw protocol payloads never enter it. Shutdown waits at most 200 ms for logging.
+A stalled writer may leave an absent or incomplete sidecar; consumers must treat
+missing final summaries as unavailable, never as evidence of no publication.
 
 `refreshed_with_publish_no_attempt` is a protocol observation, not a statement of
 model awareness or deliberate abstention. Model-visible catalog and abstention
 reason stay `unobserved`: this native stdio surface exposes neither. A started
 publication without a correlated response is `attempted_outcome_unobserved`.
 Receipts establish only reported outcomes, never semantic truth or safe content.
+Refresh requires a successful catalog containing publish from a request issued
+after the latest notification. A request already in flight when a notification
+arrives cannot confirm that refresh. New notifications invalidate the previous
+refresh observation; catalog delivery alone does not prove model awareness.
 
 This is separate host infrastructure. Connecting it to an evaluator requires
 prospectively pinning its bytes and exact launch command. It must not modify old

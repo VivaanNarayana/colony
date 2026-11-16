@@ -2,6 +2,7 @@ import io
 import json
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -148,3 +149,136 @@ def test_log_close_failure_does_not_change_child_exit_or_bytes(monkeypatch, tmp_
         code = module.relay([sys.executable, '-c',
             'import sys;sys.stdout.buffer.write(sys.stdin.buffer.read())'], tmp_path / 'trace', True)
     assert code == 0 and output.getvalue() == b'{}\n'
+
+
+def test_catalog_requested_before_notification_does_not_confirm_refresh():
+    stream = io.StringIO()
+    trace = Trace(stream, True)
+    read(trace)
+    observe(trace, 'request', id=2, method='tools/list')
+    observe(trace, 'response', method='notifications/tools/list_changed')
+    observe(trace, 'response', id=2, result={'tools': [{'name': 'publish'}]})
+    assert summary(trace, stream)['status'] == 'ready_refresh_unobserved'
+    catalog = json.loads(stream.getvalue().splitlines()[-2])
+    assert catalog['publish_present'] and not catalog['after_notification']
+
+
+def test_refresh_must_match_latest_notification_and_successful_catalog():
+    stream = io.StringIO()
+    trace = Trace(stream, True)
+    read(trace)
+    refresh(trace)
+    assert trace.refreshed
+    observe(trace, 'request', id=3, method='tools/list')
+    observe(trace, 'response', method='notifications/tools/list_changed')
+    assert not trace.refreshed
+    observe(trace, 'response', id=3, result={'tools': [{'name': 'publish'}]})
+    assert not trace.refreshed  # The older generation cannot satisfy this notification.
+    observe(trace, 'request', id=4, method='tools/list')
+    observe(trace, 'response', id=4, error={'message': 'SECRET'})
+    assert not trace.refreshed
+    observe(trace, 'request', id=5, method='tools/list')
+    observe(trace, 'response', id=5, result={'tools': [{'name': 'read'}]})
+    assert not trace.refreshed
+    observe(trace, 'request', id=6, method='tools/list')
+    observe(trace, 'response', id=6, result={'tools': [{'name': 'publish'}]})
+    assert summary(trace, stream)['status'] == 'refreshed_with_publish_no_attempt'
+
+
+@pytest.mark.parametrize('blocked_operation', ['open', 'write', 'flush', 'close'])
+def test_stalled_sidecar_cannot_hold_transport_or_shutdown(monkeypatch, tmp_path, blocked_operation):
+    from types import SimpleNamespace
+    import scripts.native_host_trace as module
+
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    results, sinks = [], []
+
+    def stall(operation):
+        if operation == blocked_operation:
+            entered.set()
+            assert release.wait(5)
+
+    class SlowFile:
+        def write(self, value):
+            stall('write')
+
+        def flush(self):
+            stall('flush')
+
+        def close(self):
+            stall('close')
+
+    def open_log(*args, **kwargs):
+        stall('open')
+        return SlowFile()
+
+    class CapturedSink(module.MetadataSink):
+        def __init__(self, *args):
+            super().__init__(*args)
+            sinks.append(self)
+
+    raw = b'{"id":1,"method":"tools/call","params":{"name":"publish","arguments":{"secret":"SECRET"}}}\n'
+    output = io.BytesIO()
+    monkeypatch.setattr(module, 'open', open_log, raising=False)
+    monkeypatch.setattr(module, 'MetadataSink', CapturedSink)
+    monkeypatch.setattr(sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(raw)))
+    monkeypatch.setattr(sys, 'stdout', SimpleNamespace(buffer=output))
+
+    def run():
+        try:
+            results.append(module.relay([sys.executable, '-c',
+                'import sys;sys.stdout.buffer.write(sys.stdin.buffer.read());sys.exit(7)'],
+                tmp_path / 'trace', True))
+        finally:
+            finished.set()
+
+    runner = threading.Thread(target=run)
+    runner.start()
+    try:
+        assert entered.wait(2)
+        assert finished.wait(2), 'Diagnostic I/O blocked child delivery or relay shutdown'
+        assert results == [7] and output.getvalue() == raw
+    finally:
+        release.set()
+        runner.join(5)
+        for sink in sinks:
+            sink.worker.join(5)
+        assert not runner.is_alive()
+        assert all(not sink.worker.is_alive() for sink in sinks)
+
+
+def test_stalled_sink_remains_bounded_and_only_queues_allowlisted_metadata(monkeypatch, tmp_path):
+    import scripts.native_host_trace as module
+
+    entered, release = threading.Event(), threading.Event()
+    original_open = open
+
+    def stalled_open(*args, **kwargs):
+        entered.set()
+        assert release.wait(5)
+        return original_open(*args, **kwargs)
+
+    monkeypatch.setattr(module, 'open', stalled_open, raising=False)
+    log = tmp_path / 'metadata.jsonl'
+    sink = module.MetadataSink(log)
+    trace = Trace(sink, True)
+    try:
+        assert entered.wait(2)
+        read(trace)
+        for _ in range(1000):
+            observe(trace, 'response', method='notifications/tools/list_changed', secret='SECRET')
+        trace.finish()
+        assert sink.items.qsize() == module.EVENT_LIMIT + 1
+        # Finishing is idempotent, and late requests cannot follow the final summary.
+        trace.finish()
+        observe(trace, 'request', id=100, method='tools/call', params={'name': 'publish'})
+        assert sink.items.qsize() == module.EVENT_LIMIT + 1 and trace.attempts == 0
+    finally:
+        release.set()
+        sink.close()
+        sink.worker.join(5)
+    text = log.read_text()
+    assert 'SECRET' not in text and 'PRIVATE_REFERENCE' not in text
+    values = [json.loads(line) for line in text.splitlines()]
+    assert len(values) == module.EVENT_LIMIT + 1
+    assert values[-1]['event'] == 'summary' and values[-1]['metadata_dropped'] > 0
