@@ -1,7 +1,6 @@
 """Opt-in transparent stdio observer. Metadata only; never a model or completion hook."""
 import argparse
 import json
-import os
 import subprocess
 import sys
 import threading
@@ -90,7 +89,7 @@ class Trace:
                         self.outcomes += 1
                         self.emit({'event': 'publication_outcome', 'tool_error': failed,
                                    'stored': data.get('stored') is True, 'queued': data.get('queued') is True})
-            except (ValueError, TypeError, KeyError, AttributeError):
+            except (ValueError, TypeError, KeyError, AttributeError, RecursionError):
                 self.dropped += 1  # Never echo malformed/source-controlled input.
 
     def finish(self):

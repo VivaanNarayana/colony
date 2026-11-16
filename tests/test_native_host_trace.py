@@ -113,3 +113,14 @@ def test_logging_failure_is_nonblocking():
     refresh(trace)
     trace.finish()
     assert trace.ready and trace.refreshed and trace.stream is None
+
+
+def test_deeply_nested_input_cannot_break_observation_or_echo_source():
+    stream = io.StringIO()
+    trace = Trace(stream, True)
+    trace.observe('response', b'[' * 4000 + b'"SECRET"' + b']' * 4000)
+    read(trace)
+    refresh(trace)
+    result = summary(trace, stream)
+    assert result['metadata_dropped'] == 1
+    assert trace.ready and trace.refreshed
