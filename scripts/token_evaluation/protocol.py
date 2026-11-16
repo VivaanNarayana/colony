@@ -9,7 +9,7 @@ from pathlib import Path
 from .output import validate_output
 from .rubrics import DIMENSIONS
 
-CONTRACT = "colony.token-evaluation/13"
+CONTRACT = "colony.token-evaluation/14"
 ARMS = ("no_colony", "colony")
 THREE_ARMS = ("no_colony", "main", "colony")
 
@@ -60,7 +60,8 @@ def validate_contract(manifest):
 
 def collector_hashes():
     collector = Path(__file__).resolve().parent
-    files = [*sorted(collector.glob("*.py")), collector.parent / "token_evaluation.py"]
+    files = [*sorted(collector.glob("*.py")), collector.parent / "token_evaluation.py",
+             collector.parent / "native_host_trace.py"]
     return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
 
 
