@@ -147,12 +147,15 @@ def test_launch_uses_selected_runtime_without_duplicate_mcp_and_prompt_does_not_
                 for i, a in enumerate(args) if i and args[i - 1] == '-c'}
     assert settings['mcp_servers.colony.command'] == 'main-python'
     actual = settings['mcp_servers.colony.args']
+    assert 'native_host_trace.py' in actual[1]
+    actual = actual[actual.index('--') + 2:]
     assert 'task_adapter.py' in actual[1]
     assert '--direct-path' in actual and '--read-only' in actual
     assert '--question' in actual and task['question'] in actual
     assert not any('mcp_servers.repository' in k for k in settings)
     prompt = native._prompt(spec, task, 'Task guidance')
-    assert 'publish is optional' in prompt and 'including failed calls and continuation pages' in prompt
+    assert 'follow the task server policy for conditional publication' in prompt
+    assert 'including failed calls and continuation pages' in prompt
     assert 'Use actual file hashes' not in prompt and 'Controlled mechanism test' not in prompt
 
 

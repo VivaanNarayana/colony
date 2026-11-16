@@ -15,6 +15,7 @@ from colony.onboard_io import private_directory, write_new
 from . import runtime
 from .adapters import task_args, task_mode
 from .host_discovery import required_host_features, validate_host_discovery
+from .publication_diagnostics import observer_path, trace_hash, trace_path
 from .output import instruction
 from .protocol import (
     arm_order,
@@ -232,6 +233,13 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
             settings = {k: v for k, v in settings.items()
                         if not k.startswith(('mcp_servers.repository.', 'mcp_servers.colony.tools.'))}
             settings['mcp_servers.colony.args'] = task_args(protocol, repo, team, task, source_files)
+            child = [protocol['target']['python'], *settings['mcp_servers.colony.args']]
+            intent = task.get('host_intent', {})
+            eligible = role == 'a' and (not intent.get('direct_path') or intent.get('remember') is True)
+            identity = Path(client_workspace or repo).name
+            settings['mcp_servers.colony.args'] = [
+                '-I', str(observer_path()), '--output', str(trace_path(root, identity)),
+                *(['--eligible'] if eligible else []), '--', *child]
             settings['mcp_servers.colony.default_tools_approval_mode'] = 'approve'
     forwarded = [k for k in env if k in {"TEMP", "TMP", "HOME", "USERPROFILE", "XDG_CACHE_HOME", "HF_HOME", "FASTEMBED_CACHE_PATH", "COLONY_MODEL_CACHE", "PYTHONPYCACHEPREFIX", "TIKTOKEN_CACHE_DIR", "COLONY_EMBED_MODEL_DIR", "COLONY_RANK_MODEL_DIR", "COLONY_CONTEXT_TOKENIZER", "COLONY_TEST_CONTEXT_TOKENIZER", "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"}]
     if 'mcp_servers.repository.command' in settings:
@@ -259,7 +267,8 @@ def _prompt(protocol, task, guidance):
             'Cite supporting repository paths and line ranges. '
             f"Repository research budget: {protocol['research']['max_calls']} calls shared across "
             'read, fixture_files and fixture_search, including failed calls and continuation pages. '
-            'research is a memory lookup; publish is optional storage. These two tools do not consume '
+            'research is a memory lookup; follow the task server policy for conditional publication. '
+            'research and publish do not consume '
             'the repository allowance; all calls are charged in token accounting. '
             'Use evidence references from successful reads for publication. '
             'Complete all requested deliverables; publication limits never limit the answer.\n'
@@ -411,6 +420,8 @@ def execute_live(run_dir, authorization, auth_home):
                         row = {**{k: invocation[k] for k in ("id", "arm", "workload", "task")}, "state": state,
                                "seconds": time.monotonic() - start, "events": log.name,
                                "events_sha256": _sha(log), "answer_sha256": answer["answer_sha256"]}
+                        if arm != 'no_colony' and task_mode(selected):
+                            row['publication_trace_sha256'] = trace_hash(trace_path(root, ident))
                         with (control / "attempts.jsonl").open("a", encoding="utf-8") as stream:
                             stream.write(json.dumps(row) + "\n")
                         rows.append(row)

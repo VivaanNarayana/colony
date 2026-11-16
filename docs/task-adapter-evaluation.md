@@ -1,6 +1,6 @@
 # Prospective task-adapter evaluation
 
-Contract `colony.token-evaluation/13` requires an explicit `--adapter ordinary|task`
+Contract `colony.token-evaluation/14` requires an explicit `--adapter ordinary|task`
 and, for a three-arm campaign, `--main-adapter ordinary|task`. The choice, target
 revision, options, collector, client and workload bytes are frozen together. Old
 contracts require their original pinned collectors; do not upgrade or regrade
@@ -106,3 +106,26 @@ An adapter-on/off experiment must be declared separately and must use the same
 public questions and limits. The new explicit-path catalog is a prospective
 comparison, not a relabeling of earlier results. These regression tests establish
 mechanics, not native token savings, native-host support or answer-quality results.
+
+Contract `/14` delegates conditional publication wording to the installed product
+policy instead of describing it as optional storage. Natural scoring still does
+not require publication. Use a runtime containing the shared task-guidance fix
+to test that behavior; the evaluator does not inject a substitute product policy.
+
+Each task-adapter worker is wrapped by the separately implemented native host
+metadata observer. The complete collector pins the observer script as well as
+the evaluator; exact invocation reconstruction includes the wrapper and original
+child command. Source access, task intent, identity, read-only mode, continuation
+offsets, and research allowance still come from the original installed adapter.
+The sidecar lives under control, never in model-visible tool output or prompts.
+Its hash is retained with the attempt, and reports include bounded observational
+status or unavailable/incomplete metadata. These fields do not affect grades,
+quality acceptance, token accounting, or reviewer packets. Missing telemetry does
+not block the answer. Model awareness and abstention reasons remain unobserved.
+
+Reports also retain the frozen task scenario and phase: the default three-arm
+catalog has four substantive cold-learning Colony sessions, four value-focused
+partial-learning sessions, and twenty read-only reuse sessions. These are workload
+labels, not automatically proven publication eligibility or semantic truth. Judge
+future gains over gross learning plus reuse cost and answer quality, not write
+counts. Original `/11` through `/13` protocols, collectors and results stay frozen.
