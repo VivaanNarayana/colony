@@ -100,6 +100,33 @@ def test_cli_forwards_budget_and_legacy_has_no_new_parameter(identity, monkeypat
               '--context-encoding', 'utf8_bytes'])
 
 
+@pytest.mark.parametrize('read_only', [False, True])
+def test_adaptive_budget_preserves_batch_content_offsets_and_publication(identity, monkeypatch, read_only):
+    client, repo, _ = identity
+    (repo / 'settings.py').write_text('x' * 17000, encoding='utf-8')
+    monkeypatch.setattr(client, 'ask', lambda *a, **k: pytest.fail('batch triggered lookup'))
+    monkeypatch.setattr('colony.mcp.Client', lambda home: client)
+    workflow = Workflow(client, 'team', repo, read_only=read_only)
+    plain = TaskMCP(workflow, 'Explain settings')
+    adaptive = TaskMCP(workflow, 'Explain settings',
+                       context_budget=ContextBudget(max_tokens=256, encoding='utf8_bytes'))
+    request = {'batch': [{'path': 'settings.py'}, {'path': 'README.md'}]}
+    expected = json.loads(call(plain, 'read', **request)[0].text)['results']
+    actual = json.loads(call(adaptive, 'read', **request)[0].text)['results']
+    assert [{k: v for k, v in r.items() if k != 'evidence_ref'} for r in actual] == [
+        {k: v for k, v in r.items() if k != 'evidence_ref'} for r in expected]
+    assert sum(len(r['content'].encode()) for r in actual) == 16000
+    tail = json.loads(call(adaptive, 'read', path='settings.py', offset=actual[0]['next_offset'])[0].text)
+    assert actual[0]['content'] + tail['content'] == 'x' * 17000
+    assert ('publish' in {t.name for t in asyncio.run(adaptive.list_tools())}) is (not read_only)
+    assert ANSWER_POLICY in adaptive.instructions
+    if not read_only:
+        monkeypatch.setattr(client, 'push', lambda *a, **k: {'stored': True})
+        result = json.loads(call(adaptive, 'publish', content='Supported behavior', applicability='settings',
+            evidence_refs=[actual[0]['evidence_ref'], tail['evidence_ref']])[0].text)
+        assert result['stored']
+
+
 def test_real_adaptive_task_transport_publication_and_evidence_reuse(running_team):
     _, homes, repo, _ = running_team
 

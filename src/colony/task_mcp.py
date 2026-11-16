@@ -11,7 +11,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
-from pydantic import Field, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -39,6 +39,15 @@ PUBLICATION_POLICY = (
     "No decision call, automatic retry or publication-success gate. "
     "Publication failure or missing evidence must not block the answer."
 )
+
+
+class ReadRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    path: str = Field(strict=True, min_length=1, max_length=1024)
+    start: StrictInt = 1
+    end: StrictInt | None = None
+    offset: StrictInt = 0
 
 
 class TaskMCP(FastMCP):
@@ -80,16 +89,31 @@ class TaskMCP(FastMCP):
             instructions += " " + PUBLICATION_POLICY
         super().__init__("Colony task", instructions=instructions)
 
+        def observe(results):
+            if self._may_publish and any(result["evidence_ref"] for result in results):
+                with self._publication_lock:
+                    self._publication_ready = True
+
         def read(path: str | None = None, start: int = 1, end: int | None = None,
-                 offset: StrictInt = 0) -> dict:
-            """Read source; omit path for direct path. Continue at next_offset with same path/start/end."""
+                 offset: StrictInt = 0,
+                 batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
+                 ) -> dict:
+            """Read source; omit path for direct path. Use batch for independent reads instead of
+            single-read arguments; results/errors are ordered. Continue each at next_offset
+            with the same path/start/end.
+            """
+            if batch is not None:
+                if path is not None or start != 1 or end is not None or offset != 0:
+                    raise ToolError("Batch and single-read arguments cannot be combined")
+                results = self.evidence.read_batch([request.model_dump() for request in batch])
+                observe(results)
+                return {"results": results}
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
                 result = self.evidence.read(selected, start, end, offset=offset)
-                if result["evidence_ref"] and self._may_publish:
-                    self._publication_ready = True
+                observe([result])
                 return result
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
