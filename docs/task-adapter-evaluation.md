@@ -1,6 +1,6 @@
 # Prospective task-adapter evaluation
 
-Contract `colony.token-evaluation/11` requires an explicit `--adapter ordinary|task`
+Contract `colony.token-evaluation/14` requires an explicit `--adapter ordinary|task`
 and, for a three-arm campaign, `--main-adapter ordinary|task`. The choice, target
 revision, options, collector, client and workload bytes are frozen together. Old
 contracts require their original pinned collectors; do not upgrade or regrade
@@ -49,10 +49,11 @@ binds it to the executable SHA-256 and version. The required shape is:
 
 ```json
 {
-  "contract": "colony.native-host-discovery/1",
+  "contract": "colony.native-host-discovery/2",
   "client_sha256": "<actual pinned executable SHA-256>",
   "client_version": "<actual pinned version>",
   "observer": "native_client",
+  "client_features": {"mcp_tool_list_changed": true},
   "events": [
     {"connection": "<same task connection>", "type": "tools/list", "tools": ["read", "research"]},
     {"connection": "<same task connection>", "type": "notifications/tools/list_changed"},
@@ -69,6 +70,24 @@ is auditable evidence, not cryptographic process attestation. Producing native-h
 observability/integration is separate work; this evaluator consumes the evidence
 and does not fabricate it. Missing or mismatched evidence blocks task-mode native
 collection before a worker starts. Ordinary-mode collection is unaffected.
+
+The pinned native client ships `mcp_tool_list_changed` disabled by default.
+For a campaign containing either task-adapter arm, the launcher explicitly enables
+this feature for every arm, including No-Colony, to hold host configuration constant.
+Local preflight passes the same overrides to `features list` and rejects missing or
+disabled required features before launching workers. Feature metadata alone is not
+proof: the native same-connection discovery trace is still required and now records
+the feature configuration. The original `/11` and `/12` collectors and results stay frozen;
+replay them with their original code. No product publication rules, evidence checks,
+answer obligations, prompts, or grading thresholds change in this host fix.
+
+The native client labels its experimental-feature startup banner as an `error`
+item. Contract `/13` sets the client's `suppress_unstable_features_warning=true`
+for the same task campaigns on every arm. This suppresses that known banner at
+its source rather than exempting arbitrary error items in the evaluator. Real
+errors and unapproved calls retain their existing treatment. The first `/12`
+refresh-enabled campaign retains its raw banners, policy flags, and grades;
+it must not be silently regenerated using this prospective configuration.
 
 ## Evidence and interpretation
 
@@ -87,3 +106,26 @@ An adapter-on/off experiment must be declared separately and must use the same
 public questions and limits. The new explicit-path catalog is a prospective
 comparison, not a relabeling of earlier results. These regression tests establish
 mechanics, not native token savings, native-host support or answer-quality results.
+
+Contract `/14` delegates conditional publication wording to the installed product
+policy instead of describing it as optional storage. Natural scoring still does
+not require publication. Use a runtime containing the shared task-guidance fix
+to test that behavior; the evaluator does not inject a substitute product policy.
+
+Each task-adapter worker is wrapped by the separately implemented native host
+metadata observer. The complete collector pins the observer script as well as
+the evaluator; exact invocation reconstruction includes the wrapper and original
+child command. Source access, task intent, identity, read-only mode, continuation
+offsets, and research allowance still come from the original installed adapter.
+The sidecar lives under control, never in model-visible tool output or prompts.
+Its hash is retained with the attempt, and reports include bounded observational
+status or unavailable/incomplete metadata. These fields do not affect grades,
+quality acceptance, token accounting, or reviewer packets. Missing telemetry does
+not block the answer. Model awareness and abstention reasons remain unobserved.
+
+Reports also retain the frozen task scenario and phase: the default three-arm
+catalog has four substantive cold-learning Colony sessions, four value-focused
+partial-learning sessions, and twenty read-only reuse sessions. These are workload
+labels, not automatically proven publication eligibility or semantic truth. Judge
+future gains over gross learning plus reuse cost and answer quality, not write
+counts. Original `/11` through `/13` protocols, collectors and results stay frozen.

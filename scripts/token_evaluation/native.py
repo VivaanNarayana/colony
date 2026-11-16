@@ -14,7 +14,8 @@ from colony.onboard_io import private_directory, write_new
 
 from . import runtime
 from .adapters import task_args, task_mode
-from .host_discovery import validate_host_discovery
+from .host_discovery import required_host_features, validate_host_discovery
+from .publication_diagnostics import observer_path, trace_hash, trace_path
 from .output import instruction
 from .protocol import (
     arm_order,
@@ -148,14 +149,17 @@ def _client_metadata(args, env):
     """Parse the exact feature/config overrides without starting a model or MCP."""
     command = [args[0], "features", "list"]
     for i, value in enumerate(args[:-1]):
-        if value in {"-c", "--disable"}:
+        if value in {"-c", "--disable", "--enable"}:
             command.extend(args[i:i + 2])
     result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=15, check=True)
     features = {parts[0]: parts[-1] for line in result.stdout.splitlines() if len(parts := line.split()) >= 3}
     disabled = [args[i + 1] for i, value in enumerate(args[:-1]) if value == "--disable"]
-    if features.get("code_mode_host") != "true" or any(features.get(name) != "false" for name in disabled):
+    enabled = [args[i + 1] for i, value in enumerate(args[:-1]) if value == "--enable"]
+    if (features.get("code_mode_host") != "true"
+            or any(features.get(name) != "false" for name in disabled)
+            or any(features.get(name) != "true" for name in enabled)):
         raise ValueError("Native feature isolation/Code Mode host metadata mismatch")
-    return {"config_accepted": True, "code_mode_host": True, "disabled": disabled,
+    return {"config_accepted": True, "code_mode_host": True, "disabled": disabled, "enabled": enabled,
             "features_sha256": hashlib.sha256(result.stdout.encode()).hexdigest(), "native_sessions": 0}
 
 
@@ -189,11 +193,14 @@ def _wall_remaining(deadline):
 
 
 def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, client_workspace=None):
+    host_features = required_host_features(protocol)
     protocol = arm_protocol(protocol, arm)
     client = protocol["client"]
     args = [client["executable"], "exec", "--ignore-user-config", "--ignore-rules",
             "--ephemeral", "--json", "--color", "never", "-s", "read-only",
             "--skip-git-repo-check", "-C", str(client_workspace or repo), "-m", client["model"]]
+    for feature in host_features:
+        args += ["--enable", feature]
     for feature in ("apps", "plugins", "browser_use", "computer_use", "multi_agent", "memories", "shell_tool", "hooks", "image_generation"):
         args += ["--disable", feature]
     # Code Mode/host remain enabled. Never repeat the earlier disabled-host failure.
@@ -207,6 +214,10 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
                     "--files", json.dumps(list(source_files))],
                 "mcp_servers.repository.required": True,
                 "mcp_servers.repository.default_tools_approval_mode": "approve"}
+    if host_features:
+        # The client emits the known experimental-feature banner as an error item.
+        # Suppress that banner at its source; never relax generic error/tool checks.
+        settings["suppress_unstable_features_warning"] = True
     if arm != "no_colony":
         role = "a" if task["phase"] == "learn" else "b"
         mcp_args = ["-I", "-m", "colony.cli", "--home", team["homes"][role], "mcp",
@@ -222,6 +233,13 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
             settings = {k: v for k, v in settings.items()
                         if not k.startswith(('mcp_servers.repository.', 'mcp_servers.colony.tools.'))}
             settings['mcp_servers.colony.args'] = task_args(protocol, repo, team, task, source_files)
+            child = [protocol['target']['python'], *settings['mcp_servers.colony.args']]
+            intent = task.get('host_intent', {})
+            eligible = role == 'a' and (not intent.get('direct_path') or intent.get('remember') is True)
+            identity = Path(client_workspace or repo).name
+            settings['mcp_servers.colony.args'] = [
+                '-I', str(observer_path()), '--output', str(trace_path(root, identity)),
+                *(['--eligible'] if eligible else []), '--', *child]
             settings['mcp_servers.colony.default_tools_approval_mode'] = 'approve'
     forwarded = [k for k in env if k in {"TEMP", "TMP", "HOME", "USERPROFILE", "XDG_CACHE_HOME", "HF_HOME", "FASTEMBED_CACHE_PATH", "COLONY_MODEL_CACHE", "PYTHONPYCACHEPREFIX", "TIKTOKEN_CACHE_DIR", "COLONY_EMBED_MODEL_DIR", "COLONY_RANK_MODEL_DIR", "COLONY_CONTEXT_TOKENIZER", "COLONY_TEST_CONTEXT_TOKENIZER", "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"}]
     if 'mcp_servers.repository.command' in settings:
@@ -249,7 +267,8 @@ def _prompt(protocol, task, guidance):
             'Cite supporting repository paths and line ranges. '
             f"Repository research budget: {protocol['research']['max_calls']} calls shared across "
             'read, fixture_files and fixture_search, including failed calls and continuation pages. '
-            'research is a memory lookup; publish is optional storage. These two tools do not consume '
+            'research is a memory lookup; follow the task server policy for conditional publication. '
+            'research and publish do not consume '
             'the repository allowance; all calls are charged in token accounting. '
             'Use evidence references from successful reads for publication. '
             'Complete all requested deliverables; publication limits never limit the answer.\n'
@@ -401,6 +420,8 @@ def execute_live(run_dir, authorization, auth_home):
                         row = {**{k: invocation[k] for k in ("id", "arm", "workload", "task")}, "state": state,
                                "seconds": time.monotonic() - start, "events": log.name,
                                "events_sha256": _sha(log), "answer_sha256": answer["answer_sha256"]}
+                        if arm != 'no_colony' and task_mode(selected):
+                            row['publication_trace_sha256'] = trace_hash(trace_path(root, ident))
                         with (control / "attempts.jsonl").open("a", encoding="utf-8") as stream:
                             stream.write(json.dumps(row) + "\n")
                         rows.append(row)

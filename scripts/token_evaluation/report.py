@@ -226,6 +226,10 @@ def _load(run_dir):
                      **native_usage(path)})
         # native_usage hashes all agent messages; preserve declared answer selection.
         rows[-1].update(answer)
+        from .publication_diagnostics import observation
+        rows[-1]['publication_diagnostics'] = observation(
+            root, identity, result.get('publication_trace_sha256'))
+        rows[-1]['task_scenario'] = task.get('scenario')
         _require(_sha(path) == result["events_sha256"], "Events changed while reading")
     _require(seen == expected, "Missing scheduled tasks")
     for workload in manifest["workloads"]:
