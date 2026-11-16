@@ -24,6 +24,46 @@ have no continuation fields and need no extra call. Partial pages are marked
 Reading all pages is not required unless the task needs them. Paging never
 triggers lookup or publication and imposes no limit on necessary research.
 
+For independent reads whose paths are already known, the same tool accepts a
+`batch` of 1–8 entries. Each entry supplies its own `path` and optional `start`,
+`end`, and `offset`; paths are explicit even on a direct task. For example:
+
+```json
+{"batch":[{"path":"settings.py"},{"path":"handler.py","start":5,"end":7}]}
+```
+
+The response is `{"results":[...]}` in request order. Successful entries have
+the same fields and evidence-reference semantics as individual reads; failed
+entries contain a fixed `error` and `evidence_ref: null` without echoing the
+rejected path. One failure does not discard other results. Malformed batches
+are rejected before reading any entry. Do not combine a batch with a top-level
+path or nondefault range/offset arguments.
+
+The batch shares at most 16,000 UTF-8 bytes of **source content**, divided equally
+among its entries. JSON framing, escaping and bounded per-entry metadata are
+additional. Smaller pages are selected before references are minted; references
+never claim observation of omitted text. Each partial page carries its own
+`next_offset`. Continue it with the same path/start/end in a later batch or an
+ordinary single read. Offsets remain characters in the scrubbed selected range,
+even when the number of entries changes. Duplicate paths/ranges are permitted
+and return independent observations. A batch is not an atomic repository snapshot;
+changed files still invalidate their earlier references at publication.
+
+Batching reduces tool round trips for independent reads, not required evidence
+coverage. Use single reads when more suitable; dependent discovery still needs
+the preceding result. All necessary research, citations, examples and answer
+detail remain available. The host's direct/read-only/remember classification,
+conditional publication, one-attempt guard and failure behavior are unchanged.
+Only successful entries with references can unlock eligible publication, and
+reading never publishes automatically.
+
+Hosts that wrap `EvidenceSession.read` must forward its private `_max_bytes`
+keyword for smaller batch pages; its default single-read call is unchanged.
+Quota/accounting wrappers must count each attempted batch entry and continuation
+as a source read, including failures, rather than charging one read per batch.
+This adapter PR does not update the evaluator: its batch support and per-entry
+accounting must be added separately before any evaluation uses this feature.
+
 This integration does not intercept arbitrary tools or change a desktop host's
 task dispatcher. Hosts must launch it with the actual task question and route
 their explicit direct reads to it. Existing MCP/setup connections are unchanged;

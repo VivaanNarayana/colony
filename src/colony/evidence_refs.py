@@ -64,7 +64,8 @@ class EvidenceSession:
         except (OSError, ValueError, TypeError):
             raise EvidenceError("Evidence session permission unavailable") from None
 
-    def read(self, path: str, start: int = 1, end: int | None = None, *, offset: int = 0) -> dict:
+    def read(self, path: str, start: int = 1, end: int | None = None, *, offset: int = 0,
+             _max_bytes: int = 16000) -> dict:
         """Read a bounded exact span; scrub whole-file secrets before slicing.
 
         Large spans return a UTF-8-safe page and next_offset. Offsets count
@@ -77,6 +78,7 @@ class EvidenceSession:
                 type(offset) is not int or offset < 0
                 or type(start) is not int or start < 1
                 or (end is not None and (type(end) is not int or end < start))
+                or type(_max_bytes) is not int or not 4 <= _max_bytes <= 16000
             ):
                 raise EvidenceError("Invalid evidence range")
             try:
@@ -97,7 +99,9 @@ class EvidenceSession:
                     raise ValueError()
                 # Slice characters first to bound encoding work. Only an incomplete
                 # final UTF-8 character may be removed; the next page includes it.
-                content = span[offset:offset + 16000].encode("utf-8")[:16000].decode(
+                # A batch may allocate a smaller page before minting its reference.
+                # Never trim an already-observed page after creating the handle.
+                content = span[offset:offset + _max_bytes].encode("utf-8")[:_max_bytes].decode(
                     "utf-8", errors="ignore",
                 )
                 stop = offset + len(content)

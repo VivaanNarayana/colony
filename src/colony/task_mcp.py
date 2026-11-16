@@ -4,14 +4,14 @@ import argparse
 import threading
 from contextlib import suppress
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
-from pydantic import StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -40,6 +40,15 @@ PUBLICATION_POLICY = (
 )
 
 
+class ReadRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    path: str = Field(strict=True, min_length=1, max_length=1024)
+    start: StrictInt = 1
+    end: StrictInt | None = None
+    offset: StrictInt = 0
+
+
 class TaskMCP(FastMCP):
     """The host supplies task intent; source text cannot select a cheaper mode."""
 
@@ -66,17 +75,43 @@ class TaskMCP(FastMCP):
             instructions += " " + PUBLICATION_POLICY
         super().__init__("Colony task", instructions=instructions)
 
+        def read_one(path, start, end, offset, *, max_bytes=16000):
+            options = {} if max_bytes == 16000 else {"_max_bytes": max_bytes}
+            result = self.evidence.read(path, start, end, offset=offset, **options)
+            if result["evidence_ref"] and self._may_publish:
+                with self._publication_lock:
+                    self._publication_ready = True
+            return result
+
         def read(path: str | None = None, start: int = 1, end: int | None = None,
-                 offset: StrictInt = 0) -> dict:
-            """Read source; omit path for direct path. Continue at next_offset with same path/start/end."""
+                 offset: StrictInt = 0,
+                 batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
+                 ) -> dict:
+            """Read source; omit path for direct path. Use batch for independent reads instead of
+            single-read arguments; results/errors are ordered. Continue each at next_offset
+            with the same path/start/end.
+            """
+            if batch is not None:
+                if path is not None or start != 1 or end is not None or offset != 0:
+                    raise ToolError("Batch and single-read arguments cannot be combined")
+                results = []
+                # A fixed equal share bounds total source text to 16,000 UTF-8 bytes.
+                # Every entry is attempted, including after an earlier failure. Pages
+                # retain exact offsets; callers can continue singly or in another batch.
+                for request in batch:
+                    try:
+                        results.append(read_one(request.path, request.start, request.end,
+                                                request.offset, max_bytes=16000 // len(batch)))
+                    except EvidenceError:
+                        # Do not echo rejected paths, source text or permission details.
+                        results.append({"error": "Source read failed; adjust path or range",
+                                        "evidence_ref": None})
+                return {"results": results}
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
-                result = self.evidence.read(selected, start, end, offset=offset)
-                if result["evidence_ref"] and self._may_publish:
-                    self._publication_ready = True
-                return result
+                return read_one(selected, start, end, offset)
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 
