@@ -39,10 +39,14 @@ rejected path. One failure does not discard other results. Malformed batches
 are rejected before reading any entry. Do not combine a batch with a top-level
 path or nondefault range/offset arguments.
 
-The batch shares at most 16,000 UTF-8 bytes of **source content**, divided equally
-among its entries. JSON framing, escaping and bounded per-entry metadata are
-additional. Smaller pages are selected before references are minted; references
-never claim observation of omitted text. Each partial page carries its own
+The batch shares at most 16,000 UTF-8 bytes of **source content**. Unused shares
+from short, empty or failed reads are redistributed to entries that need more;
+all valid requested text is returned when it fits in the combined allowance.
+When it does not fit, entries share the capacity fairly; UTF-8 boundaries may
+leave a few bytes unused. JSON framing, escaping and bounded per-entry metadata
+are additional. Each source is read and scrubbed once, and at most one ordinary
+16,000-byte page is staged per entry. Final pages are selected before references
+are minted; references never claim observation of omitted text. Each partial page carries its own
 `next_offset`. Continue it with the same path/start/end in a later batch or an
 ordinary single read. Offsets remain characters in the scrubbed selected range,
 even when the number of entries changes. Duplicate paths/ranges are permitted
@@ -57,8 +61,13 @@ conditional publication, one-attempt guard and failure behavior are unchanged.
 Only successful entries with references can unlock eligible publication, and
 reading never publishes automatically.
 
-Hosts that wrap `EvidenceSession.read` must forward its private `_max_bytes`
-keyword for smaller batch pages; its default single-read call is unchanged.
+Hosts that wrap `EvidenceSession.read` must forward private keyword arguments,
+including `_defer_reference`, and preserve the returned internal prepared value
+when staging a batch entry. Each entry still passes through that wrapped read;
+the adapter does not bypass host restrictions. Its default single-read call
+and result are unchanged. References bind final delivered pages to the hash of
+the originally read bytes, not to a later reread during allocation. Staging does
+not extend evidence expiry, and authorization is rechecked before minting.
 Quota/accounting wrappers must count each attempted batch entry and continuation
 as a source read, including failures, rather than charging one read per batch.
 This adapter PR does not update the evaluator: its batch support and per-entry

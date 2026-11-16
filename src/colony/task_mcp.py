@@ -75,13 +75,10 @@ class TaskMCP(FastMCP):
             instructions += " " + PUBLICATION_POLICY
         super().__init__("Colony task", instructions=instructions)
 
-        def read_one(path, start, end, offset, *, max_bytes=16000):
-            options = {} if max_bytes == 16000 else {"_max_bytes": max_bytes}
-            result = self.evidence.read(path, start, end, offset=offset, **options)
-            if result["evidence_ref"] and self._may_publish:
+        def observe(results):
+            if self._may_publish and any(result["evidence_ref"] for result in results):
                 with self._publication_lock:
                     self._publication_ready = True
-            return result
 
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,
@@ -94,24 +91,16 @@ class TaskMCP(FastMCP):
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
-                results = []
-                # A fixed equal share bounds total source text to 16,000 UTF-8 bytes.
-                # Every entry is attempted, including after an earlier failure. Pages
-                # retain exact offsets; callers can continue singly or in another batch.
-                for request in batch:
-                    try:
-                        results.append(read_one(request.path, request.start, request.end,
-                                                request.offset, max_bytes=16000 // len(batch)))
-                    except EvidenceError:
-                        # Do not echo rejected paths, source text or permission details.
-                        results.append({"error": "Source read failed; adjust path or range",
-                                        "evidence_ref": None})
+                results = self.evidence.read_batch([request.model_dump() for request in batch])
+                observe(results)
                 return {"results": results}
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
-                return read_one(selected, start, end, offset)
+                result = self.evidence.read(selected, start, end, offset=offset)
+                observe([result])
+                return result
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 

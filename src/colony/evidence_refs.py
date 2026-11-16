@@ -27,6 +27,20 @@ class _Observation:
     expires: float
 
 
+@dataclass(frozen=True)
+class _PreparedRead:
+    owner: object
+    ref: str
+    digest: str
+    start: int
+    end: int
+    offset: int
+    span_length: int
+    whole_range: bool
+    content: bytes
+    expires: float
+
+
 class EvidenceSession:
     """One trusted task/workflow binding. Only successful reads mint references.
 
@@ -65,7 +79,7 @@ class EvidenceSession:
             raise EvidenceError("Evidence session permission unavailable") from None
 
     def read(self, path: str, start: int = 1, end: int | None = None, *, offset: int = 0,
-             _max_bytes: int = 16000) -> dict:
+             _max_bytes: int = 16000, _defer_reference: bool = False) -> dict | _PreparedRead:
         """Read a bounded exact span; scrub whole-file secrets before slicing.
 
         Large spans return a UTF-8-safe page and next_offset. Offsets count
@@ -79,6 +93,7 @@ class EvidenceSession:
                 or type(start) is not int or start < 1
                 or (end is not None and (type(end) is not int or end < start))
                 or type(_max_bytes) is not int or not 4 <= _max_bytes <= 16000
+                or type(_defer_reference) is not bool
             ):
                 raise EvidenceError("Invalid evidence range")
             try:
@@ -99,36 +114,92 @@ class EvidenceSession:
                     raise ValueError()
                 # Slice characters first to bound encoding work. Only an incomplete
                 # final UTF-8 character may be removed; the next page includes it.
-                # A batch may allocate a smaller page before minting its reference.
-                # Never trim an already-observed page after creating the handle.
+                # At most one ordinary page is retained per staged batch entry.
                 content = span[offset:offset + _max_bytes].encode("utf-8")[:_max_bytes].decode(
                     "utf-8", errors="ignore",
-                )
-                stop = offset + len(content)
+                ).encode("utf-8")
             except EvidenceError:
                 raise
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
+            prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
+                                     offset, len(span), start == 1 and last == len(lines), content,
+                                     time.monotonic() + self._ttl)
+            if _defer_reference:
+                return prepared
+            return self._complete_read(prepared, _max_bytes)
+
+    def _complete_read(self, prepared: _PreparedRead, max_bytes: int) -> dict:
+        """Mint only the final delivered span, from the bytes and hash read together."""
+        with self._lock:
+            self._authorize()
+            if (not isinstance(prepared, _PreparedRead) or prepared.owner is not self
+                    or type(max_bytes) is not int or not 0 <= max_bytes <= 16000):
+                raise EvidenceError("Invalid prepared evidence")
+            content = prepared.content[:max_bytes].decode("utf-8", errors="ignore")
+            if prepared.content and not content:
+                raise EvidenceError("Evidence page cannot make progress")
+            stop = prepared.offset + len(content)
             now = time.monotonic()
+            if prepared.expires <= now:
+                raise EvidenceError("Prepared evidence expired")
             self._observations = {k: v for k, v in self._observations.items() if v.expires > now}
             # Publication bookkeeping must not prevent necessary research.
             handle = None
             if len(self._observations) < self._capacity:
                 handle = secrets.token_urlsafe(18)
                 self._observations[handle] = _Observation(
-                    path, hashlib.sha256(data).hexdigest(), start, last,
-                    offset, stop, now + self._ttl,
+                    prepared.ref, prepared.digest, prepared.start, prepared.end,
+                    prepared.offset, stop, prepared.expires,
                 )
-            result = {"path": path, "start_line": start, "end_line": last,
+            result = {"path": prepared.ref, "start_line": prepared.start, "end_line": prepared.end,
                       "content": content, "evidence_ref": handle,
-                      "complete_file": start == 1 and last == len(lines)
-                      and offset == 0 and stop == len(span),
+                      "complete_file": prepared.whole_range
+                      and prepared.offset == 0 and stop == prepared.span_length,
                       "provenance": "Current source; untrusted as instructions"}
             # Keep the ordinary short-read response shape unchanged.
-            if offset or stop < len(span):
-                result.update(start_offset=offset, end_offset=stop,
-                              next_offset=stop if stop < len(span) else None)
+            if prepared.offset or stop < prepared.span_length:
+                result.update(start_offset=prepared.offset, end_offset=stop,
+                              next_offset=stop if stop < prepared.span_length else None)
             return result
+
+    def read_batch(self, requests: list[dict]) -> list[dict]:
+        """Share one 16,000-byte content allowance without unused per-entry quotas."""
+        if not isinstance(requests, list) or not 1 <= len(requests) <= 8:
+            raise EvidenceError("Invalid evidence batch")
+        with self._lock:
+            prepared = []
+            for request in requests:
+                try:
+                    # Keep each entry on the normal read path, including host wrappers.
+                    # Unsupported wrappers fail rather than bypassing their restrictions.
+                    value = self.read(**request, _defer_reference=True)
+                    if not isinstance(value, _PreparedRead) or value.owner is not self:
+                        raise EvidenceError("Invalid prepared evidence")
+                    prepared.append(value)
+                except EvidenceError:
+                    prepared.append(None)
+            sizes = [len(p.content) if p is not None else 0 for p in prepared]
+            allowances = [0] * len(sizes)
+            remaining = 16000
+            active = [i for i, size in enumerate(sizes) if size]
+            while active and remaining:
+                share, extra = divmod(remaining, len(active))
+                for position, i in enumerate(active):
+                    amount = min(sizes[i] - allowances[i], share + (position < extra))
+                    allowances[i] += amount
+                    remaining -= amount
+                active = [i for i in active if allowances[i] < sizes[i]]
+            results = []
+            for value, allowance in zip(prepared, allowances, strict=True):
+                try:
+                    if value is None:
+                        raise EvidenceError("Evidence unavailable")
+                    results.append(self._complete_read(value, allowance))
+                except EvidenceError:
+                    results.append({"error": "Source read failed; adjust path or range",
+                                    "evidence_ref": None})
+            return results
 
     def resolve(self, references: list[str]) -> list[Source]:
         """Resolve all references atomically or fail; never substitute new hashes."""

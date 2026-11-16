@@ -51,6 +51,141 @@ def test_batch_returns_same_evidence_in_one_call_without_lookup_or_push(identity
     assert tools(server) == {"read", "research", "publish"}
 
 
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("other", ["short.txt", "empty.txt", "missing.txt"])
+def test_unused_shares_return_all_fitting_evidence_without_continuation(identity, other, reverse):
+    _, repo, _ = identity
+    (repo / "long.txt").write_text("x" * 8991 + "ANSWER=42", encoding="utf-8")
+    (repo / "short.txt").write_text("SHORT=TRUE", encoding="utf-8")
+    (repo / "empty.txt").write_text("", encoding="utf-8")
+    server = make(identity)
+    paths = ["long.txt", other][:: -1 if reverse else 1]
+    pages = call(server, batch=[{"path": path} for path in paths])["results"]
+    long = pages[paths.index("long.txt")]
+    assert long["content"].endswith("ANSWER=42")
+    assert long["complete_file"] and "next_offset" not in long
+    assert server.evidence._observations[long["evidence_ref"]].end_offset == 9000
+    assert sum(len(p.get("content", "").encode("utf-8")) for p in pages) <= 16000
+
+
+@pytest.mark.parametrize("sizes", [(9000, 9000, 100), (6000, 3000, 1000, 2000),
+                                   (24000, 0, 3), (4000,) * 7 + (1,)])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_redistribution_bounds_utf8_and_keeps_exact_continuations(identity, sizes, reverse):
+    _, repo, _ = identity
+    originals = {}
+    for index, size in enumerate(sizes):
+        path = f"file{index}.txt"
+        text = "😀" * (size // 4) + "x" * (size % 4)
+        (repo / path).write_text("before\n" + text + "\nafter", encoding="utf-8")
+        originals[path] = text
+    server = make(identity)
+    requests = [{"path": path, "start": 2, "end": 2} for path in originals]
+    if reverse:
+        requests.reverse()
+    pages = call(server, batch=requests)["results"]
+    assert sum(len(p["content"].encode("utf-8")) for p in pages) <= 16000
+    for page, request in zip(pages, requests, strict=True):
+        assert page["path"] == request["path"] and not page["complete_file"]
+        assert (page["start_line"], page["end_line"]) == (2, 2)
+        observation = server.evidence._observations[page["evidence_ref"]]
+        assert observation.end_offset == len(page["content"])
+        if sum(sizes) <= 16000:
+            assert "next_offset" not in page
+        content = page["content"]
+        while page.get("next_offset") is not None:
+            offset = page["next_offset"]
+            page = call(server, **request, offset=offset)
+            assert page["start_offset"] == offset
+            content += page["content"]
+        assert content == originals[request["path"]]
+
+
+def test_staging_does_not_mint_handles_reread_files_or_repair_changed_hashes(identity, monkeypatch):
+    _, repo, _ = identity
+    original = "x" * 8991 + "ANSWER=42"
+    path = repo / "long.txt"
+    path.write_text(original, encoding="utf-8")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    server = make(identity)
+    read = server.evidence.read
+    seen = []
+
+    def wrapped(path, *args, **kwargs):
+        assert kwargs["_defer_reference"]
+        assert not server.evidence._observations
+        value = read(path, *args, **kwargs)
+        assert not server.evidence._observations
+        seen.append(path)
+        if path == "settings.py":
+            (repo / "long.txt").write_text("changed after staging", encoding="utf-8")
+        return value
+
+    monkeypatch.setattr(server.evidence, "read", wrapped)
+    pages = call(server, batch=[{"path": "long.txt"}, {"path": "settings.py"}])["results"]
+    assert seen == ["long.txt", "settings.py"]
+    assert pages[0]["content"] == original and len(server.evidence._observations) == 2
+    observation = server.evidence._observations[pages[0]["evidence_ref"]]
+    assert observation.digest == digest and observation.end_offset == len(original)
+    with pytest.raises(EvidenceError, match="changed"):
+        server.evidence.resolve([pages[0]["evidence_ref"]])
+
+
+def test_read_wrapper_restrictions_remain_in_force_during_redistribution(identity, monkeypatch):
+    _, repo, _ = identity
+    (repo / "long.txt").write_text("x" * 9000, encoding="utf-8")
+    server = make(identity)
+    read = server.evidence.read
+
+    def guarded(path, *args, **kwargs):
+        if path == "settings.py":
+            raise EvidenceError("private host restriction")
+        return read(path, *args, **kwargs)
+
+    monkeypatch.setattr(server.evidence, "read", guarded)
+    pages = call(server, batch=[{"path": "settings.py"}, {"path": "long.txt"}])["results"]
+    assert pages[0].get("error") and pages[0]["evidence_ref"] is None
+    assert "private" not in str(pages[0])
+    assert pages[1]["complete_file"] and len(pages[1]["content"]) == 9000
+
+
+def test_authorization_is_rechecked_before_final_references(identity, monkeypatch):
+    server = make(identity)
+    read = server.evidence.read
+
+    def revoked(path, *args, **kwargs):
+        value = read(path, *args, **kwargs)
+        server.workflow.namespace = "other"
+        return value
+
+    monkeypatch.setattr(server.evidence, "read", revoked)
+    pages = call(server, batch=[{"path": "settings.py"}])["results"]
+    assert pages[0].get("error") and not server.evidence._observations
+    assert "publish" not in tools(server)
+
+
+def test_staged_read_cannot_be_completed_by_another_session(identity):
+    first, second = make(identity), make(identity)
+    prepared = first.evidence.read("settings.py", _defer_reference=True)
+    with pytest.raises(EvidenceError, match="Invalid prepared"):
+        second.evidence._complete_read(prepared, 16000)
+    assert not first.evidence._observations and not second.evidence._observations
+
+
+def test_staging_does_not_extend_evidence_expiry(identity, monkeypatch):
+    server = make(identity)
+    monkeypatch.setattr("colony.evidence_refs.time.monotonic", lambda: 1)
+    prepared = server.evidence.read("settings.py", _defer_reference=True)
+    monkeypatch.setattr("colony.evidence_refs.time.monotonic", lambda: 101)
+    page = server.evidence._complete_read(prepared, 16000)
+    assert server.evidence._observations[page["evidence_ref"]].expires == 901
+    monkeypatch.setattr("colony.evidence_refs.time.monotonic", lambda: 901)
+    with pytest.raises(EvidenceError, match="expired"):
+        server.evidence._complete_read(prepared, 16000)
+    with pytest.raises(EvidenceError, match="expired"):
+        server.evidence.resolve([page["evidence_ref"]])
+
+
 @pytest.mark.parametrize("count", [2, 3, 8])
 def test_batch_pages_bound_aggregate_and_continue_exact_unicode_ranges(identity, count):
     _, repo, _ = identity
@@ -287,7 +422,10 @@ def test_real_stdio_batch_continuations_and_publication_discovery(identity):
             reply = await session.call_tool("read", {"batch": [{"path": "long.txt"}, {"path": "settings.py"}]})
             assert not reply.isError
             pages = json.loads(reply.content[0].text)["results"]
-            assert pages[0]["next_offset"] == 4000 and pages[1]["content"] == "TIMEOUT = 30"
+            assert pages[0]["next_offset"] == len(pages[0]["content"])
+            assert pages[1]["content"] == "TIMEOUT = 30"
+            assert sum(len(p["content"].encode("utf-8")) for p in pages) <= 16000
+            assert len(pages[0]["content"].encode("utf-8")) > 15000
             assert "publish" in {t.name for t in (await session.list_tools()).tools}
             tail = await session.call_tool("read", {"path": "long.txt", "offset": pages[0]["next_offset"]})
             assert not tail.isError
