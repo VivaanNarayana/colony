@@ -67,7 +67,8 @@ ADAPTIVE_WORKFLOW_GUIDANCE = (
     "tool/environment traces. Never invent hashes or research solely to publish. "
     "Publication limits never restrict answer detail or necessary research. Missing publication "
     "evidence, abstention or publication/telemetry failure must not block the answer. "
-    "No abstention report, decision call or automatic retry. "
+    "Explain publication status when asked; omit unsolicited abstention reports. "
+    "No decision call or automatic retry. "
     'Payload: from observed {path:p,sha256:h}, use '
     'push(question=q,content=finding,sources=[{"ref":p,"content_hash":h}]); '
     "q: original focused question. Include all supporting observed ref/hash pairs or narrow claims. "

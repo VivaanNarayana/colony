@@ -26,6 +26,20 @@ ANSWER_POLICY = (
     "Research and answer length are unrestricted by publication policy."
 )
 
+PUBLICATION_POLICY = (
+    "After necessary research, before final, publish one new supported reusable behavior "
+    "finding if eligible; otherwise continue with the complete answer. Skip unchanged reuse "
+    "and isolated values unless explicitly asked to remember; never reframe a value lookup "
+    "as behavior or research solely to publish. Use all supporting observed references or "
+    "narrow the stored claim. Example: publish(content=finding, applicability=scope, "
+    'evidence_refs=[read_result.evidence_ref], kind="behavior"). '
+    "Use actual returned references, not literal example names; the original question is bound. "
+    "For explicitly requested value memories use kind=\"value\". "
+    "Explain requested publication status and failures truthfully; omit unsolicited abstention reports. "
+    "No decision call, automatic retry or publication-success gate. "
+    "Publication failure or missing evidence must not block the answer."
+)
+
 
 class TaskMCP(FastMCP):
     """The host supplies task intent; source text cannot select a cheaper mode."""
@@ -61,7 +75,10 @@ class TaskMCP(FastMCP):
             "Start with read for the host's explicit path. Research further whenever needed. "
             if direct_path is not None else "Use research for substantial repository questions. "
         )
-        super().__init__("Colony task", instructions=routing + ANSWER_POLICY)
+        instructions = routing + ANSWER_POLICY
+        if self._may_publish:
+            instructions += " " + PUBLICATION_POLICY
+        super().__init__("Colony task", instructions=instructions)
 
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0) -> dict:
@@ -114,7 +131,8 @@ class TaskMCP(FastMCP):
 
         def publish(content: str, applicability: str, evidence_refs: list[str],
                     kind: Literal["behavior", "value"] = "behavior") -> dict:
-            """Optionally store one new reusable task finding; skip unchanged reuse or speculation.
+            """Before final, store one eligible new reusable finding from necessary task research.
+            Otherwise skip; never manufacture a finding. Skip unchanged reuse or speculation.
             Use references from successful reads; support all claims within observed spans.
             Stored applicability + newline + content must total at most 4,000 characters.
             Value-only memories require the host's explicit remember request. Exclude secrets,

@@ -65,7 +65,8 @@ def test_new_guidance_and_catalog_do_not_grow_from_reviewed_head(identity, read_
             "Never repush unchanged reuse or restatements.",
             "Publication limits never restrict answer detail or necessary research.",
             "publication/telemetry failure must not block the answer.",
-            "No abstention report, decision call or automatic retry.",
+            "Explain publication status when asked; omit unsolicited abstention reports.",
+            "No decision call or automatic retry.",
             "Include all supporting observed ref/hash pairs or narrow claims.",
         ):
             assert invariant in guidance and invariant in server.instructions

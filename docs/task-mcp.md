@@ -65,7 +65,8 @@ they do not solve poisoned-memory admission. The normal untrusted-memory and
 source-validation protections remain in force.
 
 The adapter makes no additional model calls and adds no answer cap.
-On PR15, opt into adaptive lookup with `--context-budget 3072
+
+Opt into adaptive lookup with `--context-budget 3072
 --context-encoding utf8_bytes`. The Python API accepts `context_budget=ContextBudget(...)`.
 Adaptive `research` uses the same negotiation, source verification, packing and
 wire-response cap as ordinary adaptive `ask`, with the task question bound by the
@@ -76,3 +77,13 @@ limited or unavailable memories leave source reads and fuller answers available.
 Direct reads, continuation offsets and publication eligibility are unchanged.
 Without a budget, the legacy lookup interface and representation are unchanged.
 This does not change retrieval. End-to-end gross savings remain unproven.
+
+Writable eligible tasks receive a conditional before-final publication instruction and
+an evidence-reference payload example once in MCP initialization. Direct tasks without
+remember intent and read-only tasks receive no publication workflow. This guidance does
+not auto-publish, require a successful write, add a decision call, or limit answers.
+Requested publication status and failure explanations remain part of the answer;
+only unsolicited abstention reports are omitted. Unknown outcomes stay uncertain.
+Use all supporting read references for multi-source findings; never send the example's
+variable names as references. The ordinary AGENTS.md ask/push payload is not this API.
+Local transport tests establish delivery and capability, not model compliance or savings.
