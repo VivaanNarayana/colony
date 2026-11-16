@@ -34,7 +34,8 @@ PUBLICATION_POLICY = (
     'evidence_refs=[read_result.evidence_ref], kind="behavior"). '
     "Use actual returned references, not literal example names; the original question is bound. "
     "For explicitly requested value memories use kind=\"value\". "
-    "No abstention message, decision call, automatic retry or publication-success gate. "
+    "Explain requested publication status and failures truthfully; omit unsolicited abstention reports. "
+    "No decision call, automatic retry or publication-success gate. "
     "Publication failure or missing evidence must not block the answer."
 )
 

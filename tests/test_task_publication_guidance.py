@@ -76,6 +76,47 @@ def test_example_supports_multiple_sources_and_never_caps_reads(identity, monkey
 
 def test_guidance_has_bounded_once_per_eligible_task_cost():
     assert len(PUBLICATION_POLICY.encode("utf-8")) < 1000
-    assert "No abstention message" in PUBLICATION_POLICY
+    assert "omit unsolicited abstention reports" in PUBLICATION_POLICY
     assert "research solely to publish" in PUBLICATION_POLICY
     assert "complete answer" in PUBLICATION_POLICY
+
+
+@pytest.mark.parametrize("failure", ["missing_evidence", "unknown_publication_outcome"])
+def test_requested_status_explanations_survive_failure_without_extra_calls(identity, monkeypatch, failure):
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    client, repo, _ = identity
+    attempts = []
+
+    def unavailable(trail, **kwargs):
+        attempts.append(trail)
+        raise TimeoutError("private transport detail")
+
+    monkeypatch.setattr(client, "push", unavailable)
+    server = TaskMCP(Workflow(client, "team", repo),
+                     "Remember the timeout; explain whether it was saved and why if not.",
+                     direct_path="settings.py", remember=True)
+
+    def call(name, args):
+        return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
+
+    assert "Explain requested publication status and failures truthfully" in server.instructions
+    assert "omit unsolicited abstention reports" in server.instructions
+    assert "No abstention message" not in server.instructions
+    assert "No decision call, automatic retry or publication-success gate" in server.instructions
+    assert server.instructions.count(ANSWER_POLICY) == 1
+    if failure == "missing_evidence":
+        with pytest.raises(ToolError):
+            call("read", {"path": "missing.py"})
+        assert not attempts
+    else:
+        reference = call("read", {})["evidence_ref"]
+        result = call("publish", {"content": "The timeout is 30.", "applicability": "settings.py",
+                                  "evidence_refs": [reference], "kind": "value"})
+        assert result["answer_unblocked"]
+        assert result["reason"] == "publication_failed_or_outcome_unknown"
+        assert "private transport detail" not in str(result)
+        assert len(attempts) == 1
+    # Necessary research remains usable; neither guidance nor failure starts a retry.
+    assert call("read", {"path": "README.md"})["content"]
+    assert len(attempts) == int(failure == "unknown_publication_outcome")
