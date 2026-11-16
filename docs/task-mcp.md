@@ -67,3 +67,13 @@ source-validation protections remain in force.
 The adapter makes no additional model calls and adds no answer cap.
 Legacy lookup representation is retained on main; this adapter does not copy
 PR15's adaptive packing or change retrieval. End-to-end gross savings are unproven.
+
+Writable eligible tasks receive a conditional before-final publication instruction and
+an evidence-reference payload example once in MCP initialization. Direct tasks without
+remember intent and read-only tasks receive no publication workflow. This guidance does
+not auto-publish, require a successful write, add a decision call, or limit answers.
+Requested publication status and failure explanations remain part of the answer;
+only unsolicited abstention reports are omitted. Unknown outcomes stay uncertain.
+Use all supporting read references for multi-source findings; never send the example's
+variable names as references. The ordinary AGENTS.md ask/push payload is not this API.
+Local transport tests establish delivery and capability, not model compliance or savings.
