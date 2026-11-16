@@ -14,6 +14,7 @@ from colony.task_mcp import TaskMCP
 from colony.workflow import Workflow
 
 try:
+    from .read_contract import read_units
     from .research import Research
 except ImportError:  # Launched as a pinned absolute script with target Python -I.
     import importlib.util
@@ -21,6 +22,12 @@ except ImportError:  # Launched as a pinned absolute script with target Python -
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     Research = module.Research
+    spec = importlib.util.spec_from_file_location('evaluation_read_contract', Path(__file__).with_name('read_contract.py'))
+    module = importlib.util.module_from_spec(spec)
+    import sys
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    read_units = module.read_units
 
 
 def create_server(home, repo, question, files, max_calls, *, read_only=False,
@@ -31,7 +38,10 @@ def create_server(home, repo, question, files, max_calls, *, read_only=False,
         async def call_tool(self, name, arguments):
             # Charge before argument validation; failures and continuation pages count.
             if name in {'read', 'fixture_files', 'fixture_search'}:
-                research._charge()
+                # Reserve the entire batch atomically before any source is read.
+                # A rejected/invalid batch still incurs every requested entry.
+                for _ in range(read_units(arguments) if name == 'read' else 1):
+                    research._charge()
             token = research.external_charge.set(True)
             try:
                 return await super().call_tool(name, arguments)
@@ -43,12 +53,12 @@ def create_server(home, repo, question, files, max_calls, *, read_only=False,
                             direct_path=direct_path, remember=remember, **options)
     original_read = server.evidence.read
 
-    def read(path, start=1, end=None, *, offset=0):
+    def read(path, start=1, end=None, *, offset=0, **private_options):
         try:
             research._path(path)
         except (OSError, ValueError, TypeError, RuntimeError):
             raise EvidenceError('Path is outside fixture files') from None
-        return original_read(path, start, end, offset=offset)
+        return original_read(path, start, end, offset=offset, **private_options)
 
     server.evidence.read = read
 

@@ -267,6 +267,7 @@ def _prompt(protocol, task, guidance):
             'Cite supporting repository paths and line ranges. '
             f"Repository research budget: {protocol['research']['max_calls']} calls shared across "
             'read, fixture_files and fixture_search, including failed calls and continuation pages. '
+            'Each entry in a read batch consumes one call; a batch exceeding the remaining allowance is rejected before reading. '
             'research is a memory lookup; follow the task server policy for conditional publication. '
             'research and publish do not consume '
             'the repository allowance; all calls are charged in token accounting. '

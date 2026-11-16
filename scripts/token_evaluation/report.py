@@ -11,7 +11,7 @@ import re
 import secrets
 from pathlib import Path
 
-from .adapters import allowed_tool, research_call
+from .adapters import allowed_tool, research_call, research_units
 from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
 from .output import instruction
 from .protocol import (
@@ -24,8 +24,9 @@ from .protocol import (
 )
 from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
+from .read_contract import split_reads
 from .receipt import validate_native_receipts
-from .task_evidence import lookup_value, verified_page
+from .task_evidence import lookup_value, verified_reads
 from .tool_receipts import collect as collect_tool_receipts
 from .tool_receipts import digest as receipt_digest
 from .usage import native_usage
@@ -74,12 +75,12 @@ def activity(events_path, adapter='ordinary'):
     counts = dict.fromkeys(("colony_calls", "research_calls", "hits", "misses", "stored",
                             "claimed_current_reads", "stale", "miss_or_research_advice", "claimed_validated_hits", "safe_refusals", "claimed_evidence_hits", "cache_misses", "unapproved_calls",
                             "task_adapter_calls", "task_read_attempts", "task_publish_attempts", "task_reference_results"), 0)
-    seen, completed = {}, set()
+    seen, completed, charged = {}, set(), {}
     for number, line in enumerate(Path(events_path).read_text(encoding="utf-8").splitlines()):
         event = json.loads(line)
         if event.get("type") == "turn.started":
             # Item IDs are scoped to a turn; a later turn still incurs new calls.
-            seen, completed = {}, set()
+            seen, completed, charged = {}, set(), {}
         item = event.get("item", {})
         if event.get("type") not in {"item.started", "item.updated", "item.completed"}:
             continue
@@ -102,10 +103,14 @@ def activity(events_path, adapter='ordinary'):
         if first:
             counts["unapproved_calls"] += not allowed
             counts["colony_calls"] += colony
-            counts["research_calls"] += research_call(server, tool)
             counts['task_adapter_calls'] += colony and tool in {'read', 'research', 'publish'}
-            counts['task_read_attempts'] += colony and tool == 'read'
             counts['task_publish_attempts'] += colony and tool == 'publish'
+        units = research_units(server, tool, item.get('arguments'))
+        increment = max(0, units - charged.get(identity, 0))
+        charged[identity] = max(units, charged.get(identity, 0))
+        counts['research_calls'] += increment
+        if colony and tool == 'read':
+            counts['task_read_attempts'] += increment
         if identity in completed:
             if event.get("type") == "item.completed":
                 raise ValueError("Duplicate completed tool call")
@@ -128,7 +133,8 @@ def activity(events_path, adapter='ordinary'):
             if not isinstance(value, dict):
                 continue
             if tool == 'read':
-                counts['task_reference_results'] += isinstance(value.get('evidence_ref'), str)
+                counts['task_reference_results'] += sum(isinstance(v.get('evidence_ref'), str)
+                    and 'error' not in v for _, v in split_reads(item, value))
             if tool in {"ask", "research"}:
                 value = lookup_value(value) if tool == 'research' else value
                 counts["hits"] += value.get("hit") is True
@@ -277,7 +283,8 @@ def review_subject(run_dir, run, manifest, row, case):
             server = str(item.get("server", "")).lower()
             if server == 'colony' and item.get('tool') == 'read':
                 for value in _objects(item):
-                    spans += verified_page(item, value, source_root, current['files'], task, pages=task_pages)[0]
+                    for got, _, _ in verified_reads(item, value, source_root, current['files'], task, pages=task_pages):
+                        spans += got
             elif research_call(server, item.get('tool')):
                 spans += _research(item, source_root, current["files"])
             elif server == "colony" and item.get("tool") in {"ask", "research"}:
