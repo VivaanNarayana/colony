@@ -18,7 +18,7 @@ Ordinary and adaptive lookup share the same routing guidance: look up saved find
 when useful, read known paths directly, and batch independent reads. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
-and contradictions, then explain remaining limitations. This adapter adds no research quota.
+and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
 Answer guidance distinguishes concrete implementations from injected interfaces and total
 attempts from retries. For example, a concrete adapter allowing two attempts does not prove
@@ -159,3 +159,73 @@ only unsolicited abstention reports are omitted. Unknown outcomes stay uncertain
 Use all supporting read references for multi-source findings; never send the example's
 variable names as references. The ordinary AGENTS.md ask/push payload is not this API.
 Local transport tests establish delivery and capability, not model compliance or savings.
+
+
+## Empty-memory source-first routing
+
+On stdio startup, a non-direct task makes a short authenticated
+`POST /memory/availability` request. The response contains only a contract,
+namespace, configured repository identity and `empty`/`present` state. Only a
+zero active-row result in the authorized namespace enables the source-first hint.
+Stale, unverified and unrelated active memories conservatively count as present;
+a search miss never becomes an empty-store proof. Repository-ID mismatch, old
+servers, denied/expired credentials and transport failures yield `unknown` and
+retain normal research. No embedding, ranking or source reading occurs in this probe.
+
+The hint is explicitly a snapshot, not a guarantee about subsequent publications.
+An empty hint has a three-second local lifetime; tool-list and source-tool requests
+recheck expired state and revalidate identity. Present/unknown results back off for
+30 seconds so outages do not add a probe to every read. Explicit lookup skips the
+availability probe, invalidates the hint and uses the normal current lookup. Publication invalidates even an in-flight
+snapshot, including failed/unknown write outcomes. Catalog changes are notified
+on subsequent tool calls. Explicit `research` always performs the normal current
+lookup; it is never hidden and never returns a cached miss. The startup hint is
+historical ("empty at task startup"); it does not claim continued emptiness.
+Sources, other research and all requested answer detail remain available.
+Use `--no-empty-memory-routing` to disable the probe. Explicit direct-file tasks
+already route to reads and do not make the startup probe. Embedded hosts can opt
+into the same lifecycle through the stdio runner; construction alone does no I/O.
+
+## Opt-in dependency bundles
+
+`--trace-reads` additionally exposes `trace_read(paths=[...], max_files=8)`.
+Paths are bounded to 1-8 entries and 1,024 characters each; `max_files` is 1-8.
+This tool is for code-tracing requests, not an instruction to expand every value
+lookup. It reads explicit paths first, then deduplicated static Python module
+hints in discovery order. It never executes imports or probes the filesystem to
+resolve packages. Only `.py` module candidates from full delivered Python pages
+are followed; relative imports are bounded to the repository. Package initializers,
+dynamic imports, runtime bindings, callers and injected implementations are not
+inferred. Request scope documents and other required evidence explicitly.
+
+All attempted files use the ordinary evidence-read boundary. A bundle shares a
+16,000-byte source-content allowance in order; it stops at the file/content cap.
+Each partial page has the same character-based `next_offset` as `read`; continue
+it using the returned path/start/end and offset. Expansion does not inspect
+omitted pages. Errors do not mint references, and current hashes, scrubbing,
+expiry, task/principal binding and conditional publication remain authoritative.
+Successful reads can expose the existing single publication cue, but never
+publish automatically. `coverage` explicitly does not certify completeness;
+`pending_paths` are bounded discovery hints, not factual evidence. Additional
+research and the complete user answer remain permitted.
+
+### Quota boundary
+
+The standalone adapter accepts optional `--read-unit-limit N`. It applies to
+single reads, every batch entry, continuations and every attempted expanded file,
+including failures. This allowance is stated in initialization policy. Without
+this option the standalone source allowance is
+unlimited (the bundle's per-call size caps still apply). A trusted embedded host
+can supply `read_admission`, a callback reserving one shared unit and returning
+exactly `True` before a file attempt. False, errors or exhausted allowance deny
+access. The callback is not a model-controlled tool argument. Use the same ledger
+for the host's other research tools; do not separately debit adapter entries a
+second time. `read_accounting` reports admitted, denied and successful bundle
+entries. No denied entry executes or acquires an evidence reference.
+
+Legacy outer wrappers that charge only one unit per tool or only recognize `read`
+must **not** enable `trace_reads` until they integrate this per-entry admission
+contract and report expanded units. The existing evaluation adapter does not
+enable `trace_read`; evaluator schema/receipt/accounting support remains a
+separate change. This PR does not change frozen protocols or historical results,
+add a host completion hook, or establish native token savings or model compliance.

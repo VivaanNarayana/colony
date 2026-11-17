@@ -12,6 +12,7 @@ from colony.models import (
     GitContext,
     Grant,
     Keyfile,
+    MemoryAvailability,
     MemoryChange,
     MemoryCorrection,
     MemoryFeedback,
@@ -153,6 +154,22 @@ def create_app(
         if query.context_budget is not None:
             return Response(content=serialize_response(result), media_type="application/json")
         return result
+
+    @app.post("/memory/availability")
+    def memory_availability(query: MemoryAvailability, grant: Annotated[Grant, Depends(member)]):
+        if not any(s.namespace == query.namespace and s.pull for s in grant.scopes):
+            raise HTTPException(403, "Namespace pull denied")
+        if query.repository_id is not None and query.repository_id != repository_id:
+            raise HTTPException(409, "Repository binding unavailable")
+        # Conservative: even stale/unverified active findings count as present.
+        # No ranking, embeddings, source reads, or content crosses this endpoint.
+        with store.connect() as db:
+            present = db.execute(
+                "SELECT 1 FROM trails t JOIN memory_state_v1 m ON m.trail_id=t.id "
+                "WHERE t.namespace=? AND m.state='active' LIMIT 1", (query.namespace,),
+            ).fetchone() is not None
+        return {"contract": "colony.memory-availability/1", "namespace": query.namespace,
+                "repository_id": repository_id, "state": "present" if present else "empty"}
 
     @app.post("/memory/inspect")
     def memory_inspect(query: MemoryInspect, grant: Annotated[Grant, Depends(member)]):

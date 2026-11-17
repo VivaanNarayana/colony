@@ -75,6 +75,12 @@ class GitContext(Model):
         return self
 
 
+class MemoryAvailability(Model):
+    model_config = ConfigDict(extra="forbid")
+    namespace: str = Field(pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
+    repository_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
+
+
 class Scope(Model):
     namespace: str = Field(pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
     push: bool = False
