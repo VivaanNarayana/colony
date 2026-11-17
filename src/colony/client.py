@@ -271,6 +271,39 @@ class Client:
         response.raise_for_status()
         return response.json()
 
+    def memory_availability(self, namespace: str, repository_id: str | None = None) -> str:
+        """A fresh scoped hint, never a cached answer or evidence of relevance/absence."""
+        from colony.models import MemoryAvailability
+
+        try:
+            query = MemoryAvailability(namespace=namespace, repository_id=repository_id)
+            grant = verify(self.keyfile, self.home / "issuer.pub")
+            if not any(s.namespace == namespace and s.pull for s in grant.scopes):
+                return "unknown"
+            if self.url != grant.server.rstrip("/"):
+                return "unknown"
+            identity = fingerprint(self.keyfile)
+            # Short bounded probe; do not send credentials across a redirect.
+            response = httpx.post(self.url + "/memory/availability", json=query.model_dump(),
+                                  headers={"Authorization": f"Bearer {token(self.keyfile)}"},
+                                  timeout=1, follow_redirects=False)
+            response.raise_for_status()
+            value = response.json()
+            if (not isinstance(value, dict)
+                    or set(value) != {"contract", "namespace", "repository_id", "state"}
+                    or value["contract"] != "colony.memory-availability/1"
+                    or value["namespace"] != namespace
+                    or (repository_id is not None and value["repository_id"] != repository_id)
+                    or value["state"] not in ("empty", "present")):
+                return "unknown"
+            MemoryAvailability(namespace=value["namespace"], repository_id=value["repository_id"])
+            verify(self.keyfile, self.home / "issuer.pub")
+            if identity != fingerprint(self.keyfile):
+                return "unknown"
+            return value["state"]
+        except (OSError, ValueError, TypeError, httpx.HTTPError):
+            return "unknown"
+
     def _git_supported(self, context: GitContext, *, capabilities=None):
         try:
             if capabilities is None:
