@@ -40,6 +40,20 @@ PUBLICATION_POLICY = (
     "Publication failure or missing evidence must not block the answer."
 )
 
+RESEARCH_GUIDANCE = (
+    "Look up the original task when saved findings could help, including gaps in a direct-read task. "
+    "Use sufficient current evidence; research gaps or contradictions."
+)
+READ_ROUTING = (
+    "Batch known independent paths; read needed implementation dependencies before repeated "
+    "literal searches. Continue research whenever evidence is insufficient or conflicting. "
+)
+PUBLICATION_CUE = (
+    "Before final, publish one eligible new reusable finding using all supporting observed "
+    "evidence_refs, or skip. Isolated values require an explicit remember request. "
+    "Never invent evidence or research solely to publish. Complete the answer regardless."
+)
+
 
 class ReadRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -82,17 +96,23 @@ class TaskMCP(FastMCP):
         self._publication_lock = threading.RLock()
         routing = (
             "Start with read for the host's explicit path. Research further whenever needed. "
-            if direct_path is not None else "Use research for substantial repository questions. "
+            if direct_path is not None else "Use research when saved findings could help. "
         )
-        instructions = routing + ANSWER_POLICY
+        instructions = routing + READ_ROUTING + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
         super().__init__("Colony task", instructions=instructions)
 
-        def observe(results):
+        def observe(results, response):
             if self._may_publish and any(result["evidence_ref"] for result in results):
                 with self._publication_lock:
+                    first = not self._publication_ready and not self._publication_attempted
                     self._publication_ready = True
+                    if first:
+                        # Trusted adapter guidance, outside source text and batch entries.
+                        # One cue per task; no extra call, read, or publication attempt.
+                        response["publication_guidance"] = PUBLICATION_CUE
+            return response
 
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,
@@ -107,15 +127,13 @@ class TaskMCP(FastMCP):
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
                 results = self.evidence.read_batch([request.model_dump() for request in batch])
-                observe(results)
-                return {"results": results}
+                return observe(results, {"results": results})
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
                 result = self.evidence.read(selected, start, end, offset=offset)
-                observe([result])
-                return result
+                return observe([result], result)
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 
@@ -129,6 +147,7 @@ class TaskMCP(FastMCP):
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 
+        research.__doc__ = RESEARCH_GUIDANCE
         if lookup is not None:
             async def adaptive_research(
                 max_context_tokens: Annotated[int, Field(strict=True, ge=256, le=8192)] | None = None,
@@ -142,8 +161,7 @@ class TaskMCP(FastMCP):
 
             units = "UTF-8 bytes (estimate)" if context_budget.encoding == "utf8_bytes" else "o200k_base tokens"
             adaptive_research.__doc__ = (
-                "Look up the original task. Assess current source excerpts; reuse sufficient evidence "
-                "with citations, and research gaps or contradictions. max_context_tokens caps the "
+                RESEARCH_GUIDANCE + " max_context_tokens caps the "
                 f"full lookup response: default {context_budget.max_tokens} {units}; override 256..8192. "
                 "budget_limited is not proof of no match; no automatic retry. "
                 "This cap never limits the answer or necessary source research."

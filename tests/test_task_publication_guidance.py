@@ -10,7 +10,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from test_workflow import identity as identity
 
-from colony.task_mcp import ANSWER_POLICY, PUBLICATION_POLICY, TaskMCP
+from colony.task_mcp import ANSWER_POLICY, PUBLICATION_CUE, PUBLICATION_POLICY, TaskMCP
 from colony.workflow import Workflow
 
 
@@ -44,6 +44,8 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             result = await session.call_tool("read", {"path": "settings.py"})
             assert not result.isError
             assert PUBLICATION_POLICY not in result.content[0].text
+            page = json.loads(result.content[0].text)
+            assert page.get("publication_guidance") == (PUBLICATION_CUE if eligible else None)
             tools = (await session.list_tools()).tools
             assert ("publish" in {t.name for t in tools}) == eligible
             if eligible:
@@ -53,7 +55,9 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
                 assert "4,000 characters" in tool.description
                 assert "Before final" in tool.description
             # Policy delivery cannot trigger a publication or limit later research.
-            assert not (await session.call_tool("read", {"path": "README.md"})).isError
+            later = await session.call_tool("read", {"path": "README.md"})
+            assert not later.isError
+            assert "publication_guidance" not in json.loads(later.content[0].text)
     asyncio.run(check())
 
 
