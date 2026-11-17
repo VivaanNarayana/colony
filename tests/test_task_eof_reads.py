@@ -16,8 +16,9 @@ def test_oversized_end_matches_omitted_end_and_binds_actual_span(identity, batch
     expected = call(server, path="small.txt", start=start)
     request = {"path": "small.txt", "start": start, "end": 120}
     actual = (call(server, batch=[request])["results"][0] if batch else call(server, **request))
-    assert {k: v for k, v in actual.items() if k != "evidence_ref"} == {
-        k: v for k, v in expected.items() if k != "evidence_ref"}
+    metadata = {"evidence_ref", "publication_guidance"}
+    assert {k: v for k, v in actual.items() if k not in metadata} == {
+        k: v for k, v in expected.items() if k not in metadata}
     observation = server.evidence._observations[actual["evidence_ref"]]
     assert observation.end == len(text.splitlines())
     assert server.evidence.resolve([actual["evidence_ref"]])[0].content_hash == hashlib.sha256(

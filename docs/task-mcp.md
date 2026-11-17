@@ -14,6 +14,10 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
+Ordinary and adaptive lookup share the same routing guidance: look up saved findings
+when useful, batch known independent paths, and read needed implementation dependencies
+before repeating literal searches. This is guidance, not a restriction on research.
+
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue
 with that offset and the same path/start/end until it is null. Offsets count
@@ -85,6 +89,15 @@ reads with references make `publish` discoverable. A direct task keeps publicati
 unavailable unless the host passes `--remember` for an explicit user request.
 Lookup-only reuse never unlocks publication. The host must not classify a broad
 research task as direct merely because it mentions a filename.
+
+The first successful eligible read also returns a short `publication_guidance` field
+alongside the read result, or alongside `results` for a batch. This constant adapter
+cue is separate from source content and is not evidence. It reminds the model to
+publish an eligible supported finding or skip publication and complete the answer.
+It appears at most once per task, never once per batch entry or continuation page.
+Failed reads and reads without evidence references do not consume the cue. Read-only
+and direct tasks without explicit remember intent receive no cue. The cue does not
+attempt publication, add a tool call, reserve source capacity, or gate the final answer.
 
 The server advertises MCP tools-list changes and sends notifications. Hosts must
 support refreshing tool discovery; otherwise research still works but they may

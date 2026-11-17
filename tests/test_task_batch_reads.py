@@ -42,7 +42,7 @@ def test_batch_returns_same_evidence_in_one_call_without_lookup_or_push(identity
     together = call(server, batch=requests)["results"]
     assert len(together) == len(requests)
     for one, many in zip(individual, together, strict=True):
-        assert {k: v for k, v in one.items() if k != "evidence_ref"} == {
+        assert {k: v for k, v in one.items() if k not in {"evidence_ref", "publication_guidance"}} == {
             k: v for k, v in many.items() if k != "evidence_ref"}
         assert one["evidence_ref"] != many["evidence_ref"]
         assert server.evidence.resolve([one["evidence_ref"]]) == server.evidence.resolve(
