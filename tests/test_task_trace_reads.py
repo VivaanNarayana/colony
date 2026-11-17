@@ -268,7 +268,8 @@ def test_symlink_dependency_cannot_escape_repo(identity, tmp_path):
         pytest.skip("symlinks unavailable")
     (repo / "root.py").write_text("import escape\n")
     result = call(make(identity), paths=["root.py"])
-    assert result["results"][1]["evidence_ref"] is None
+    assert len(result["results"]) == 1
+    assert result["unresolved_paths"] == ["escape.py"]
     assert "PRIVATE" not in json.dumps(result)
 
 
@@ -288,4 +289,101 @@ def test_reference_capacity_does_not_reduce_answer_evidence_or_read_success(iden
     assert result["read_accounting"] == {"admitted": 3, "denied": 0, "succeeded": 3}
     assert all("content" in p for p in result["results"])
     assert [bool(p["evidence_ref"]) for p in result["results"]] == [True, False, False]
+    assert len(server.evidence._observations) == 1
+
+
+def test_unresolved_imports_do_not_spend_required_dependency_allowance(identity):
+    _, repo, _ = identity
+    (repo / "handler.py").write_text(
+        "import os\nimport sys\nimport external_library\nfrom policy import LIMIT\n"
+    )
+    (repo / "policy.py").write_text("LIMIT=7\n")
+    remaining = [3]
+
+    def admit():
+        if not remaining[0]:
+            return False
+        remaining[0] -= 1
+        return True
+
+    server = make(identity, read_admission=admit)
+    result = call(server, paths=["handler.py"])
+    assert [p["path"] for p in result["results"]] == ["handler.py", "policy.py"]
+    assert result["read_accounting"] == {"admitted": 2, "denied": 0, "succeeded": 2}
+    assert result["unresolved_paths"] == ["os.py", "sys.py", "external_library.py"]
+    assert not result["unresolved_truncated"]
+    assert call(server, "read", path="policy.py")["content"] == "LIMIT=7"
+    assert remaining[0] == 0
+
+
+def test_local_shadow_is_read_and_explicit_missing_read_still_costs_unit(identity):
+    _, repo, _ = identity
+    (repo / "handler.py").write_text("import json\n")
+    (repo / "json.py").write_text("LOCAL=True\n")
+    attempts = []
+    server = make(identity, read_admission=lambda: attempts.append(1) or True)
+    result = call(server, paths=["missing.py", "handler.py"])
+    assert [p["path"] for p in result["results"]] == ["missing.py", "handler.py", "json.py"]
+    assert len(attempts) == 3
+    assert result["read_accounting"] == {"admitted": 3, "denied": 0, "succeeded": 2}
+    assert not result.get("unresolved_paths")
+
+
+def test_unresolved_import_metadata_is_bounded_and_not_evidence(identity):
+    _, repo, _ = identity
+    (repo / "handler.py").write_text("\n".join(f"import missing{i}" for i in range(20)))
+    server = make(identity)
+    result = call(server, paths=["handler.py"])
+    assert result["read_accounting"] == {"admitted": 1, "denied": 0, "succeeded": 1}
+    assert len(result["unresolved_paths"]) == 8 and result["unresolved_truncated"]
+    assert len(server.evidence._observations) == 1
+
+
+def test_candidate_metadata_rechecks_auth_without_reading_content(identity, monkeypatch):
+    from colony import task_reads
+
+    server = make(identity)
+    probes = []
+    monkeypatch.setattr(task_reads, "repo_file", lambda *a: probes.append(a))
+    assert task_reads._local_candidate(server.evidence, "policy.py")
+    assert len(probes) == 1 and not server.evidence._observations
+    monkeypatch.setattr(server.evidence, "_authorize", lambda: (_ for _ in ()).throw(
+        EvidenceError("denied")))
+    assert not task_reads._local_candidate(server.evidence, "policy.py")
+    assert len(probes) == 1
+
+
+def test_candidate_metadata_failure_keeps_answer_evidence_available(identity, monkeypatch):
+    from colony import task_reads
+
+    _, repo, _ = identity
+    (repo / "handler.py").write_text("import policy\n")
+    server = make(identity)
+    monkeypatch.setattr(task_reads, "repo_file", lambda *a: (_ for _ in ()).throw(
+        OSError("private path details")))
+    result = call(server, paths=["handler.py"])
+    assert result["results"][0]["content"] == "import policy"
+    assert result["unresolved_paths"] == ["policy.py"]
+    assert "private path" not in json.dumps(result)
+    assert result["read_accounting"]["admitted"] == 1
+
+
+def test_inferred_file_disappearing_after_metadata_is_still_charged(identity, monkeypatch):
+    _, repo, _ = identity
+    (repo / "handler.py").write_text("import policy\n")
+    (repo / "policy.py").write_text("LIMIT=7\n")
+    attempts = []
+    server = make(identity, read_admission=lambda: attempts.append(1) or True)
+    original = server.evidence.read
+
+    def host_read(path, *args, **kwargs):
+        if path == "policy.py":
+            (repo / path).unlink()
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(server.evidence, "read", host_read)
+    result = call(server, paths=["handler.py"])
+    assert len(attempts) == 2
+    assert result["read_accounting"] == {"admitted": 2, "denied": 0, "succeeded": 1}
+    assert result["results"][1]["evidence_ref"] is None
     assert len(server.evidence._observations) == 1

@@ -5,6 +5,7 @@ from pathlib import PurePosixPath
 
 from colony.evidence_refs import EvidenceError
 from colony.security import scrub
+from colony.validation import repo_file
 
 
 class ReadDenied(EvidenceError):
@@ -14,7 +15,7 @@ class ReadDenied(EvidenceError):
 class ReadAccess:
     """Trusted per-entry admission, shared by normal reads, batches and trace reads.
 
-    A host callback reserves ONE unit before any file access, including failures.
+    A host callback reserves ONE unit before any source-content attempt, including failures.
     It must return True only when reserved. It is never a model/tool argument.
     """
 
@@ -98,6 +99,23 @@ def _public_path(path):
     return path if safe else None
 
 
+def _local_candidate(evidence, path):
+    """Select exact repo-file candidates using authorized metadata, never source bytes.
+
+    This is not import resolution or evidence of a runtime binding. The eventual
+    content read still needs the host wrapper, admission and current authorization.
+    Missing, unsafe and unavailable candidates are all unresolved, not absence facts.
+    """
+    try:
+        evidence._authorize()
+        if _public_path(path) is None:
+            return False
+        repo_file(evidence.workflow.repo, path)
+        return True
+    except (OSError, ValueError, RuntimeError):
+        return False
+
+
 def trace_read(evidence, access, paths, max_files):
     # Inputs are bounded by the tool schema; retain a guard for Python callers.
     if (
@@ -112,6 +130,8 @@ def trace_read(evidence, access, paths, max_files):
         before = access.admitted, access.denied
         pending = list(dict.fromkeys(paths))
         seen, results, remaining = set(), [], 16000
+        unresolved = set()
+        unresolved_paths = []
         while pending and len(results) < max_files and remaining >= 4:
             path = pending.pop(0)
             if path in seen:
@@ -136,9 +156,15 @@ def trace_read(evidence, access, paths, max_files):
             results.append(page)
             remaining -= len(page.get("content", "").encode("utf-8"))
             for child in local_imports(path, page):
-                if child not in seen and child not in pending and len(pending) < 32:
-                    pending.append(child)
-        return {
+                if (child not in seen and child not in pending and child not in unresolved
+                        and len(pending) < 32):
+                    if _local_candidate(evidence, child):
+                        pending.append(child)
+                    else:
+                        unresolved.add(child)
+                        if len(unresolved_paths) < 8:
+                            unresolved_paths.append(_public_path(child))
+        result = {
             "results": results,
             "read_accounting": {
                 "admitted": access.admitted - before[0],
@@ -146,8 +172,12 @@ def trace_read(evidence, access, paths, max_files):
                 "succeeded": sum("content" in p and "error" not in p for p in results),
             },
             "coverage": "Static module hints only; packages, dynamic imports, injected bindings "
-            "and repository-wide absence remain unverified. Errors, pending paths "
+            "and repository-wide absence remain unverified. Errors, unresolved/pending paths "
             "and next_offset pages need further research when relevant.",
             "pending_paths": [_public_path(path) for path in pending[:8]],
             "pending_truncated": len(pending) > 8,
         }
+        if unresolved:
+            result.update(unresolved_paths=unresolved_paths,
+                          unresolved_truncated=len(unresolved) > len(unresolved_paths))
+        return result

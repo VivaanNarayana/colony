@@ -306,21 +306,22 @@ class TaskMCP(FastMCP):
         except ToolError:
             # FastMCP/Pydantic errors can echo arbitrary rejected input.
             raise ToolError("Task tool failed; adjust the request or use other research tools") from None
-        if name == "publish":
-            # Invalidate even after failed/unknown writes; never reuse an empty hint.
-            self._availability_generation += 1
-            self._availability_until = 0
-            availability_changed |= self._availability_state != "unknown"
-            self._availability_state = "unknown"
-        if availability_changed or before != (self._publication_ready, self._publication_attempted):
-            try:
-                context = self.get_context().request_context
-            except ValueError:  # In-process Python calls have no transport session.
-                context = None
-            if context is not None:
-                # Notification failure must not discard successful source reads.
-                with suppress(Exception):
-                    await context.session.send_tool_list_changed()
+        finally:
+            if name == "publish":
+                # Invalidate even after failed/unknown writes; never reuse an empty hint.
+                self._availability_generation += 1
+                self._availability_until = 0
+                availability_changed |= self._availability_state != "unknown"
+                self._availability_state = "unknown"
+            if availability_changed or before != (self._publication_ready, self._publication_attempted):
+                try:
+                    context = self.get_context().request_context
+                except ValueError:  # In-process Python calls have no transport session.
+                    context = None
+                if context is not None:
+                    # Notification failure must not discard successful source reads.
+                    with suppress(Exception):
+                        await context.session.send_tool_list_changed()
         return result
 
 

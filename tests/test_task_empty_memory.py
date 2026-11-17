@@ -297,3 +297,72 @@ def test_explicit_lookup_skips_probe_and_outage_checks_back_off(identity, monkey
         assert len(probes) == 1
 
     asyncio.run(check())
+
+
+@pytest.mark.parametrize("name,arguments", [
+    ("read", {"path": "missing.py"}),
+    ("read", {"offset": "invalid"}),
+    ("unknown_tool", {}),
+])
+def test_failed_tool_still_notifies_changed_availability(identity, monkeypatch, name, arguments):
+    from types import SimpleNamespace
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    client, repo, _ = identity
+    state, notifications = ["empty"], []
+    monkeypatch.setattr(client, "memory_availability", lambda *a: state[0])
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True), "Explain behavior")
+    server._availability_enabled = True
+
+    class Session:
+        async def send_tool_list_changed(self):
+            notifications.append(1)
+
+    monkeypatch.setattr(server, "get_context", lambda: SimpleNamespace(
+        request_context=SimpleNamespace(session=Session())))
+
+    async def check():
+        await server.list_tools()
+        state[0] = "present"
+        server._availability_until = 0
+        with pytest.raises(ToolError, match="Task tool failed"):
+            await server.call_tool(name, arguments)
+        assert notifications == [1]
+        assert not any("empty at last check" in (t.description or "")
+                       for t in await server.list_tools())
+        await server.call_tool("read", {"path": "settings.py"})
+        assert notifications == [1]  # No redundant catalog event for unchanged state.
+
+    asyncio.run(check())
+
+
+def test_notification_failure_preserves_tool_error_and_publication_invalidation(identity, monkeypatch):
+    from types import SimpleNamespace
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "memory_availability", lambda *a: "empty")
+    server = TaskMCP(Workflow(client, "team", repo), "Explain behavior")
+    server._availability_enabled = True
+    notifications = []
+
+    class Session:
+        async def send_tool_list_changed(self):
+            notifications.append(1)
+            raise RuntimeError("transport failure")
+
+    monkeypatch.setattr(server, "get_context", lambda: SimpleNamespace(
+        request_context=SimpleNamespace(session=Session())))
+
+    async def check():
+        await server.list_tools()
+        with pytest.raises(ToolError, match="Task tool failed"):
+            await server.call_tool("publish", {})
+        assert server._availability_state == "unknown"
+        assert server._availability_until == 0
+        assert notifications == [1]
+        assert not server._publication_attempted
+        result = await server.call_tool("read", {"path": "settings.py"})
+        assert json.loads(result[0].text)["content"]
+
+    asyncio.run(check())

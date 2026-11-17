@@ -178,7 +178,8 @@ recheck expired state and revalidate identity. Present/unknown results back off 
 30 seconds so outages do not add a probe to every read. Explicit lookup skips the
 availability probe, invalidates the hint and uses the normal current lookup. Publication invalidates even an in-flight
 snapshot, including failed/unknown write outcomes. Catalog changes are notified
-on subsequent tool calls. Explicit `research` always performs the normal current
+even when a tool call fails. Notification transport errors cannot replace a tool
+result or its sanitized error. Explicit `research` always performs the normal current
 lookup; it is never hidden and never returns a cached miss. The startup hint is
 historical ("empty at task startup"); it does not claim continued emptiness.
 Sources, other research and all requested answer detail remain available.
@@ -192,13 +193,22 @@ into the same lifecycle through the stdio runner; construction alone does no I/O
 Paths are bounded to 1-8 entries and 1,024 characters each; `max_files` is 1-8.
 This tool is for code-tracing requests, not an instruction to expand every value
 lookup. It reads explicit paths first, then deduplicated static Python module
-hints in discovery order. It never executes imports or probes the filesystem to
-resolve packages. Only `.py` module candidates from full delivered Python pages
-are followed; relative imports are bounded to the repository. Package initializers,
+hints in discovery order. It never executes imports or resolves packages. Only
+`.py` module candidates from full delivered Python pages are considered. Before
+queueing an inferred path, a bounded exact-path metadata check revalidates the
+evidence session and repository boundary; it reads no source bytes and issues no
+evidence references. Missing, unsafe or unavailable candidates remain unresolved
+gaps, reported in at most eight `unresolved_paths` with `unresolved_truncated`.
+They do not spend source-read units. This metadata is neither evidence of absence
+nor proof of an import's runtime binding. Local files sharing standard-library
+names remain eligible. Relative imports are bounded to the repository. Package initializers,
 dynamic imports, runtime bindings, callers and injected implementations are not
 inferred. Request scope documents and other required evidence explicitly.
 
-All attempted files use the ordinary evidence-read boundary. A bundle shares a
+Every content-read attempt still uses the ordinary host-wrapped evidence-read
+boundary and per-entry admission, including explicit missing paths and candidates
+that disappear after the metadata check. Metadata selection never permits a
+content read, relaxes an allowlist, or refunds a failed read. A bundle shares a
 16,000-byte source-content allowance in order; it stops at the file/content cap.
 Each partial page has the same character-based `next_offset` as `read`; continue
 it using the returned path/start/end and offset. Expansion does not inspect
