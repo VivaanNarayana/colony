@@ -9,6 +9,7 @@ from .adapters import research_call, research_units
 from .protocol import validate_evidence_policy
 from .redaction import redacted_source_lines
 from .research import Research
+from .research_budget import source_blocks
 from .task_evidence import handle, lookup_value, verified_reads
 
 
@@ -17,7 +18,7 @@ def _objects(item):
     if item.get('status') != 'completed' or result.get('isError'):
         return []
     values = []
-    for block in result.get('content', []):
+    for block in source_blocks(result.get('content', [])):
         try:
             value = json.loads(block['text']) if block.get('type') == 'text' else None
         except (ValueError, KeyError, TypeError):

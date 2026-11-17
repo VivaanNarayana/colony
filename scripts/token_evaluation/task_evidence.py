@@ -30,8 +30,10 @@ def verified_page(item, value, root, files, task, *, pages=None, bounded_page=Fa
         if rendered is None:
             return [], None
         lines, redacted = rendered
-        end = len(lines) if end is None else end
-        if (end < start and lines) or end > len(lines) or (not lines and (start != 1 or args.end is not None)):
+        if end is not None and end < start:
+            return [], None
+        end = len(lines) if end is None else min(end, len(lines))
+        if (end < start and lines) or (not lines and start != 1):
             return [], None
         span = '\n'.join(lines[start - 1:end])
         if offset and offset >= len(span):

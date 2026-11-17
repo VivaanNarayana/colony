@@ -1,6 +1,36 @@
 # Memory-use token evaluations
 
-## Batch reads in prospective runs (version /15)
+## Quota-aware research in prospective runs (version /16)
+
+Version `/16` admits valid batch requests in order up to the remaining shared
+research allowance. Excess entries return ordered `Research call limit reached`
+errors with no source content or evidence references. An admitted entry with an
+invalid path/range still consumes its unit. Malformed schemas fail without source
+access and consume the admitted units; they cannot hide requested entries.
+Listing, search and single reads share the same allowance. Calls are serialized
+within the research boundary to prevent concurrent over-admission.
+
+A small `research_budget` block accompanies existing research responses, including
+empty searches and errors: `admitted`, `denied`, `succeeded`, and `remaining`.
+There is no separate budget tool or additional model round trip. `succeeded`
+counts operations returning results, not verified evidence or correct claims.
+Error messages remain sanitized; lookup and publication behavior is unchanged.
+
+Reports retain every requested unit in `research_calls`; an oversized request
+still violates the attempted-unit policy even when its admitted prefix succeeds.
+The additional `research_accounting` totals separate admitted, denied, successful,
+failed, and unresolved units. Missing or malformed receipts do not invent outcomes.
+Grounding still independently verifies actual source bytes. Valid explicit read
+ends beyond EOF can match the actual clipped span, including continuation offsets;
+nonexistent lines, invalid ranges, forged contents and denied entries earn no credit.
+
+Gross usage remains all native input plus output, including cached input and all
+failed/denied attempts. Answer completion, correctness, grounding, publication and
+the research cap are unchanged. This is a prospective policy change, not a repair
+to historical grades. `/15` and earlier protocols must use their original pinned
+collectors; no historical artifacts are upgraded, replayed or relabeled.
+
+## Historical batch contract (version /15)
 
 Version `/15` supports the task adapter's ordered `read(batch=[...])` results.
 The existing shared research allowance counts **each requested entry**, including

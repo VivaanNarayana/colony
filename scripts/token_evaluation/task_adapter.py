@@ -3,10 +3,12 @@
 One process per task. No model invocation; no alternative product implementation.
 """
 import argparse
+import asyncio
 import json
 from pathlib import Path
 
-from mcp.types import CallToolResult
+from mcp.server.fastmcp.exceptions import ToolError
+from mcp.types import CallToolResult, TextContent
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError
@@ -14,6 +16,7 @@ from colony.task_mcp import TaskMCP
 from colony.workflow import Workflow
 
 try:
+    from .read_contract import arguments as read_arguments
     from .read_contract import read_units
     from .research import Research
 except ImportError:  # Launched as a pinned absolute script with target Python -I.
@@ -28,25 +31,44 @@ except ImportError:  # Launched as a pinned absolute script with target Python -
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     read_units = module.read_units
+    read_arguments = module.arguments
 
 
 def create_server(home, repo, question, files, max_calls, *, read_only=False,
                   direct_path=None, remember=False, context_budget=None):
     research = Research(repo, max_calls, files)
+    lock = asyncio.Lock()
 
     class BoundedTaskMCP(TaskMCP):
         async def call_tool(self, name, arguments):
-            # Charge before argument validation; failures and continuation pages count.
-            if name in {'read', 'fixture_files', 'fixture_search'}:
-                # Reserve the entire batch atomically before any source is read.
-                # A rejected/invalid batch still incurs every requested entry.
-                for _ in range(read_units(arguments) if name == 'read' else 1):
-                    research._charge()
-            token = research.external_charge.set(True)
-            try:
+            if name not in {'read', 'fixture_files', 'fixture_search'}:
                 return await super().call_tool(name, arguments)
-            finally:
-                research.external_charge.reset(token)
+            async with lock:
+                units = read_units(arguments) if name == 'read' else 1
+                admitted = research.reserve(units)
+                denied = units - admitted
+                parsed = read_arguments({'arguments': arguments}) if name == 'read' else None
+                batch = parsed.batch if parsed is not None else None
+                if not admitted and batch is None:
+                    research.failure(0, denied, limited=True)
+                selected = ({'batch': [entry.model_dump() for entry in batch[:admitted]]}
+                            if batch is not None and denied else arguments)
+                token = research.external_charge.set(True)
+                try:
+                    if batch is not None and not admitted:
+                        result = [TextContent(type='text', text='{"results": []}')]
+                    else:
+                        result = await super().call_tool(name, selected)
+                    if batch is not None and denied:
+                        value = json.loads(result[0].text)
+                        value['results'].extend({'error': 'Research call limit reached',
+                                                 'evidence_ref': None} for _ in range(denied))
+                        result[0].text = json.dumps(value)
+                except Exception as exc:
+                    research.failure(admitted, denied, tool_error=isinstance(exc, ToolError))
+                finally:
+                    research.external_charge.reset(token)
+                return research.annotate(result, admitted, denied)
 
     options = {} if context_budget is None else {'context_budget': context_budget}
     server = BoundedTaskMCP(Workflow(Client(home), 'bench', repo, read_only=read_only), question,

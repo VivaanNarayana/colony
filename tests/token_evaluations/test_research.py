@@ -99,7 +99,8 @@ def test_explicit_tool_results_preserve_literal_blocks_without_structured_copy(t
         ]:
             result = await server.call_tool(name, arguments)
             assert isinstance(result, CallToolResult)
-            assert result.content == expected
+            assert result.content[:-1] == expected
+            assert json.loads(result.content[-1].text)["research_budget"]["admitted"] == 1
             assert result.structuredContent is None
             assert not result.isError
         tools = await server.list_tools()
