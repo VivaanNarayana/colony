@@ -14,8 +14,16 @@ not block the task; the caller must report absent diagnostics as unavailable.
 File open, write, flush and close run in one daemon writer, outside the transport
 lock. Its nonblocking queue holds at most 256 allowlisted events plus one summary;
 raw protocol payloads never enter it. Shutdown waits at most 200 ms for logging.
-A stalled writer may leave an absent or incomplete sidecar; consumers must treat
-missing final summaries as unavailable, never as evidence of no publication.
+A stalled writer may leave an absent or incomplete sidecar. A missing final summary
+never establishes that no publication occurred. The prospective `/17` evaluator can
+recover strictly validated, hash-bound event observations from a sidecar without a
+summary; it labels these `partial_metadata`, not a complete task outcome. It reports
+only observed read/refresh flags and attempt/outcome counts. `no_attempt_observed`
+means no attempt appears in the captured events, not deliberate abstention or proof
+that no later attempt occurred. Eligibility, pending requests, dropped metadata and
+model decisions cannot be inferred from this prefix. Malformed, unknown, oversized
+or inconsistently ordered records remain unavailable; arbitrary fields are never
+forwarded. Earlier collectors and saved reports retain their original behavior.
 
 `refreshed_with_publish_no_attempt` is a protocol observation, not a statement of
 model awareness or deliberate abstention. Model-visible catalog and abstention

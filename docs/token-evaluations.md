@@ -1,5 +1,16 @@
 # Memory-use token evaluations
 
+## Discovery parity and incomplete diagnostics (version /17)
+
+Version `/17` gives task and No-Colony discovery tools a shared literal-search
+contract and schema. It also retains validated observations from hash-bound native
+publication sidecars when the final summary is missing. Such records are explicitly
+partial: no model awareness, deliberate abstention or complete outcome is inferred.
+Diagnostic fields remain outside grading, reviewer packets and gross-token accounting.
+Unknown or malformed metadata is unavailable. All `/16` and older protocols, raw
+traces, grades and measurements require their original pinned collector and remain
+historical; do not regenerate them with this prospective implementation.
+
 ## Quota-aware research in prospective runs (version /16)
 
 Version `/16` admits valid batch requests in order up to the remaining shared

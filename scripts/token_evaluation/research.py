@@ -18,6 +18,30 @@ Bound = Annotated[StrictInt, Field(
     ge=1, le=120,
     description="Number of lines, 1-120; omit for a normal small-file read (default 120).",
 )]
+SearchQuery = Annotated[str, Field(
+    min_length=1, description="Nonempty, case-sensitive literal substring of file contents.",
+)]
+
+
+def register_discovery_tools(server, research):
+    """Share the public discovery contract across ordinary and task adapters."""
+    @server.tool(structured_output=False)
+    def fixture_files() -> CallToolResult:
+        """List allowed repository-relative filenames; read a known file directly.
+
+        Every attempt, including failures, consumes one repository research call.
+        """
+        return CallToolResult(content=research.files())
+
+    @server.tool(structured_output=False)
+    def fixture_search(query: SearchQuery) -> CallToolResult:
+        """Find a case-sensitive literal substring in allowed file contents.
+
+        This is not regex, semantic or filename search. No matches returns no
+        source blocks. Discover unknown paths with fixture_files, then read full
+        context. Every attempt, including failures, consumes one research call.
+        """
+        return CallToolResult(content=research.search(query))
 
 
 class Research:
@@ -146,14 +170,7 @@ def create_server(root: Path, max_calls: int = 6, files=None) -> FastMCP:
                 return research.annotate(result, 1, 0)
 
     server = ChargedMCP("evaluation-fixture-research")
-
-    @server.tool(structured_output=False)
-    def fixture_files() -> CallToolResult:
-        """List allowed repository-relative filenames; read a known file directly.
-
-        Every attempt, including failures, consumes one repository research call.
-        """
-        return CallToolResult(content=research.files())
+    register_discovery_tools(server, research)
 
     @server.tool(structured_output=False)
     def fixture_read(
@@ -168,18 +185,6 @@ def create_server(root: Path, max_calls: int = 6, files=None) -> FastMCP:
         consumes one repository research call.
         """
         return CallToolResult(content=research.read(path, start, lines))
-
-    @server.tool(structured_output=False)
-    def fixture_search(query: Annotated[str, Field(
-        min_length=1, description="Nonempty, case-sensitive literal substring of file contents.",
-    )]) -> CallToolResult:
-        """Find a case-sensitive literal substring in allowed file contents.
-
-        This is not regex, semantic or filename search. No matches returns no
-        blocks. Discover unknown paths with fixture_files, then read full context
-        with fixture_read. Every attempt consumes one repository research call.
-        """
-        return CallToolResult(content=research.search(query))
 
     return server
 

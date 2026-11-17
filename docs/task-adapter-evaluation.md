@@ -1,10 +1,19 @@
 # Prospective task-adapter evaluation
 
-Contract `colony.token-evaluation/14` requires an explicit `--adapter ordinary|task`
+Contract `colony.token-evaluation/17` requires an explicit `--adapter ordinary|task`
 and, for a three-arm campaign, `--main-adapter ordinary|task`. The choice, target
 revision, options, collector, client and workload bytes are frozen together. Old
 contracts require their original pinned collectors; do not upgrade or regrade
 historical runs with this implementation.
+
+Version `/17` shares the exact source-listing and literal-search descriptions and
+argument schemas between the task boundary and No-Colony research server. Search
+is case-sensitive literal content matching, not semantic, regex or filename search;
+no match contributes no source blocks (the budget receipt remains). Empty/invalid
+requests still consume a research unit, and search does not mint evidence references.
+The selected target's read implementation, evidence security, continuation offsets,
+batch allowance and publication policy remain unchanged. Model compliance and token
+savings are not established by local transport tests.
 
 Task mode launches the installed target's `TaskMCP` through a small evaluator
 fixture boundary. It does not launch ordinary Colony MCP alongside it. The same
