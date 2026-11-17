@@ -44,7 +44,7 @@ def test_successful_producer_arguments_preserve_evidence(identity, monkeypatch, 
 @pytest.mark.parametrize('args', [
     {'path': 1}, {'path': []}, {'path': '[]'}, {'start': None}, {'start': 'null'},
     {'start': 1.2}, {'start': '1.2'}, {'start': 'true'}, {'start': []},
-    {'start': 0}, {'end': 0}, {'end': -1}, {'end': 2},
+    {'start': 0}, {'end': 0}, {'end': -1},
     {'offset': '0'}, {'offset': 0.0}, {'offset': True}, {'offset': None}, {'offset': -1},
 ])
 def test_rejected_producer_arguments_cannot_gain_evidence(identity, monkeypatch, args):

@@ -81,12 +81,18 @@ def test_real_batch_shares_quota_and_preserves_per_entry_errors(batch_server, id
     assert 'publish' in {t.name for t in asyncio.run(server.list_tools())}
 
 
-def test_over_limit_batch_reads_nothing_and_does_not_unlock_publish(batch_server, monkeypatch):
+def test_over_limit_batch_returns_admitted_prefix_only(batch_server, monkeypatch):
     server = batch_server(max_calls=2)
-    monkeypatch.setattr(server.evidence, 'read', lambda *a, **k: pytest.fail('Read before reservation'))
-    with pytest.raises(ValueError, match='Research call limit'):
-        call(server, 'read', batch=[{'path': 'settings.py'}] * 3)
-    assert 'publish' not in {t.name for t in asyncio.run(server.list_tools())}
+    original, seen = server.evidence.read, []
+    def observed(*args, **kwargs):
+        seen.append(args[0] if args else kwargs['path'])
+        return original(*args, **kwargs)
+    monkeypatch.setattr(server.evidence, 'read', observed)
+    result = call(server, 'read', batch=[{'path': 'settings.py'}] * 3)['results']
+    assert seen == ['settings.py'] * 2
+    assert all(r['evidence_ref'] for r in result[:2])
+    assert result[2] == {'error': 'Research call limit reached', 'evidence_ref': None}
+    assert 'publish' in {t.name for t in asyncio.run(server.list_tools())}
     with pytest.raises(ValueError, match='Research call limit'):
         asyncio.run(server.call_tool('fixture_files', {}))
 
@@ -146,10 +152,16 @@ def test_real_stdio_batch_and_shared_limit(batch_server, identity):
             '--files', json.dumps(['settings.py', 'README.md']), '--max-calls', '2'], env=dict(os.environ))
         async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
             await session.initialize()
-            result = await session.call_tool('read', {'batch': [{'path': 'settings.py'}, {'path': 'README.md'}]})
+            result = await session.call_tool('read', {'batch': [{'path': 'settings.py'}, {'path': 'README.md'},
+                                                               {'path': 'settings.py'}]})
             assert not result.isError
-            assert all(r['evidence_ref'] for r in json.loads(result.content[0].text)['results'])
+            values = json.loads(result.content[0].text)['results']
+            assert all(r['evidence_ref'] for r in values[:2])
+            assert values[2] == {'error': 'Research call limit reached', 'evidence_ref': None}
+            assert json.loads(result.content[-1].text)['research_budget'] == {
+                'admitted': 2, 'denied': 1, 'succeeded': 2, 'remaining': 0}
             assert 'publish' in {t.name for t in (await session.list_tools()).tools}
             denied = await session.call_tool('fixture_files', {})
             assert denied.isError and 'Research call limit' in denied.content[0].text
+            assert json.loads(denied.content[0].text)['research_budget']['denied'] == 1
     asyncio.run(asyncio.wait_for(check(), 30))

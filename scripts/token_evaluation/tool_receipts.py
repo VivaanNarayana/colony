@@ -9,6 +9,7 @@ from contextlib import suppress
 
 from .read_contract import arguments as read_arguments
 from .read_contract import split_reads
+from .research_budget import source_blocks
 from .redaction import PATTERNS
 
 MAX_RECEIPTS = 64
@@ -95,6 +96,8 @@ def _outcome(item, files):
     raw = item.get("result")
     raw = raw if isinstance(raw, dict) else {}
     blocks = raw.get("content")
+    if isinstance(blocks, list):
+        blocks = source_blocks(blocks)
     out = {"is_error": bool(raw.get("isError") or raw.get("is_error")) or item.get("status") != "completed",
            "result_available": False}
     if out["is_error"]:
@@ -183,6 +186,8 @@ def _entries(item):
     result = item.get('result')
     result = result if isinstance(result, dict) else {}
     blocks = result.get('content')
+    if isinstance(blocks, list):
+        blocks = source_blocks(blocks)
     pairs = []
     failed = bool(result.get('isError') or result.get('is_error')) or item.get('status') != 'completed'
     if not failed and isinstance(blocks, list) and len(blocks) == 1:

@@ -25,6 +25,7 @@ from .protocol import (
 from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .read_contract import split_reads
+from .research_budget import receipt as budget_receipt
 from .receipt import validate_native_receipts
 from .task_evidence import lookup_value, verified_reads
 from .tool_receipts import collect as collect_tool_receipts
@@ -74,7 +75,9 @@ def activity(events_path, adapter='ordinary'):
     """Observe exact completed MCP calls and every JSON content block; never infer reuse."""
     counts = dict.fromkeys(("colony_calls", "research_calls", "hits", "misses", "stored",
                             "claimed_current_reads", "stale", "miss_or_research_advice", "claimed_validated_hits", "safe_refusals", "claimed_evidence_hits", "cache_misses", "unapproved_calls",
-                            "task_adapter_calls", "task_read_attempts", "task_publish_attempts", "task_reference_results"), 0)
+                            "task_adapter_calls", "task_read_attempts", "task_publish_attempts", "task_reference_results",
+                            "research_admitted", "research_denied", "research_succeeded", "research_failed",
+                            "research_receipt_calls", "research_unresolved_units"), 0)
     seen, completed, charged = {}, set(), {}
     for number, line in enumerate(Path(events_path).read_text(encoding="utf-8").splitlines()):
         event = json.loads(line)
@@ -118,9 +121,19 @@ def activity(events_path, adapter='ordinary'):
         if event.get("type") != "item.completed":
             continue
         completed.add(identity)
+        result = item.get("result") or {}
+        if units and allowed:
+            budgets = [b for block in result.get('content', []) if (b := budget_receipt(block)) is not None]
+            failed = item.get('status') != 'completed' or result.get('isError') or result.get('is_error')
+            if (len(budgets) == 1 and budgets[0]['admitted'] + budgets[0]['denied'] == charged[identity]
+                    and (not failed or budgets[0]['succeeded'] == 0)):
+                budget = budgets[0]
+                counts['research_receipt_calls'] += 1
+                for key in ('admitted', 'denied', 'succeeded'):
+                    counts['research_' + key] += budget[key]
+                counts['research_failed'] += budget['admitted'] - budget['succeeded']
         if not colony:
             continue
-        result = item.get("result") or {}
         if item.get("status") != "completed" or result.get("isError"):
             continue
         for block in result.get("content", []):
@@ -156,6 +169,7 @@ def activity(events_path, adapter='ordinary'):
                 counts["miss_or_research_advice"] += (value.get("hit") is False or value.get("recommendation") == "research")
             if tool in {"push", "publish"}:
                 counts["stored"] += value.get("stored") is True
+    counts['research_unresolved_units'] = counts['research_calls'] - counts['research_admitted'] - counts['research_denied']
     return counts
 
 
@@ -495,6 +509,12 @@ def report(run_dir, quality_path, output_path):
               'task_adapter_observations': {arm: {
                   key: sum(r['activity'][key] for r in rows if r['arm'] == arm)
                   for key in ('task_adapter_calls', 'task_read_attempts', 'task_publish_attempts', 'task_reference_results')
+              } for arm in evaluation_arms(manifest)},
+              'research_accounting': {arm: {
+                  key: sum(r['activity'][key] for r in rows if r['arm'] == arm)
+                  for key in ('research_calls', 'research_admitted', 'research_denied',
+                              'research_succeeded', 'research_failed', 'research_receipt_calls',
+                              'research_unresolved_units')
               } for arm in evaluation_arms(manifest)},
               "output": manifest["output"], "arms": arms, "attempts": rows,
               "comparisons": comparisons,

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import hashlib
 import json
 from contextvars import ContextVar
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import CallToolResult, TextContent
 from pydantic import Field, StrictInt
 
@@ -25,6 +27,39 @@ class Research:
         self.calls = 0
         self.allowed_files = None if files is None else {Path(value).as_posix() for value in files}
         self.external_charge = ContextVar("research_external_charge", default=False)
+
+    def reserve(self, requested):
+        admitted = min(requested, self.max_calls - self.calls)
+        self.calls += admitted
+        return admitted
+
+    def receipt(self, admitted, denied, succeeded=0):
+        return {"research_budget": {"admitted": admitted, "denied": denied,
+                "succeeded": succeeded, "remaining": self.max_calls - self.calls}}
+
+    def failure(self, admitted, denied, *, limited=False, tool_error=False):
+        message = ("Research call limit reached" if limited else
+                   "Research request failed; check allowed paths, ranges and argument types")
+        error = ToolError if tool_error else ValueError
+        raise error(json.dumps({"error": message, **self.receipt(admitted, denied)},
+                               separators=(',', ':'))) from None
+
+    def annotate(self, result, admitted, denied):
+        # One small block on the existing response, never an additional tool call.
+        blocks = result.content if isinstance(result, CallToolResult) else result
+        succeeded = admitted
+        if isinstance(result, CallToolResult) and result.isError:
+            succeeded = 0
+        elif blocks:
+            try:
+                value = json.loads(blocks[0].text)
+                if isinstance(value, dict) and isinstance(value.get('results'), list):
+                    succeeded = sum('error' not in entry for entry in value['results'])
+            except (ValueError, AttributeError):
+                pass
+        blocks.append(TextContent(type='text', text=json.dumps(
+            self.receipt(admitted, denied, succeeded), separators=(',', ':'))))
+        return result
 
     def _charge(self):
         if self.external_charge.get():
@@ -93,15 +128,22 @@ class Research:
 
 def create_server(root: Path, max_calls: int = 6, files=None) -> FastMCP:
     research = Research(root, max_calls, files)
+    lock = asyncio.Lock()
 
     class ChargedMCP(FastMCP):
         async def call_tool(self, name, arguments):
-            research._charge()
-            token = research.external_charge.set(True)
-            try:
-                return await super().call_tool(name, arguments)
-            finally:
-                research.external_charge.reset(token)
+            async with lock:
+                admitted = research.reserve(1)
+                if not admitted:
+                    research.failure(0, 1, limited=True)
+                token = research.external_charge.set(True)
+                try:
+                    result = await super().call_tool(name, arguments)
+                except Exception as exc:
+                    research.failure(1, 0, tool_error=isinstance(exc, ToolError))
+                finally:
+                    research.external_charge.reset(token)
+                return research.annotate(result, 1, 0)
 
     server = ChargedMCP("evaluation-fixture-research")
 
