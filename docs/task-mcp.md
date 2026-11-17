@@ -15,8 +15,18 @@ read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
 Ordinary and adaptive lookup share the same routing guidance: look up saved findings
-when useful, batch known independent paths, and read needed implementation dependencies
-before repeating literal searches. This is guidance, not a restriction on research.
+when useful, read known paths directly, and batch independent reads. Prioritize evidence
+needed for requested claims (including callers and dependencies) before auxiliary searches,
+and size batches to any allowance imposed by the host. Use available research to close gaps
+and contradictions, then explain remaining limitations. This adapter adds no research quota.
+
+Answer guidance distinguishes concrete implementations from injected interfaces and total
+attempts from retries. For example, a concrete adapter allowing two attempts does not prove
+that an arbitrary injected transport has that limit; two total attempts permit one retry.
+Preserve useful explanations by stating their verified conditions. Failed entries, partial
+pages and literal search misses do not prove repository-wide absence. The read tool also
+exposes the coverage warning; it adds no repeated warning to source responses. These are
+evidence and precision requirements, not caps on examples, citations or answer detail.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue
