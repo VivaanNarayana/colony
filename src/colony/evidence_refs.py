@@ -104,10 +104,10 @@ class EvidenceSession:
                 for pattern in PATTERNS:
                     text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
                 lines = text.splitlines()
-                last = len(lines) if end is None else end
-                if (not lines and (start != 1 or end is not None)) or (lines and (
-                    start > last or last > len(lines)
-                )):
+                # Treat end as an inclusive upper bound, after authorization and
+                # scrubbing. Bind references to the actual span, never guessed lines.
+                last = len(lines) if end is None else min(end, len(lines))
+                if (not lines and start != 1) or (lines and start > last):
                     raise ValueError()
                 span = "\n".join(lines[start - 1:last])
                 if offset and offset >= len(span):
