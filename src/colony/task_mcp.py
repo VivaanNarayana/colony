@@ -84,7 +84,8 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Read source; omit path for direct path. Use batch for independent reads instead of
+            """Read source; omit end for ordinary reads (end beyond EOF is clipped).
+            Omit path for direct path. Use batch for independent reads instead of
             single-read arguments; results/errors are ordered. Continue each at next_offset
             with the same path/start/end.
             """
