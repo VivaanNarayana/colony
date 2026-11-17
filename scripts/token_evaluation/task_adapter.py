@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from mcp.server.fastmcp.exceptions import ToolError
-from mcp.types import CallToolResult, TextContent
+from mcp.types import TextContent
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError
@@ -18,13 +18,14 @@ from colony.workflow import Workflow
 try:
     from .read_contract import arguments as read_arguments
     from .read_contract import read_units
-    from .research import Research
+    from .research import Research, register_discovery_tools
 except ImportError:  # Launched as a pinned absolute script with target Python -I.
     import importlib.util
     spec = importlib.util.spec_from_file_location('evaluation_research', Path(__file__).with_name('research.py'))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     Research = module.Research
+    register_discovery_tools = module.register_discovery_tools
     spec = importlib.util.spec_from_file_location('evaluation_read_contract', Path(__file__).with_name('read_contract.py'))
     module = importlib.util.module_from_spec(spec)
     import sys
@@ -84,15 +85,7 @@ def create_server(home, repo, question, files, max_calls, *, read_only=False,
 
     server.evidence.read = read
 
-    @server.tool(structured_output=False)
-    def fixture_files() -> CallToolResult:
-        """List allowed source paths; each attempt consumes one research call."""
-        return CallToolResult(content=research.files())
-
-    @server.tool(structured_output=False)
-    def fixture_search(query: str) -> CallToolResult:
-        """Search literal source text; each attempt consumes one research call."""
-        return CallToolResult(content=research.search(query))
+    register_discovery_tools(server, research)
 
     return server
 

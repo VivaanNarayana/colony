@@ -28,6 +28,50 @@ def trace_hash(path):
     return hashlib.sha256(raw).hexdigest() if raw is not None else None
 
 
+def _partial_observation(lines):
+    """Recover only observed metadata, never a completed-task or abstention claim."""
+    schemas = {
+        'tool_catalog': {'publish_present', 'after_notification'},
+        'tools_list_changed': set(),
+        'source_read': {'reference_returned'},
+        'publication_attempt': set(),
+        'publication_outcome': {'tool_error', 'stored', 'queued'},
+    }
+    if len(lines) > 256:
+        raise ValueError('Too many metadata events')
+    referenced = notified = refreshed = False
+    attempts = outcomes = 0
+    for line in lines:
+        value = json.loads(line)
+        if not isinstance(value, dict) or not isinstance(value.get('event'), str):
+            raise ValueError('Invalid metadata event')
+        event = value['event']
+        keys = schemas.get(event)
+        if (keys is None or set(value) != keys | {'event'}
+                or any(type(value[k]) is not bool for k in keys)):
+            raise ValueError('Invalid metadata fields')
+        if event == 'source_read':
+            referenced |= value['reference_returned']
+        elif event == 'tools_list_changed':
+            notified, refreshed = True, False
+        elif event == 'tool_catalog':
+            if value['after_notification'] and not notified:
+                raise ValueError('Missing notification')
+            refreshed |= value['after_notification'] and value['publish_present']
+        elif event == 'publication_attempt':
+            attempts += 1
+        elif event == 'publication_outcome':
+            outcomes += 1
+            if outcomes > attempts:
+                raise ValueError('Missing attempt')
+    return {
+        'status': 'partial_metadata', 'summary_present': False,
+        'publication_activity': 'attempt_observed' if attempts else 'no_attempt_observed',
+        'observed': {'referenced_read': referenced, 'refreshed_with_publish': refreshed,
+                     'publication_attempts': attempts, 'publication_outcomes': outcomes},
+    }
+
+
 def observation(root, identity, expected):
     unavailable = {'status': 'unavailable', 'model_visible_catalog': 'unobserved',
                    'abstention_reason': 'unobserved'}
@@ -40,6 +84,11 @@ def observation(root, identity, expected):
         if not 1 <= len(lines) <= 257:
             return unavailable
         value = json.loads(lines[-1])
+        if isinstance(value, dict) and value.get('event') != 'summary':
+            # An abrupt host shutdown can leave valid, hash-bound events without
+            # a final summary. Unknown/malformed events fail closed. No source,
+            # eligibility, pending-count or model-decision inference is made.
+            return {**unavailable, **_partial_observation(lines), 'sha256': expected}
         statuses = {'not_eligible', 'no_referenced_read', 'ready_refresh_unobserved',
                     'refreshed_with_publish_no_attempt', 'attempted_with_receipt',
                     'attempted_outcome_unobserved'}
