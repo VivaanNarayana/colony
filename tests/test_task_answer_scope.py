@@ -34,10 +34,9 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
     async def check():
         tools = {t.name: t for t in await server.list_tools()}
         assert "Failed entries and partial pages leave coverage gaps" in tools["read"].description
-        assert "Batch caller, config and operation" in tools["read"].description
+        assert "8 ordered entries share 16000 UTF-8 content bytes" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
-        assert "Batch known configuration, caller and operation together" in server.instructions
         assert "qualify remaining claims" in server.instructions
         assert "detail, examples and citations" in server.instructions
         assert "Publication never limits research or answer length" in server.instructions
@@ -111,7 +110,9 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
     guidance = server.instructions
-    assert "Batch known configuration, caller and operation together for call chains." in guidance
+    assert "Batch call chains with configuration, caller, operation and any decisive implementation." in guidance[:247]
+    tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
+    assert "Include the backend if its behavior matters." in tools["read"].description
     assert "Condition concrete behavior on a specified or verified implementation." in guidance
     assert "attempt limits from actual calls and retries on return or raise" in guidance
 
@@ -135,8 +136,8 @@ def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
     permits = iter(range(read_limit))
     server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert ("For absence, batch the remaining relevant files before searching or consulting memory "
-            "when they fit the allowance.") in server.instructions
+    assert ("For absence, group remaining relevant files by count and content size "
+            "before searches within allowance.") in server.instructions[:247]
     assert "Check derived values. Report coverage gaps you cannot resolve." in server.instructions
     overview = read(server, path="README.md")
     assert "schedule.py" in overview["content"]
@@ -167,6 +168,9 @@ def test_initialized_guidance_fits_pr15_parent(identity, monkeypatch, direct, en
     }
     count = _counter(ContextBudget(encoding=encoding))
     assert count(server.instructions) <= limits[encoding]
+    # Compare the description as sent inside the tool catalog, including escaped newlines.
+    read_tool = next(tool for tool in asyncio.run(server.list_tools()) if tool.name == "read")
+    assert count(json.dumps(read_tool.description)) <= {"utf8_bytes": 385, "o200k_base": 78}[encoding]
     preview = server.instructions[:247] + "..."
     assert READ_ROUTING.strip() in preview
     if direct:

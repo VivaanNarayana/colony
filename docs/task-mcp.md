@@ -29,10 +29,13 @@ State which implementation that conclusion depends on when its binding is unknow
 A direct question about a value already visible in one file needs only that read.
 
 For an absence claim, use already observed evidence and identify the remaining scope.
-If a listing leaves five short, relevant files and five read units, one batch covers
-them before an auxiliary search could spend a unit. Inspect computed values and
-continue partial pages when needed. When access or allowance prevents full coverage,
-state what was checked and what remains unknown.
+Group the reads before spending a unit on an auxiliary search. Five short files
+whose contents fit in 16,000 UTF-8 bytes can share one batch. Nine short files
+need at least two batches because each accepts at most eight entries. Four
+5,000-byte files fit in two pairs with four read units. Group using sizes already
+known; if sizes are uncertain and quota is tight, use smaller groups and check
+for partial pages. Inspect computed values, continue needed pages at their
+returned offsets, and state any scope that access or allowance leaves uncovered.
 
 The adapter puts both batching rules near the start of its MCP instructions. The
 pinned Codex native host previews the first 247 characters of a long namespace

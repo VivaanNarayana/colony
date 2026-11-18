@@ -51,9 +51,8 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Batch known configuration, caller and operation together for call chains. "
-    "For absence, batch the remaining relevant files before searching or consulting memory "
-    "when they fit the allowance. "
+    "Batch call chains with configuration, caller, operation and any decisive implementation. "
+    "For absence, group remaining relevant files by count and content size before searches within allowance. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -135,10 +134,10 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Read source; omit end for ordinary reads (end beyond EOF is clipped).
-            Omit path for direct path. Use batch for independent reads instead of
-            single-read arguments; results/errors are ordered. Continue each at next_offset
-            with the same path/start/end. Batch caller, config and operation for call chains.
+            """Omit direct path. End defaults or clips to EOF.
+            Batch alone: up to 8 ordered entries share 16000 UTF-8 content bytes.
+            Split large groups; pair unknown sizes when quota is tight.
+            Include the backend if its behavior matters. Resume at next_offset with unchanged path/start/end.
             Failed entries and partial pages leave coverage gaps.
             """
             if batch is not None:
@@ -284,7 +283,7 @@ class TaskMCP(FastMCP):
         await self._refresh_availability()
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
-                "Memory was empty at task startup; start with source reads. "
+                "Memory was empty at task startup. Start with sources. "
                 + self._base_instructions + " Explicit research checks current memory.")
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):

@@ -135,6 +135,39 @@ def test_finite_scope_fits_one_listing_and_one_batch(batch_server, identity, der
     assert all('1440' not in p['content'] for p in pages)
 
 
+@pytest.mark.parametrize(('file_count', 'file_bytes', 'group_size'), [
+    (9, 100, 8), (4, 5000, 2), (4, 4000, 4),
+], ids=['entry-limit', 'content-limit', 'exact-content-limit'])
+def test_bounded_absence_groups_cover_scope_with_one_unit_per_file(
+        batch_server, identity, file_count, file_bytes, group_size):
+    _, repo, _ = identity
+    paths = [f'scope{i}.txt' for i in range(file_count)]
+    for path in paths:
+        # Whole UTF-8 ranges matter: the decisive evidence is at the end.
+        setting = '\nretries=1' if path == paths[-1] else '\nretries=0'
+        text = 'é' * ((file_bytes - len(setting)) // 2) + setting
+        (repo / path).write_bytes(text.encode())
+        assert (repo / path).stat().st_size == file_bytes
+    server = batch_server(question='Do any scoped files enable retries?', files=paths,
+                          max_calls=1 + file_count, read_only=True)
+    listing = asyncio.run(server.call_tool('fixture_files', {}))
+    names = listing.content[0].text.splitlines()
+    assert names == paths
+    enabled = []
+    for start in range(0, file_count, group_size):
+        group = names[start:start + group_size]
+        result = asyncio.run(server.call_tool('read', {'batch': [{'path': p} for p in group]}))
+        pages = json.loads(result[0].text)['results']
+        assert [page['path'] for page in pages] == group
+        assert all(page['complete_file'] and page['evidence_ref'] for page in pages)
+        enabled.extend(page['path'] for page in pages if page['content'].endswith('retries=1'))
+        assert json.loads(result[-1].text)['research_budget'] == {
+            'admitted': len(group), 'succeeded': len(group), 'denied': 0,
+            'remaining': file_count - start - len(group),
+        }
+    assert enabled == [paths[-1]]
+
+
 def test_real_batch_continuation_evidence_and_publication(batch_server, identity, monkeypatch):
     client, repo, _ = identity
     text = 'first\n' + 'é' * 9000 + '\npassword="private"\nlast'
