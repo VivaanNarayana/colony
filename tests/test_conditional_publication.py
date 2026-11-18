@@ -201,7 +201,7 @@ def test_direct_catalog_is_smaller_and_has_no_publication_policy(identity):
         return json.dumps([t.model_dump() for t in asyncio.run(s.list_tools())])
     assert len(catalog(direct).encode()) < len(catalog(full).encode())
     assert "evidence_refs" not in catalog(direct)
-    assert "Complete every requested deliverable" in direct.instructions
+    assert "Complete every deliverable with needed detail, examples and citations." in direct.instructions
 
 
 def test_real_stdio_discovery_reference_publication_and_lookup(running_team):
