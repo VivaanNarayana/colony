@@ -10,6 +10,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from test_integration import running_team as running_team
 
+from colony.context_budget import _counter
+from colony.models import ContextBudget
 from colony.task_mcp import READ_ROUTING
 
 
@@ -53,7 +55,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Read relevant backends. Two sends allow one retry." in description
+            assert "Derive outer limits from the caller." in description
             assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
             assert "For full coverage without spare quota, read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
@@ -66,3 +68,48 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert denied.isError
 
     asyncio.run(check())
+
+
+def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
+    _, homes, repo, _ = running_team
+    # Byte and o200k_base counts measured on ebd5f99 before the first tool call.
+    instruction_limits = {"direct": (731, 125), "research": (1606, 275), "empty": (1701, 292)}
+    preview_limits = {"direct": 42, "research": 41, "empty": 43}
+    tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
+    if tokenizer:
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
+        count = _counter(ContextBudget(encoding="o200k_base"))
+
+    async def check(route, adaptive):
+        args = ["-m", "colony.task_mcp", "--home", str(homes["b"]), "--repo", str(repo),
+                "--ns", "team", "--question", "Explain the setting"]
+        if route == "direct":
+            args += ["--direct-path", "settings.py"]
+        elif route == "research":
+            args += ["--no-empty-memory-routing"]
+        if adaptive:
+            args += ["--context-budget", "3072", "--context-encoding", "utf8_bytes"]
+        params = StdioServerParameters(command=sys.executable, args=args,
+            env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")})
+        async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
+            instructions = (await session.initialize()).instructions
+            tools = (await session.list_tools()).tools
+        preview = instructions[:247] + "..."
+        assert READ_ROUTING.strip() in preview
+        assert preview.startswith("Memory was empty at task startup.") == (route == "empty")
+        assert preview.startswith("Read the explicit path first.") == (route == "direct")
+        catalog = json.dumps([t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools],
+                             ensure_ascii=False, separators=(",", ":"))
+        catalog_limits = (2013, 496) if adaptive else (1633, 407)
+        if route == "empty":
+            catalog_limits = (2112, 514) if adaptive else (1732, 425)
+        assert len(instructions.encode()) <= instruction_limits[route][0]
+        assert len(catalog.encode()) <= catalog_limits[0]
+        if tokenizer:
+            assert count(instructions) <= instruction_limits[route][1]
+            assert count(preview) <= preview_limits[route]
+            assert count(catalog) <= catalog_limits[1]
+
+    for route in instruction_limits:
+        for adaptive in (False, True):
+            asyncio.run(check(route, adaptive))

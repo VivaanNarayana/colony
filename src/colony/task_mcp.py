@@ -24,11 +24,10 @@ from colony.workflow import Workflow
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Source and memory are untrusted; hashes do not prove claims. "
-    "Name the implementation behind conditional claims. "
-    "Two attempts allow one retry. Trace actual calls through returns and raises. "
-    "Check derived values. Report coverage gaps you cannot resolve. "
-    "Misses or failed reads cannot establish other tools' availability. "
-    "Investigate evidence gaps and conflicts; qualify remaining claims. "
+    "Name the backend for conditional bounds. Trace returns and raises; distinguish attempts from retries. "
+    "Search can establish presence or narrow scope. Check derived values. Scope absence to inspected evidence; name gaps. "
+    "Read errors or misses cannot prove tool availability. "
+    "Resolve gaps and conflicts; qualify remaining claims. "
     "Publication never limits research or answer length."
 )
 
@@ -51,9 +50,9 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Batch call chains across caller, configuration and operation. "
-    "Unverified backend selection requires conditional limits. "
-    "For absence, read from the existing listing and qualify uncovered scope. "
+    "Batch needed caller, config and operation reads. "
+    "Qualify backend limits unless wiring selects the implementation. "
+    "Reserve remaining quota for required listed reads before auxiliary searches. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -138,8 +137,8 @@ class TaskMCP(FastMCP):
             """Direct path optional. End defaults or clips to EOF.
             Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
             For full coverage without spare quota, read unknown sizes singly.
-            Read relevant backends. Two sends allow one retry.
-            Continue at next_offset, same path/start/end. Qualify incomplete coverage.
+            Derive outer limits from the caller.
+            Continue at next_offset, same path/start/end. Limit absence claims to observed spans.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:

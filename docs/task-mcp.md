@@ -28,12 +28,15 @@ call and the wrapper lets the exception propagate, the wrapper makes one call.
 An implementation in the repository establishes what that class does. To apply
 its limit to the actual call, check where the caller receives or constructs the
 dependency. If selection is unknown, state the caller's own limit and give any
-relevant inner limit conditionally, naming the class.
+relevant inner limit conditionally, naming the class. Read wiring when the
+question requires the selected implementation and the evidence so far leaves it open.
 A direct question about a value already visible in one file needs only that read.
 
 For an absence claim, use already observed evidence and identify the remaining scope.
 Reuse the existing listing and the remaining allowance in the latest receipt.
-Group the reads before spending a unit on an auxiliary search. Five short files
+Reserve units for required listed reads before spending one on an auxiliary search.
+For example, if five units remain for five required files, a literal search would
+leave at least one unchecked. Five short files
 whose contents fit in 16,000 UTF-8 bytes can share one batch. Nine short files
 need at least two batches because each accepts at most eight entries. Four
 5,000-byte files fit in two pairs with four read units. If full coverage matters

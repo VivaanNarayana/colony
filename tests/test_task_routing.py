@@ -28,8 +28,9 @@ def test_explicit_direct_route_reads_without_lookup_or_publication(identity, mon
     answer = call(server, "read", {})
     assert answer["content"] == "TIMEOUT = 30" and answer["evidence_ref"]
     assert server._read_access.admitted == 1 and server._read_access.denied == 0
-    assert answer["complete_file"] and "next_offset" not in answer
-    assert "publication_guidance" not in answer
+    assert answer["complete_file"]
+    assert set(answer) == {"path", "start_line", "end_line", "content", "evidence_ref",
+                           "complete_file", "provenance"}
     assert {t.name for t in asyncio.run(server.list_tools())} == {"read", "research"}
     assert ANSWER_POLICY in server.instructions
 

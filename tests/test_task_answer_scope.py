@@ -1,12 +1,10 @@
 """Guidance delivery and evidence invariants; no model-compliance claim."""
 import asyncio
 import json
-import os
 
 import pytest
 from test_workflow import identity as identity
 
-from colony.context_budget import _counter
 from colony.evidence_refs import EvidenceError
 from colony.models import ContextBudget
 from colony.task_mcp import ANSWER_POLICY, READ_ROUTING, TaskMCP
@@ -33,7 +31,7 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
 
     async def check():
         tools = {t.name: t for t in await server.list_tools()}
-        assert "Qualify incomplete coverage" in tools["read"].description
+        assert "Limit absence claims to observed spans" in tools["read"].description
         assert "8 ordered entries sharing 16000 UTF-8 content bytes" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
@@ -110,11 +108,11 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
     guidance = server.instructions
-    assert "Batch call chains across caller, configuration and operation." in guidance[:247]
+    assert "Batch needed caller, config and operation reads." in guidance[:247]
     tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
-    assert "Read relevant backends." in tools["read"].description
-    assert "Name the implementation behind conditional claims." in guidance
-    assert "Trace actual calls through returns and raises." in guidance
+    assert "Derive outer limits from the caller." in tools["read"].description
+    assert "Name the backend for conditional bounds." in guidance
+    assert "Trace returns and raises; distinguish attempts from retries." in guidance
 
     # Bounds require the caller's +1. Only the named-backend question needs
     # the concrete raise; the operation itself catches no exception.
@@ -136,8 +134,8 @@ def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
     permits = iter(range(read_limit))
     server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "For absence, read from the existing listing and qualify uncovered scope." in server.instructions[:247]
-    assert "Check derived values. Report coverage gaps you cannot resolve." in server.instructions
+    assert "Search can establish presence or narrow scope. Check derived values." in server.instructions
+    assert "Scope absence to inspected evidence; name gaps." in server.instructions
     overview = read(server, path="README.md")
     assert "schedule.py" in overview["content"]
     assert [s.ref for s in server.evidence.resolve([overview["evidence_ref"]])] == ["README.md"]
@@ -150,8 +148,9 @@ def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
         assert "content" not in definition and server._read_access.denied == 1
 
 
-@pytest.mark.parametrize("wired", [False, True], ids=["injected", "selected"])
-def test_concrete_retry_limit_needs_selection_evidence(identity, wired):
+@pytest.mark.parametrize(("wired", "check_wiring"), [(True, False), (False, True), (True, True)],
+                         ids=["conditional-answer", "injected", "selected"])
+def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wiring):
     client, repo, _ = identity
     # The same caller and two-send implementation exist in both repositories.
     # Only the entry point can establish which implementation the caller receives.
@@ -166,20 +165,24 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired):
     files = {"caller.py": caller, "backend.py": backend, "main.py": entry}
     for path, source in files.items():
         (repo / path).write_text(source, encoding="utf-8")
-    server = TaskMCP(Workflow(client, "team", repo), "How many send attempts and retries can main make?")
-    assert "Unverified backend selection requires conditional limits." in server.instructions[:247]
-    tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "Two sends allow one retry." in tool.description
-
-    pages = read(server, batch=[{"path": path} for path in files])["results"]
+    paths = list(files) if check_wiring else ["caller.py", "backend.py"]
+    permits = iter(paths)
+    question = "Explain the caller limit and the retry backend."
+    if check_wiring:
+        question += " Which backend does main supply?"
+    server = TaskMCP(Workflow(client, "team", repo), question,
+                     read_admission=lambda: next(permits, None) is not None)
+    assert "Qualify backend limits unless wiring selects the implementation." in server.instructions[:247]
+    pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(p["complete_file"] for p in pages)
-    assert [p["content"] for p in pages] == [caller, backend, entry]
-    assert ("dispatch(retry, send)" in pages[2]["content"]) == wired
-    assert [s.ref for s in server.evidence.resolve([p["evidence_ref"] for p in pages])] == list(files)
-    assert server._read_access.admitted == 3 and server._read_access.denied == 0
+    assert [p["content"] for p in pages] == [files[path] for path in paths]
+    if check_wiring:
+        assert ("dispatch(retry, send)" in pages[2]["content"]) == wired
+    assert [s.ref for s in server.evidence.resolve([p["evidence_ref"] for p in pages])] == paths
+    assert server._read_access.admitted == len(paths) and server._read_access.denied == 0
 
 
-@pytest.mark.parametrize("remaining", [3, 5], ids=["two-denied", "complete"])
+@pytest.mark.parametrize("remaining", [3, 4, 5], ids=["two-denied", "one-spent-on-search", "complete"])
 @pytest.mark.parametrize("present", [False, True], ids=["absent", "present-in-last-file"])
 def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     client, repo, _ = identity
@@ -191,10 +194,12 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     permits = iter(range(remaining))
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository set STEP_LIMIT?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "read from the existing listing and qualify uncovered scope" in server.instructions[:247]
+    assert "Reserve remaining quota for required listed reads before auxiliary searches." in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "without spare quota" in tool.description and "Qualify incomplete coverage" in tool.description
-    pages = read(server, batch=[{"path": path} for path in paths])["results"]
+    assert "without spare quota" in tool.description and "Limit absence claims to observed spans" in tool.description
+    batch = read(server, batch=[{"path": path} for path in paths])
+    assert set(batch) == {"results", "publication_guidance"}
+    pages = batch["results"]
     observed, denied = pages[:remaining], pages[remaining:]
     assert len(pages) == len(paths)
     assert all(p["complete_file"] and p["evidence_ref"] for p in observed)
@@ -229,36 +234,3 @@ def test_two_remaining_units_for_full_coverage(identity, bytes_per_file, batched
     if not complete:
         assert [p["next_offset"] for p in pages] == [8000, 8000]
     assert server._read_access.admitted == 2 and server._read_access.denied == 0
-
-
-@pytest.mark.parametrize("direct", [False, True], ids=["research", "direct"])
-@pytest.mark.parametrize("adaptive", [False, True], ids=["ordinary", "adaptive"])
-@pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
-def test_initialized_guidance_fits_previous_pr41(identity, monkeypatch, direct, adaptive, encoding):
-    if encoding == "o200k_base":
-        tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
-        if not tokenizer:
-            pytest.skip("Pinned tokenizer required")
-        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
-    client, repo, _ = identity
-    server = TaskMCP(Workflow(client, "team", repo), "What is the default?",
-                     direct_path="settings.py" if direct else None,
-                     context_budget=ContextBudget() if adaptive else None)
-    # Measured on PR41 at 48b90ed, before any tool calls.
-    limits = {"utf8_bytes": 751, "o200k_base": 129} if direct else {
-        "utf8_bytes": 1626, "o200k_base": 279,
-    }
-    count = _counter(ContextBudget(encoding=encoding))
-    assert count(server.instructions) <= limits[encoding]
-    tools = asyncio.run(server.list_tools())
-    catalog = [t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools]
-    catalog_limits = {"utf8_bytes": 2029, "o200k_base": 499} if adaptive else {
-        "utf8_bytes": 1649, "o200k_base": 410,
-    }
-    assert count(json.dumps(catalog, ensure_ascii=False, separators=(",", ":"))) <= catalog_limits[encoding]
-    preview = server.instructions[:247] + "..."
-    assert READ_ROUTING.strip() in preview
-    if direct:
-        assert preview.startswith("Read the explicit path first.")
-    if encoding == "o200k_base":
-        assert count(preview) <= (42 if direct else 41)
