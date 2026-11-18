@@ -20,13 +20,16 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-Answer guidance distinguishes concrete implementations from injected interfaces and total
-attempts from retries. For example, a concrete adapter allowing two attempts does not prove
-that an arbitrary injected transport has that limit; two total attempts permit one retry.
-Preserve useful explanations by stating their verified conditions. Failed entries, partial
-pages and literal search misses do not prove repository-wide absence. The read tool also
-exposes the coverage warning; it adds no repeated warning to source responses. These are
-evidence and precision requirements, not caps on examples, citations or answer detail.
+For a call-chain question, use the caller to connect configuration to the operation.
+Two configured attempts permit one retry. If an injected transport raises on its first
+call and the wrapper lets the exception propagate, the wrapper makes one call.
+State which implementation that conclusion depends on when its binding is unknown.
+A direct question about a value already visible in one file needs only that read.
+
+For an absence claim, check the relevant scope, including code that computes the value.
+If a read fails or available evidence covers only part of that scope, say what was
+checked. The adapter delivers this guidance at initialization. Source responses carry
+the evidence, and the answer can include all requested detail, examples and citations.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue
