@@ -117,18 +117,28 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     assert server._read_access.admitted == len(paths)
 
 
-def test_literal_miss_leaves_derived_value_researchable(identity):
+@pytest.mark.parametrize("read_limit", [2, 1], ids=["definition-readable", "quota-exhausted"])
+def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
     client, repo, _ = identity
+    (repo / "README.md").write_text("The daily schedule is defined in schedule.py.", encoding="utf-8")
     (repo / "schedule.py").write_text("PER_DAY = 24 * 60", encoding="utf-8")
     # A literal search across this fixture misses the actual configured value.
     assert all("1440" not in path.read_text() for path in repo.iterdir())
-    server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?")
-    assert "check relevant scope including derived values, or state what you checked" in server.instructions
+    permits = iter(range(read_limit))
+    server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?",
+                     read_admission=lambda: next(permits, None) is not None)
+    assert ("For absence, check relevant scope including derived values. "
+            "Report coverage gaps you cannot resolve.") in server.instructions
     overview = read(server, path="README.md")
+    assert "schedule.py" in overview["content"]
     assert [s.ref for s in server.evidence.resolve([overview["evidence_ref"]])] == ["README.md"]
-    definition = read(server, path="schedule.py")
-    assert definition["complete_file"] and definition["content"] == "PER_DAY = 24 * 60"
-    assert [s.ref for s in server.evidence.resolve([definition["evidence_ref"]])] == ["schedule.py"]
+    definition, = read(server, batch=[{"path": "schedule.py"}])["results"]
+    if read_limit == 2:
+        assert definition["complete_file"] and definition["content"] == "PER_DAY = 24 * 60"
+        assert [s.ref for s in server.evidence.resolve([definition["evidence_ref"]])] == ["schedule.py"]
+    else:
+        assert definition["error"] and definition["evidence_ref"] is None
+        assert "content" not in definition and server._read_access.denied == 1
 
 
 @pytest.mark.parametrize("direct", [False, True], ids=["research", "direct"])

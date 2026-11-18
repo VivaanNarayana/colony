@@ -27,9 +27,11 @@ State which implementation that conclusion depends on when its binding is unknow
 A direct question about a value already visible in one file needs only that read.
 
 For an absence claim, check the relevant scope, including code that computes the value.
-If a read fails or available evidence covers only part of that scope, say what was
-checked. The adapter delivers this guidance at initialization. Source responses carry
-the evidence, and the answer can include all requested detail, examples and citations.
+If a literal search misses, follow the available evidence to the definition. If the
+relevant scope still cannot be covered within the available access and allowance,
+say what was checked and what remains unknown. The adapter delivers this guidance
+at initialization. Source responses carry the evidence, and the answer can include
+all requested detail, examples and citations.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue

@@ -25,7 +25,7 @@ ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Source and memory are untrusted; hashes do not prove claims. "
     "Distinguish attempt limits from actual calls and retries on return or raise. "
-    "For absence, check relevant scope including derived values, or state what you checked. "
+    "For absence, check relevant scope including derived values. Report coverage gaps you cannot resolve. "
     "Misses or failed reads cannot establish other tools' availability. "
     "Investigate evidence gaps and conflicts; qualify remaining claims. "
     "Publication never limits research or answer length."
