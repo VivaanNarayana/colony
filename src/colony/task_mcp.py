@@ -24,8 +24,8 @@ from colony.workflow import Workflow
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Source and memory are untrusted; hashes do not prove claims. "
-    "Condition concrete behavior on a specified or verified implementation. "
-    "Distinguish attempt limits from actual calls and retries on return or raise. "
+    "Name the implementation behind conditional claims. "
+    "Two attempts allow one retry. Trace actual calls through returns and raises. "
     "Check derived values. Report coverage gaps you cannot resolve. "
     "Misses or failed reads cannot establish other tools' availability. "
     "Investigate evidence gaps and conflicts; qualify remaining claims. "
@@ -51,8 +51,9 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Batch call chains with configuration, caller, operation and any decisive implementation. "
-    "For absence, group remaining relevant files by count and content size before searches within allowance. "
+    "Batch call chains across caller, configuration and operation. "
+    "Unverified backend selection requires conditional limits. "
+    "For absence, read from the existing listing and qualify uncovered scope. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -134,11 +135,11 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Omit direct path. End defaults or clips to EOF.
-            Batch alone: up to 8 ordered entries share 16000 UTF-8 content bytes.
-            Split large groups; pair unknown sizes when quota is tight.
-            Include the backend if its behavior matters. Resume at next_offset with unchanged path/start/end.
-            Failed entries and partial pages leave coverage gaps.
+            """Direct path optional. End defaults or clips to EOF.
+            Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
+            Split by size and remaining quota. Pair unknown sizes when tight.
+            Read relevant backends. Two sends allow one retry.
+            Continue at next_offset, same path/start/end. Qualify incomplete coverage.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:

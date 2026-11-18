@@ -25,10 +25,14 @@ needed to connect the settings to the behavior. Include a concrete dependency
 when the requested explanation depends on it.
 Two configured attempts permit one retry. If an injected transport raises on its first
 call and the wrapper lets the exception propagate, the wrapper makes one call.
-State which implementation that conclusion depends on when its binding is unknown.
+An implementation in the repository establishes what that class does. To apply
+its limit to the actual call, check where the caller receives or constructs the
+dependency. If selection is unknown, state the caller's own limit and give any
+relevant inner limit conditionally, naming the class.
 A direct question about a value already visible in one file needs only that read.
 
 For an absence claim, use already observed evidence and identify the remaining scope.
+Reuse the existing listing and the remaining allowance in the latest receipt.
 Group the reads before spending a unit on an auxiliary search. Five short files
 whose contents fit in 16,000 UTF-8 bytes can share one batch. Nine short files
 need at least two batches because each accepts at most eight entries. Four
@@ -36,6 +40,9 @@ need at least two batches because each accepts at most eight entries. Four
 known; if sizes are uncertain and quota is tight, use smaller groups and check
 for partial pages. Inspect computed values, continue needed pages at their
 returned offsets, and state any scope that access or allowance leaves uncovered.
+For example, if three of five relevant files were read and two were denied,
+report what the three establish and identify the two still unchecked.
+A targeted search remains useful when it can establish presence or narrow a larger scope.
 
 The adapter puts both batching rules near the start of its MCP instructions. The
 pinned Codex native host previews the first 247 characters of a long namespace

@@ -53,9 +53,9 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Include the backend if its behavior matters." in description
-            assert "up to 8 ordered entries share 16000 UTF-8 content bytes" in description
-            assert "Split large groups; pair unknown sizes when quota is tight." in description
+            assert "Read relevant backends. Two sends allow one retry." in description
+            assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
+            assert "Split by size and remaining quota. Pair unknown sizes when tight." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
             assert not result.isError
             value = json.loads(result.content[0].text)
