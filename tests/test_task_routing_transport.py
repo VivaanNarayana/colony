@@ -10,6 +10,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from test_integration import running_team as running_team
 
+from colony.task_mcp import READ_ROUTING
+
 
 def test_live_empty_hint_bundle_quota_and_readonly(running_team):
     _, homes, repo, _ = running_team
@@ -43,6 +45,9 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
         ):
             init = await session.initialize()
             assert "Memory was empty at task startup" in init.instructions
+            # The pinned native host reserves the tail of its 250-character
+            # namespace preview for an ellipsis. Both routing rules must fit.
+            assert READ_ROUTING.strip() in init.instructions[:247]
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}

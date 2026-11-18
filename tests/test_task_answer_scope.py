@@ -34,10 +34,10 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
     async def check():
         tools = {t.name: t for t in await server.list_tools()}
         assert "Failed entries and partial pages leave coverage gaps" in tools["read"].description
-        assert "required caller/dependency evidence" in tools["read"].description
+        assert "Batch caller, config and operation" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
-        assert "link configuration, caller and operation" in server.instructions
+        assert "Batch known configuration, caller and operation together" in server.instructions
         assert "qualify remaining claims" in server.instructions
         assert "detail, examples and citations" in server.instructions
         assert "Publication never limits research or answer length" in server.instructions
@@ -77,14 +77,20 @@ def read(server, **arguments):
     return json.loads(asyncio.run(server.call_tool("read", arguments))[0].text)
 
 
-@pytest.mark.parametrize("explicit_backend", [False, True], ids=["unbound", "named-backend"])
-def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, explicit_backend):
+@pytest.mark.parametrize(("explicit_backend", "caller_catches"), [
+    (False, False), (True, False), (True, True),
+], ids=["unbound", "exception-propagates", "caller-handles-exception"])
+def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, explicit_backend, caller_catches):
     client, repo, _ = identity
+    invocation = "return run(backend, RETRIES + 1)"
+    body = invocation
+    if caller_catches:
+        body = f"try:\n        {invocation}\n    except ConnectionError:\n        return 'offline'"
     sources = {
         "config.py": "RETRIES = 2",
         "caller.py": (
             "from config import RETRIES\nfrom operation import run\n"
-            "def handle(backend):\n    return run(backend, RETRIES + 1)"
+            f"def handle(backend):\n    {body}"
         ),
         "operation.py": (
             "def run(backend, attempts):\n    for _ in range(attempts):\n"
@@ -99,13 +105,14 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     question = "How many calls to the injected backend can handle make?"
     paths = ["config.py", "caller.py", "operation.py"]
     if explicit_backend:
-        question += " What actually happens with failing.send?"
+        question += " What happens with failing.send, and does its exception reach handle's caller?"
         paths.append("failing.py")
-    server = TaskMCP(Workflow(client, "team", repo), question)
+    permits = iter(range(len(paths)))
+    server = TaskMCP(Workflow(client, "team", repo), question,
+                     read_admission=lambda: next(permits, None) is not None)
     guidance = server.instructions
-    assert "batch independent reads within allowance" in guidance
-    assert "link configuration, caller and operation" in guidance
-    assert "qualify behavior unless the binding is established" in guidance
+    assert "Batch known configuration, caller and operation together for call chains." in guidance
+    assert "Condition concrete behavior on a specified or verified implementation." in guidance
     assert "attempt limits from actual calls and retries on return or raise" in guidance
 
     # Bounds require the caller's +1. Only the named-backend question needs
@@ -115,6 +122,7 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     refs = [p["evidence_ref"] for p in pages]
     assert [s.ref for s in server.evidence.resolve(refs)] == paths
     assert server._read_access.admitted == len(paths)
+    assert server._read_access.denied == 0
 
 
 @pytest.mark.parametrize("read_limit", [2, 1], ids=["definition-readable", "quota-exhausted"])
@@ -127,8 +135,9 @@ def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
     permits = iter(range(read_limit))
     server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert ("For absence, check relevant scope including derived values. "
-            "Report coverage gaps you cannot resolve.") in server.instructions
+    assert ("For absence, batch the remaining relevant files before searching or consulting memory "
+            "when they fit the allowance.") in server.instructions
+    assert "Check derived values. Report coverage gaps you cannot resolve." in server.instructions
     overview = read(server, path="README.md")
     assert "schedule.py" in overview["content"]
     assert [s.ref for s in server.evidence.resolve([overview["evidence_ref"]])] == ["README.md"]
@@ -156,4 +165,11 @@ def test_initialized_guidance_fits_pr15_parent(identity, monkeypatch, direct, en
     limits = {"utf8_bytes": 842, "o200k_base": 139} if direct else {
         "utf8_bytes": 1667, "o200k_base": 280,
     }
-    assert _counter(ContextBudget(encoding=encoding))(server.instructions) <= limits[encoding]
+    count = _counter(ContextBudget(encoding=encoding))
+    assert count(server.instructions) <= limits[encoding]
+    preview = server.instructions[:247] + "..."
+    assert READ_ROUTING.strip() in preview
+    if direct:
+        assert preview.startswith("Read the explicit path first.")
+    if encoding == "o200k_base":
+        assert count(preview) <= (43 if direct else 42)

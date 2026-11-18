@@ -50,9 +50,9 @@ def batch_server(identity, monkeypatch):
     servers = []
     client, repo, _ = identity
     monkeypatch.setattr('scripts.token_evaluation.task_adapter.Client', lambda home: client)
-    def create(**kwargs):
-        server = create_server(client.home, repo, 'Explain settings behavior',
-                               ['settings.py', 'README.md'], kwargs.pop('max_calls', 6), **kwargs)
+    def create(*, question='Explain settings behavior', files=None, max_calls=6, **kwargs):
+        server = create_server(client.home, repo, question,
+                               ['settings.py', 'README.md'] if files is None else files, max_calls, **kwargs)
         servers.append(server)
         read = next(t for t in asyncio.run(server.list_tools()) if t.name == 'read')
         if 'batch' not in read.inputSchema['properties']:
@@ -106,6 +106,33 @@ def test_invalid_batch_charged_before_validation(batch_server, batch):
     assert 'publish' not in {t.name for t in asyncio.run(server.list_tools())}
     with pytest.raises(ValueError, match='Research call limit'):
         call(server, 'read', path='settings.py')
+
+
+@pytest.mark.parametrize('derived', [False, True], ids=['absent', 'computed'])
+def test_finite_scope_fits_one_listing_and_one_batch(batch_server, identity, derived):
+    _, repo, _ = identity
+    sources = {
+        'README.md': 'Work schedule.',
+        'settings.py': 'HOURS = 24',
+        'calendar.py': 'from settings import HOURS\nPER_DAY = HOURS * 60' if derived else 'WEEK = 7',
+        'handler.py': 'def handle(): pass',
+        'worker.py': 'def submit(): pass',
+    }
+    for name, content in sources.items():
+        (repo / name).write_text(content, encoding='utf-8')
+    server = batch_server(question='Does this repository specify 1440 minutes per day?',
+                          files=list(sources), max_calls=6, read_only=True)
+    listing = asyncio.run(server.call_tool('fixture_files', {}))
+    paths = listing.content[0].text.splitlines()
+    remaining = json.loads(listing.content[-1].text)['research_budget']['remaining']
+    assert remaining == len(paths) == 5
+    result = asyncio.run(server.call_tool('read', {'batch': [{'path': p} for p in paths]}))
+    pages = json.loads(result[0].text)['results']
+    assert json.loads(result[-1].text)['research_budget'] == {
+        'admitted': 5, 'denied': 0, 'succeeded': 5, 'remaining': 0}
+    assert all(p['complete_file'] and p['evidence_ref'] for p in pages)
+    assert {p['path']: p['content'] for p in pages} == sources
+    assert all('1440' not in p['content'] for p in pages)
 
 
 def test_real_batch_continuation_evidence_and_publication(batch_server, identity, monkeypatch):

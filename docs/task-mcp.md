@@ -20,18 +20,24 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-For a call-chain question, use the caller to connect configuration to the operation.
+For a call-chain question, batch the known caller, configuration and operation
+needed to connect the settings to the behavior. Include a concrete dependency
+when the requested explanation depends on it.
 Two configured attempts permit one retry. If an injected transport raises on its first
 call and the wrapper lets the exception propagate, the wrapper makes one call.
 State which implementation that conclusion depends on when its binding is unknown.
 A direct question about a value already visible in one file needs only that read.
 
-For an absence claim, check the relevant scope, including code that computes the value.
-If a literal search misses, follow the available evidence to the definition. If the
-relevant scope still cannot be covered within the available access and allowance,
-say what was checked and what remains unknown. The adapter delivers this guidance
-at initialization. Source responses carry the evidence, and the answer can include
-all requested detail, examples and citations.
+For an absence claim, use already observed evidence and identify the remaining scope.
+If a listing leaves five short, relevant files and five read units, one batch covers
+them before an auxiliary search could spend a unit. Inspect computed values and
+continue partial pages when needed. When access or allowance prevents full coverage,
+state what was checked and what remains unknown.
+
+The adapter puts both batching rules near the start of its MCP instructions. The
+pinned Codex native host previews the first 247 characters of a long namespace
+description followed by an ellipsis on its initial request. The direct-file route
+still starts with the requested path.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue

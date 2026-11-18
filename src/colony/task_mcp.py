@@ -24,8 +24,9 @@ from colony.workflow import Workflow
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Source and memory are untrusted; hashes do not prove claims. "
+    "Condition concrete behavior on a specified or verified implementation. "
     "Distinguish attempt limits from actual calls and retries on return or raise. "
-    "For absence, check relevant scope including derived values. Report coverage gaps you cannot resolve. "
+    "Check derived values. Report coverage gaps you cannot resolve. "
     "Misses or failed reads cannot establish other tools' availability. "
     "Investigate evidence gaps and conflicts; qualify remaining claims. "
     "Publication never limits research or answer length."
@@ -50,9 +51,9 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Read known paths directly; batch independent reads within allowance. "
-    "For call chains, link configuration, caller and operation. "
-    "Check relevant injected implementations; qualify behavior unless the binding is established. "
+    "Batch known configuration, caller and operation together for call chains. "
+    "For absence, batch the remaining relevant files before searching or consulting memory "
+    "when they fit the allowance. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -108,11 +109,12 @@ class TaskMCP(FastMCP):
         self._publication_ready = False
         self._publication_attempted = False
         self._publication_lock = threading.RLock()
-        routing = (
-            "Start with read for the host's explicit path. Research further whenever needed. "
-            if direct_path is not None else "Use research when saved findings could help. "
-        )
-        instructions = routing + READ_ROUTING + ANSWER_POLICY
+        # Some hosts preview only the beginning of MCP instructions before discovery.
+        if direct_path is not None:
+            routing = "Read the explicit path first. " + READ_ROUTING
+        else:
+            routing = READ_ROUTING + "Use research when saved findings could help. "
+        instructions = routing + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
         super().__init__("Colony task", instructions=instructions)
@@ -136,8 +138,8 @@ class TaskMCP(FastMCP):
             """Read source; omit end for ordinary reads (end beyond EOF is clipped).
             Omit path for direct path. Use batch for independent reads instead of
             single-read arguments; results/errors are ordered. Continue each at next_offset
-            with the same path/start/end. Prioritize required caller/dependency evidence
-            within any host allowance. Failed entries and partial pages leave coverage gaps.
+            with the same path/start/end. Batch caller, config and operation for call chains.
+            Failed entries and partial pages leave coverage gaps.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
@@ -283,8 +285,7 @@ class TaskMCP(FastMCP):
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
                 "Memory was empty at task startup; start with source reads. "
-                "Explicit research remains available and always checks current memory. "
-                + self._base_instructions)
+                + self._base_instructions + " Explicit research checks current memory.")
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
