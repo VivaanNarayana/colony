@@ -137,7 +137,7 @@ class TaskMCP(FastMCP):
                  ) -> dict:
             """Direct path optional. End defaults or clips to EOF.
             Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
-            Split by size and remaining quota. Pair unknown sizes when tight.
+            For full coverage without spare quota, read unknown sizes singly.
             Read relevant backends. Two sends allow one retry.
             Continue at next_offset, same path/start/end. Qualify incomplete coverage.
             """

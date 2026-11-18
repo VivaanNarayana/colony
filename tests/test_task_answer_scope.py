@@ -193,7 +193,7 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
                      read_admission=lambda: next(permits, None) is not None)
     assert "read from the existing listing and qualify uncovered scope" in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "remaining quota" in tool.description and "Qualify incomplete coverage" in tool.description
+    assert "without spare quota" in tool.description and "Qualify incomplete coverage" in tool.description
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     observed, denied = pages[:remaining], pages[remaining:]
     assert len(pages) == len(paths)
@@ -206,6 +206,29 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     if remaining == len(paths) and present:
         expected[-1] = "STEP_LIMIT = 12"
     assert [p["content"] for p in observed] == expected
+
+
+@pytest.mark.parametrize(("bytes_per_file", "batched", "complete"), [
+    (9000, True, False), (9000, False, True), (8000, True, True),
+], ids=["unknown-pair-clips", "individual-reads-cover-both", "known-pair-fits"])
+def test_two_remaining_units_for_full_coverage(identity, bytes_per_file, batched, complete):
+    client, repo, _ = identity
+    paths = ["first.txt", "second.txt"]
+    for path, tail in zip(paths, ["\nretries=0", "\nretries=1"], strict=True):
+        (repo / path).write_bytes(b"x" * (bytes_per_file - len(tail)) + tail.encode())
+    # The listing is already known. Each entry or continuation needs a unit.
+    units = iter(range(2))
+    server = TaskMCP(Workflow(client, "team", repo), "Do any scoped files enable retries?",
+                     read_admission=lambda: next(units, None) is not None)
+    if batched:
+        pages = read(server, batch=[{"path": p} for p in paths])["results"]
+    else:
+        pages = [read(server, path=p) for p in paths]
+    assert all(p["complete_file"] == complete and p["evidence_ref"] for p in pages)
+    assert pages[1]["content"].endswith("retries=1") == complete
+    if not complete:
+        assert [p["next_offset"] for p in pages] == [8000, 8000]
+    assert server._read_access.admitted == 2 and server._read_access.denied == 0
 
 
 @pytest.mark.parametrize("direct", [False, True], ids=["research", "direct"])

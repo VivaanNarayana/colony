@@ -36,9 +36,11 @@ Reuse the existing listing and the remaining allowance in the latest receipt.
 Group the reads before spending a unit on an auxiliary search. Five short files
 whose contents fit in 16,000 UTF-8 bytes can share one batch. Nine short files
 need at least two batches because each accepts at most eight entries. Four
-5,000-byte files fit in two pairs with four read units. Group using sizes already
-known; if sizes are uncertain and quota is tight, use smaller groups and check
-for partial pages. Inspect computed values, continue needed pages at their
+5,000-byte files fit in two pairs with four read units. If full coverage matters
+and only one unit remains per needed file, batch ranges already known to fit
+together. Read files of unknown size individually so each gets its own
+16,000-byte page. Even an individual file can require a continuation.
+Inspect computed values, continue needed pages at their
 returned offsets, and state any scope that access or allowance leaves uncovered.
 For example, if three of five relevant files were read and two were denied,
 report what the three establish and identify the two still unchecked.
