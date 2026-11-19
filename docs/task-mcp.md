@@ -45,8 +45,12 @@ If it delegates the value, conflicts with another source, or the user requests
 corroboration, follow that evidence. Eligible publication uses the references
 already obtained.
 
-For an exact-text question, a literal search across the requested scope can settle
-whether that text occurs. A question about a fact also covers indirect expressions,
+For an exact-text question, one literal search can settle a single-line query
+when it covers the requested files and uses the requested case rules. For a
+multiline snippet on a line-oriented host, search for a distinctive line and
+read the adjacent lines at candidate matches. If the results are capped or files
+were skipped, check the remaining scope before claiming absence, or name the gap.
+A question about a fact also covers indirect expressions,
 such as a value computed from two settings. For that question, use already observed
 evidence and batch the remaining listed files when the scope fits.
 Reuse the existing listing and the remaining allowance in the latest receipt.
