@@ -5,11 +5,11 @@ import os
 import sys
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
-from test_workflow import identity as identity
-from test_integration import running_team as running_team
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.server.fastmcp.exceptions import ToolError
+from test_integration import running_team as running_team
+from test_workflow import identity as identity
 
 from colony.mcp import create_mcp
 from colony.models import ContextBudget

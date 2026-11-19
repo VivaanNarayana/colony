@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from mcp.server.fastmcp.exceptions import ToolError
 from test_evidence import trace as trace
 from test_integration import running_team as running_team
 from test_protocol import manifest
@@ -127,7 +128,7 @@ def test_source_allowlist_blocks_existing_unlisted_file(identity, monkeypatch):
     _, repo, _ = identity
     (repo / 'unlisted.py').write_text('PRIVATE = 123')
     server = server_for(identity, monkeypatch)
-    with pytest.raises(Exception):
+    with pytest.raises(ToolError, match='Research request failed'):
         call(server, 'read', path='unlisted.py')
     assert 'publish' not in {t.name for t in asyncio.run(server.list_tools())}
     assert call(server, 'read', path='settings.py')['content'] == 'TIMEOUT = 30'
@@ -161,7 +162,7 @@ def test_launch_uses_selected_runtime_without_duplicate_mcp_and_prompt_does_not_
 
 def test_budget_shared_by_reads_search_and_listing_including_failures(identity, monkeypatch):
     server = server_for(identity, monkeypatch, max_calls=3)
-    with pytest.raises(Exception):
+    with pytest.raises(ToolError, match='Research request failed'):
         call(server, 'read', path='private.txt')
     assert call(server, 'read', path='settings.py')['evidence_ref']
     asyncio.run(server.call_tool('fixture_files', {}))
@@ -287,9 +288,27 @@ def test_real_stdio_preflight_discovery_and_readonly_direct_roles(running_team, 
         with pytest.raises(ExceptionGroup):
             asyncio.run(asyncio.wait_for(check(team, protocol, repo, dict(os.environ)), 30))
         return
+    # Deliver a late callback from the first role while the direct role starts.
+    # Its receipt must describe notifications from its own transport session.
+    from mcp.types import ServerNotification, ToolListChangedNotification
+
+    handlers = []
+
+    class LateNotificationSession(ClientSession):
+        def __init__(self, *args, message_handler, **kwargs):
+            handlers.append(message_handler)
+            super().__init__(*args, message_handler=message_handler, **kwargs)
+
+        async def initialize(self):
+            if len(handlers) == 2:
+                await handlers[0](ServerNotification(ToolListChangedNotification()))
+            return await super().initialize()
+
+    monkeypatch.setattr('mcp.ClientSession', LateNotificationSession)
     result = asyncio.run(asyncio.wait_for(check(team, protocol, repo, dict(os.environ)), 30))
     assert result['ok'] and result['sdk_discovery_refresh_verified']
     assert result['native_sessions'] == 0 and not result['native_host_refresh_verified']
     assert result['roles']['learn_research']['tools_changed_received']
+    assert not result['roles']['learn_direct']['tools_changed_received']
     assert 'publish' not in result['roles']['learn_direct']['tools_after_read']
     assert 'publish' not in result['roles']['reuse_research']['tools_after_read']

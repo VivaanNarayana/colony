@@ -262,6 +262,8 @@ and explicitly prepare the tokenizer on each server/client host that will count 
 - Set `COLONY_CONTEXT_TOKENIZER` to that file and add `--context-encoding o200k_base`
   alongside `--context-budget`. Server and client paths may differ; the verified data
   and encoding must match. The optional package supports tiktoken 0.14.x.
+  For this encoding, Codex setup forwards the variable from the host environment
+  to the MCP server. Existing installations pick up the setting on reinstall.
 
 The runtime reads at most 8 MiB, verifies the hash and constructs the encoding locally.
 It never calls a downloading tokenizer loader. Missing, changed or unavailable requested

@@ -25,8 +25,8 @@ from .protocol import (
 from .quality import BINDINGS, REVIEW_CONTRACT, assess, review_policy, validate_reviews
 from .quality import CONTRACT as QUALITY_CONTRACT
 from .read_contract import split_reads
-from .research_budget import receipt as budget_receipt
 from .receipt import validate_native_receipts
+from .research_budget import receipt as budget_receipt
 from .task_evidence import lookup_value, verified_reads
 from .tool_receipts import collect as collect_tool_receipts
 from .tool_receipts import digest as receipt_digest

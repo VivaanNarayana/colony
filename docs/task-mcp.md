@@ -265,3 +265,21 @@ contract and report expanded units. The existing evaluation adapter does not
 enable `trace_read`; evaluator schema/receipt/accounting support remains a
 separate change. This PR does not change frozen protocols or historical results,
 add a host completion hook, or establish native token savings or model compliance.
+
+Embedded hosts with a path allowlist can pass `read_path_allowed(path)` to
+`TaskMCP`. Use only metadata and return exactly `True` for allowed repository
+paths. Both the requested name and any distinct resolved target must be allowed.
+The adapter checks this policy before probing inferred imports, reading source
+bytes, delivering staged batch or trace entries, and revalidating publication references.
+Changing a link's target invalidates its staged reads and earlier references,
+even when the new file has the same bytes.
+Trace results include only dependencies reachable from a delivered source or
+requested explicitly. Each attempted read still consumes its original allowance.
+Lookups with excluded cited sources withhold the hit, including saved prose.
+Restricted Git lookups retain each validated target through delivery. Restricted
+publication retains the observed targets through sending or offline queueing.
+Allowed sources remain available for the answer. Excluded imports stay unresolved
+and spend no read units. An explicit read attempt still counts.
+A host that wraps `evidence.read` should supply the same path policy to
+enable automatic expansion. Without it, the adapter follows
+explicit requests and reports inferred imports as unresolved.

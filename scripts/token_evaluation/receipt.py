@@ -80,9 +80,9 @@ def validate_native_receipts(root, run, manifest, rows):
     execution or provider billing. Relocated read-only replay uses captured launch
     paths from run.run_dir while reading prompt bytes in the replay directory.
     """
+    from .host_discovery import validate_host_discovery
     from .native import _client_args
     from .protocol import arm_order, arm_protocol, cohort_root
-    from .host_discovery import validate_host_discovery
 
     validate_host_discovery(manifest)
 

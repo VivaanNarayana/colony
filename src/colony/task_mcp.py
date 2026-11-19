@@ -76,7 +76,7 @@ class TaskMCP(FastMCP):
     def __init__(self, workflow, question: str, *, direct_path: str | None = None,
                  remember: bool = False, context_budget: ContextBudget | None = None,
                  empty_memory_routing: bool = True, trace_reads: bool = False,
-                 read_admission=None):
+                 read_admission=None, read_path_allowed=None):
         if not isinstance(question, str) or not question.strip():
             raise ValueError("A focused task question is required")
         self.workflow = workflow
@@ -93,9 +93,10 @@ class TaskMCP(FastMCP):
                 workflow.client.home, workflow_namespace=workflow.namespace,
                 workflow_repo=workflow.repo, workflow_read_only=workflow.read_only,
                 workflow_repository_id=workflow.repository_id, context_budget=context_budget,
+                _lookup_path_allowed=read_path_allowed,
             )
             context_budget = ContextBudget.model_validate(context_budget)
-        self.evidence = EvidenceSession(workflow)
+        self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed)
         self._availability_enabled = False
         self._empty_memory_routing = empty_memory_routing and direct_path is None
         self._availability_until = 0.0
@@ -160,6 +161,8 @@ class TaskMCP(FastMCP):
             try:
                 options = ({"repo": workflow.repo, "repository_id": workflow.repository_id}
                            if workflow.repository_id else {})
+                if read_path_allowed is not None:
+                    options.update(repo=workflow.repo, path_allowed=read_path_allowed)
                 return workflow.client.ask(self.question, workflow.namespace, **options)
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}

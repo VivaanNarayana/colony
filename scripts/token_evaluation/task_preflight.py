@@ -25,9 +25,9 @@ async def check(team, protocol, repo, env):
         args = task_args(protocol, repo, team, task, files)
         notifications = asyncio.Event()
 
-        async def handler(message):
+        async def handler(message, *, event=notifications):
             if isinstance(message, ServerNotification) and isinstance(message.root, ToolListChangedNotification):
-                notifications.set()
+                event.set()
 
         params = StdioServerParameters(command=protocol['target']['python'], args=args, env=env)
         async with stdio_client(params) as (read, write), ClientSession(read, write, message_handler=handler) as session:

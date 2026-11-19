@@ -7,28 +7,30 @@ from pathlib import Path
 from colony.git_context import capture, compare
 from colony.models import ContextBudget, GitContext, Source
 from colony.security import PATTERNS, scrub
-from colony.validation import repo_file, validate
+from colony.validation import PinnedSourcePaths, repo_contents, repo_file, validate
 
 
-def _source_lines(root: Path, source: Source) -> list[str]:
+def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
     # Keep the caller path independent of the server's native retrieval stack.
     # Scrub the whole file before excerpting, preserving original line numbers.
     if source.kind != "file":
         return []
     try:
-        data = repo_file(root, source.ref).read_bytes()
+        _, data = repo_contents(root, source.ref, path_allowed=path_allowed)
         if hashlib.sha256(data).hexdigest() != source.content_hash:
-            return []
+            raise ValueError("Current source changed")
         text = data.decode("utf-8")
     except (OSError, ValueError, UnicodeError):
+        if path_allowed is not None:
+            raise ValueError("Current source unavailable") from None
         return []
     for pattern in PATTERNS:
         text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
     return text.splitlines()
 
 
-def checked_sources(repo: Path, sources: list[Source]) -> None:
-    if validate(repo, sources)[0] != "validated":
+def checked_sources(repo: Path, sources: list[Source], *, path_allowed=None) -> None:
+    if validate(repo, sources, path_allowed=path_allowed)[0] != "validated":
         raise ValueError("Git-aware publication requires matching current local file evidence")
 
 
@@ -49,7 +51,7 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
 
 
 def _local_reads(
-    repo, sources, remote_evidence, whole_files, *, adaptive=False, compact_bundle=False,
+    repo, sources, remote_evidence, whole_files, *, adaptive=False, compact_bundle=False, path_allowed=None,
 ):
     by_ref = {source.ref: source for source in sources}
     hints = remote_evidence if isinstance(remote_evidence, list) else []
@@ -57,6 +59,7 @@ def _local_reads(
     # Compact adaptive responses can require all eight bounded source cores.
     # Legacy focused/whole-file requests retain their two/four-read limits.
     limit = 8 if adaptive and compact_bundle else (4 if whole_files else 2)
+    options = {"path_allowed": path_allowed} if path_allowed is not None else {}
     for item in hints[:8]:
         if not isinstance(item, dict):
             continue
@@ -65,7 +68,7 @@ def _local_reads(
             continue
         if type(line) is not int or line < 1:
             continue
-        lines = _source_lines(repo, by_ref[ref])
+        lines = _source_lines(repo, by_ref[ref], **options)
         if not lines or line > len(lines):
             continue
         text = "\n".join(lines)
@@ -117,6 +120,7 @@ def verify_lookup(
     *,
     whole_files=False,
     context_budget: ContextBudget | None = None,
+    path_allowed=None,
 ):
     """A server's checkout or receipt alone cannot certify the caller's working tree."""
     if not isinstance(result, dict):
@@ -132,6 +136,11 @@ def verify_lookup(
         } and not (context_budget is not None and reason == "budget_limited"):
             reason = "git_no_verified_hit"
         return {"hit": False, "reason": reason, "git": compact_receipt(context, "unavailable")}
+    # Client.ask owns the final delivery check when it supplies its operation's
+    # pins. Direct Python callers get the same protection at this return boundary.
+    check_on_return = path_allowed is not None and not isinstance(path_allowed, PinnedSourcePaths)
+    if check_on_return:
+        path_allowed = PinnedSourcePaths(path_allowed)
     try:
         receipt = result["git"]
         if GitContext.model_validate(receipt["request"]) != context:
@@ -152,7 +161,7 @@ def verify_lookup(
         if not isinstance(raw_sources, list) or not 1 <= len(raw_sources) <= 50:
             raise ValueError()
         sources = [Source.model_validate(source) for source in raw_sources]
-        checked_sources(repo, sources)
+        checked_sources(repo, sources, path_allowed=path_allowed)
         hints = result.get("evidence")
         evidence = _local_reads(
             repo,
@@ -161,6 +170,7 @@ def verify_lookup(
             whole_files or compact,
             **({"compact_bundle": True} if compact else {}),
             **({"adaptive": True} if context_budget is not None else {}),
+            **({"path_allowed": path_allowed} if path_allowed is not None else {}),
         )
         if context_budget is not None and (
             not isinstance(hints, list) or len(evidence) != len(hints)
@@ -186,5 +196,11 @@ def verify_lookup(
     if context_budget is not None:
         from colony.context_budget import fit_response
 
-        return fit_response(answer, context_budget)
+        answer = fit_response(answer, context_budget)
+    if check_on_return and answer.get("hit"):
+        try:
+            for ref in path_allowed.targets:
+                repo_file(repo, ref, path_allowed=path_allowed)
+        except (ValueError, OSError):
+            return {"hit": False, "reason": "git_local_evidence_not_verified"}
     return answer

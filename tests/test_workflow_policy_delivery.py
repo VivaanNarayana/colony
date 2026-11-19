@@ -46,6 +46,7 @@ def test_installed_setup_and_stdio_initialization_share_policy(
         pytest.importorskip('tiktoken')
         if not os.environ.get('COLONY_TEST_CONTEXT_TOKENIZER'):
             pytest.skip('Set COLONY_TEST_CONTEXT_TOKENIZER for pinned o200k cost checks')
+        monkeypatch.setenv('COLONY_CONTEXT_TOKENIZER', os.environ['COLONY_TEST_CONTEXT_TOKENIZER'])
     client, repo, _ = identity
     setup_codex(client.home, repo, 'install', namespace='team', read_only=read_only,
                 repository_id='delivery-repository' if git else None,
@@ -53,6 +54,8 @@ def test_installed_setup_and_stdio_initialization_share_policy(
     config = tomllib.loads((repo / '.codex/config.toml').read_text())['mcp_servers']
     assert set(config) == {'colony'}
     settings = config['colony']
+    assert settings.get('env_vars', []) == (['COLONY_CONTEXT_TOKENIZER'] if measurement == 'o200k_base' else [])
+    assert 'env' not in settings
     policy = (ADAPTIVE_READ_ONLY_WORKFLOW_GUIDANCE if read_only else ADAPTIVE_WORKFLOW_GUIDANCE
               ) if adaptive else WORKFLOW_GUIDANCE
     installed_bytes = (repo / 'AGENTS.md').read_bytes()
@@ -76,11 +79,8 @@ def test_installed_setup_and_stdio_initialization_share_policy(
 
     async def inspect():
         parameters = StdioServerParameters(command=settings['command'], args=settings['args'],
-                                           cwd=settings['cwd'], env={
-                                               'COLONY_CONTEXT_TOKENIZER': os.environ.get(
-                                                   'COLONY_TEST_CONTEXT_TOKENIZER', '',
-                                               ),
-                                           })
+                                           cwd=settings['cwd'],
+                                           env={k: os.environ[k] for k in settings.get('env_vars', [])})
         async with stdio_client(parameters) as (read, write):
             captured = CaptureResponses(read)
             async with ClientSession(captured, write) as session:

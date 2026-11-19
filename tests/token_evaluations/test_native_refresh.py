@@ -3,11 +3,11 @@ import copy
 from types import SimpleNamespace
 
 import pytest
+from test_protocol import manifest
 
 from scripts.token_evaluation import native
 from scripts.token_evaluation.host_discovery import required_host_features
 from scripts.token_evaluation.protocol import validate_contract
-from test_protocol import manifest
 
 
 @pytest.mark.parametrize('candidate,main', [('task', 'task'), ('task', 'ordinary'),

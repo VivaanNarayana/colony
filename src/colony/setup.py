@@ -433,6 +433,8 @@ def setup_codex(
             + "\ncwd = "
             + json.dumps(str(repo), ensure_ascii=False)
         )
+        if context_budget is not None and context_budget.encoding == "o200k_base":
+            table += '\nenv_vars = ["COLONY_CONTEXT_TOKENIZER"]'
         outputs[config] = _render(
             originals[config] or b"", table, False, created=originals[config] is None
         )

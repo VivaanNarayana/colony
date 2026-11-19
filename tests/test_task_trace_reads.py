@@ -7,7 +7,7 @@ import pytest
 from test_workflow import identity as identity
 
 from colony.evidence_refs import EvidenceError
-from colony.task_mcp import TaskMCP, ANSWER_POLICY, PUBLICATION_POLICY
+from colony.task_mcp import ANSWER_POLICY, PUBLICATION_POLICY, TaskMCP
 from colony.workflow import Workflow
 
 
@@ -119,8 +119,100 @@ def test_expansion_keeps_host_allowlist_and_does_not_mint_denied_references(iden
 
     monkeypatch.setattr(server.evidence, "read", host_read)
     result = call(server, paths=["handler.py"])
-    assert result["results"][-1]["evidence_ref"] is None
+    assert [p["path"] for p in result["results"]] == ["handler.py"]
+    assert result["unresolved_paths"] == ["policy.py", "executor.py"]
+    assert not result["pending_paths"]
+    # Without a host metadata predicate, the wrapper still governs explicit paths.
+    explicit = call(server, paths=["policy.py", "executor.py"])
+    assert explicit["results"][0]["evidence_ref"] and explicit["results"][1]["evidence_ref"] is None
     assert {o.ref for o in server.evidence._observations.values()} == {"handler.py", "policy.py"}
+
+
+@pytest.mark.parametrize("max_files", [1, 2])
+@pytest.mark.parametrize("excluded_exists", [False, True])
+def test_host_path_policy_preserves_last_unit_and_masks_excluded_metadata(
+    identity, monkeypatch, max_files, excluded_exists,
+):
+    from pathlib import Path
+
+    _, repo, _ = identity
+    (repo / "root.py").write_text("import excluded\nimport required\n")
+    (repo / "required.py").write_text("LIMIT=7")
+    if excluded_exists:
+        (repo / "excluded.py").write_text("UNLISTED")
+    units = iter([True, True])
+    server = make(identity, read_admission=lambda: next(units, False),
+                  read_path_allowed={"root.py", "required.py"}.__contains__)
+    probes = []
+    resolve = Path.resolve
+
+    def record_probe(path, *args, **kwargs):
+        probes.append(path)
+        return resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", record_probe)
+    result = call(server, paths=["root.py"], max_files=max_files)
+    assert repo / "required.py" in probes and repo / "excluded.py" not in probes
+    assert result["unresolved_paths"] == ["excluded.py"]
+    assert result["pending_paths"] == (["required.py"] if max_files == 1 else [])
+    assert result["read_accounting"] == {"admitted": max_files, "denied": 0, "succeeded": max_files}
+    page = call(server, "read", path="required.py") if max_files == 1 else result["results"][1]
+    assert page["content"] == "LIMIT=7" and page["evidence_ref"]
+    assert {o.ref for o in server.evidence._observations.values()} == {"root.py", "required.py"}
+
+
+def test_host_path_policy_is_rechecked_on_content_access_and_fails_closed(identity):
+    _, repo, _ = identity
+    (repo / "root.py").write_text("import policy")
+    (repo / "policy.py").write_text("UNLISTED")
+    checks = []
+
+    def allow(path):
+        if path == "policy.py":
+            checks.append(path)
+            if len(checks) > 1:
+                raise OSError("private host details")
+        return True
+
+    server = make(identity, read_path_allowed=allow)
+    trace = call(server, paths=["root.py"])
+    assert len(checks) == 2
+    assert trace["read_accounting"] == {"admitted": 2, "denied": 0, "succeeded": 1}
+    assert trace["results"][1]["evidence_ref"] is None
+    batch = call(server, "read", batch=[{"path": "policy.py"}, {"path": "root.py"}])
+    assert batch["results"][0]["evidence_ref"] is None and batch["results"][1]["evidence_ref"]
+    assert "private host details" not in json.dumps([trace, batch])
+    assert {o.ref for o in server.evidence._observations.values()} == {"root.py"}
+
+
+def test_host_wrapper_cannot_transfer_path_approval_to_a_different_file(identity, monkeypatch):
+    _, repo, _ = identity
+    (repo / "root.py").write_text("import allowed")
+    (repo / "allowed.py").write_text("PUBLIC")
+    (repo / "excluded.py").write_text("PRIVATE")
+    server = make(identity, read_path_allowed={"root.py", "allowed.py"}.__contains__)
+    read = server.evidence.read
+
+    def wrapped(path, *args, **kwargs):
+        return read("excluded.py" if path == "allowed.py" else path, *args, **kwargs)
+
+    monkeypatch.setattr(server.evidence, "read", wrapped)
+    result = call(server, paths=["root.py"])
+    assert result["read_accounting"] == {"admitted": 2, "denied": 0, "succeeded": 1}
+    assert result["results"][1]["evidence_ref"] is None and "PRIVATE" not in json.dumps(result)
+    assert {o.ref for o in server.evidence._observations.values()} == {"root.py"}
+
+
+def test_host_path_policy_preserves_direct_read_reply_and_tool_catalog(identity):
+    ordinary = make(identity, direct_path="settings.py")
+    restricted = make(identity, direct_path="settings.py", read_path_allowed=lambda p: p == "settings.py")
+    assert ordinary.instructions == restricted.instructions
+    assert asyncio.run(ordinary.list_tools()) == asyncio.run(restricted.list_tools())
+    expected, actual = [call(server, "read") for server in (ordinary, restricted)]
+    # Handles are fresh per task. All other worker-facing fields must agree.
+    assert len(expected.pop("evidence_ref")) == len(actual.pop("evidence_ref")) == 24
+    assert expected == actual
+    assert restricted._read_access.admitted == 1
 
 
 def test_trace_pages_are_exact_and_continuable_without_hidden_reads(identity):
@@ -344,12 +436,12 @@ def test_candidate_metadata_rechecks_auth_without_reading_content(identity, monk
 
     server = make(identity)
     probes = []
-    monkeypatch.setattr(task_reads, "repo_file", lambda *a: probes.append(a))
-    assert task_reads._local_candidate(server.evidence, "policy.py")
+    monkeypatch.setattr(task_reads, "repo_file", lambda *a, **kw: probes.append(a))
+    assert task_reads._local_candidate(server._read_access, "policy.py")
     assert len(probes) == 1 and not server.evidence._observations
     monkeypatch.setattr(server.evidence, "_authorize", lambda: (_ for _ in ()).throw(
         EvidenceError("denied")))
-    assert not task_reads._local_candidate(server.evidence, "policy.py")
+    assert not task_reads._local_candidate(server._read_access, "policy.py")
     assert len(probes) == 1
 
 
@@ -359,7 +451,7 @@ def test_candidate_metadata_failure_keeps_answer_evidence_available(identity, mo
     _, repo, _ = identity
     (repo / "handler.py").write_text("import policy\n")
     server = make(identity)
-    monkeypatch.setattr(task_reads, "repo_file", lambda *a: (_ for _ in ()).throw(
+    monkeypatch.setattr(task_reads, "repo_file", lambda *a, **kw: (_ for _ in ()).throw(
         OSError("private path details")))
     result = call(server, paths=["handler.py"])
     assert result["results"][0]["content"] == "import policy"
@@ -373,7 +465,8 @@ def test_inferred_file_disappearing_after_metadata_is_still_charged(identity, mo
     (repo / "handler.py").write_text("import policy\n")
     (repo / "policy.py").write_text("LIMIT=7\n")
     attempts = []
-    server = make(identity, read_admission=lambda: attempts.append(1) or True)
+    server = make(identity, read_admission=lambda: attempts.append(1) or True,
+                  read_path_allowed={"handler.py", "policy.py"}.__contains__)
     original = server.evidence.read
 
     def host_read(path, *args, **kwargs):

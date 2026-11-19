@@ -9,21 +9,36 @@ from contextlib import suppress
 
 from .read_contract import arguments as read_arguments
 from .read_contract import split_reads
-from .research_budget import source_blocks
 from .redaction import PATTERNS
+from .research_budget import source_blocks
 
 MAX_RECEIPTS = 64
 MAX_TEXT = 1024
 MAX_SAVED_ANSWER = 4000
 SAVED_ANSWER_TRUST = "untrusted_saved_answer_not_source_evidence"
+SUBMITTED_FINDING_TRUST = "untrusted_submitted_finding_not_source_evidence"
 MAX_PATHS = 16
+LOOKUP_REASONS = {
+    "no_pull_scope", "no_relevant_trail", "below_threshold", "no_active_trails",
+    "git_context_mismatch", "git_no_verified_hit", "git_invalid_receipt",
+    "git_local_evidence_not_verified", "git_context_unsupported", "budget_limited",
+    "context_budget_unsupported", "context_budget_invalid_profile", "context_budget_invalid_receipt",
+    "invalid_evidence", "server_unavailable",
+}
+REASONS_BY_TOOL = {
+    "ask": LOOKUP_REASONS,
+    "research": LOOKUP_REASONS | {"lookup_unavailable"},
+    "publish": {"publication_not_eligible", "finding_and_scope_required", "finding_too_large",
+                "publication_failed_or_outcome_unknown"},
+    "push": set(),
+}
 TOOLS = {
     "repository.fixture_files", "repository.fixture_read", "repository.fixture_search",
     "colony.ask", "colony.push", "colony.read", "colony.research", "colony.publish",
     "colony.fixture_files", "colony.fixture_search",
 }
 LIMITS = {
-    "contract": "colony.review-tool-receipts/4",
+    "contract": "colony.review-tool-receipts/6",
     "max_receipts": MAX_RECEIPTS,
     "max_text_chars": MAX_TEXT,
     "max_saved_answer_chars": MAX_SAVED_ANSWER,
@@ -63,17 +78,20 @@ def _path(value, files):
     return normalized if normalized in files and len(normalized) <= MAX_TEXT else None
 
 
-def _arguments(item, files):
+def _raw_arguments(item):
     raw = item.get("arguments")
     if isinstance(raw, str):
         try:
             raw = json.loads(raw)
-        except ValueError:
+        except (ValueError, RecursionError):
             raw = None
+    return raw
+
+
+def _arguments(tool, raw, files):
     if not isinstance(raw, dict):
         return {}, False, False
     args, truncated = {}, False
-    tool = item["tool"]
     for key in (("question",) if tool in {"ask", "push"} else
                 ("query",) if tool == "fixture_search" else
                 ("path", "start", "lines") if tool == "fixture_read" else
@@ -92,7 +110,18 @@ def _arguments(item, files):
     return args, True, truncated
 
 
-def _outcome(item, files):
+def _excerpt(text, limit, trust):
+    cleaned = scrub(text, maximum=None)
+    return {"text": cleaned[:limit], "trust": trust, "redacted": cleaned != text,
+            "truncated": len(cleaned) > limit}
+
+
+def _new_storage(value):
+    return (value.get("stored") is True and value.get("duplicate", False) is False
+            and value.get("queued", False) is False)
+
+
+def _outcome(item, arguments, files):
     raw = item.get("result")
     raw = raw if isinstance(raw, dict) else {}
     blocks = raw.get("content")
@@ -156,8 +185,7 @@ def _outcome(item, files):
             if type(value.get(key)) is bool:
                 out[key] = value[key]
         for key, allowed in {
-            "reason": {"no_relevant_trail", "git_context_mismatch", "git_no_verified_hit",
-                       "git_invalid_receipt", "git_local_evidence_not_verified", "budget_limited"},
+            "reason": REASONS_BY_TOOL[tool],
             "status": {"validated", "unverified", "stale", "rejected"},
             "match_kind": {"answer", "evidence", "memory", "trail"},
         }.items():
@@ -170,11 +198,16 @@ def _outcome(item, files):
                          and isinstance(text, str))
             out["saved_answer_available"] = available
             if available:
-                cleaned = scrub(text, maximum=None)
-                out["saved_answer"] = {
-                    "text": cleaned[:MAX_SAVED_ANSWER], "trust": SAVED_ANSWER_TRUST,
-                    "redacted": cleaned != text, "truncated": len(cleaned) > MAX_SAVED_ANSWER,
-                }
+                out["saved_answer"] = _excerpt(text, MAX_SAVED_ANSWER, SAVED_ANSWER_TRUST)
+        elif _new_storage(value) and not item.get("error") and isinstance(arguments, dict):
+            content = arguments.get("content")
+            if isinstance(content, str) and content.strip():
+                if tool == "publish":
+                    scope = arguments.get("applicability")
+                    if not isinstance(scope, str) or not scope.strip():
+                        return out
+                    content = scope + "\n" + content
+                out["submitted_finding"] = _excerpt(content, MAX_TEXT, SUBMITTED_FINDING_TRUST)
     return out
 
 
@@ -226,8 +259,9 @@ def collect(events, files):
             if len(receipts) >= MAX_RECEIPTS:
                 omitted += 1
                 continue
-            args, available, truncated = _arguments(entry, files)
-            outcome = _outcome(entry, files)
+            raw_args = _raw_arguments(entry)
+            args, available, truncated = _arguments(entry["tool"], raw_args, files)
+            outcome = _outcome(entry, raw_args, files)
             outcome.update(arguments_available=available, arguments_truncated=truncated)
             receipts.append({
                 "id": "tool-" + str(len(receipts) + 1),
@@ -282,16 +316,24 @@ def validate(receipts, limits, files):
             extra |= {"evidence_reference_available"}
         if tool in {"ask", "research"}:
             extra |= {"saved_answer_available", "saved_answer"}
+        if tool in {"push", "publish"}:
+            extra.add("submitted_finding")
         require(base <= set(outcome) <= base | extra | {"error"})
         for key, value in outcome.items():
-            if key == "saved_answer":
-                require(tool in {"ask", "research"} and outcome.get("saved_answer_available") is True
-                        and outcome.get("hit") is True and outcome.get("match_kind") == "answer"
-                        and not outcome["is_error"] and outcome["result_available"])
+            if key in {"saved_answer", "submitted_finding"}:
+                require(outcome["is_error"] is False and outcome["result_available"] is True)
+                if key == "saved_answer":
+                    limit, trust = MAX_SAVED_ANSWER, SAVED_ANSWER_TRUST
+                    require(outcome.get("saved_answer_available") is True
+                            and outcome.get("hit") is True and outcome.get("match_kind") == "answer")
+                else:
+                    limit, trust = MAX_TEXT, SUBMITTED_FINDING_TRUST
+                    require(receipt["status"] == "completed" and _new_storage(outcome)
+                            and outcome["arguments_available"] is True and "error" not in outcome)
                 require(isinstance(value, dict) and set(value) == {"text", "trust", "redacted", "truncated"})
-                require(isinstance(value["text"], str) and len(value["text"]) <= MAX_SAVED_ANSWER
-                        and scrub(value["text"], MAX_SAVED_ANSWER) == value["text"])
-                require(value["trust"] == SAVED_ANSWER_TRUST
+                require(isinstance(value["text"], str) and len(value["text"]) <= limit
+                        and scrub(value["text"], limit) == value["text"])
+                require(value["trust"] == trust
                         and type(value["redacted"]) is bool and type(value["truncated"]) is bool)
             elif key == "returned_paths":
                 require(isinstance(value, list) and len(value) <= MAX_PATHS
@@ -301,8 +343,7 @@ def validate(receipts, limits, files):
             elif key in {"error", "reason", "status", "match_kind"}:
                 enums = {
                     "error": {"tool_error", "research_call_limit"},
-                    "reason": {"no_relevant_trail", "git_context_mismatch", "git_no_verified_hit",
-                               "git_invalid_receipt", "git_local_evidence_not_verified", "budget_limited", "other"},
+                    "reason": REASONS_BY_TOOL.get(tool, set()) | {"other"},
                     "status": {"validated", "unverified", "stale", "rejected", "other"},
                     "match_kind": {"answer", "evidence", "memory", "trail", "other"},
                 }

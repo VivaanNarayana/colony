@@ -306,6 +306,7 @@ def test_explicit_lookup_skips_probe_and_outage_checks_back_off(identity, monkey
 ])
 def test_failed_tool_still_notifies_changed_availability(identity, monkeypatch, name, arguments):
     from types import SimpleNamespace
+
     from mcp.server.fastmcp.exceptions import ToolError
 
     client, repo, _ = identity
@@ -338,6 +339,7 @@ def test_failed_tool_still_notifies_changed_availability(identity, monkeypatch, 
 
 def test_notification_failure_preserves_tool_error_and_publication_invalidation(identity, monkeypatch):
     from types import SimpleNamespace
+
     from mcp.server.fastmcp.exceptions import ToolError
 
     client, repo, _ = identity
