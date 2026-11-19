@@ -135,6 +135,7 @@ def create_mcp(
     workflow_read_only: bool = False,
     workflow_repository_id: str | None = None,
     context_budget: ContextBudget | None = None,
+    _lookup_path_allowed=None,
 ):
     if context_budget is not None:
         from colony.context_budget import count_response
@@ -200,6 +201,8 @@ def create_mcp(
             if workflow and workflow.repository_id is not None
             else {}
         )
+        if _lookup_path_allowed is not None:
+            git_options.update(repo=workflow.repo, path_allowed=_lookup_path_allowed)
         if budget is not None:
             from colony.compact import PROFILE
 

@@ -241,9 +241,15 @@ separate change. This PR does not change frozen protocols or historical results,
 add a host completion hook, or establish native token savings or model compliance.
 
 Embedded hosts with a path allowlist can pass `read_path_allowed(path)` to
-`TaskMCP`. Use only metadata and return exactly `True` for allowed repository paths. The adapter
-checks this predicate before probing an inferred import and again when reading
-the file. Excluded imports stay unresolved and spend no read units. An explicit
-read attempt still counts. A host that wraps `evidence.read` should supply the
-same path policy to enable automatic expansion. Without it, the adapter follows
+`TaskMCP`. Use only metadata and return exactly `True` for allowed repository
+paths. Both the requested name and any distinct resolved target must be allowed.
+The adapter checks this policy before probing inferred imports, reading source
+bytes, delivering staged batch entries, and revalidating publication references.
+Changing a link's target invalidates its staged reads and earlier references,
+even when the new file has the same bytes.
+Lookups with excluded cited sources withhold the hit, including saved prose.
+Allowed sources remain available for the answer. Excluded imports stay unresolved
+and spend no read units. An explicit read attempt still counts.
+A host that wraps `evidence.read` should supply the same path policy to
+enable automatic expansion. Without it, the adapter follows
 explicit requests and reports inferred imports as unresolved.

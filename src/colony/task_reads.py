@@ -19,25 +19,13 @@ class ReadAccess:
     It must return True only when reserved. It is never a model/tool argument.
     """
 
-    def __init__(self, evidence, admit=None, path_allowed=None):
+    def __init__(self, evidence, admit=None):
         self.evidence = evidence
         self.lock = evidence._lock  # One lock order with read_batch and publication.
         self.admit = admit
-        self.path_allowed = path_allowed
         self.original = evidence.read
         self.admitted = self.denied = self._active = 0
         evidence.read = self.read
-
-    def check_path(self, path):
-        """Recheck the host's metadata policy without spending a read unit."""
-        self.evidence._authorize()
-        if self.path_allowed is not None:
-            try:
-                allowed = self.path_allowed(path) is True
-            except Exception:
-                allowed = False
-            if not allowed:
-                raise EvidenceError("Source path unavailable")
 
     def invoke(self, function, *args, **kwargs):
         with self.lock:
@@ -55,16 +43,11 @@ class ReadAccess:
             finally:
                 self._active -= 1
 
-    def _read(self, path, *args, **kwargs):
-        if self.path_allowed is not None:
-            self.check_path(path)
-        return self.original(path, *args, **kwargs)
-
     def read(self, *args, **kwargs):
         with self.lock:
             if self._active:
-                return self._read(*args, **kwargs)
-            return self.invoke(self._read, *args, **kwargs)
+                return self.original(*args, **kwargs)
+            return self.invoke(self.original, *args, **kwargs)
 
 
 def local_imports(path, page):
@@ -127,13 +110,13 @@ def _local_candidate(access, path):
     evidence = access.evidence
     # A custom read wrapper has an opaque path policy unless its host supplies
     # the corresponding metadata predicate. Explicit reads still use the wrapper.
-    if access.path_allowed is None and evidence.read != access.read:
+    if evidence.path_allowed is None and evidence.read != access.read:
         return False
     try:
         if _public_path(path) is None:
             return False
-        access.check_path(path)
-        repo_file(evidence.workflow.repo, path)
+        evidence._authorize()
+        repo_file(evidence.workflow.repo, path, path_allowed=evidence.path_allowed)
         return True
     except (OSError, ValueError, RuntimeError):
         return False

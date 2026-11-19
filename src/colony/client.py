@@ -329,6 +329,7 @@ class Client:
         repository_id: str | None = None,
         context_budget: ContextBudget | None = None,
         response_profile: str | None = None,
+        path_allowed=None,
     ):
         budget = None
         negotiated_profile = False
@@ -353,6 +354,8 @@ class Client:
             return fit_response(value, budget, question=question) if budget is not None else value
 
         context = None
+        if path_allowed is not None and repo is None:
+            raise ValueError("Restricted lookups require an explicit repository")
         if repository_id is not None:
             from colony.git_context import capture
 
@@ -421,6 +424,8 @@ class Client:
 
                 receipt = result.get("context_budget") if budget is not None else None
                 options = {"context_budget": budget} if budget is not None else {}
+                if path_allowed is not None:
+                    options["path_allowed"] = path_allowed
                 result = verify_lookup(
                     result, repo, context, whole_files=include_evidence_files, **options
                 )
@@ -429,6 +434,22 @@ class Client:
                         result["context_budget"] = receipt
                     elif receipt["limited"]:
                         result["context_budget"]["limited"] = True
+            if path_allowed is not None and result.get("hit"):
+                # Check the delivered bundle, including remote-only hits and
+                # saved prose whose support spans multiple files.
+                from colony.validation import repo_file
+
+                try:
+                    refs = {s["ref"] for s in result["sources"]}
+                    if not refs:
+                        raise ValueError()
+                    for ref in refs:
+                        repo_file(repo, ref, path_allowed=path_allowed)
+                    for field, key in (("evidence", "ref"), ("current_repository_reads", "path")):
+                        if any(item[key] not in refs for item in result.get(field, [])):
+                            raise ValueError()
+                except (KeyError, TypeError, ValueError, OSError):
+                    return finish({"hit": False, "reason": "lookup_unavailable"})
             return finish(result)
         except httpx.TransportError:
             return finish({"hit": False, "reason": "server_unavailable"})
@@ -576,7 +597,17 @@ class Client:
         return Trail.model_validate(data)
 
     @_observed("publish")
-    def push(self, trail: Trail, *, repo: Path | None = None, repository_id: str | None = None):
+    def push(self, trail: Trail, *, repo: Path | None = None, repository_id: str | None = None,
+             path_allowed=None):
+        def authorize_sources():
+            if path_allowed is not None:
+                from colony.validation import repo_file
+
+                if repo is None:
+                    raise ValueError("Restricted publication requires an explicit repository")
+                for source in trail.sources:
+                    repo_file(repo, source.ref, path_allowed=path_allowed)
+
         if repository_id is not None:
             from colony.git_client import checked_sources
             from colony.git_context import capture
@@ -586,7 +617,7 @@ class Client:
             context = capture(repo, repository_id)
             if trail.git_context is not None and trail.git_context != context:
                 raise ValueError("Git context changed before publication")
-            checked_sources(repo, trail.sources)
+            checked_sources(repo, trail.sources, path_allowed=path_allowed)
             if capture(repo, repository_id) != context:
                 raise ValueError("Git context changed before publication")
             trail = trail.model_copy(update={"git_context": context})
@@ -594,8 +625,10 @@ class Client:
         try:
             if trail.git_context is not None:
                 self._git_supported(trail.git_context)
+            authorize_sources()
             return self.request("/trails", trail.model_dump())
         except httpx.TransportError:
+            authorize_sources()
             queue = self.home / "queue"
             queue.mkdir(exist_ok=True, mode=0o700)
             payload = {"identity": fingerprint(self.keyfile), "trail": trail.model_dump()}

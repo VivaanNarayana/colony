@@ -123,7 +123,7 @@ class Workflow:
             raise ValueError("Namespace differs from the configured workflow namespace")
         return self.namespace
 
-    def finding(self, question: str, content: str, sources: list[Source]) -> Trail:
+    def finding(self, question: str, content: str, sources: list[Source], *, path_allowed=None) -> Trail:
         if self.read_only:
             raise ValueError("Workflow is read-only")
         if len(content) > 4000:
@@ -152,7 +152,7 @@ class Workflow:
         for source in trail.sources:
             try:
                 # Check confinement and existence without rereading just to fingerprint.
-                repo_file(self.repo, source.ref)
+                repo_file(self.repo, source.ref, path_allowed=path_allowed)
             except (OSError, ValueError):
                 raise ValueError(
                     "Workflow evidence must name an available repository file"

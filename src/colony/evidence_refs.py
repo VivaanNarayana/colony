@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from colony.models import Source
 from colony.security import PATTERNS, fingerprint, verify
-from colony.validation import MAX_SOURCE_BYTES, repo_file
+from colony.validation import MAX_SOURCE_BYTES, repo_contents, repo_file
 
 
 class EvidenceError(ValueError):
@@ -25,6 +25,7 @@ class _Observation:
     start_offset: int
     end_offset: int
     expires: float
+    target: str | None
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class _PreparedRead:
     whole_range: bool
     content: bytes
     expires: float
+    target: str | None
 
 
 class EvidenceSession:
@@ -49,10 +51,11 @@ class EvidenceSession:
     Existing raw-source publication remains available on the ordinary API.
     """
 
-    def __init__(self, workflow, *, ttl=900, capacity=256):
+    def __init__(self, workflow, *, ttl=900, capacity=256, path_allowed=None):
         if not 1 <= ttl <= 3600 or not 1 <= capacity <= 4096:
             raise ValueError("Invalid evidence session limits")
         self.workflow = workflow
+        self.path_allowed = path_allowed
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
@@ -97,7 +100,7 @@ class EvidenceSession:
             ):
                 raise EvidenceError("Invalid evidence range")
             try:
-                data = repo_file(self.workflow.repo, path).read_bytes()
+                target, data = repo_contents(self.workflow.repo, path, path_allowed=self.path_allowed)
                 if len(data) > MAX_SOURCE_BYTES:
                     raise ValueError()
                 text = data.decode("utf-8")
@@ -124,7 +127,8 @@ class EvidenceSession:
                 raise EvidenceError("Evidence file or range unavailable") from None
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
                                      offset, len(span), start == 1 and last == len(lines), content,
-                                     time.monotonic() + self._ttl)
+                                     time.monotonic() + self._ttl,
+                                     str(target) if self.path_allowed is not None else None)
             if _defer_reference:
                 return prepared
             return self._complete_read(prepared, _max_bytes)
@@ -150,7 +154,7 @@ class EvidenceSession:
                 handle = secrets.token_urlsafe(18)
                 self._observations[handle] = _Observation(
                     prepared.ref, prepared.digest, prepared.start, prepared.end,
-                    prepared.offset, stop, prepared.expires,
+                    prepared.offset, stop, prepared.expires, prepared.target,
                 )
             result = {"path": prepared.ref, "start_line": prepared.start, "end_line": prepared.end,
                       "content": content, "evidence_ref": handle,
@@ -195,8 +199,12 @@ class EvidenceSession:
                 try:
                     if value is None:
                         raise EvidenceError("Evidence unavailable")
+                    if self.path_allowed is not None:
+                        # Another entry may have changed the host policy since staging.
+                        repo_file(self.workflow.repo, value.ref, path_allowed=self.path_allowed,
+                                  expected_target=value.target)
                     results.append(self._complete_read(value, allowance))
-                except EvidenceError:
+                except (OSError, ValueError):
                     results.append({"error": "Source read failed; adjust path or range",
                                     "evidence_ref": None})
             return results
@@ -213,7 +221,8 @@ class EvidenceSession:
                 if observation is None or observation.expires <= now:
                     raise EvidenceError("Evidence reference unavailable or expired")
                 try:
-                    data = repo_file(self.workflow.repo, observation.ref).read_bytes()
+                    _, data = repo_contents(self.workflow.repo, observation.ref,
+                                            path_allowed=self.path_allowed, expected_target=observation.target)
                     if hashlib.sha256(data).hexdigest() != observation.digest:
                         raise ValueError()
                 except (OSError, ValueError):
@@ -230,9 +239,12 @@ class EvidenceSession:
         with self._lock:
             sources = self.resolve(references)
             w = self.workflow
-            trail = w.finding(question, content, sources)
+            policy = {"path_allowed": self.path_allowed} if self.path_allowed is not None else {}
+            trail = w.finding(question, content, sources, **policy)
             options = {"repo": w.repo, "repository_id": w.repository_id} if w.repository_id else {}
-            return w.client.push(trail, **options)
+            if self.path_allowed is not None:
+                options["repo"] = w.repo
+            return w.client.push(trail, **options, **policy)
 
     def close(self):
         with self._lock:

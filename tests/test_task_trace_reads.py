@@ -133,7 +133,7 @@ def test_expansion_keeps_host_allowlist_and_does_not_mint_denied_references(iden
 def test_host_path_policy_preserves_last_unit_and_masks_excluded_metadata(
     identity, monkeypatch, max_files, excluded_exists,
 ):
-    from colony import task_reads
+    from pathlib import Path
 
     _, repo, _ = identity
     (repo / "root.py").write_text("import excluded\nimport required\n")
@@ -144,15 +144,15 @@ def test_host_path_policy_preserves_last_unit_and_masks_excluded_metadata(
     server = make(identity, read_admission=lambda: next(units, False),
                   read_path_allowed={"root.py", "required.py"}.__contains__)
     probes = []
-    probe = task_reads.repo_file
+    resolve = Path.resolve
 
-    def record_probe(root, path):
+    def record_probe(path, *args, **kwargs):
         probes.append(path)
-        return probe(root, path)
+        return resolve(path, *args, **kwargs)
 
-    monkeypatch.setattr(task_reads, "repo_file", record_probe)
+    monkeypatch.setattr(Path, "resolve", record_probe)
     result = call(server, paths=["root.py"], max_files=max_files)
-    assert probes == ["required.py"]
+    assert repo / "required.py" in probes and repo / "excluded.py" not in probes
     assert result["unresolved_paths"] == ["excluded.py"]
     assert result["pending_paths"] == (["required.py"] if max_files == 1 else [])
     assert result["read_accounting"] == {"admitted": max_files, "denied": 0, "succeeded": max_files}
@@ -436,7 +436,7 @@ def test_candidate_metadata_rechecks_auth_without_reading_content(identity, monk
 
     server = make(identity)
     probes = []
-    monkeypatch.setattr(task_reads, "repo_file", lambda *a: probes.append(a))
+    monkeypatch.setattr(task_reads, "repo_file", lambda *a, **kw: probes.append(a))
     assert task_reads._local_candidate(server._read_access, "policy.py")
     assert len(probes) == 1 and not server.evidence._observations
     monkeypatch.setattr(server.evidence, "_authorize", lambda: (_ for _ in ()).throw(
@@ -451,7 +451,7 @@ def test_candidate_metadata_failure_keeps_answer_evidence_available(identity, mo
     _, repo, _ = identity
     (repo / "handler.py").write_text("import policy\n")
     server = make(identity)
-    monkeypatch.setattr(task_reads, "repo_file", lambda *a: (_ for _ in ()).throw(
+    monkeypatch.setattr(task_reads, "repo_file", lambda *a, **kw: (_ for _ in ()).throw(
         OSError("private path details")))
     result = call(server, paths=["handler.py"])
     assert result["results"][0]["content"] == "import policy"
