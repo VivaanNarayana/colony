@@ -20,7 +20,8 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-For a propagation question, batch the known caller and operation. Include
+For a propagation question, batch the operation and the wrappers through the
+caller whose outcome the user asked about. Include
 configuration when it affects that path, such as a flag that controls whether
 the caller re-raises an error. Include a concrete dependency
 when the requested explanation depends on it.
@@ -33,8 +34,10 @@ relevant inner limit conditionally, naming the class. Read wiring when the
 question requires the selected implementation and the evidence so far leaves it open.
 When the question specifies a particular backend, that premise supports an answer
 about that backend. A claim about the deployed backend still needs wiring evidence.
-For an exception outcome, include the caller that can catch or propagate the error
-in the initial batch when its path is known.
+For example, if a client lets a transport error escape, a gateway wrapping the
+client can still catch it. Include the gateway in the first batch when its path
+is known and its outcome is requested. If its code is unavailable, report where
+the observed exception escapes and identify the unresolved caller outcome.
 
 For a default value, read the identifiable policy or configuration file directly.
 When it establishes the requested value and precedence, finish source research.
@@ -42,7 +45,10 @@ If it delegates the value, conflicts with another source, or the user requests
 corroboration, follow that evidence. Eligible publication uses the references
 already obtained.
 
-For an absence claim, use already observed evidence and identify the remaining scope.
+For an exact-text question, a literal search across the requested scope can settle
+whether that text occurs. A question about a fact also covers indirect expressions,
+such as a value computed from two settings. For that question, use already observed
+evidence and batch the remaining listed files when the scope fits.
 Reuse the existing listing and the remaining allowance in the latest receipt.
 Reserve units for required listed reads before spending one on an auxiliary search.
 For example, if five units remain for five required files, a literal search would

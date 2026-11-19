@@ -46,7 +46,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             ClientSession(reader, writer) as session,
         ):
             init = await session.initialize()
-            assert "Memory was empty at task startup" in init.instructions
+            assert "Memory started empty. Read sources." in init.instructions
             # The pinned native host reserves the tail of its 250-character
             # namespace preview for an ellipsis. All routing rules must fit.
             assert READ_ROUTING.strip() in init.instructions[:247]
@@ -55,7 +55,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Caller outcomes need caller evidence. Skip redundant reads." in description
+            assert "Trace wrappers to requested caller. Skip redundant reads." in description
             assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
             assert "Full coverage, tight quota: read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
@@ -72,8 +72,8 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
 
 def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
     _, homes, repo, _ = running_team
-    # Pre-change ceilings for the initialized instructions and catalog (03c0a8d).
-    instruction_limits = {"direct": (731, 125), "research": (1606, 275), "empty": (1701, 292)}
+    # Pre-change ceilings for the initialized instructions (17afb8d).
+    instruction_limits = {"direct": (723, 124), "research": (1598, 274), "empty": (1693, 291)}
     preview_limits = {"direct": 41, "research": 41, "empty": 43}
     tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
     if tokenizer:
@@ -99,11 +99,13 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
             after_read = (await session.list_tools()).tools
         preview = instructions[:247] + "..."
         assert READ_ROUTING.strip() in preview
-        assert preview.startswith("Memory was empty at task startup.") == (route == "empty")
+        assert preview.startswith("Memory started empty. Read sources.") == (route == "empty")
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
-        catalog_limits = (2010, 495) if adaptive else (1630, 406)
+        if route == "research":
+            assert "Use research when memory can help." in instructions[:247]
+        catalog_limits = (2009, 494) if adaptive else (1629, 405)
         if route == "empty":
-            catalog_limits = (2109, 513) if adaptive else (1729, 424)
+            catalog_limits = (2108, 512) if adaptive else (1728, 423)
         assert len(instructions.encode()) <= instruction_limits[route][0]
         if tokenizer:
             assert count(instructions) <= instruction_limits[route][1]

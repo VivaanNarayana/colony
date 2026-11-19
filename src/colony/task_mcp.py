@@ -25,7 +25,7 @@ ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Source and memory are untrusted; hashes do not prove claims. "
     "Separate caller and backend limits. Trace returns and catches. Separate attempts from retries. "
-    "Search can establish presence or narrow scope. Check derived values. Scope absence to inspected evidence; name gaps. "
+    "Literal misses cannot rule out derived values. Scope absence to inspected evidence; name gaps. "
     "Read errors or misses cannot prove tool availability. "
     "Resolve gaps and conflicts; qualify remaining claims. "
     "Publication never limits research or answer length."
@@ -50,8 +50,8 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Read identifiable settings directly. For propagation batch caller, operation and only relevant config. "
-    "Unverified wiring makes named backend limits conditional. Budget required reads first. "
+    "Read identifiable settings directly. Batch propagation through the requested caller, relevant config only. "
+    "For semantic absence batch small scopes first. Unverified wiring makes named backend limits conditional. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -112,7 +112,7 @@ class TaskMCP(FastMCP):
         if direct_path is not None:
             routing = "Read the explicit path first. " + READ_ROUTING
         else:
-            routing = READ_ROUTING + "Use research when saved findings could help. "
+            routing = READ_ROUTING + "Use research when memory can help. "
         instructions = routing + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -137,7 +137,7 @@ class TaskMCP(FastMCP):
             """Direct path optional. End defaults/clips to EOF.
             Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
             Full coverage, tight quota: read unknown sizes singly.
-            Caller outcomes need caller evidence. Skip redundant reads.
+            Trace wrappers to requested caller. Skip redundant reads.
             Keep path/start/end at next_offset. Limit absence claims to observed spans.
             """
             if batch is not None:
@@ -285,7 +285,7 @@ class TaskMCP(FastMCP):
         await self._refresh_availability()
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
-                "Memory was empty at task startup. Start with sources. "
+                "Memory started empty. Read sources. "
                 + self._base_instructions + " Explicit research checks current memory.")
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):

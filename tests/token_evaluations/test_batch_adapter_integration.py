@@ -109,14 +109,15 @@ def test_invalid_batch_charged_before_validation(batch_server, batch):
 
 
 @pytest.mark.parametrize('derived', [False, True], ids=['absent', 'computed'])
-def test_finite_scope_fits_one_listing_and_one_batch(batch_server, identity, derived):
+@pytest.mark.parametrize('search_first', [False, True], ids=['reserve-reads', 'spend-one-on-literal'])
+def test_semantic_absence_needs_coverage_of_listed_scope(batch_server, identity, derived, search_first):
     _, repo, _ = identity
     sources = {
         'README.md': 'Work schedule.',
         'settings.py': 'HOURS = 24',
-        'calendar.py': 'from settings import HOURS\nPER_DAY = HOURS * 60' if derived else 'WEEK = 7',
+        'schedule.py': 'WEEK = 7',
         'handler.py': 'def handle(): pass',
-        'worker.py': 'def submit(): pass',
+        'worker.py': 'from settings import HOURS\nPER_DAY = HOURS * 60' if derived else 'def submit(): pass',
     }
     for name, content in sources.items():
         (repo / name).write_text(content, encoding='utf-8')
@@ -126,13 +127,24 @@ def test_finite_scope_fits_one_listing_and_one_batch(batch_server, identity, der
     paths = listing.content[0].text.splitlines()
     remaining = json.loads(listing.content[-1].text)['research_budget']['remaining']
     assert remaining == len(paths) == 5
+    if search_first:
+        search = asyncio.run(server.call_tool('fixture_search', {'query': '1440'}))
+        assert len(search.content) == 1  # No source blocks for either snapshot.
+        remaining = json.loads(search.content[0].text)['research_budget']['remaining']
+        assert remaining == 4
     result = asyncio.run(server.call_tool('read', {'batch': [{'path': p} for p in paths]}))
     pages = json.loads(result[0].text)['results']
     assert json.loads(result[-1].text)['research_budget'] == {
-        'admitted': 5, 'denied': 0, 'succeeded': 5, 'remaining': 0}
-    assert all(p['complete_file'] and p['evidence_ref'] for p in pages)
-    assert {p['path']: p['content'] for p in pages} == sources
-    assert all('1440' not in p['content'] for p in pages)
+        'admitted': remaining, 'denied': 5 - remaining, 'succeeded': remaining, 'remaining': 0}
+    observed = pages[:remaining]
+    assert all(p['complete_file'] and p['evidence_ref'] for p in observed)
+    assert {p['path']: p['content'] for p in observed} == {path: sources[path] for path in paths[:remaining]}
+    assert all('1440' not in p['content'] for p in observed)
+    assert paths[-1] == 'worker.py'
+    if search_first:
+        assert pages[-1]['evidence_ref'] is None and 'content' not in pages[-1]
+    else:
+        assert ('HOURS * 60' in pages[-1]['content']) == derived
 
 
 @pytest.mark.parametrize(('file_count', 'file_bytes', 'group_size'), [

@@ -156,7 +156,7 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     units = iter(range(3 if configured else 2))
     server = TaskMCP(Workflow(client, "team", repo), "Does send's ConnectionError reach handle's caller?",
                      read_admission=lambda: next(units, None) is not None)
-    assert "For propagation batch caller, operation and only relevant config." in server.instructions[:247]
+    assert "Batch propagation through the requested caller, relevant config only." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(page["complete_file"] for page in pages)
     assert [page["content"] for page in pages] == [sources[path] for path in paths]
@@ -164,22 +164,30 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     assert server._read_access.admitted == len(paths) and server._read_access.denied == 0
 
 
-def test_backend_raise_alone_cannot_distinguish_caller_outcomes(identity):
+@pytest.mark.parametrize("caught", [False, True], ids=["propagates", "caught-by-endpoint"])
+@pytest.mark.parametrize("can_read_endpoint", [False, True], ids=["wrapper-only", "through-endpoint"])
+def test_propagation_needs_evidence_through_requested_caller(identity, caught, can_read_endpoint):
     client, repo, _ = identity
-    (repo / "backend.py").write_text("def send():\n    raise ConnectionError()")
-    handler = repo / "entry.py"
-    caller = "def handle(send):\n    return send()"
-    catching = "def handle(send):\n    try:\n        return send()\n    except ConnectionError:\n        return None"
-    for source in (caller, catching):
-        handler.write_text(source)
-        server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach handle's caller?",
-                         read_path_allowed=lambda path: path == "backend.py")
-        tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-        assert "Caller outcomes need caller evidence." in tool.description
-        backend, unavailable = read(server, batch=[{"path": "backend.py"}, {"path": "entry.py"}])["results"]
-        assert backend["content"] == "def send():\n    raise ConnectionError()"
-        assert unavailable["evidence_ref"] is None and "content" not in unavailable
-        assert [s.ref for s in server.evidence.resolve([backend["evidence_ref"]])] == ["backend.py"]
+    backend = "def send():\n    raise ConnectionError()"
+    wrapper = "from backend import send\ndef fetch():\n    return send()"
+    body = "try:\n        return fetch()\n    except ConnectionError:\n        return None" if caught else "return fetch()"
+    endpoint = f"from client import fetch\ndef handle():\n    {body}"
+    sources = {"backend.py": backend, "client.py": wrapper, "gateway.py": endpoint}
+    for path, source in sources.items():
+        (repo / path).write_text(source, encoding="utf-8")
+    server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach the caller of handle?",
+                     read_path_allowed=lambda path: path != "gateway.py" or can_read_endpoint)
+    tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
+    assert "Trace wrappers to requested caller." in tool.description
+    pages = read(server, batch=[{"path": path} for path in sources])["results"]
+    assert [p["content"] for p in pages[:2]] == [backend, wrapper]
+    refs = [p["evidence_ref"] for p in pages if p["evidence_ref"]]
+    if can_read_endpoint:
+        assert pages[2]["complete_file"] and pages[2]["content"] == endpoint
+        assert [s.ref for s in server.evidence.resolve(refs)] == list(sources)
+    else:
+        assert pages[2]["evidence_ref"] is None and "content" not in pages[2]
+        assert [s.ref for s in server.evidence.resolve(refs)] == ["backend.py", "client.py"]
 
 
 @pytest.mark.parametrize("read_limit", [2, 1], ids=["definition-readable", "quota-exhausted"])
@@ -192,7 +200,7 @@ def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
     permits = iter(range(read_limit))
     server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Search can establish presence or narrow scope. Check derived values." in server.instructions
+    assert "Literal misses cannot rule out derived values." in server.instructions
     assert "Scope absence to inspected evidence; name gaps." in server.instructions
     overview = read(server, path="README.md")
     assert "schedule.py" in overview["content"]
@@ -252,7 +260,7 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     permits = iter(range(remaining))
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository set STEP_LIMIT?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Budget required reads first." in server.instructions[:247]
+    assert "For semantic absence batch small scopes first." in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
     assert "tight quota" in tool.description and "Limit absence claims to observed spans" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])
