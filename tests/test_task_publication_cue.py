@@ -32,10 +32,15 @@ def test_routing_is_shared_and_direct_task_can_promote_without_forced_lookup(ide
     for server in (plain, adaptive):
         description = next(t.description for t in asyncio.run(server.list_tools()) if t.name == "research")
         assert description.startswith(RESEARCH_GUIDANCE)
+        assert "requested memory or prior findings that could fill a gap" in description
+        assert "Otherwise skip lookup for settled facts" in description
+        assert "Repository absence needs current source coverage" in description
         assert call(server)["content"] == "TIMEOUT = 30"
+        assert server._read_access.admitted == 1
     assert not seen
     for server in (plain, adaptive):
         assert call(server, "research")["hit"] is False
+        assert server._read_access.admitted == 1
     assert len(seen) == 2
 
 

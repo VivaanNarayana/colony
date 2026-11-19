@@ -1,6 +1,8 @@
 """Guidance delivery and evidence invariants; no model-compliance claim."""
 import asyncio
+import inspect
 import json
+from textwrap import dedent
 
 import pytest
 from test_workflow import identity as identity
@@ -35,7 +37,7 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
         assert "8 ordered entries sharing 16000 UTF-8 content bytes" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
-        assert "qualify remaining claims" in server.instructions
+        assert "qualify uncertainty" in server.instructions
         assert "detail, examples and citations" in server.instructions
         assert "Publication never limits research or answer length" in server.instructions
 
@@ -74,6 +76,73 @@ def read(server, **arguments):
     return json.loads(asyncio.run(server.call_tool("read", arguments))[0].text)
 
 
+@pytest.mark.parametrize(("outcomes", "catch_at_endpoint", "expected", "calls"), [
+    (["ok"], False, "ok", (1, 1)),
+    (["error", "error", "retry"] * 2, False, "retry", (2, 6)),
+    (["error"] * 3, False, "raised", (1, 3)),
+    (["error"] * 3, True, "offline", (1, 3)),
+], ids=["early-return", "retryable-returns", "uncaught", "caught-outside-loop"])
+def test_retry_evidence_and_reachable_attempts_in_one_batch(
+        identity, monkeypatch, outcomes, catch_at_endpoint, expected, calls):
+    client, repo, _ = identity
+
+    def retry_backend(send):
+        for attempt in range(3):
+            try:
+                return send()
+            except ConnectionError:
+                if attempt == 2:
+                    raise
+
+    def handle(backend, catch_at_endpoint):
+        try:
+            for _ in range(2):
+                result = backend()
+                if result != "retry":
+                    return result
+            return result
+        except ConnectionError:
+            if catch_at_endpoint:
+                return "offline"
+            raise
+
+    # Read the same fixed fixture functions exercised below. Never execute source
+    # received from the adapter. The question explicitly selects the inner backend.
+    files = {"endpoint.py": handle, "backend.py": retry_backend}
+    for name, function in files.items():
+        (repo / name).write_text(dedent(inspect.getsource(function)), encoding="utf-8")
+    server = TaskMCP(Workflow(client, "team", repo), "Trace handle using retry_backend.")
+    monkeypatch.setattr(client, "ask", lambda *args, **kw: pytest.fail("lookup for settled source facts"))
+    pages = read(server, batch=[{"path": name} for name in files])["results"]
+    assert [p["content"] for p in pages] == [dedent(inspect.getsource(f)).rstrip("\n") for f in files.values()]
+    assert all(p["complete_file"] and p["evidence_ref"] for p in pages)
+    assert (server._read_access.admitted, server._read_access.denied) == (2, 0)
+    assert "Outer retries require a return or catch leading back to the loop." in server.instructions
+
+    remaining = iter(outcomes)
+    outer = inner = 0
+
+    def send():
+        nonlocal inner
+        inner += 1
+        value = next(remaining)
+        if value == "error":
+            raise ConnectionError
+        return value
+
+    def selected_backend():
+        nonlocal outer
+        outer += 1
+        return retry_backend(send)
+
+    if expected == "raised":
+        with pytest.raises(ConnectionError):
+            handle(selected_backend, catch_at_endpoint)
+    else:
+        assert handle(selected_backend, catch_at_endpoint) == expected
+    assert (outer, inner) == calls
+
+
 @pytest.mark.parametrize(("explicit_backend", "caller_catches"), [
     (False, False), (True, False), (True, True),
 ], ids=["unbound", "exception-propagates", "caller-handles-exception"])
@@ -109,8 +178,8 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
     guidance = server.instructions
-    assert "Separate caller and backend limits. Trace returns and catches." in guidance
-    assert "Separate attempts from retries." in guidance
+    assert "Outer retries require a return or catch leading back to the loop." in guidance
+    assert "Distinguish attempts from retries." in guidance
 
     # Bounds require the caller's +1. Only the named-backend question needs
     # the concrete raise; the operation itself catches no exception.
@@ -156,7 +225,7 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     units = iter(range(3 if configured else 2))
     server = TaskMCP(Workflow(client, "team", repo), "Does send's ConnectionError reach handle's caller?",
                      read_admission=lambda: next(units, None) is not None)
-    assert "Batch propagation through the requested caller, relevant config only." in server.instructions[:247]
+    assert "Batch the requested caller chain with relevant config." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(page["complete_file"] for page in pages)
     assert [page["content"] for page in pages] == [sources[path] for path in paths]
@@ -178,7 +247,7 @@ def test_propagation_needs_evidence_through_requested_caller(identity, caught, c
     server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach the caller of handle?",
                      read_path_allowed=lambda path: path != "gateway.py" or can_read_endpoint)
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "Trace wrappers to requested caller." in tool.description
+    assert "Batch deciding files" in tool.description
     pages = read(server, batch=[{"path": path} for path in sources])["results"]
     assert [p["content"] for p in pages[:2]] == [backend, wrapper]
     refs = [p["evidence_ref"] for p in pages if p["evidence_ref"]]
@@ -200,8 +269,8 @@ def test_absence_guidance_and_evidence_after_literal_miss(identity, read_limit):
     permits = iter(range(read_limit))
     server = TaskMCP(Workflow(client, "team", repo), "Does the schedule specify 1440 per day?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Literal misses cannot rule out derived values." in server.instructions
-    assert "Scope absence to inspected evidence; name gaps." in server.instructions
+    assert "Literal misses can hide derived values." in server.instructions
+    assert "Name gaps; unchecked fields stay unknown." in server.instructions
     overview = read(server, path="README.md")
     assert "schedule.py" in overview["content"]
     assert [s.ref for s in server.evidence.resolve([overview["evidence_ref"]])] == ["README.md"]
@@ -238,7 +307,7 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wi
         question += " Which backend does main supply?"
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Unverified wiring makes named backend limits conditional." in server.instructions[:247]
+    assert "Backend limits require selection by wiring or the question." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(p["complete_file"] for p in pages)
     assert [p["content"] for p in pages] == [files[path] for path in paths]
@@ -260,7 +329,7 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     permits = iter(range(remaining))
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository set STEP_LIMIT?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "For semantic absence batch small scopes first." in server.instructions[:247]
+    assert "Reserve listed reads before searching for semantic absence." in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
     assert "tight quota" in tool.description and "Limit absence claims to observed spans" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])

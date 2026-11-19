@@ -14,8 +14,11 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive lookup share the same routing guidance: look up saved findings
-when useful, read known paths directly, and batch independent reads. Prioritize evidence
+Ordinary and adaptive lookup share the same routing guidance. Use memory when the
+user asks about it or when a prior finding could fill a gap, including on a repeat
+question. Once current source settles the requested facts, continue to the answer
+and any eligible publication. A memory miss provides no evidence of repository absence.
+Read known paths directly and batch independent reads. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
@@ -27,6 +30,10 @@ the caller re-raises an error. Include a concrete dependency
 when the requested explanation depends on it.
 Two configured attempts permit one retry. If an injected transport raises on its first
 call and the wrapper lets the exception propagate, the wrapper makes one call.
+For example, if a backend exhausts three sends and raises on the first wrapper
+attempt, two configured wrapper attempts still yield three sends on that path.
+Count a second wrapper attempt only if a return or catch leads back to that loop.
+A catch outside the loop can change the caller's outcome without adding a retry.
 An implementation in the repository establishes what that class does. To apply
 its limit to the actual call, check where the caller receives or constructs the
 dependency. If selection is unknown, state the caller's own limit and give any
@@ -66,7 +73,10 @@ together. Read files of unknown size individually so each gets its own
 Inspect computed values, continue needed pages at their
 returned offsets, and state any scope that access or allowance leaves uncovered.
 For example, if three of five relevant files were read and two were denied,
-report what the three establish and identify the two still unchecked.
+report what the three establish and identify the two still unchecked. In a
+structured answer, express that uncertainty in the field reporting the finding
+whenever the format permits. A caveat in prose cannot support a categorical
+false value for the whole repository.
 A targeted search remains useful when it can establish presence or narrow a larger scope.
 
 The adapter puts direct reads, caller batching, backend selection and quota

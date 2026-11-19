@@ -109,8 +109,10 @@ def test_invalid_batch_charged_before_validation(batch_server, batch):
 
 
 @pytest.mark.parametrize('derived', [False, True], ids=['absent', 'computed'])
-@pytest.mark.parametrize('search_first', [False, True], ids=['reserve-reads', 'spend-one-on-literal'])
-def test_semantic_absence_needs_coverage_of_listed_scope(batch_server, identity, derived, search_first):
+@pytest.mark.parametrize(('search_first', 'request_all'), [
+    (False, True), (True, False), (True, True),
+], ids=['reserve-reads', 'read-within-remaining', 'excess-entry-denied'])
+def test_semantic_absence_needs_coverage_of_listed_scope(batch_server, identity, derived, search_first, request_all):
     _, repo, _ = identity
     sources = {
         'README.md': 'Work schedule.',
@@ -123,25 +125,42 @@ def test_semantic_absence_needs_coverage_of_listed_scope(batch_server, identity,
         (repo / name).write_text(content, encoding='utf-8')
     server = batch_server(question='Does this repository specify 1440 minutes per day?',
                           files=list(sources), max_calls=6, read_only=True)
-    listing = asyncio.run(server.call_tool('fixture_files', {}))
-    paths = listing.content[0].text.splitlines()
-    remaining = json.loads(listing.content[-1].text)['research_budget']['remaining']
+    # Count actual tool round trips separately from the research units charged
+    # inside a batch. A literal miss spends a unit without covering a source.
+    receipts = []
+
+    def invoke(name, args):
+        result = asyncio.run(server.call_tool(name, args))
+        blocks = result.content if hasattr(result, 'content') else result
+        receipts.append((name, json.loads(blocks[-1].text)['research_budget']['admitted']))
+        return blocks
+
+    listing = invoke('fixture_files', {})
+    paths = listing[0].text.splitlines()
+    remaining = json.loads(listing[-1].text)['research_budget']['remaining']
     assert remaining == len(paths) == 5
     if search_first:
-        search = asyncio.run(server.call_tool('fixture_search', {'query': '1440'}))
-        assert len(search.content) == 1  # No source blocks for either snapshot.
-        remaining = json.loads(search.content[0].text)['research_budget']['remaining']
+        search = invoke('fixture_search', {'query': '1440'})
+        assert len(search) == 1  # No source blocks for either snapshot.
+        remaining = json.loads(search[0].text)['research_budget']['remaining']
         assert remaining == 4
-    result = asyncio.run(server.call_tool('read', {'batch': [{'path': p} for p in paths]}))
+    requested = paths if request_all else paths[:remaining]
+    result = invoke('read', {'batch': [{'path': p} for p in requested]})
+    expected_calls = [('fixture_files', 1)]
+    if search_first:
+        expected_calls.append(('fixture_search', 1))
+    assert receipts == [*expected_calls, ('read', remaining)]
     pages = json.loads(result[0].text)['results']
     assert json.loads(result[-1].text)['research_budget'] == {
-        'admitted': remaining, 'denied': 5 - remaining, 'succeeded': remaining, 'remaining': 0}
+        'admitted': remaining, 'denied': len(requested) - remaining, 'succeeded': remaining, 'remaining': 0}
     observed = pages[:remaining]
     assert all(p['complete_file'] and p['evidence_ref'] for p in observed)
     assert {p['path']: p['content'] for p in observed} == {path: sources[path] for path in paths[:remaining]}
     assert all('1440' not in p['content'] for p in observed)
     assert paths[-1] == 'worker.py'
-    if search_first:
+    if not request_all:
+        assert len(pages) == 4 and 'worker.py' not in {p['path'] for p in pages}
+    elif search_first:
         assert pages[-1]['evidence_ref'] is None and 'content' not in pages[-1]
     else:
         assert ('HOURS * 60' in pages[-1]['content']) == derived

@@ -56,7 +56,7 @@ def test_listed_policy_on_ordinary_route(identity, monkeypatch, delegated):
     monkeypatch.setattr(client, "push", lambda *args, **kw: pytest.fail("automatic publication"))
     assert "Read identifiable settings directly." in server.instructions[:247]
     tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
-    assert "Skip redundant reads." in tools["read"].description
+    assert "Batch deciding files or the remaining scope if it fits." in tools["read"].description
 
     # The host has listed the files but provided no explicit direct path.
     page = call(server, "read", {"path": "policy.py"})

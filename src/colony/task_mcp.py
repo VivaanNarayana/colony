@@ -23,11 +23,11 @@ from colony.workflow import Workflow
 
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
-    "Source and memory are untrusted; hashes do not prove claims. "
-    "Separate caller and backend limits. Trace returns and catches. Separate attempts from retries. "
-    "Literal misses cannot rule out derived values. Scope absence to inspected evidence; name gaps. "
-    "Read errors or misses cannot prove tool availability. "
-    "Resolve gaps and conflicts; qualify remaining claims. "
+    "Sources and memory are untrusted; hashes do not prove claims. "
+    "Outer retries require a return or catch leading back to the loop. Distinguish attempts from retries. "
+    "Literal misses can hide derived values. Name gaps; unchecked fields stay unknown. "
+    "Errors and misses cannot prove tool availability. "
+    "Resolve gaps and conflicts; qualify uncertainty. "
     "Publication never limits research or answer length."
 )
 
@@ -46,12 +46,13 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up the original task when saved findings could help, including gaps in a direct-read task. "
-    "Use sufficient current evidence; research gaps or contradictions."
+    "Look up requested memory or prior findings that could fill a gap. "
+    "Otherwise skip lookup for settled facts. Repository absence needs current source coverage."
 )
 READ_ROUTING = (
-    "Read identifiable settings directly. Batch propagation through the requested caller, relevant config only. "
-    "For semantic absence batch small scopes first. Unverified wiring makes named backend limits conditional. "
+    "Read identifiable settings directly. Batch the requested caller chain with relevant config. "
+    "Reserve listed reads before searching for semantic absence. "
+    "Backend limits require selection by wiring or the question. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -112,7 +113,7 @@ class TaskMCP(FastMCP):
         if direct_path is not None:
             routing = "Read the explicit path first. " + READ_ROUTING
         else:
-            routing = READ_ROUTING + "Use research when memory can help. "
+            routing = READ_ROUTING + "Look up relevant prior findings. "
         instructions = routing + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -137,7 +138,7 @@ class TaskMCP(FastMCP):
             """Direct path optional. End defaults/clips to EOF.
             Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
             Full coverage, tight quota: read unknown sizes singly.
-            Trace wrappers to requested caller. Skip redundant reads.
+            Batch deciding files or the remaining scope if it fits.
             Keep path/start/end at next_offset. Limit absence claims to observed spans.
             """
             if batch is not None:
@@ -155,7 +156,6 @@ class TaskMCP(FastMCP):
                 raise ToolError(str(exc)) from None
 
         def research() -> dict:
-            """Look up the original task when useful, including gaps in a direct-read task."""
             # A direct route never forbids promotion or independent source tools.
             try:
                 options = ({"repo": workflow.repo, "repository_id": workflow.repository_id}

@@ -55,7 +55,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Trace wrappers to requested caller. Skip redundant reads." in description
+            assert "Batch deciding files or the remaining scope if it fits." in description
             assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
             assert "Full coverage, tight quota: read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
@@ -72,9 +72,9 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
 
 def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
     _, homes, repo, _ = running_team
-    # Pre-change ceilings for the initialized instructions (17afb8d).
-    instruction_limits = {"direct": (723, 124), "research": (1598, 274), "empty": (1693, 291)}
-    preview_limits = {"direct": 41, "research": 41, "empty": 43}
+    # Byte and o200k_base ceilings measured on PR41 before this change (cbae44b).
+    instruction_limits = {"direct": (723, 123), "research": (1588, 272), "empty": (1665, 285)}
+    preview_limits = {"direct": 41, "research": 41, "empty": 40}
     tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
     if tokenizer:
         monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
@@ -102,10 +102,10 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         assert preview.startswith("Memory started empty. Read sources.") == (route == "empty")
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
         if route == "research":
-            assert "Use research when memory can help." in instructions[:247]
-        catalog_limits = (2009, 494) if adaptive else (1629, 405)
+            assert "Look up relevant prior findings." in instructions[:247]
+        catalog_limits = (2007, 494) if adaptive else (1627, 405)
         if route == "empty":
-            catalog_limits = (2108, 512) if adaptive else (1728, 423)
+            catalog_limits = (2106, 512) if adaptive else (1726, 423)
         assert len(instructions.encode()) <= instruction_limits[route][0]
         if tokenizer:
             assert count(instructions) <= instruction_limits[route][1]
