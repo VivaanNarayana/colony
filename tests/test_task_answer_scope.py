@@ -109,7 +109,6 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
     guidance = server.instructions
-    assert "Batch caller, config and operation for propagation." in guidance[:247]
     assert "Separate caller and backend limits. Trace returns and catches." in guidance
     assert "Separate attempts from retries." in guidance
 
@@ -136,6 +135,33 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(
     assert {s.ref for s in stored[0].sources} == {"config.py", "caller.py", "operation.py"}
     assert server._read_access.admitted == len(paths)
     assert server._read_access.denied == 0
+
+
+@pytest.mark.parametrize("configured", [False, True], ids=["two-units", "config-controls-propagation"])
+def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured):
+    client, repo, _ = identity
+    caller = "from operation import send\ndef handle():\n    return send()"
+    config = "LOG_LEVEL = 'INFO'"
+    paths = ["caller.py", "operation.py"]
+    if configured:
+        caller = ("from operation import send\nfrom config import SUPPRESS\ndef handle():\n"
+                  "    try:\n        return send()\n    except ConnectionError:\n"
+                  "        if not SUPPRESS:\n            raise")
+        config += "\nSUPPRESS = True"
+        paths.append("config.py")
+    sources = {"caller.py": caller, "operation.py": "def send():\n    raise ConnectionError()", "config.py": config}
+    for path, content in sources.items():
+        (repo / path).write_text(content, encoding="utf-8")
+
+    units = iter(range(3 if configured else 2))
+    server = TaskMCP(Workflow(client, "team", repo), "Does send's ConnectionError reach handle's caller?",
+                     read_admission=lambda: next(units, None) is not None)
+    assert "For propagation batch caller, operation and only relevant config." in server.instructions[:247]
+    pages = read(server, batch=[{"path": path} for path in paths])["results"]
+    assert all(page["complete_file"] for page in pages)
+    assert [page["content"] for page in pages] == [sources[path] for path in paths]
+    assert [s.ref for s in server.evidence.resolve([p["evidence_ref"] for p in pages])] == paths
+    assert server._read_access.admitted == len(paths) and server._read_access.denied == 0
 
 
 def test_backend_raise_alone_cannot_distinguish_caller_outcomes(identity):
@@ -204,7 +230,7 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wi
         question += " Which backend does main supply?"
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Condition backend limits on a named implementation unless visibly wired." in server.instructions[:247]
+    assert "Unverified wiring makes named backend limits conditional." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(p["complete_file"] for p in pages)
     assert [p["content"] for p in pages] == [files[path] for path in paths]

@@ -20,8 +20,9 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-For a call-chain question, batch the known caller, configuration and operation
-needed to connect the settings to the behavior. Include a concrete dependency
+For a propagation question, batch the known caller and operation. Include
+configuration when it affects that path, such as a flag that controls whether
+the caller re-raises an error. Include a concrete dependency
 when the requested explanation depends on it.
 Two configured attempts permit one retry. If an injected transport raises on its first
 call and the wrapper lets the exception propagate, the wrapper makes one call.

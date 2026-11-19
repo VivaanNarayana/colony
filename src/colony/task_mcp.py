@@ -50,8 +50,8 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Read identifiable settings directly. Batch caller, config and operation for propagation. "
-    "Condition backend limits on a named implementation unless visibly wired. Budget required reads first. "
+    "Read identifiable settings directly. For propagation batch caller, operation and only relevant config. "
+    "Unverified wiring makes named backend limits conditional. Budget required reads first. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
