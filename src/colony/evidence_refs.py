@@ -8,8 +8,8 @@ import time
 from dataclasses import dataclass
 
 from colony.models import Source
-from colony.security import PATTERNS, fingerprint, verify
-from colony.validation import MAX_SOURCE_BYTES, repo_contents, repo_file
+from colony.security import PATTERNS, fingerprint, scrub, verify
+from colony.validation import MAX_SOURCE_BYTES, PinnedSourcePaths, repo_contents, repo_file
 
 
 class EvidenceError(ValueError):
@@ -140,6 +140,12 @@ class EvidenceSession:
             if (not isinstance(prepared, _PreparedRead) or prepared.owner is not self
                     or type(max_bytes) is not int or not 0 <= max_bytes <= 16000):
                 raise EvidenceError("Invalid prepared evidence")
+            if prepared.target is not None or self.path_allowed is not None:
+                try:
+                    repo_file(self.workflow.repo, prepared.ref, path_allowed=self.path_allowed,
+                              expected_target=prepared.target)
+                except (OSError, ValueError):
+                    raise EvidenceError("Evidence file or range unavailable") from None
             content = prepared.content[:max_bytes].decode("utf-8", errors="ignore")
             if prepared.content and not content:
                 raise EvidenceError("Evidence page cannot make progress")
@@ -199,10 +205,6 @@ class EvidenceSession:
                 try:
                     if value is None:
                         raise EvidenceError("Evidence unavailable")
-                    if self.path_allowed is not None:
-                        # Another entry may have changed the host policy since staging.
-                        repo_file(self.workflow.repo, value.ref, path_allowed=self.path_allowed,
-                                  expected_target=value.target)
                     results.append(self._complete_read(value, allowance))
                 except (OSError, ValueError):
                     results.append({"error": "Source read failed; adjust path or range",
@@ -211,6 +213,9 @@ class EvidenceSession:
 
     def resolve(self, references: list[str]) -> list[Source]:
         """Resolve all references atomically or fail; never substitute new hashes."""
+        return self._resolve(references, self.path_allowed)
+
+    def _resolve(self, references, path_allowed):
         with self._lock:
             self._authorize(publishing=True)
             if not isinstance(references, list) or not 1 <= len(references) <= 50:
@@ -222,7 +227,7 @@ class EvidenceSession:
                     raise EvidenceError("Evidence reference unavailable or expired")
                 try:
                     _, data = repo_contents(self.workflow.repo, observation.ref,
-                                            path_allowed=self.path_allowed, expected_target=observation.target)
+                                            path_allowed=path_allowed, expected_target=observation.target)
                     if hashlib.sha256(data).hexdigest() != observation.digest:
                         raise ValueError()
                 except (OSError, ValueError):
@@ -237,9 +242,19 @@ class EvidenceSession:
         The host must keep claims within those spans and apply publication policy.
         """
         with self._lock:
-            sources = self.resolve(references)
+            if self.path_allowed is None:
+                sources = self.resolve(references)
+                policy = {}
+            else:
+                pins = PinnedSourcePaths(self.path_allowed)
+                sources = self._resolve(references, pins)
+                # Sanitization may rewrite a ref. Only the observed names and targets
+                # may support the outgoing finding, including an offline queue entry.
+                if any(scrub(source.ref) != source.ref for source in sources):
+                    raise EvidenceError("Observed source name unavailable for publication")
+                pins.observed_only = True
+                policy = {"path_allowed": pins}
             w = self.workflow
-            policy = {"path_allowed": self.path_allowed} if self.path_allowed is not None else {}
             trail = w.finding(question, content, sources, **policy)
             options = {"repo": w.repo, "repository_id": w.repository_id} if w.repository_id else {}
             if self.path_allowed is not None:

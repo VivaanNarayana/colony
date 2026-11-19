@@ -26,6 +26,7 @@ from colony.models import (
 )
 from colony.security import fingerprint, private_write, scrub, token, verify
 from colony.usage import UsageJournal
+from colony.validation import PinnedSourcePaths, repo_file
 
 
 def _usage_outcome(operation, result, error):
@@ -354,8 +355,10 @@ class Client:
             return fit_response(value, budget, question=question) if budget is not None else value
 
         context = None
-        if path_allowed is not None and repo is None:
-            raise ValueError("Restricted lookups require an explicit repository")
+        if path_allowed is not None:
+            if repo is None:
+                raise ValueError("Restricted lookups require an explicit repository")
+            path_allowed = PinnedSourcePaths(path_allowed)
         if repository_id is not None:
             from colony.git_context import capture
 
@@ -434,23 +437,22 @@ class Client:
                         result["context_budget"] = receipt
                     elif receipt["limited"]:
                         result["context_budget"]["limited"] = True
+            result = finish(result)
             if path_allowed is not None and result.get("hit"):
                 # Check the delivered bundle, including remote-only hits and
                 # saved prose whose support spans multiple files.
-                from colony.validation import repo_file
-
                 try:
                     refs = {s["ref"] for s in result["sources"]}
                     if not refs:
                         raise ValueError()
-                    for ref in refs:
+                    for ref in refs.union(path_allowed.targets):
                         repo_file(repo, ref, path_allowed=path_allowed)
                     for field, key in (("evidence", "ref"), ("current_repository_reads", "path")):
                         if any(item[key] not in refs for item in result.get(field, [])):
                             raise ValueError()
                 except (KeyError, TypeError, ValueError, OSError):
                     return finish({"hit": False, "reason": "lookup_unavailable"})
-            return finish(result)
+            return result
         except httpx.TransportError:
             return finish({"hit": False, "reason": "server_unavailable"})
 
@@ -599,10 +601,11 @@ class Client:
     @_observed("publish")
     def push(self, trail: Trail, *, repo: Path | None = None, repository_id: str | None = None,
              path_allowed=None):
+        if path_allowed is not None and not isinstance(path_allowed, PinnedSourcePaths):
+            path_allowed = PinnedSourcePaths(path_allowed)
+
         def authorize_sources():
             if path_allowed is not None:
-                from colony.validation import repo_file
-
                 if repo is None:
                     raise ValueError("Restricted publication requires an explicit repository")
                 for source in trail.sources:
@@ -639,6 +642,7 @@ class Client:
             temporary = queue / f".{uuid.uuid4().hex}.tmp"
             try:
                 private_write(temporary, encrypted)
+                authorize_sources()
                 with suppress(FileExistsError):
                     # Publish complete ciphertext without replacing an existing envelope.
                     # Same-directory hard links are atomic on supported local filesystems.

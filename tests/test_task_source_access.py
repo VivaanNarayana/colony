@@ -13,6 +13,7 @@ from colony.evidence_refs import EvidenceError
 from colony.git_client import checked_sources
 from colony.models import ContextBudget
 from colony.task_mcp import TaskMCP
+from colony.validation import snapshot
 from colony.workflow import Workflow
 
 
@@ -213,3 +214,175 @@ def test_retargeted_alias_cannot_release_staged_content_or_rebind_a_reference(id
     with pytest.raises(EvidenceError):
         server.evidence.resolve([original["evidence_ref"]])
     assert call(server, "read", path="alias/value.py")["content"] == "LIMIT = 7"
+
+
+def matching_targets(repo, content="LIMIT = 7"):
+    for folder in ("first", "second"):
+        (repo / folder).mkdir()
+        (repo / folder / "value.py").write_text(content)
+    alias = repo / "alias"
+    directory_link(alias, repo / "first")
+
+    def switch():
+        alias.rename(repo / "old-alias")
+        directory_link(alias, repo / "second")
+
+    return switch
+
+
+@pytest.mark.parametrize("max_files", [2, 6])
+def test_trace_delivers_only_hints_reachable_from_still_authorized_roots(identity, max_files):
+    client, repo, _ = identity
+    switch = matching_targets(repo, "import private_child\nimport private_missing\nimport shared")
+    (repo / "private_child.py").write_text("import private_grandchild")
+    (repo / "shared.py").write_text("LIMIT = 9")
+    (repo / "caller.py").write_text("import shared")
+    attempts = []
+
+    def admit():
+        attempts.append(1)
+        if len(attempts) == 2:
+            switch()
+        return True
+
+    server = TaskMCP(Workflow(client, "team", repo), "Trace the limits", trace_reads=True,
+                     read_path_allowed=lambda ref: True, read_admission=admit)
+    server.evidence._capacity = 1
+    trace = call(server, "trace_read", paths=["alias/value.py", "caller.py"], max_files=max_files)
+    pages = trace["results"]
+    assert pages[0].get("error") and pages[0]["evidence_ref"] is None
+    assert pages[1]["content"] == "import shared" and pages[1]["evidence_ref"]
+    assert "private_" not in json.dumps(trace)
+    assert {obs.ref for obs in server.evidence._observations.values()} == {"caller.py"}
+    if max_files == 2:
+        assert trace["pending_paths"] == ["shared.py"] and len(pages) == 2
+    else:
+        assert not trace["pending_paths"] and len(pages) == 3
+        assert pages[2]["content"] == "LIMIT = 9" and pages[2]["evidence_ref"] is None
+    assert trace["read_accounting"] == {
+        "admitted": len(attempts), "denied": 0, "succeeded": len(pages) - 1,
+    }
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+@pytest.mark.parametrize("stage", ["excerpt", "delivery"])
+def test_git_lookup_keeps_source_targets_through_delivery(transport, monkeypatch, adaptive, stage):
+    from colony import git_client
+
+    client, repo, _, _ = transport
+    switch = matching_targets(repo)
+    (repo / "stable.py").write_text("STABLE = 3")
+    refs = ["stable.py", "alias/value.py"]
+    workflow = Workflow(client, "team", repo, repository_id="project")
+    trail = workflow.finding("Explain the two limits", "The configured limits are 3 and 7.",
+                             [snapshot(repo, ref) for ref in refs])
+    assert client.push(trail, repo=repo, repository_id="project")["stored"]
+    options = {"context_budget": ContextBudget(max_tokens=8192)} if adaptive else {}
+    server = TaskMCP(workflow, trail.question, read_path_allowed=lambda ref: True, **options)
+    assert call(server, "research")["hit"]
+    boundary = "_local_reads" if stage == "excerpt" else "verify_lookup"
+    original = getattr(git_client, boundary)
+    changes = []
+
+    def change_target(*args, **kwargs):
+        changes.append(stage)
+        if stage == "excerpt":
+            switch()
+        result = original(*args, **kwargs)
+        if stage == "delivery":
+            assert result["hit"]
+            switch()
+        return result
+
+    monkeypatch.setattr(git_client, boundary, change_target)
+    result = call(server, "research")
+    assert changes == [stage] and not result["hit"]
+    assert not {"content", "evidence", "current_repository_reads", "sources"}.intersection(result)
+    assert call(server, "read", path=refs[1])["content"] == "LIMIT = 7"
+
+
+@pytest.mark.parametrize("git", [False, True])
+@pytest.mark.parametrize("stage", ["send", "queue", "queue_commit", "stable_offline"])
+def test_publication_pins_target_through_send_and_queue(identity, monkeypatch, git, stage):
+    client, repo, _ = identity
+    switch = matching_targets(repo)
+    workflow = Workflow(client, "team", repo, repository_id="project" if git else None)
+    server = TaskMCP(workflow, "Explain the limit", read_path_allowed=lambda ref: True)
+    page = call(server, "read", path="alias/value.py")
+    requests = []
+    monkeypatch.setattr(client, "_git_supported", lambda *args: None)
+    push = client.push
+
+    def publish_trail(*args, **options):
+        if stage == "send":
+            switch()
+        return push(*args, **options)
+
+    def offline(route, payload):
+        requests.append(route)
+        if stage == "queue":
+            switch()
+        raise httpx.ConnectError("offline")
+
+    if stage == "queue_commit":
+        from colony import client as client_module
+        write = client_module.private_write
+
+        def stage_queue(path, data):
+            write(path, data)
+            switch()
+
+        monkeypatch.setattr(client_module, "private_write", stage_queue)
+    monkeypatch.setattr(client, "push", publish_trail)
+    monkeypatch.setattr(client, "request", offline)
+    result = call(server, "publish", content="The limit is 7.", applicability="Current settings",
+                  evidence_refs=[page["evidence_ref"]])
+    assert requests == ([] if stage == "send" else ["/trails"])
+    assert bool(list((client.home / "queue").glob("*.enc"))) == (stage == "stable_offline")
+    assert not list((client.home / "queue").glob("*.tmp"))
+    assert not result["stored"]
+    if stage == "stable_offline":
+        assert result["queued"]
+    else:
+        assert result["answer_unblocked"]
+    assert call(server, "read", path="alias/value.py")["content"] == "LIMIT = 7"
+
+
+def test_restricted_publication_cannot_substitute_another_observed_name_during_scrubbing(
+    identity, monkeypatch,
+):
+    client, repo, _ = identity
+    names = ["password=testing", "[REDACTED]"]
+    for name in names:
+        (repo / name).write_text("LIMIT = 7")
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the limit",
+                     read_path_allowed=names.__contains__)
+    pages = call(server, "read", batch=[{"path": name} for name in names])["results"]
+    monkeypatch.setattr(client, "push", lambda *a, **kw: pytest.fail("rewritten publication"))
+    result = call(server, "publish", content="Limit behavior", applicability="Current settings",
+                  evidence_refs=[page["evidence_ref"] for page in pages])
+    assert all(page["content"] == "LIMIT = 7" for page in pages)
+    assert not result["stored"] and result["answer_unblocked"]
+
+
+def test_direct_git_verification_also_rechecks_unexcerpted_support(identity, monkeypatch):
+    from test_git_client import response
+
+    from colony import git_client, git_context
+
+    _, repo, _ = identity
+    switch = matching_targets(repo)
+    context = git_context.capture(repo, "project")
+    receipt = response(context, snapshot(repo, "settings.py"))
+    receipt["sources"].append(snapshot(repo, "alias/value.py").model_dump())
+    allowed = {"settings.py", "alias/value.py", "first/value.py", "second/value.py"}
+    assert git_client.verify_lookup(receipt, repo, context, path_allowed=allowed.__contains__)["hit"]
+
+    def final_git_context(*args):
+        switch()
+        return context
+
+    monkeypatch.setattr(git_client, "capture", final_git_context)
+    assert git_client.verify_lookup(receipt, repo, context, path_allowed=allowed.__contains__) == {
+        "hit": False, "reason": "git_local_evidence_not_verified",
+    }

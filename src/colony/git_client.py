@@ -7,7 +7,7 @@ from pathlib import Path
 from colony.git_context import capture, compare
 from colony.models import ContextBudget, GitContext, Source
 from colony.security import PATTERNS, scrub
-from colony.validation import repo_contents, validate
+from colony.validation import PinnedSourcePaths, repo_contents, repo_file, validate
 
 
 def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
@@ -136,6 +136,11 @@ def verify_lookup(
         } and not (context_budget is not None and reason == "budget_limited"):
             reason = "git_no_verified_hit"
         return {"hit": False, "reason": reason, "git": compact_receipt(context, "unavailable")}
+    # Client.ask owns the final delivery check when it supplies its operation's
+    # pins. Direct Python callers get the same protection at this return boundary.
+    check_on_return = path_allowed is not None and not isinstance(path_allowed, PinnedSourcePaths)
+    if check_on_return:
+        path_allowed = PinnedSourcePaths(path_allowed)
     try:
         receipt = result["git"]
         if GitContext.model_validate(receipt["request"]) != context:
@@ -191,5 +196,11 @@ def verify_lookup(
     if context_budget is not None:
         from colony.context_budget import fit_response
 
-        return fit_response(answer, context_budget)
+        answer = fit_response(answer, context_budget)
+    if check_on_return and answer.get("hit"):
+        try:
+            for ref in path_allowed.targets:
+                repo_file(repo, ref, path_allowed=path_allowed)
+        except (ValueError, OSError):
+            return {"hit": False, "reason": "git_local_evidence_not_verified"}
     return answer

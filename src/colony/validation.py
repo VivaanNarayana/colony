@@ -14,6 +14,25 @@ class SourcePathDenied(ValueError):
     """A fixed public error for a host-restricted source."""
 
 
+class PinnedSourcePaths:
+    """Bind each requested name to one authorized target for a single operation."""
+
+    def __init__(self, allowed):
+        self.allowed = allowed
+        self.targets = {}
+        self.observed_only = False
+
+    def __call__(self, ref):
+        return self.allowed(ref)
+
+    def check_target(self, ref, path):
+        target = str(path)
+        if not self.observed_only:
+            self.targets.setdefault(ref, target)
+        if self.targets.get(ref) != target:
+            raise SourcePathDenied("Observed source target changed")
+
+
 def _require_allowed(predicate, ref):
     try:
         allowed = predicate(ref) is True
@@ -46,6 +65,8 @@ def repo_file(root: Path, ref: str, *, path_allowed=None, expected_target=None) 
         raise ValueError("Source path unavailable") from exc
     if not path.is_file() or path.stat().st_size > MAX_SOURCE_BYTES:
         raise ValueError("Source is missing or exceeds 2 MB")
+    if isinstance(path_allowed, PinnedSourcePaths):
+        path_allowed.check_target(ref, path)
     return path
 
 

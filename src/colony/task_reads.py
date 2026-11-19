@@ -3,7 +3,7 @@
 import ast
 from pathlib import PurePosixPath
 
-from colony.evidence_refs import EvidenceError
+from colony.evidence_refs import EvidenceError, _PreparedRead
 from colony.security import scrub
 from colony.validation import repo_file
 
@@ -50,16 +50,19 @@ class ReadAccess:
             return self.invoke(self.original, *args, **kwargs)
 
 
-def local_imports(path, page):
-    """Hints from a full, delivered Python page. Never import or probe the filesystem.
+def local_imports(path, prepared):
+    """Hints from a full, staged Python page. Never import or probe the filesystem.
 
     Only module.py candidates are supported. Packages, dynamic loading and runtime
     injection remain unverified; these hints do not establish a binding or absence.
     """
-    if not path.endswith(".py") or not page.get("complete_file"):
+    if not path.endswith(".py") or not prepared.whole_range or prepared.offset:
+        return []
+    source = prepared.content.decode("utf-8")
+    if len(source) != prepared.span_length:
         return []
     try:
-        tree = ast.parse(page["content"])
+        tree = ast.parse(source)
     except (ValueError, SyntaxError, RecursionError):
         return []
     found = []
@@ -122,6 +125,36 @@ def _local_candidate(access, path):
         return False
 
 
+def _trace_error(path, exc):
+    return {"error": ("Research allowance unavailable or exhausted"
+                      if isinstance(exc, ReadDenied) else "Source read failed"),
+            "path": _public_path(path), "evidence_ref": None}
+
+
+def _deliver_trace(evidence, paths, staged, imports):
+    # Replay reachability from the explicit roots. A withheld page contributes
+    # neither handles nor import names, even if its dependencies were staged.
+    reachable = set(paths)
+    queue = list(dict.fromkeys(paths))
+    delivered = {}
+    for path in queue:
+        if path not in staged:
+            continue
+        value = staged[path]
+        if isinstance(value, _PreparedRead):
+            try:
+                value = evidence._complete_read(value, len(value.content))
+            except EvidenceError as exc:
+                value = _trace_error(path, exc)
+            else:
+                for child in imports[path]:
+                    if child not in reachable:
+                        reachable.add(child)
+                        queue.append(child)
+        delivered[path] = value
+    return [delivered[path] for path in staged if path in delivered], reachable
+
+
 def trace_read(evidence, access, paths, max_files):
     # Inputs are bounded by the tool schema; retain a guard for Python callers.
     if (
@@ -135,41 +168,37 @@ def trace_read(evidence, access, paths, max_files):
     with access.lock:
         before = access.admitted, access.denied
         pending = list(dict.fromkeys(paths))
-        seen, results, remaining = set(), [], 16000
-        unresolved = set()
-        unresolved_paths = []
-        while pending and len(results) < max_files and remaining >= 4:
+        staged, imports, unresolved = {}, {}, {}
+        remaining = 16000
+        while pending and len(staged) < max_files and remaining >= 4:
             path = pending.pop(0)
-            if path in seen:
-                continue
-            seen.add(path)
             try:
                 # This is the same wrapped read method used by read/read_batch:
                 # host allowlists and admission cannot be bypassed by expansion.
-                page = access.invoke(evidence.read, path, _max_bytes=remaining)
+                value = access.invoke(evidence.read, path, _max_bytes=remaining, _defer_reference=True)
+                if not isinstance(value, _PreparedRead) or value.owner is not evidence or value.ref != path:
+                    raise EvidenceError("Invalid prepared evidence")
             except EvidenceError as exc:
-                page = {
-                    "error": (
-                        "Research allowance unavailable or exhausted"
-                        if isinstance(exc, ReadDenied)
-                        else "Source read failed"
-                    ),
-                    "evidence_ref": None,
-                }
-            # Ordered error identity without echoing arbitrary rejected paths.
-            if "error" in page:
-                page["path"] = _public_path(path)
-            results.append(page)
-            remaining -= len(page.get("content", "").encode("utf-8"))
-            for child in local_imports(path, page):
-                if (child not in seen and child not in pending and child not in unresolved
+                staged[path] = _trace_error(path, exc)
+                continue
+            staged[path] = value
+            remaining -= len(value.content)
+            imports[path] = local_imports(path, value)
+            for child in imports[path]:
+                if (child not in staged and child not in pending and child not in unresolved
                         and len(pending) < 32):
                     if _local_candidate(access, child):
                         pending.append(child)
                     else:
-                        unresolved.add(child)
-                        if len(unresolved_paths) < 8:
-                            unresolved_paths.append(_public_path(child))
+                        unresolved[child] = None
+        results, reachable = _deliver_trace(evidence, paths, staged, imports)
+        pending = [path for path in pending if path in reachable]
+        if evidence.path_allowed is not None:
+            for path in pending.copy():
+                if path not in paths and not _local_candidate(access, path):
+                    pending.remove(path)
+                    unresolved[path] = None
+        unresolved_paths = [_public_path(path) for path in unresolved if path in reachable]
         result = {
             "results": results,
             "read_accounting": {
@@ -183,7 +212,7 @@ def trace_read(evidence, access, paths, max_files):
             "pending_paths": [_public_path(path) for path in pending[:8]],
             "pending_truncated": len(pending) > 8,
         }
-        if unresolved:
-            result.update(unresolved_paths=unresolved_paths,
-                          unresolved_truncated=len(unresolved) > len(unresolved_paths))
+        if unresolved_paths:
+            result.update(unresolved_paths=unresolved_paths[:8],
+                          unresolved_truncated=len(unresolved_paths) > 8)
         return result
