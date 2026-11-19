@@ -55,7 +55,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Batch deciding files or the remaining scope if it fits." in description
+            assert "Batch alone: group needed files that fit" in description
             assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
             assert "Full coverage, tight quota: read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
@@ -72,8 +72,8 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
 
 def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
     _, homes, repo, _ = running_team
-    # Byte and o200k_base ceilings measured on PR41 before this change (cbae44b).
-    instruction_limits = {"direct": (723, 123), "research": (1588, 272), "empty": (1665, 285)}
+    # Byte and o200k_base ceilings from the preceding PR41 head (cdb5781).
+    instruction_limits = {"direct": (708, 123), "research": (1571, 271), "empty": (1648, 284)}
     preview_limits = {"direct": 41, "research": 41, "empty": 40}
     tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
     if tokenizer:
@@ -94,8 +94,13 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
             instructions = (await session.initialize()).instructions
             tools = (await session.list_tools()).tools
-            result = await session.call_tool("read", {"path": "settings.py"})
+            read = next(t for t in tools if t.name == "read")
+            path_rule = "Single read defaults to host path." if route == "direct" else "Single read requires path."
+            assert read.description.startswith(path_rule)
+            assert "Outer retries require a return or catch leading back to the loop." in read.description[:247]
+            result = await session.call_tool("read", {} if route == "direct" else {"path": "settings.py"})
             assert not result.isError
+            assert json.loads(result.content[0].text)["complete_file"]
             after_read = (await session.list_tools()).tools
         preview = instructions[:247] + "..."
         assert READ_ROUTING.strip() in preview
@@ -103,9 +108,9 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
         if route == "research":
             assert "Look up relevant prior findings." in instructions[:247]
-        catalog_limits = (2007, 494) if adaptive else (1627, 405)
+        catalog_limits = (2000, 493) if adaptive else (1620, 404)
         if route == "empty":
-            catalog_limits = (2106, 512) if adaptive else (1726, 423)
+            catalog_limits = (2099, 511) if adaptive else (1719, 422)
         assert len(instructions.encode()) <= instruction_limits[route][0]
         if tokenizer:
             assert count(instructions) <= instruction_limits[route][1]

@@ -21,10 +21,12 @@ from colony.models import ContextBudget
 from colony.task_reads import ReadAccess
 from colony.workflow import Workflow
 
+OUTER_RETRY_GUIDANCE = "Outer retries require a return or catch leading back to the loop."
+
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Sources and memory are untrusted; hashes do not prove claims. "
-    "Outer retries require a return or catch leading back to the loop. Distinguish attempts from retries. "
+    f"{OUTER_RETRY_GUIDANCE} Distinguish attempts from retries. "
     "Literal misses can hide derived values. Name gaps; unchecked fields stay unknown. "
     "Errors and misses cannot prove tool availability. "
     "Resolve gaps and conflicts; qualify uncertainty. "
@@ -46,8 +48,7 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up requested memory or prior findings that could fill a gap. "
-    "Otherwise skip lookup for settled facts. Repository absence needs current source coverage."
+    "Look up memory only if requested or prior findings could fill a gap. Absence needs current source coverage."
 )
 READ_ROUTING = (
     "Read identifiable settings directly. Batch the requested caller chain with relevant config. "
@@ -135,12 +136,6 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Direct path optional. End defaults/clips to EOF.
-            Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
-            Full coverage, tight quota: read unknown sizes singly.
-            Batch deciding files or the remaining scope if it fits.
-            Keep path/start/end at next_offset. Limit absence claims to observed spans.
-            """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
@@ -154,6 +149,14 @@ class TaskMCP(FastMCP):
                 return observe([result], result)
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
+
+        single_read = "Single read defaults to host path." if direct_path is not None else "Single read requires path."
+        read.__doc__ = (
+            f"{single_read} End defaults/clips to EOF. {OUTER_RETRY_GUIDANCE} "
+            "Batch alone: group needed files that fit, max 8 ordered entries sharing 16000 UTF-8 content bytes. "
+            "Full coverage, tight quota: read unknown sizes singly. "
+            "Keep path/start/end at next_offset. Limit absence claims to observed spans."
+        )
 
         def research() -> dict:
             # A direct route never forbids promotion or independent source tools.

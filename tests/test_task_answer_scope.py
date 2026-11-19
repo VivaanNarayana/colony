@@ -117,7 +117,8 @@ def test_retry_evidence_and_reachable_attempts_in_one_batch(
     assert [p["content"] for p in pages] == [dedent(inspect.getsource(f)).rstrip("\n") for f in files.values()]
     assert all(p["complete_file"] and p["evidence_ref"] for p in pages)
     assert (server._read_access.admitted, server._read_access.denied) == (2, 0)
-    assert "Outer retries require a return or catch leading back to the loop." in server.instructions
+    read_tool = next(tool for tool in asyncio.run(server.list_tools()) if tool.name == "read")
+    assert "Outer retries require a return or catch leading back to the loop." in read_tool.description[:247]
 
     remaining = iter(outcomes)
     outer = inner = 0
@@ -247,7 +248,7 @@ def test_propagation_needs_evidence_through_requested_caller(identity, caught, c
     server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach the caller of handle?",
                      read_path_allowed=lambda path: path != "gateway.py" or can_read_endpoint)
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "Batch deciding files" in tool.description
+    assert "Batch alone: group needed files that fit" in tool.description
     pages = read(server, batch=[{"path": path} for path in sources])["results"]
     assert [p["content"] for p in pages[:2]] == [backend, wrapper]
     refs = [p["evidence_ref"] for p in pages if p["evidence_ref"]]

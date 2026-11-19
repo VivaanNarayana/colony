@@ -83,7 +83,9 @@ The adapter puts direct reads, caller batching, backend selection and quota
 priority near the start of its MCP instructions. The
 pinned Codex native host previews the first 247 characters of a long namespace
 description followed by an ellipsis on its initial request. The direct-file route
-still starts with the requested path.
+still starts with the requested path. The discovered `read` tool also explains
+when an outer retry is reachable. For a single read, supply `path` unless the
+host provided `--direct-path`, in which case omitting `path` reads that file.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue

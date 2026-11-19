@@ -81,6 +81,16 @@ def test_real_batch_shares_quota_and_preserves_per_entry_errors(batch_server, id
     assert 'publish' in {t.name for t in asyncio.run(server.list_tools())}
 
 
+@pytest.mark.parametrize('direct', [False, True], ids=['named-path', 'host-default'])
+def test_single_read_fits_last_research_unit(batch_server, direct):
+    server = batch_server(max_calls=1, direct_path='settings.py' if direct else None)
+    result = asyncio.run(server.call_tool('read', {} if direct else {'path': 'settings.py'}))
+    page = json.loads(result[0].text)
+    assert page['complete_file'] and page['evidence_ref'] and page['content'] == 'TIMEOUT = 30'
+    assert json.loads(result[-1].text)['research_budget'] == {
+        'admitted': 1, 'succeeded': 1, 'denied': 0, 'remaining': 0}
+
+
 def test_over_limit_batch_returns_admitted_prefix_only(batch_server, monkeypatch):
     server = batch_server(max_calls=2)
     original, seen = server.evidence.read, []
