@@ -76,7 +76,7 @@ class TaskMCP(FastMCP):
     def __init__(self, workflow, question: str, *, direct_path: str | None = None,
                  remember: bool = False, context_budget: ContextBudget | None = None,
                  empty_memory_routing: bool = True, trace_reads: bool = False,
-                 read_admission=None):
+                 read_admission=None, read_path_allowed=None):
         if not isinstance(question, str) or not question.strip():
             raise ValueError("A focused task question is required")
         self.workflow = workflow
@@ -101,7 +101,7 @@ class TaskMCP(FastMCP):
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
-        self._read_access = ReadAccess(self.evidence, read_admission)
+        self._read_access = ReadAccess(self.evidence, read_admission, read_path_allowed)
         # Trusted host classification; tool/source arguments cannot promote this.
         self._may_publish = not workflow.read_only and (remember or direct_path is None)
         self._remember = remember
