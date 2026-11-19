@@ -10,7 +10,13 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from test_workflow import identity as identity
 
-from colony.task_mcp import ANSWER_POLICY, PUBLICATION_CUE, PUBLICATION_POLICY, READ_ROUTING, TaskMCP
+from colony.task_mcp import (
+    ANSWER_POLICY,
+    PUBLICATION_CUE,
+    PUBLICATION_POLICY,
+    READ_ROUTING,
+    TaskMCP,
+)
 from colony.workflow import Workflow
 
 

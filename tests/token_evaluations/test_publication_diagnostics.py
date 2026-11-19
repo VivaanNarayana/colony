@@ -1,8 +1,8 @@
+import asyncio
 import copy
 import io
 import json
 import os
-import asyncio
 import sys
 from pathlib import Path
 
@@ -15,7 +15,12 @@ from test_workflow import identity as identity
 from scripts.native_host_trace import Trace
 from scripts.token_evaluation import native
 from scripts.token_evaluation.protocol import collector_hashes, validate_contract
-from scripts.token_evaluation.publication_diagnostics import observation, observer_path, trace_hash, trace_path
+from scripts.token_evaluation.publication_diagnostics import (
+    observation,
+    observer_path,
+    trace_hash,
+    trace_path,
+)
 
 
 @pytest.mark.parametrize('arm', ['colony', 'main', 'no_colony'])

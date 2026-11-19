@@ -6,8 +6,8 @@ import json
 
 import pytest
 from test_batch_adapter_integration import batch_server as batch_server
-from test_batch_adapter_integration import identity as identity
 from test_batch_adapter_integration import call
+from test_batch_adapter_integration import identity as identity
 
 from scripts.token_evaluation import report, tool_receipts
 from scripts.token_evaluation.evidence import _objects, _research

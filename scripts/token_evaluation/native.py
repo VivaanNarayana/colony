@@ -15,7 +15,6 @@ from colony.onboard_io import private_directory, write_new
 from . import runtime
 from .adapters import task_args, task_mode
 from .host_discovery import required_host_features, validate_host_discovery
-from .publication_diagnostics import observer_path, trace_hash, trace_path
 from .output import instruction
 from .protocol import (
     arm_order,
@@ -28,6 +27,7 @@ from .protocol import (
     validate_contract,
     verify_active_collector,
 )
+from .publication_diagnostics import observer_path, trace_hash, trace_path
 from .usage import native_usage
 
 

@@ -145,6 +145,7 @@ def test_deeply_nested_input_cannot_break_observation_or_echo_source():
 
 def test_log_close_failure_does_not_change_child_exit_or_bytes(monkeypatch, tmp_path):
     from types import SimpleNamespace
+
     import scripts.native_host_trace as module
 
     class BadClose:
@@ -204,6 +205,7 @@ def test_refresh_must_match_latest_notification_and_successful_catalog():
 @pytest.mark.parametrize('blocked_operation', ['open', 'write', 'flush', 'close'])
 def test_stalled_sidecar_cannot_hold_transport_or_shutdown(monkeypatch, tmp_path, blocked_operation):
     from types import SimpleNamespace
+
     import scripts.native_host_trace as module
 
     entered, release, finished = threading.Event(), threading.Event(), threading.Event()

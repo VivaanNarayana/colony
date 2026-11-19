@@ -5,7 +5,7 @@ import queue
 import subprocess
 import sys
 import threading
-
+from contextlib import closing, suppress
 
 EVENT_LIMIT = 256
 
@@ -37,26 +37,19 @@ class MetadataSink:
         self.worker.join(timeout=0.2)
 
     def _write(self, output):
-        stream = None
         try:
-            stream = open(output, 'x', encoding='utf-8')
-            while not self.failed.is_set():
-                try:
-                    value = self.items.get(timeout=0.05)
-                except queue.Empty:
-                    if self.closed.is_set():
-                        break
-                    continue
-                stream.write(value)
-                stream.flush()
+            with closing(open(output, 'x', encoding='utf-8')) as stream:
+                while not self.failed.is_set():
+                    try:
+                        value = self.items.get(timeout=0.05)
+                    except queue.Empty:
+                        if self.closed.is_set():
+                            break
+                        continue
+                    stream.write(value)
+                    stream.flush()
         except (OSError, ValueError):
             self.failed.set()
-        finally:
-            if stream is not None:
-                try:
-                    stream.close()
-                except (OSError, ValueError):
-                    self.failed.set()
 
 
 class Trace:
@@ -197,10 +190,8 @@ def relay(command, output, eligible):
         except (BrokenPipeError, OSError):
             pass
         finally:
-            try:
+            with suppress(OSError):
                 process.stdin.close()
-            except OSError:
-                pass
 
     threading.Thread(target=requests, daemon=True).start()
     try:
