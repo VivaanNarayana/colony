@@ -1,5 +1,13 @@
 # Memory-use token evaluations
 
+## Submitted findings in prospective reviews (version /18)
+
+Reviewers can check what a successful publication submitted using up to 1,024
+scrubbed characters from that call. The excerpt carries no source authority.
+Queued, duplicate and failed publications expose no finding text. The change
+affects offline review packets only. Historical runs retain their original
+collector, grades and token counts.
+
 ## Discovery parity and incomplete diagnostics (version /17)
 
 Version `/17` gives task and No-Colony discovery tools a shared literal-search

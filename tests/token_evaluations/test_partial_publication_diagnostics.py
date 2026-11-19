@@ -9,7 +9,6 @@ from test_report import run as run
 from scripts.token_evaluation.protocol import validate_contract
 from scripts.token_evaluation.publication_diagnostics import observation, trace_hash, trace_path
 
-
 EVENTS = [
     {'event': 'tool_catalog', 'publish_present': False, 'after_notification': False},
     {'event': 'tools_list_changed'},
@@ -81,7 +80,7 @@ def test_event_order_bounds_and_truncation_fail_closed(tmp_path):
 
 def test_new_collector_does_not_reinterpret_historical_protocols(tmp_path):
     spec = manifest(tmp_path)
-    assert spec['contract'] == 'colony.token-evaluation/17'
+    assert spec['contract'] == 'colony.token-evaluation/18'
     for version in (15, 16):
         with pytest.raises(ValueError, match='original pinned collector'):
             validate_contract({**spec, 'contract': f'colony.token-evaluation/{version}'})
