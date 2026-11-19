@@ -92,10 +92,14 @@ def test_partial_sources_never_become_complete_or_authoritative(transport):
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
-def test_installed_stdio_delivers_reuse_cue_and_all_sources(running_team, encoding):
-    if encoding == "o200k_base" and not os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER"):
-        pytest.skip("Pinned local tokenizer unavailable")
-    cli, homes, repo, directory = running_team
+def test_installed_stdio_delivers_reuse_cue_and_all_sources(request, monkeypatch, encoding):
+    if encoding == "o200k_base":
+        tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
+        if not tokenizer:
+            pytest.skip("Pinned local tokenizer unavailable")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
+    # Start the HTTP service after configuring its tokenizer; the MCP child gets only configured variables.
+    cli, homes, repo, directory = request.getfixturevalue("running_team")
     files = {"settings.py": "TIMEOUT = 30\n", "caller.py": "run(TIMEOUT)\n",
              "loop.py": "def run(timeout): return timeout\n"}
     for name, text in files.items():
@@ -115,8 +119,7 @@ def test_installed_stdio_delivers_reuse_cue_and_all_sources(running_team, encodi
 
     async def inspect():
         parameters = StdioServerParameters(command=settings["command"], args=settings["args"],
-            cwd=settings["cwd"], env={"COLONY_CONTEXT_TOKENIZER": os.environ.get(
-                "COLONY_TEST_CONTEXT_TOKENIZER", "")})
+            cwd=settings["cwd"], env={k: os.environ[k] for k in settings.get("env_vars", [])})
         async with (
             stdio_client(parameters) as (read, write),
             ClientSession(read, write) as session,

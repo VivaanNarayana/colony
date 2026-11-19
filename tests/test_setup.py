@@ -87,6 +87,28 @@ def test_unicode_project_paths_are_valid_toml(project):
     assert config["mcp_servers"]["colony"]["cwd"] == str(unicode_repo)
 
 
+def test_changing_encoding_replaces_only_the_tokenizer_configuration(project, monkeypatch):
+    from colony.models import ContextBudget
+
+    # Exercise configuration generation even on hosts without the optional tokenizer.
+    monkeypatch.setattr("colony.context_budget.count_response", lambda *args: 1)
+    monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", "/private/tokenizer-file")
+    repo, _ = project
+    byte_budget = ContextBudget(max_tokens=512, encoding="utf8_bytes")
+    exact_budget = ContextBudget(max_tokens=512, encoding="o200k_base")
+    install(project, context_budget=byte_budget)
+    original = tree(repo)
+    install(project, context_budget=exact_budget)
+    configured = tree(repo)
+    table = tomllib.loads(configured[".codex/config.toml"].decode())["mcp_servers"]["colony"]
+    assert table["env_vars"] == ["COLONY_CONTEXT_TOKENIZER"]
+    assert b"/private/tokenizer-file" not in configured[".codex/config.toml"]
+    assert configured["AGENTS.md"] == original["AGENTS.md"]
+    assert not install(project, context_budget=exact_budget)["changed"]
+    install(project, context_budget=byte_budget)
+    assert tree(repo) == original
+
+
 @pytest.mark.parametrize("ending", [b"", b"\n", b"\r\n"])
 def test_preserves_existing_bytes_comments_and_mode(project, ending):
     repo, home = project
