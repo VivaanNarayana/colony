@@ -48,16 +48,16 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             init = await session.initialize()
             assert "Memory was empty at task startup" in init.instructions
             # The pinned native host reserves the tail of its 250-character
-            # namespace preview for an ellipsis. Both routing rules must fit.
+            # namespace preview for an ellipsis. All routing rules must fit.
             assert READ_ROUTING.strip() in init.instructions[:247]
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Derive outer limits from the caller." in description
+            assert "Caller outcomes need caller evidence. Skip redundant reads." in description
             assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
-            assert "For full coverage without spare quota, read unknown sizes singly." in description
+            assert "Full coverage, tight quota: read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
             assert not result.isError
             value = json.loads(result.content[0].text)
@@ -72,9 +72,9 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
 
 def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
     _, homes, repo, _ = running_team
-    # Byte and o200k_base counts measured on ebd5f99 before the first tool call.
+    # Pre-change ceilings for the initialized instructions and catalog (03c0a8d).
     instruction_limits = {"direct": (731, 125), "research": (1606, 275), "empty": (1701, 292)}
-    preview_limits = {"direct": 42, "research": 41, "empty": 43}
+    preview_limits = {"direct": 41, "research": 41, "empty": 43}
     tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
     if tokenizer:
         monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
@@ -94,21 +94,29 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
             instructions = (await session.initialize()).instructions
             tools = (await session.list_tools()).tools
+            result = await session.call_tool("read", {"path": "settings.py"})
+            assert not result.isError
+            after_read = (await session.list_tools()).tools
         preview = instructions[:247] + "..."
         assert READ_ROUTING.strip() in preview
         assert preview.startswith("Memory was empty at task startup.") == (route == "empty")
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
-        catalog = json.dumps([t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools],
-                             ensure_ascii=False, separators=(",", ":"))
-        catalog_limits = (2013, 496) if adaptive else (1633, 407)
+        catalog_limits = (2010, 495) if adaptive else (1630, 406)
         if route == "empty":
-            catalog_limits = (2112, 514) if adaptive else (1732, 425)
+            catalog_limits = (2109, 513) if adaptive else (1729, 424)
         assert len(instructions.encode()) <= instruction_limits[route][0]
-        assert len(catalog.encode()) <= catalog_limits[0]
         if tokenizer:
             assert count(instructions) <= instruction_limits[route][1]
             assert count(preview) <= preview_limits[route]
-            assert count(catalog) <= catalog_limits[1]
+        # The previous head exposed publish after eligible evidence, costing
+        # 1079 serialized bytes and 226 tokens. A plain direct read adds nothing.
+        for observed, publish_visible in ((tools, False), (after_read, route != "direct")):
+            assert ("publish" in {t.name for t in observed}) == publish_visible
+            catalog = json.dumps([t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in observed],
+                                 ensure_ascii=False, separators=(",", ":"))
+            assert len(catalog.encode()) <= catalog_limits[0] + (1079 if publish_visible else 0)
+            if tokenizer:
+                assert count(catalog) <= catalog_limits[1] + (226 if publish_visible else 0)
 
     for route in instruction_limits:
         for adaptive in (False, True):

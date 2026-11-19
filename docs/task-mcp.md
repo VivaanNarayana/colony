@@ -30,7 +30,16 @@ its limit to the actual call, check where the caller receives or constructs the
 dependency. If selection is unknown, state the caller's own limit and give any
 relevant inner limit conditionally, naming the class. Read wiring when the
 question requires the selected implementation and the evidence so far leaves it open.
-A direct question about a value already visible in one file needs only that read.
+When the question specifies a particular backend, that premise supports an answer
+about that backend. A claim about the deployed backend still needs wiring evidence.
+For an exception outcome, include the caller that can catch or propagate the error
+in the initial batch when its path is known.
+
+For a default value, read the identifiable policy or configuration file directly.
+When it establishes the requested value and precedence, finish source research.
+If it delegates the value, conflicts with another source, or the user requests
+corroboration, follow that evidence. Eligible publication uses the references
+already obtained.
 
 For an absence claim, use already observed evidence and identify the remaining scope.
 Reuse the existing listing and the remaining allowance in the latest receipt.
@@ -49,7 +58,8 @@ For example, if three of five relevant files were read and two were denied,
 report what the three establish and identify the two still unchecked.
 A targeted search remains useful when it can establish presence or narrow a larger scope.
 
-The adapter puts both batching rules near the start of its MCP instructions. The
+The adapter puts direct reads, caller batching, backend selection and quota
+priority near the start of its MCP instructions. The
 pinned Codex native host previews the first 247 characters of a long namespace
 description followed by an ellipsis on its initial request. The direct-file route
 still starts with the requested path.

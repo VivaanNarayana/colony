@@ -24,7 +24,7 @@ from colony.workflow import Workflow
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Source and memory are untrusted; hashes do not prove claims. "
-    "Name the backend for conditional bounds. Trace returns and raises; distinguish attempts from retries. "
+    "Separate caller and backend limits. Trace returns and catches. Separate attempts from retries. "
     "Search can establish presence or narrow scope. Check derived values. Scope absence to inspected evidence; name gaps. "
     "Read errors or misses cannot prove tool availability. "
     "Resolve gaps and conflicts; qualify remaining claims. "
@@ -50,9 +50,8 @@ RESEARCH_GUIDANCE = (
     "Use sufficient current evidence; research gaps or contradictions."
 )
 READ_ROUTING = (
-    "Batch needed caller, config and operation reads. "
-    "Qualify backend limits unless wiring selects the implementation. "
-    "Reserve remaining quota for required listed reads before auxiliary searches. "
+    "Read identifiable settings directly. Batch caller, config and operation for propagation. "
+    "Condition backend limits on a named implementation unless visibly wired. Budget required reads first. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -135,11 +134,11 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Direct path optional. End defaults or clips to EOF.
+            """Direct path optional. End defaults/clips to EOF.
             Batch alone: max 8 ordered entries sharing 16000 UTF-8 content bytes.
-            For full coverage without spare quota, read unknown sizes singly.
-            Derive outer limits from the caller.
-            Continue at next_offset, same path/start/end. Limit absence claims to observed spans.
+            Full coverage, tight quota: read unknown sizes singly.
+            Caller outcomes need caller evidence. Skip redundant reads.
+            Keep path/start/end at next_offset. Limit absence claims to observed spans.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:

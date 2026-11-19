@@ -77,7 +77,8 @@ def read(server, **arguments):
 @pytest.mark.parametrize(("explicit_backend", "caller_catches"), [
     (False, False), (True, False), (True, True),
 ], ids=["unbound", "exception-propagates", "caller-handles-exception"])
-def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, explicit_backend, caller_catches):
+def test_call_chain_batch_delivers_only_requested_behavior_evidence(
+        identity, monkeypatch, explicit_backend, caller_catches):
     client, repo, _ = identity
     invocation = "return run(backend, RETRIES + 1)"
     body = invocation
@@ -108,11 +109,9 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
     guidance = server.instructions
-    assert "Batch needed caller, config and operation reads." in guidance[:247]
-    tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
-    assert "Derive outer limits from the caller." in tools["read"].description
-    assert "Name the backend for conditional bounds." in guidance
-    assert "Trace returns and raises; distinguish attempts from retries." in guidance
+    assert "Batch caller, config and operation for propagation." in guidance[:247]
+    assert "Separate caller and backend limits. Trace returns and catches." in guidance
+    assert "Separate attempts from retries." in guidance
 
     # Bounds require the caller's +1. Only the named-backend question needs
     # the concrete raise; the operation itself catches no exception.
@@ -120,8 +119,41 @@ def test_call_chain_batch_delivers_only_requested_behavior_evidence(identity, ex
     assert [p["content"] for p in pages] == [sources[path] for path in paths]
     refs = [p["evidence_ref"] for p in pages]
     assert [s.ref for s in server.evidence.resolve(refs)] == paths
+    if explicit_backend:
+        assert "raise ConnectionError()" in pages[3]["content"]
+        assert ("except ConnectionError:" in pages[1]["content"]) == caller_catches
+
+    # The outer bound is reusable even when the concrete backend is unknown.
+    # Only its supporting pages belong in this finding; publication needs no new read.
+    stored = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: stored.append(trail) or {"stored": True})
+    receipt = asyncio.run(server.call_tool("publish", {
+        "content": "handle allows up to RETRIES + 1 backend calls and run stops on a non-None result.",
+        "applicability": "Outer handle/run loop",
+        "evidence_refs": refs[:3],
+    }))
+    assert json.loads(receipt[0].text)["stored"] and len(stored) == 1
+    assert {s.ref for s in stored[0].sources} == {"config.py", "caller.py", "operation.py"}
     assert server._read_access.admitted == len(paths)
     assert server._read_access.denied == 0
+
+
+def test_backend_raise_alone_cannot_distinguish_caller_outcomes(identity):
+    client, repo, _ = identity
+    (repo / "backend.py").write_text("def send():\n    raise ConnectionError()")
+    handler = repo / "entry.py"
+    caller = "def handle(send):\n    return send()"
+    catching = "def handle(send):\n    try:\n        return send()\n    except ConnectionError:\n        return None"
+    for source in (caller, catching):
+        handler.write_text(source)
+        server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach handle's caller?",
+                         read_path_allowed=lambda path: path == "backend.py")
+        tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
+        assert "Caller outcomes need caller evidence." in tool.description
+        backend, unavailable = read(server, batch=[{"path": "backend.py"}, {"path": "entry.py"}])["results"]
+        assert backend["content"] == "def send():\n    raise ConnectionError()"
+        assert unavailable["evidence_ref"] is None and "content" not in unavailable
+        assert [s.ref for s in server.evidence.resolve([backend["evidence_ref"]])] == ["backend.py"]
 
 
 @pytest.mark.parametrize("read_limit", [2, 1], ids=["definition-readable", "quota-exhausted"])
@@ -172,7 +204,7 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wi
         question += " Which backend does main supply?"
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Qualify backend limits unless wiring selects the implementation." in server.instructions[:247]
+    assert "Condition backend limits on a named implementation unless visibly wired." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(p["complete_file"] for p in pages)
     assert [p["content"] for p in pages] == [files[path] for path in paths]
@@ -194,9 +226,9 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     permits = iter(range(remaining))
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository set STEP_LIMIT?",
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Reserve remaining quota for required listed reads before auxiliary searches." in server.instructions[:247]
+    assert "Budget required reads first." in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "without spare quota" in tool.description and "Limit absence claims to observed spans" in tool.description
+    assert "tight quota" in tool.description and "Limit absence claims to observed spans" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])
     assert set(batch) == {"results", "publication_guidance"}
     pages = batch["results"]
