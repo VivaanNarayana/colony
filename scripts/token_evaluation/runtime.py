@@ -13,6 +13,8 @@ import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 
+from .adapters import task_mode
+
 
 def environment(run_dir):
     root = Path(run_dir).resolve()
@@ -131,6 +133,9 @@ def server(team, protocol, env):
 
 
 async def _mcp_preflight(team, protocol, repo, env):
+    if task_mode(protocol):
+        from .task_preflight import check
+        return await check(team, protocol, repo, env)
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
     _roles(team)
@@ -164,6 +169,12 @@ def mcp_preflight(team, protocol, repo, env):
 def configure(team, protocol, repo, read_only):
     _roles(team)
     label = "b" if read_only else "a"
+    if task_mode(protocol):
+        # Product policy is delivered once by MCP initialize; never install ordinary
+        # ask/push guidance alongside the task adapter.
+        return {'mode': 'task', 'role': label, 'files': [],
+                'guidance': 'Use the configured task-scoped tools and their server policy.',
+                'native_client_loaded': False}
     args = ["-m", "colony.cli", "--home", team["homes"][label], "setup", "codex", "install", "--repo", str(repo), "--ns", "bench"]
     if read_only:
         args.append("--read-only")

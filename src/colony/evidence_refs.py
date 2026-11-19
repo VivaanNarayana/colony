@@ -8,8 +8,8 @@ import time
 from dataclasses import dataclass
 
 from colony.models import Source
-from colony.security import PATTERNS, fingerprint, verify
-from colony.validation import MAX_SOURCE_BYTES, repo_file
+from colony.security import PATTERNS, fingerprint, scrub, verify
+from colony.validation import MAX_SOURCE_BYTES, PinnedSourcePaths, repo_contents, repo_file
 
 
 class EvidenceError(ValueError):
@@ -25,6 +25,7 @@ class _Observation:
     start_offset: int
     end_offset: int
     expires: float
+    target: str | None
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class _PreparedRead:
     whole_range: bool
     content: bytes
     expires: float
+    target: str | None
 
 
 class EvidenceSession:
@@ -49,10 +51,11 @@ class EvidenceSession:
     Existing raw-source publication remains available on the ordinary API.
     """
 
-    def __init__(self, workflow, *, ttl=900, capacity=256):
+    def __init__(self, workflow, *, ttl=900, capacity=256, path_allowed=None):
         if not 1 <= ttl <= 3600 or not 1 <= capacity <= 4096:
             raise ValueError("Invalid evidence session limits")
         self.workflow = workflow
+        self.path_allowed = path_allowed
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
@@ -97,7 +100,7 @@ class EvidenceSession:
             ):
                 raise EvidenceError("Invalid evidence range")
             try:
-                data = repo_file(self.workflow.repo, path).read_bytes()
+                target, data = repo_contents(self.workflow.repo, path, path_allowed=self.path_allowed)
                 if len(data) > MAX_SOURCE_BYTES:
                     raise ValueError()
                 text = data.decode("utf-8")
@@ -124,7 +127,8 @@ class EvidenceSession:
                 raise EvidenceError("Evidence file or range unavailable") from None
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
                                      offset, len(span), start == 1 and last == len(lines), content,
-                                     time.monotonic() + self._ttl)
+                                     time.monotonic() + self._ttl,
+                                     str(target) if self.path_allowed is not None else None)
             if _defer_reference:
                 return prepared
             return self._complete_read(prepared, _max_bytes)
@@ -136,6 +140,12 @@ class EvidenceSession:
             if (not isinstance(prepared, _PreparedRead) or prepared.owner is not self
                     or type(max_bytes) is not int or not 0 <= max_bytes <= 16000):
                 raise EvidenceError("Invalid prepared evidence")
+            if prepared.target is not None or self.path_allowed is not None:
+                try:
+                    repo_file(self.workflow.repo, prepared.ref, path_allowed=self.path_allowed,
+                              expected_target=prepared.target)
+                except (OSError, ValueError):
+                    raise EvidenceError("Evidence file or range unavailable") from None
             content = prepared.content[:max_bytes].decode("utf-8", errors="ignore")
             if prepared.content and not content:
                 raise EvidenceError("Evidence page cannot make progress")
@@ -150,7 +160,7 @@ class EvidenceSession:
                 handle = secrets.token_urlsafe(18)
                 self._observations[handle] = _Observation(
                     prepared.ref, prepared.digest, prepared.start, prepared.end,
-                    prepared.offset, stop, prepared.expires,
+                    prepared.offset, stop, prepared.expires, prepared.target,
                 )
             result = {"path": prepared.ref, "start_line": prepared.start, "end_line": prepared.end,
                       "content": content, "evidence_ref": handle,
@@ -196,13 +206,16 @@ class EvidenceSession:
                     if value is None:
                         raise EvidenceError("Evidence unavailable")
                     results.append(self._complete_read(value, allowance))
-                except EvidenceError:
+                except (OSError, ValueError):
                     results.append({"error": "Source read failed; adjust path or range",
                                     "evidence_ref": None})
             return results
 
     def resolve(self, references: list[str]) -> list[Source]:
         """Resolve all references atomically or fail; never substitute new hashes."""
+        return self._resolve(references, self.path_allowed)
+
+    def _resolve(self, references, path_allowed):
         with self._lock:
             self._authorize(publishing=True)
             if not isinstance(references, list) or not 1 <= len(references) <= 50:
@@ -213,7 +226,8 @@ class EvidenceSession:
                 if observation is None or observation.expires <= now:
                     raise EvidenceError("Evidence reference unavailable or expired")
                 try:
-                    data = repo_file(self.workflow.repo, observation.ref).read_bytes()
+                    _, data = repo_contents(self.workflow.repo, observation.ref,
+                                            path_allowed=path_allowed, expected_target=observation.target)
                     if hashlib.sha256(data).hexdigest() != observation.digest:
                         raise ValueError()
                 except (OSError, ValueError):
@@ -228,11 +242,24 @@ class EvidenceSession:
         The host must keep claims within those spans and apply publication policy.
         """
         with self._lock:
-            sources = self.resolve(references)
+            if self.path_allowed is None:
+                sources = self.resolve(references)
+                policy = {}
+            else:
+                pins = PinnedSourcePaths(self.path_allowed)
+                sources = self._resolve(references, pins)
+                # Sanitization may rewrite a ref. Only the observed names and targets
+                # may support the outgoing finding, including an offline queue entry.
+                if any(scrub(source.ref) != source.ref for source in sources):
+                    raise EvidenceError("Observed source name unavailable for publication")
+                pins.observed_only = True
+                policy = {"path_allowed": pins}
             w = self.workflow
-            trail = w.finding(question, content, sources)
+            trail = w.finding(question, content, sources, **policy)
             options = {"repo": w.repo, "repository_id": w.repository_id} if w.repository_id else {}
-            return w.client.push(trail, **options)
+            if self.path_allowed is not None:
+                options["repo"] = w.repo
+            return w.client.push(trail, **options, **policy)
 
     def close(self):
         with self._lock:

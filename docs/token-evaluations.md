@@ -1,5 +1,110 @@
 # Memory-use token evaluations
 
+## Publication and lookup reasons in prospective reviews (version /19)
+
+Offline review receipts preserve recognized reason codes for each tool. Reviewers
+can distinguish an oversized finding from a publication with an unknown outcome.
+Unrecognized reason text maps to `other`. Historical runs use their pinned collectors.
+
+## Submitted findings in prospective reviews (version /18)
+
+Reviewers can check what a successful publication submitted using up to 1,024
+scrubbed characters from that call. The excerpt carries no source authority.
+Queued, duplicate and failed publications expose no finding text. The change
+affects offline review packets only. Historical runs retain their original
+collector, grades and token counts.
+
+## Discovery parity and incomplete diagnostics (version /17)
+
+Version `/17` gives task and No-Colony discovery tools a shared literal-search
+contract and schema. It also retains validated observations from hash-bound native
+publication sidecars when the final summary is missing. Such records are explicitly
+partial: no model awareness, deliberate abstention or complete outcome is inferred.
+Diagnostic fields remain outside grading, reviewer packets and gross-token accounting.
+Unknown or malformed metadata is unavailable. All `/16` and older protocols, raw
+traces, grades and measurements require their original pinned collector and remain
+historical; do not regenerate them with this prospective implementation.
+
+## Quota-aware research in prospective runs (version /16)
+
+Version `/16` admits valid batch requests in order up to the remaining shared
+research allowance. Excess entries return ordered `Research call limit reached`
+errors with no source content or evidence references. An admitted entry with an
+invalid path/range still consumes its unit. Malformed schemas fail without source
+access and consume the admitted units; they cannot hide requested entries.
+Listing, search and single reads share the same allowance. Calls are serialized
+within the research boundary to prevent concurrent over-admission.
+
+A small `research_budget` block accompanies existing research responses, including
+empty searches and errors: `admitted`, `denied`, `succeeded`, and `remaining`.
+There is no separate budget tool or additional model round trip. `succeeded`
+counts operations returning results, not verified evidence or correct claims.
+Error messages remain sanitized; lookup and publication behavior is unchanged.
+
+Reports retain every requested unit in `research_calls`; an oversized request
+still violates the attempted-unit policy even when its admitted prefix succeeds.
+The additional `research_accounting` totals separate admitted, denied, successful,
+failed, and unresolved units. Missing or malformed receipts do not invent outcomes.
+Grounding still independently verifies actual source bytes. Valid explicit read
+ends beyond EOF can match the actual clipped span, including continuation offsets;
+nonexistent lines, invalid ranges, forged contents and denied entries earn no credit.
+
+Gross usage remains all native input plus output, including cached input and all
+failed/denied attempts. Answer completion, correctness, grounding, publication and
+the research cap are unchanged. This is a prospective policy change, not a repair
+to historical grades. `/15` and earlier protocols must use their original pinned
+collectors; no historical artifacts are upgraded, replayed or relabeled.
+
+## Historical batch contract (version /15)
+
+Version `/15` supports the task adapter's ordered `read(batch=[...])` results.
+The existing shared research allowance counts **each requested entry**, including
+failed paths, duplicate paths and continuation pages. Listing and search still
+cost one unit. Reservation happens before validation or source access: a batch
+larger than the remaining allowance is rejected in full and exhausts that
+allowance. Reports retain all requested units, including entries denied by the
+limit. Malformed or empty requests cost at least one unit. Lifecycle updates
+are counted once per entry, and unfinished attempts remain visible.
+
+`research_calls`, `task_read_attempts` and mechanism `research_attempts` therefore
+count entry attempts; `colony_calls` and `task_adapter_calls` count physical MCP
+calls. A batch does not multiply native token usage. Gross tokens remain all
+input plus output tokens, including cached input, failures and incomplete attempts.
+Workers are told the per-entry rule. Answer requirements and publication policy
+are unchanged; this adds no completion gate or extra worker tool call.
+
+Grounding independently verifies each requested path/range/offset against the
+frozen source bytes and scrubber, including the aggregate 16 KB batch content
+limit. Only fully delivered, unredacted lines earn coverage; verified continuation
+pages can complete a line. Reordered/mismatched results cannot substitute another
+source. Publication references must come from prior verified source reads.
+Reviewer receipt contract `/4` projects each entry with its zero-based
+`batch_index`, `batch_size` and the original parent event hash. Failed or missing
+results remain explicit. Receipts omit source content and raw handles and remain
+procedural observations, separate from grounding and task completion. The
+64-receipt bound applies to entries, with omitted entries reported.
+
+The optional metadata observer recognizes references returned inside batches;
+it still cannot establish model visibility, deliberate abstention or grounding.
+No host completion integration is added. The installed target controls batch
+availability: a legacy target retains its single-read schema.
+
+Historical `/14` and earlier protocols, traces, grades and reports must use their
+original pinned collector. They are not migrated or relabeled. Regression tests
+use synthetic events and local MCP calls, never worker/reviewer model sessions.
+Run `tests/token_evaluations/test_batch_adapter_integration.py` against both the
+legacy target and a batch-capable installed target (or a read-only source export
+on `PYTHONPATH`); skips on a legacy target do not validate the batch transport.
+
+## Task-adapter coverage in prospective runs
+
+New `/11` runs explicitly select ordinary or task MCP per target. See
+[task-adapter evaluation](task-adapter-evaluation.md) for fixture boundaries,
+native-host discovery evidence, adaptive option forwarding and interpretation.
+Historical `/10` runs retain their original collector, configuration and conclusions.
+The `/10` command examples below require explicit `--adapter ordinary` and
+`--main-adapter ordinary` when creating a new ordinary-mode `/11` protocol.
+
 This developer-only harness asks whether actual shared memory helps a fresh agent
 complete source-grounded work. It adds no Colony runtime behavior, dependencies,
 defaults or CI campaign. Ordinary tests use synthetic events and local code, never
@@ -12,6 +117,117 @@ preflight, separately authorized native collection, arm-masked review and scorin
 All commands preserve existing evidence: choose new output directories/files.
 Windows generated data must be on D:. Keep private credentials, logs and answers
 outside Git. Source fixtures may be read from the checkout.
+
+## Default three-group campaign (version /10)
+
+The default template freezes **one campaign with three groups**: the feature
+candidate (`colony`), a separately pinned Colony `main`, and **one** `no_colony`
+control. The unchanged two-lineage catalog has fourteen tasks, so collection is
+**14 candidate + 14 main + 14 No-Colony = 42 native sessions**, never two paired
+28-session runs. Each group includes four learning and ten reuse sessions.
+`max_attempts` must equal the full three-group schedule (42 for the full catalog);
+resource stops may produce a partial run but never retries or replacement sessions.
+
+Provide `--main-target-python`, `--main-target-repo` and `--main-revision` in
+addition to the candidate pins. Both installed runtimes are byte-checked against
+Git, independently preflighted and rechecked during collection. Main's
+`--main-mcp-arg`, `--main-setup-arg` and `--main-server-arg` options default to its
+supported defaults; candidate options remain separate. One frozen client, model,
+effort, task order, source transitions, output policy and resource budget apply to
+all groups. Group order rotates once per task. Candidate and main have separate
+authenticated teams/stores per lineage, writable learning and pull-only reuse;
+No-Colony has no memory server. Authorization additionally pins `main_revision`.
+
+Mask the **entire campaign once**. The public packet has all 42 cases under one
+protocol, with no group identities or costs. Start **two total fresh independent
+GPT-6.1 Sol/medium review sessions**: each judges completion, correctness and grounding
+for every case in that same packet. Do not create a separate reviewer pair per
+group or per comparison. Existing source-bound findings, disagreement handling,
+format, tool-policy, source-integrity and all-attempt accounting gates remain.
+
+Reports retain all three groups, complete learning/reuse/total usage and every
+failed/unresolved case. `primary_comparison` is candidate versus main over the
+full horizon; both must pass their strict checks before a lower gross total can
+pass acceptance. `comparisons` also reports candidate versus No-Colony and main
+versus the **same single** No-Colony control as informational comparisons. Their
+failed or incomplete quality gates stay visible; no control is duplicated or
+selected after results. Descriptive differences never imply qualified savings.
+
+`--paired` explicitly opts into a two-group diagnostic and cannot be combined
+with main pins. It is not the default feature-evaluation design. `/8` introduced
+this campaign structure; `/9` preserves its schedule and changes future review
+packets and dimensions only. Historical `/8`, the candidate-only diagnostic
+adapter, `/7` and earlier runs use their original pinned collectors. Keep all
+original 42-session, 14-session and 56-session results, reviews and costs unchanged.
+Never relabel historical sessions or treat this update as permission to run models.
+
+## Prospective review receipts and separate completion (version /9)
+
+New manifests use `colony.token-evaluation/10`, quality policy
+`colony.agent-quality/2` and review responses `colony.quality-review/2`.
+The fourteen task questions, source snapshots, oracle facts, answer format,
+research limits, model configuration and usage accounting are unchanged.
+`template` splits the legacy catalog rubrics in memory; it does not rewrite the
+catalog or any frozen run. Only the pinned catalog's known legacy rubrics are
+split automatically; custom catalogs must supply explicit three-dimensional
+rubrics rather than silently losing custom constraints. Reports expose `task_completion_complete`,
+`correctness_complete` and `grounding_complete` independently. Each answer's
+`quality_obligations` contains `complete`, `correct`, `grounded` and `format`.
+All remain conjunctive gates; disagreements stay unresolved and missing
+completion judgments never default to a pass.
+
+- **Completion** checks whether every requested part was addressed. Leaving a
+  requested repository-containment determination unknown is incomplete, even if
+  the uncertainty is honest. An omission is recorded only under `complete`.
+- **Correctness** checks actual factual assertions against complete current
+  sources and relevant procedural receipts. Missing requested answers are not
+  automatically false factual assertions.
+- **Grounding** checks support for claims actually made. A cautious admission of
+  uncertainty must not be failed merely for an omitted task deliverable. Source
+  assertions still require adequate observed current excerpts; correctness alone
+  cannot waive missing evidence.
+
+The masked subject includes `tool_receipts`, `tool_receipt_limits` and a
+`tool_receipts_sha256` binding. These are rebuilt from the same retained native
+log whenever `report` validates the review. The private identity bindings also
+include this digest, and each reviewer response binds the full public packet.
+Editing receipts and recomputing a public hash cannot change the authoritative
+raw-log subject or transfer an existing review.
+
+The bounded projection retains relevant supported MCP outcomes before the final
+answer: lookup hit/miss/status, stored/duplicate/queued responses, repository
+listings, empty literal searches, read coordinates and failed calls (including
+the research-call limit). It strips namespace/producer identities, private paths,
+credentials, raw memory/source bodies and unrelated payloads. Text is scrubbed
+and capped at 1,024 characters, returned paths at 16, and receipt count at 64;
+limits and omitted-call counts are explicit. Unsupported or malformed results
+are unavailable evidence, never fabricated successful empty results. Tool names,
+queries or answer content can still reveal treatment; disclose that limitation.
+
+Findings declare `claim_type` as `task`, `source` or `tool`. Only completion uses
+`task`, and whole-answer `omission` findings cannot be used to fail grounding.
+For tool claims, cite `tool_receipts: [{"id": "tool-1", "sha256": "..."}]` using
+the canonical digest of that supplied receipt. Source claims continue to cite
+exact `sources` spans; a receipt cannot replace those spans. A procedural receipt
+proves only what a tool did or returned. It does not certify returned claims,
+create observed source coverage, or turn a cache miss/empty literal search into
+semantic repository-wide absence. Both `sources` and `tool_receipts` lists are
+explicit on every finding. Task findings are anchored to the answer and judged
+against the frozen question/oracle; their support does not certify other dimensions.
+
+For example, an answer that accurately reports three empty searches but leaves
+repository containment unknown can pass correctness and grounding for those
+narrow procedural claims while failing completion. The overall answer still
+fails. Conversely, a correct repository-wide absence assertion can fail grounding
+if adequate scope evidence was never observed.
+
+These are prospective grading changes. Use the original pinned collector for
+historical replay; do not add receipt fields, a completion verdict, or a new
+contract identifier to an old packet. The last 14-session experiment and its 9/14
+strict result remain unchanged. Archived exports and Git revisions preserve the
+old reader. New output paths remain mandatory; this change authorizes no native
+collection or regrading campaign. Review context grows, but review usage remains
+separate from the benchmark's execution-token accounting.
 
 ## What is compared
 
@@ -119,12 +335,12 @@ it does not require the false positive to persist or add it to the native schedu
 
 ## Prospective shared output contract
 
-New manifests use `colony.token-evaluation/7` and bind the shared instruction and
+New manifests use `colony.token-evaluation/10` and bind the shared instruction and
 structural check through `output.contract`:
 
 ```json
 {
-  "contract": "colony.token-evaluation/7",
+  "contract": "colony.token-evaluation/10",
   "output": {
     "contract": "colony.token-evaluation-output/1",
     "answer_policy": "last_agent_message",
@@ -136,7 +352,7 @@ structural check through `output.contract`:
 This is an excerpt, not a complete executable manifest. `template` writes the
 binding automatically, together with the frozen `quality_review` policy (GPT-6.1 Sol,
 medium reasoning, exact instructions and their hash). Missing or unknown contract identifiers fail before
-collection or scoring. Historical `/1`, `/2`, `/3`, `/4`, `/5` and `/6` manifests are rejected by this collector
+collection or scoring. Historical `/1`, `/2`, `/3`, `/4`, `/5`, `/6`, `/7`, `/8` and `/9` manifests are rejected by this collector
 with instructions to use their original pinned collector for historical replay.
 Do not add the new version/field to an old protocol or relabel old answers, labels,
 reports, failures or statuses under these rules. A new candidate comparison needs
@@ -266,7 +482,7 @@ provisioned model snapshots; preflight never downloads models. Example commands
 below have placeholders and do not authorize or start native sessions.
 
 ```powershell
-python scripts/token_evaluation.py template --target-python D:/env/Scripts/python.exe --target-repo D:/source/colony --revision FULL_COMMIT_SHA --client C:/path/to/codex.exe --model EXPLICIT_MODEL --track controlled --workload gateway --output D:/evaluations/protocol.json
+python scripts/token_evaluation.py template --target-python D:/candidate-env/Scripts/python.exe --target-repo D:/source/colony --revision CANDIDATE_FULL_SHA --main-target-python D:/main-env/Scripts/python.exe --main-target-repo D:/source/colony --main-revision MAIN_FULL_SHA --client C:/path/to/codex.exe --model gpt-6-luna --effort low --track natural --format json --output D:/evaluations/protocol.json
 python scripts/token_evaluation.py prepare --manifest D:/evaluations/protocol.json --output D:/evaluations/run-001
 python scripts/token_evaluation.py preflight --run D:/evaluations/run-001
 ```
@@ -319,6 +535,7 @@ owner approves the exact frozen protocol, create a private authorization JSON:
 {
   "protocol_sha256": "FROM_RUN_JSON",
   "revision": "EXACT_TARGET_REVISION",
+  "main_revision": "EXACT_MAIN_REVISION",
   "model": "EXACT_MODEL",
   "limits": {"COPY": "the entire exact limits object from run.json"},
   "owner_intent": "The owner's explicit approval of this bounded run"
@@ -373,17 +590,18 @@ python scripts/token_evaluation.py inventory --run D:/evaluations/run-001
 python scripts/token_evaluation.py mask --run D:/evaluations/run-001 --output D:/evaluations/review-001
 ```
 
-The prospective `/7` contract implements **agent-based semantic quality review**.
-This replaces the advisory-only design in the earlier PR22 `/6` commit; `/6`
-artifacts are not reinterpreted. It uses the same benchmark questions, source
+The `/10` campaign keeps the independent **agent-based semantic quality review**
+introduced in `/7` and retained in `/8`, while adding procedural receipts and
+separate completion judgments prospectively. The earlier PR22 `/6` advisory-only
+design and all `/7`/`/8` artifacts are not reinterpreted. It uses the same benchmark questions, source
 snapshots, answer contract and accounting. The contract version records the
 changed grading authority, not a new benchmark or permission to run it.
 
 Two fresh, independent review sessions use **GPT-6.1 Sol (`gpt-6.1-sol`), medium
-reasoning**. Both `reviewer_a` and `reviewer_b` judge BOTH correctness and grounding
+reasoning**. Both `reviewer_a` and `reviewer_b` judge completion, correctness and grounding
 for every masked case using the same frozen rubric and instructions. They do not
 see costs, arm identities, implementation discussion or each other's judgments.
-Give each session only the public `answers.json`, its own response template and
+For `/10`, use one 42-case packet and two sessions total. Give each session only the public `answers.json`, its own response template and
 the exact instructions embedded in `review_policy`. Do not mount the coordinator
 folder or expose the private map. Use context-separated subagents rather than
 reusing benchmark-answering or implementation sessions. Record each actual session
@@ -394,7 +612,7 @@ sessions, retains their original responses, and cannot override their verdicts.
 Answer text may reveal treatment, so perfect blinding is not claimed.
 
 The packet contains the frozen question, rubric, oracle, output contract, current
-sources and normalized **observed current evidence**. Verified repository and
+sources, normalized **observed current evidence**, and bounded **procedural tool receipts**. Verified repository and
 cache excerpts have the same path/hash/line/content representation. Publication,
 hits, tool choice and research volume confer no quality credit. Oracle citations
 are not the only acceptable support: other current observed spans may justify an
@@ -438,19 +656,22 @@ python scripts/token_evaluation.py quality-template --packet D:/evaluations/revi
 
 Each template deliberately has an empty session ID, unset verdicts and empty
 rationales. It is not a completed review. Every case must contain a `judgments`
-object with explicit `correct` and `grounded` entries. Each entry contains a
+object with explicit `complete`, `correct` and `grounded` entries. Each entry contains a
 `verdict` (`passed`, `failed`, `unresolved`), nonempty `rationale`, and `evidence`
 indices into that case's `findings` array. Every case also states `uncertainty`.
 No pass can be inferred merely because a reviewer reports no concerns.
 
-Findings bind a frozen `correct` or `grounded` obligation, a kind (`support`,
+Findings bind a frozen `complete`, `correct` or `grounded` obligation, a kind (`support`,
 `concern`, `omission`, `counterexample`), exact answer/source anchors, rationale
 and optional counterexample text. Non-omission answer anchors use zero-based
 Unicode code-point offsets `[start,end)` and exact text; omissions bind the whole
-answer hash. Source references use one-based inclusive lines, full source SHA-256
-and exact text. Resolved verdicts require specific findings. Passes require
-source-supported findings and cannot coexist with contrary findings for that
-obligation. A grounding pass additionally requires all cited support lines to
+answer hash. Omissions belong only to `complete`; every finding also declares
+`claim_type` (`task`, `source`, `tool`) and explicit `sources` and `tool_receipts`
+lists. Source references use one-based inclusive lines, full source SHA-256 and
+exact text; procedural references use the supplied receipt ID and canonical hash.
+Resolved verdicts require specific findings. Source passes require source support,
+tool passes require receipt support, and task findings address the frozen question.
+A pass cannot coexist with contrary findings for its obligation. A grounding pass additionally requires all cited support lines to
 have been observed by the answerer. These checks establish binding/coverage,
 not the semantic truth of the reviewer reasoning. Both reviewers must examine
 unsupported extra claims, qualifiers, exceptions and absence scope. Proposed
@@ -460,6 +681,7 @@ Example case fragment (finding index 0 must actually exist and bind the obligati
 
 ```json
 {"judgments": {
+  "complete": {"verdict":"unresolved","rationale":"Requested deliverables have not yet been reviewed.","evidence":[]},
   "correct": {"verdict":"passed","rationale":"The current definition supports the stated value.","evidence":[0]},
   "grounded": {"verdict":"unresolved","rationale":"The required observed support is incomplete.","evidence":[]}
 }}
@@ -474,7 +696,7 @@ python scripts/token_evaluation.py bind-quality --packet D:/evaluations/review-0
 python scripts/token_evaluation.py report --run D:/evaluations/run-001 --quality D:/evaluations/quality.json --output D:/evaluations/report.json
 ```
 
-The deterministic agreement rule applies separately to correctness and grounding:
+The deterministic agreement rule applies separately to completion, correctness and grounding:
 
 | Reviewer A | Reviewer B | Combined result |
 | --- | --- | --- |
@@ -494,7 +716,7 @@ quality passes. An agreed semantic failure or structural failure fails quality.
 Otherwise unresolved obligations block acceptance while preserving the costs.
 
 To account for an unreviewed collection, an explicit
-`{"contract":"colony.quality-review/1","reviews":[]}` is permitted and yields
+`{"contract":"colony.quality-review/2","reviews":[]}` is permitted and yields
 unresolved semantic results. The old arbitrary Boolean-label path remains closed.
 `report --run` reconstructs the subjects from retained collection bytes and
 revalidates both reviews; a self-consistent forged packet cannot replace the
@@ -511,7 +733,7 @@ python scripts/token_evaluation.py human-template --packet D:/evaluations/review
 ```
 
 Open `review.html` locally to inspect the answer, frozen and observed sources,
-reviewer judgments, evidence, uncertainty, and combined assessment. The HTML is a
+procedural receipts, reviewer judgments, evidence, uncertainty, and combined assessment. The HTML is a
 packet inspection artifact, not certification of the full run's receipt/policy
 checks. It has no active scripts or external requests, and escapes untrusted text.
 Human notes contain an author declaration and entries `{case, answer_sha256, text}`.
@@ -632,3 +854,27 @@ for future authorized native sessions, after verifying and pinning the exact
 supported client model identifier and light reasoning setting for all fresh arms.
 Do not substitute the Sol reviewer model. The offline review commands neither select nor
 launch benchmark models, and this change does not authorize a new evaluation.
+
+
+## Saved-answer review receipts (version /10)
+
+New packets use `colony.review-tool-receipts/2`. Successful `colony.ask` answer
+hits include `saved_answer` with bounded text, the explicit trust marker
+`untrusted_saved_answer_not_source_evidence`, and redaction/truncation flags.
+`saved_answer_available` distinguishes an available empty string from omitted or
+unavailable text. Only the returned answer content is projected; producer IDs,
+namespace metadata, credentials and usage fields are not copied. Existing secret
+and private-path scrubbing runs before the 4,000-character text bound. Malformed
+or oversized results remain unavailable rather than being guessed from partial JSON.
+
+Saved text proves what the lookup returned. It does not prove that saved claims
+are true, add current source coverage, or provide instructions for the reviewer.
+Reviewers separately check claims about the returned text and claims about source
+behavior; missing or truncated text cannot establish omitted content. Receipt and
+packet hashes bind this text; report generation reconstructs it from raw logs.
+
+This is prospective: `/9` protocols, reviewer packets, grades and reports remain
+with their original pinned evaluator. Do not rewrite, remask, regrade or relabel
+historical campaigns using `/10`. Questions, actor prompts, budgets, runtime
+behavior and completion/correctness/grounding obligations are unchanged. The review
+instruction hash and receipt/protocol versions identify the new evidence projection.

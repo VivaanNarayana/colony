@@ -30,12 +30,12 @@ def completed_reviews(public):
         review["session_id"] = "synthetic-" + review["slot"]
         for case in review["cases"]:
             case["uncertainty"] = "Semantics unresolved, synthetic fixture only."
-            case["judgments"] = {key: {"verdict": "unresolved", "rationale": "Synthetic fixture; insufficient evidence.", "evidence": []} for key in ("correct", "grounded")}
+            case["judgments"] = {key: {"verdict": "unresolved", "rationale": "Synthetic fixture; insufficient evidence.", "evidence": []} for key in ("complete", "correct", "grounded")}
     return advice
 
 
 def finding(subject):
-    return {"obligation": "correct", "kind": "concern",
+    return {"obligation": "correct", "kind": "concern", "claim_type": "source", "tool_receipts": [],
             "anchor": {"start": 0, "end": len(subject["answer"]), "text": subject["answer"]},
             "sources": [], "rationale": "Needs semantic investigation", "counterexample": ""}
 
@@ -44,7 +44,7 @@ def finding(subject):
 def subject(tmp_path):
     root = packet(tmp_path)
     public = json.loads((root / "answers.json").read_text())
-    public[0]["rubric"] = {"correct": "Current facts", "grounded": "Observed current sources"}
+    public[0]["rubric"] = {"complete": "Requested parts", "correct": "Current facts", "grounded": "Observed current sources"}
     public[0]["label_sha256"] = digest(public[0]["rubric"])
     public[0]["answer"] = "π🙂 <script>alert('x')</script>"
     public[0]["answer_sha256"] = hashlib.sha256(public[0]["answer"].encode()).hexdigest()
@@ -105,7 +105,7 @@ def test_omission_supports_empty_answer_without_inventing_a_quote(subject):
     subject[0].update(answer="", answer_sha256=hashlib.sha256(b"").hexdigest())
     advice = completed_reviews(subject)
     item = finding(subject[0])
-    item.update(kind="omission", anchor={"whole_answer_sha256": subject[0]["answer_sha256"]})
+    item.update(obligation="complete", claim_type="task", kind="omission", anchor={"whole_answer_sha256": subject[0]["answer_sha256"]})
     advice["reviews"][0]["cases"][0]["findings"] = [item]
     validate_reviews(subject, advice)
     item["anchor"]["whole_answer_sha256"] = "wrong"

@@ -14,6 +14,7 @@ from cryptography.fernet import Fernet
 
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import (
+    ContextBudget,
     GitContext,
     Keyfile,
     MemoryChange,
@@ -25,6 +26,7 @@ from colony.models import (
 )
 from colony.security import fingerprint, private_write, scrub, token, verify
 from colony.usage import UsageJournal
+from colony.validation import PinnedSourcePaths, repo_file
 
 
 def _usage_outcome(operation, result, error):
@@ -270,9 +272,44 @@ class Client:
         response.raise_for_status()
         return response.json()
 
-    def _git_supported(self, context: GitContext):
+    def memory_availability(self, namespace: str, repository_id: str | None = None) -> str:
+        """A fresh scoped hint, never a cached answer or evidence of relevance/absence."""
+        from colony.models import MemoryAvailability
+
         try:
-            capability = self.request("/capabilities", {})["git_context"]
+            query = MemoryAvailability(namespace=namespace, repository_id=repository_id)
+            grant = verify(self.keyfile, self.home / "issuer.pub")
+            if not any(s.namespace == namespace and s.pull for s in grant.scopes):
+                return "unknown"
+            if self.url != grant.server.rstrip("/"):
+                return "unknown"
+            identity = fingerprint(self.keyfile)
+            # Short bounded probe; do not send credentials across a redirect.
+            response = httpx.post(self.url + "/memory/availability", json=query.model_dump(),
+                                  headers={"Authorization": f"Bearer {token(self.keyfile)}"},
+                                  timeout=1, follow_redirects=False)
+            response.raise_for_status()
+            value = response.json()
+            if (not isinstance(value, dict)
+                    or set(value) != {"contract", "namespace", "repository_id", "state"}
+                    or value["contract"] != "colony.memory-availability/1"
+                    or value["namespace"] != namespace
+                    or (repository_id is not None and value["repository_id"] != repository_id)
+                    or value["state"] not in ("empty", "present")):
+                return "unknown"
+            MemoryAvailability(namespace=value["namespace"], repository_id=value["repository_id"])
+            verify(self.keyfile, self.home / "issuer.pub")
+            if identity != fingerprint(self.keyfile):
+                return "unknown"
+            return value["state"]
+        except (OSError, ValueError, TypeError, httpx.HTTPError):
+            return "unknown"
+
+    def _git_supported(self, context: GitContext, *, capabilities=None):
+        try:
+            if capabilities is None:
+                capabilities = self.request("/capabilities", {})
+            capability = capabilities["git_context"]
             if capability["version"] != context.version or (
                 capability["repository_id"] != context.repository_id
             ):
@@ -291,8 +328,37 @@ class Client:
         include_evidence_files: bool = False,
         repo: Path | None = None,
         repository_id: str | None = None,
+        context_budget: ContextBudget | None = None,
+        response_profile: str | None = None,
+        path_allowed=None,
     ):
+        budget = None
+        negotiated_profile = False
+        if response_profile is not None:
+            from colony.compact import PROFILE
+
+            if response_profile != PROFILE or context_budget is None:
+                raise ValueError("Invalid response profile")
+        if context_budget is not None:
+            from colony.context_budget import count_response, fit_response
+
+            try:
+                budget = ContextBudget.model_validate(context_budget)
+            except (TypeError, ValueError):
+                raise ValueError("Invalid context budget") from None
+            # Validate explicitly requested local accounting before contacting a server.
+            count_response({}, budget)
+
+        def finish(value):
+            if negotiated_profile:
+                value = {**value, "response_profile": response_profile}
+            return fit_response(value, budget, question=question) if budget is not None else value
+
         context = None
+        if path_allowed is not None:
+            if repo is None:
+                raise ValueError("Restricted lookups require an explicit repository")
+            path_allowed = PinnedSourcePaths(path_allowed)
         if repository_id is not None:
             from colony.git_context import capture
 
@@ -303,20 +369,92 @@ class Client:
             payload = {"question": scrub(question), "namespace": namespace}
             if include_evidence_files:
                 payload["include_evidence_files"] = True
+            capabilities = None
+            if budget is not None:
+                try:
+                    capabilities = self.request("/capabilities", {})
+                    capability = capabilities["context_budget"]
+                    if (
+                        capability["version"] != budget.version
+                        or not isinstance(capability["encodings"], list)
+                        or not all(isinstance(name, str) for name in capability["encodings"])
+                        or budget.encoding not in capability["encodings"]
+                        or type(capability["min_tokens"]) is not int
+                        or type(capability["max_tokens"]) is not int
+                        or not capability["min_tokens"] <= budget.max_tokens <= capability["max_tokens"]
+                    ):
+                        raise ValueError()
+                except (KeyError, TypeError, ValueError, httpx.HTTPStatusError):
+                    return finish({"hit": False, "reason": "context_budget_unsupported"})
+                payload["context_budget"] = budget.model_dump()
+                profiles = capability.get("profiles")
+                if response_profile is not None and isinstance(profiles, list) and response_profile in profiles:
+                    payload["response_profile"] = response_profile
+                    negotiated_profile = True
             if context is not None:
                 try:
-                    self._git_supported(context)
+                    if budget is not None:
+                        self._git_supported(context, capabilities=capabilities)
+                    else:
+                        self._git_supported(context)
                 except ValueError:
-                    return {"hit": False, "reason": "git_context_unsupported"}
+                    return finish({"hit": False, "reason": "git_context_unsupported"})
                 payload["git_context"] = context.model_dump()
             result = self.request("/ask", payload)
+            expected_profile = response_profile if negotiated_profile else None
+            if (
+                (negotiated_profile and not isinstance(result, dict))
+                or (isinstance(result, dict) and result.get("response_profile") != expected_profile)
+            ):
+                return finish({"hit": False, "reason": "context_budget_invalid_profile"})
+            if budget is not None:
+                try:
+                    receipt = result["context_budget"]
+                    if (
+                        any(receipt[key] != value for key, value in budget.model_dump().items())
+                        or type(receipt["used"]) is not int
+                        or type(receipt["limited"]) is not bool
+                        or receipt["used"] != count_response(result, budget)
+                        or receipt["used"] > budget.max_tokens
+                        or receipt["measurement"]
+                        != ("utf8_bytes_estimate" if budget.encoding == "utf8_bytes" else "encoding_tokens")
+                    ):
+                        raise ValueError()
+                except (KeyError, TypeError, ValueError):
+                    return finish({"hit": False, "reason": "context_budget_invalid_receipt"})
             if context is not None:
                 from colony.git_client import verify_lookup
 
-                return verify_lookup(result, repo, context, whole_files=include_evidence_files)
+                receipt = result.get("context_budget") if budget is not None else None
+                options = {"context_budget": budget} if budget is not None else {}
+                if path_allowed is not None:
+                    options["path_allowed"] = path_allowed
+                result = verify_lookup(
+                    result, repo, context, whole_files=include_evidence_files, **options
+                )
+                if budget is not None:
+                    if "context_budget" not in result:
+                        result["context_budget"] = receipt
+                    elif receipt["limited"]:
+                        result["context_budget"]["limited"] = True
+            result = finish(result)
+            if path_allowed is not None and result.get("hit"):
+                # Check the delivered bundle, including remote-only hits and
+                # saved prose whose support spans multiple files.
+                try:
+                    refs = {s["ref"] for s in result["sources"]}
+                    if not refs:
+                        raise ValueError()
+                    for ref in refs.union(path_allowed.targets):
+                        repo_file(repo, ref, path_allowed=path_allowed)
+                    for field, key in (("evidence", "ref"), ("current_repository_reads", "path")):
+                        if any(item[key] not in refs for item in result.get(field, [])):
+                            raise ValueError()
+                except (KeyError, TypeError, ValueError, OSError):
+                    return finish({"hit": False, "reason": "lookup_unavailable"})
             return result
         except httpx.TransportError:
-            return {"hit": False, "reason": "server_unavailable"}
+            return finish({"hit": False, "reason": "server_unavailable"})
 
     def _memory_request(self, route: str, request_type, values: dict, *, mutation: bool):
         try:
@@ -461,7 +599,18 @@ class Client:
         return Trail.model_validate(data)
 
     @_observed("publish")
-    def push(self, trail: Trail, *, repo: Path | None = None, repository_id: str | None = None):
+    def push(self, trail: Trail, *, repo: Path | None = None, repository_id: str | None = None,
+             path_allowed=None):
+        if path_allowed is not None and not isinstance(path_allowed, PinnedSourcePaths):
+            path_allowed = PinnedSourcePaths(path_allowed)
+
+        def authorize_sources():
+            if path_allowed is not None:
+                if repo is None:
+                    raise ValueError("Restricted publication requires an explicit repository")
+                for source in trail.sources:
+                    repo_file(repo, source.ref, path_allowed=path_allowed)
+
         if repository_id is not None:
             from colony.git_client import checked_sources
             from colony.git_context import capture
@@ -471,7 +620,7 @@ class Client:
             context = capture(repo, repository_id)
             if trail.git_context is not None and trail.git_context != context:
                 raise ValueError("Git context changed before publication")
-            checked_sources(repo, trail.sources)
+            checked_sources(repo, trail.sources, path_allowed=path_allowed)
             if capture(repo, repository_id) != context:
                 raise ValueError("Git context changed before publication")
             trail = trail.model_copy(update={"git_context": context})
@@ -479,8 +628,10 @@ class Client:
         try:
             if trail.git_context is not None:
                 self._git_supported(trail.git_context)
+            authorize_sources()
             return self.request("/trails", trail.model_dump())
         except httpx.TransportError:
+            authorize_sources()
             queue = self.home / "queue"
             queue.mkdir(exist_ok=True, mode=0o700)
             payload = {"identity": fingerprint(self.keyfile), "trail": trail.model_dump()}
@@ -491,6 +642,7 @@ class Client:
             temporary = queue / f".{uuid.uuid4().hex}.tmp"
             try:
                 private_write(temporary, encrypted)
+                authorize_sources()
                 with suppress(FileExistsError):
                     # Publish complete ciphertext without replacing an existing envelope.
                     # Same-directory hard links are atomic on supported local filesystems.

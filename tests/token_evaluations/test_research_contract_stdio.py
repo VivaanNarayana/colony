@@ -62,7 +62,7 @@ def test_actual_metadata_and_literal_content_contract(tmp_path):
                 'path': 'alpha.py', 'sha256': hashlib.sha256(raw).hexdigest(),
                 'start': 99, 'end': 2, 'content': ''}
             upper = text_only(await session.call_tool('fixture_search', {'query': 'VALUE'}))
-            assert {json.loads(b.text)['path']: json.loads(b.text) for b in upper.content} == {
+            assert {json.loads(b.text)['path']: json.loads(b.text) for b in upper.content[:-1]} == {
                 'alpha.py': {'path': 'alpha.py', 'sha256': hashlib.sha256(raw).hexdigest(),
                              'matches': ['1: VALUE = 77']},
                 'notes.txt': {'path': 'notes.txt',
@@ -70,13 +70,14 @@ def test_actual_metadata_and_literal_content_contract(tmp_path):
                               'matches': ['1: VALUE = 99']},
             }
             lower = text_only(await session.call_tool('fixture_search', {'query': 'value'}))
-            assert len(lower.content) == 1
+            assert len(lower.content) == 2
             assert json.loads(lower.content[0].text) == {
                 'path': 'alpha.py', 'sha256': hashlib.sha256(raw).hexdigest(),
                 'matches': ['2: value = "café"']}
             for query in ['VALUE|value', 'alpha.py']:
                 empty = text_only(await session.call_tool('fixture_search', {'query': query}))
-                assert not empty.isError and empty.content == []
+                assert not empty.isError and len(empty.content) == 1
+                assert json.loads(empty.content[0].text)['research_budget']['succeeded'] == 1
     asyncio.run(asyncio.wait_for(control(), timeout=30))
 
 

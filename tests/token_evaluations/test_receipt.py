@@ -128,9 +128,10 @@ def test_native_joint_arm_order_is_not_only_per_arm_task_order(native_run):
         report(root, root / "quality.json", root / "refused.json")
 
 
+@pytest.mark.parametrize('three_arm', [False, True])
 @pytest.mark.parametrize('dispatch_alias', [False, True])
 def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path, monkeypatch,
-                                                                    dispatch_alias):
+                                                                    dispatch_alias, three_arm):
     """Real collector/argument/prompt writer; only processes/server I/O are simulated."""
     from colony.onboarding import initialize
     from scripts.token_evaluation import native, runner
@@ -143,6 +144,9 @@ def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path,
                 "tasks": [{"id": phase, "phase": phase, "snapshot": "v1",
                            "question": "What is the value?", "expected_use": "optional"}
                           for phase in ("learn", "reuse")]}
+    if three_arm:
+        workload["tasks"] = [{**workload["tasks"][i > 1], "id": f"task{i}"}
+                             for i in range(14)]
     protocol = {"contract": CONTRACT, "quality_review": review_policy(), "collector": {"files": collector_hashes()},
                 "track": "natural", "output": {"contract": OUTPUT_CONTRACT,
                 "format": "json", "answer_policy": "last_agent_message"},
@@ -152,9 +156,12 @@ def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path,
                 "research": {"max_calls": 6}, "workloads": [workload],
                 "limits": {"max_attempts": 4, "gross_token_stop": 1000,
                            "wall_seconds": 60, "session_seconds": 5}}
+    if three_arm:
+        protocol["main_target"] = {"python": sys.executable, "mcp_args": ["--compact"]}
+        protocol["limits"]["max_attempts"] = 42
     run = {"run_dir": str(tmp_path), "protocol": protocol, "protocol_sha256": digest(protocol),
            "arms": {arm: {"workspace": str(tmp_path / "workspaces" / arm)}
-                    for arm in ("no_colony", "colony")}}
+                    for arm in (("no_colony", "main", "colony") if three_arm else ("no_colony", "colony"))}}
     for arm in run["arms"]:
         source = tmp_path / "workspaces" / arm / "sample/v1/value.py"
         source.parent.mkdir(parents=True)
@@ -204,8 +211,16 @@ def test_mocked_native_writer_round_trips_learn_and_read_only_receipts(tmp_path,
         (tmp_path / 'dispatch-alias').mkdir()
         dispatch = tmp_path / 'dispatch-alias' / '..'
     collection = native.execute_live(dispatch, {}, tmp_path / "auth")
-    assert collection["status"] == "complete" and collection["attempts"] == 4, collection["error"]
+    assert collection["status"] == "complete" and collection["attempts"] == (42 if three_arm else 4), collection["error"]
     rows = [json.loads(line) for line in (tmp_path / "control/attempts.jsonl").read_text().splitlines()]
     validate_native_receipts(tmp_path, run, protocol, rows)
-    assert [r["arm"] for r in rows] == ["no_colony", "colony", "colony", "no_colony"]
-    assert collection["inventory"]["known_gross_tokens"] == 48
+    if three_arm:
+        from collections import Counter
+        assert Counter(r["arm"] for r in rows) == {"no_colony": 14, "main": 14, "colony": 14}
+        assert [r["arm"] for r in rows[:9]] == ["no_colony", "main", "colony", "main", "colony", "no_colony", "colony", "no_colony", "main"]
+        assert (tmp_path / "private/sample/team").is_dir()
+        assert (tmp_path / "cohorts/main/private/sample/team").is_dir()
+        assert collection["initial_empty_stores"] == {"no_colony": True, "main": True, "colony": True}
+    else:
+        assert [r["arm"] for r in rows] == ["no_colony", "colony", "colony", "no_colony"]
+    assert collection["inventory"]["known_gross_tokens"] == (504 if three_arm else 48)

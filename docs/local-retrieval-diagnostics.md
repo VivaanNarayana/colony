@@ -14,8 +14,12 @@ means additional candidates are unknown, not that none exist. Query text, saved
 content, namespace names, source paths, hashes and excerpts are not logged.
 Trail IDs remain local diagnostic identifiers and should be handled as private.
 
-`Store.ask` records when it enters its existing evidence fallback. Detailed
-passage ranking in that fallback is not instrumented by this change. Source
+`Store.ask` records when it enters its existing evidence fallback. The adaptive
+compact path also records this event with
+`reason: budget_limited` when a validated answer's automatic bundle needs its
+existing same-finding evidence salvage. Diagnostics remain local and can be used
+alongside context budgets/profiles; their records do not consume response budget.
+Detailed passage ranking in that fallback is not instrumented by this change. Source
 counts and validation status describe declared references, not semantic coverage
 of every claim or the whole repository. Failure or saturation of observation
 cannot block the answer. Ranking, thresholds and response contracts are unchanged.

@@ -30,10 +30,11 @@ def judgments(public):
             row = subjects[case["case"]]
             source = row["current_sources"][0]
             case["uncertainty"] = "Synthetic schema control, not empirical model calibration."
-            for key in ("correct", "grounded"):
+            for key in ("correct", "grounded", "complete"):
                 case["judgments"][key] = {"verdict": "passed", "rationale": "Current definition supports this fixture answer.",
                                           "evidence": [len(case["findings"])]}
                 case["findings"].append({"obligation": key, "kind": "support",
+                    "claim_type": "task" if key == "complete" else "source", "tool_receipts": [],
                     "anchor": {"start": 0, "end": len(row["answer"]), "text": row["answer"]},
                     "sources": [{"path": source["path"], "sha256": source["sha256"], "start": 1, "end": 1,
                                  "text": source["content"].splitlines()[0]}],
@@ -142,7 +143,7 @@ def test_good_grounded_answers_can_pass_end_to_end_in_both_arms(run):
     assert result["quality_complete"] and result["tool_policy_compliant"]
     assert result["observed_token_reduction"]["gross_tokens"] == pytest.approx(1 - 100 / 120)
     assert not result["certifying"] and result["supported_product_win"] == "not_established"
-    assert all(row["quality_obligations"] == {"correct": "passed", "grounded": "passed", "format": "passed"}
+    assert all(row["quality_obligations"] == {"complete": "passed", "correct": "passed", "grounded": "passed", "format": "passed"}
                for row in result["attempts"])
     assert "both_passed" in render_html(public, submission)
 

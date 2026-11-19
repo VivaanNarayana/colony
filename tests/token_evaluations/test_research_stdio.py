@@ -35,11 +35,12 @@ def test_actual_research_mcp_blocks_validation_eof_and_hard_budget(tmp_path):
                 'path': 'a.py', 'sha256': hashlib.sha256(b'one\ncommon\n').hexdigest(),
                 'start': 2, 'end': 2, 'content': 'common'}
             missing = await session.call_tool('fixture_search', {'query': 'absent'})
-            assert missing.content == []
+            assert len(missing.content) == 1
+            assert json.loads(missing.content[0].text)['research_budget']['remaining'] == 5
             multi = await session.call_tool('fixture_search', {'query': 'common'})
-            assert {json.loads(block.text)['path'] for block in multi.content} == {'a.py', 'b.py'}
+            assert {json.loads(block.text)['path'] for block in multi.content[:-1]} == {'a.py', 'b.py'}
             one = await session.call_tool('fixture_search', {'query': 'one'})
-            assert len(one.content) == 1
+            assert len(one.content) == 2
             eof = await session.call_tool('fixture_read', {'path': 'a.py', 'start': 99})
             assert json.loads(eof.content[0].text)['content'] == ''
             invalid = await session.call_tool('fixture_read', {'path': 'a.py', 'lines': True})

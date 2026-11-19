@@ -5,30 +5,32 @@ import re
 from pathlib import Path
 
 from colony.git_context import capture, compare
-from colony.models import GitContext, Source
+from colony.models import ContextBudget, GitContext, Source
 from colony.security import PATTERNS, scrub
-from colony.validation import repo_file, validate
+from colony.validation import PinnedSourcePaths, repo_contents, repo_file, validate
 
 
-def _source_lines(root: Path, source: Source) -> list[str]:
+def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
     # Keep the caller path independent of the server's native retrieval stack.
     # Scrub the whole file before excerpting, preserving original line numbers.
     if source.kind != "file":
         return []
     try:
-        data = repo_file(root, source.ref).read_bytes()
+        _, data = repo_contents(root, source.ref, path_allowed=path_allowed)
         if hashlib.sha256(data).hexdigest() != source.content_hash:
-            return []
+            raise ValueError("Current source changed")
         text = data.decode("utf-8")
     except (OSError, ValueError, UnicodeError):
+        if path_allowed is not None:
+            raise ValueError("Current source unavailable") from None
         return []
     for pattern in PATTERNS:
         text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
     return text.splitlines()
 
 
-def checked_sources(repo: Path, sources: list[Source]) -> None:
-    if validate(repo, sources)[0] != "validated":
+def checked_sources(repo: Path, sources: list[Source], *, path_allowed=None) -> None:
+    if validate(repo, sources, path_allowed=path_allowed)[0] != "validated":
         raise ValueError("Git-aware publication requires matching current local file evidence")
 
 
@@ -48,10 +50,16 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
     return result
 
 
-def _local_reads(repo, sources, remote_evidence, whole_files):
+def _local_reads(
+    repo, sources, remote_evidence, whole_files, *, adaptive=False, compact_bundle=False, path_allowed=None,
+):
     by_ref = {source.ref: source for source in sources}
     hints = remote_evidence if isinstance(remote_evidence, list) else []
     selected, occupied, budget = [], [], 24000 if whole_files else 4800
+    # Compact adaptive responses can require all eight bounded source cores.
+    # Legacy focused/whole-file requests retain their two/four-read limits.
+    limit = 8 if adaptive and compact_bundle else (4 if whole_files else 2)
+    options = {"path_allowed": path_allowed} if path_allowed is not None else {}
     for item in hints[:8]:
         if not isinstance(item, dict):
             continue
@@ -60,7 +68,7 @@ def _local_reads(repo, sources, remote_evidence, whole_files):
             continue
         if type(line) is not int or line < 1:
             continue
-        lines = _source_lines(repo, by_ref[ref])
+        lines = _source_lines(repo, by_ref[ref], **options)
         if not lines or line > len(lines):
             continue
         text = "\n".join(lines)
@@ -68,27 +76,52 @@ def _local_reads(repo, sources, remote_evidence, whole_files):
         start = 1 if complete else line
         if not complete:
             hint = item.get("text")
-            if not isinstance(hint, str) or not 1 <= len(hint) <= 2400:
+            if not isinstance(hint, str) or not hint or (not adaptive and len(hint) > 2400):
                 continue
             # A short Markdown section may exceed 32 lines. Preserve its selected
             # span, using only the bounded hint length and verified local text.
-            text = "\n".join(lines[line - 1 :])[: len(hint)]
-        if len(text) > budget:
+            if adaptive:
+                # Budgeted source units are indivisible. A remote character count
+                # must never turn a verified local command into a partial command.
+                # Excerpts use canonical '\n' separators. splitlines() would
+                # discard a represented trailing empty source line.
+                last_line = line + len(hint.split("\n")) - 1
+                if last_line > len(lines):
+                    continue
+                text = "\n".join(lines[line - 1 : last_line])
+            else:
+                text = "\n".join(lines[line - 1 :])[: len(hint)]
+        if not adaptive and len(text) > budget:
             continue
         end = start + text.count("\n")
         # Separate sections of one file can supply different requested facts.
         # Refuse overlapping reads, including duplicate complete-file hints.
         if any(r == ref and start <= last and end >= first for r, first, last in occupied):
             continue
-        selected.append({"ref": ref, "line": start, "text": text, "complete_file": complete})
+        read = {"ref": ref, "line": start, "text": text, "complete_file": complete}
+        if adaptive:
+            first, last = item.get("selected_line"), item.get("selected_end_line")
+            if first is not None or last is not None:
+                if not (type(first) is int and type(last) is int and start <= first <= last <= end):
+                    continue
+                read.update(selected_line=first, selected_end_line=last)
+        selected.append(read)
         occupied.append((ref, start, end))
         budget -= len(text)
-        if len(selected) >= (4 if whole_files else 2):
+        if len(selected) >= limit:
             break
     return selected
 
 
-def verify_lookup(result, repo: Path, context: GitContext, *, whole_files=False):
+def verify_lookup(
+    result,
+    repo: Path,
+    context: GitContext,
+    *,
+    whole_files=False,
+    context_budget: ContextBudget | None = None,
+    path_allowed=None,
+):
     """A server's checkout or receipt alone cannot certify the caller's working tree."""
     if not isinstance(result, dict):
         return {"hit": False, "reason": "git_invalid_receipt"}
@@ -100,9 +133,14 @@ def verify_lookup(result, repo: Path, context: GitContext, *, whole_files=False)
             "below_threshold",
             "no_active_trails",
             "git_context_mismatch",
-        }:
+        } and not (context_budget is not None and reason == "budget_limited"):
             reason = "git_no_verified_hit"
         return {"hit": False, "reason": reason, "git": compact_receipt(context, "unavailable")}
+    # Client.ask owns the final delivery check when it supplies its operation's
+    # pins. Direct Python callers get the same protection at this return boundary.
+    check_on_return = path_allowed is not None and not isinstance(path_allowed, PinnedSourcePaths)
+    if check_on_return:
+        path_allowed = PinnedSourcePaths(path_allowed)
     try:
         receipt = result["git"]
         if GitContext.model_validate(receipt["request"]) != context:
@@ -111,12 +149,35 @@ def verify_lookup(result, repo: Path, context: GitContext, *, whole_files=False)
         reason = compare(origin, context)
         if reason == "repository_mismatch" or result.get("status") != "validated":
             raise ValueError()
+        from colony.compact import PROFILE, legacy_evidence
+
+        profile = result.get("response_profile")
+        if profile is not None and (profile != PROFILE or context_budget is None):
+            raise ValueError()
+        compact = profile == PROFILE
+        if compact:
+            result = legacy_evidence(result)
         raw_sources = result["sources"]
         if not isinstance(raw_sources, list) or not 1 <= len(raw_sources) <= 50:
             raise ValueError()
         sources = [Source.model_validate(source) for source in raw_sources]
-        checked_sources(repo, sources)
-        evidence = _local_reads(repo, sources, result.get("evidence"), whole_files)
+        checked_sources(repo, sources, path_allowed=path_allowed)
+        hints = result.get("evidence")
+        evidence = _local_reads(
+            repo,
+            sources,
+            hints,
+            whole_files or compact,
+            **({"compact_bundle": True} if compact else {}),
+            **({"adaptive": True} if context_budget is not None else {}),
+            **({"path_allowed": path_allowed} if path_allowed is not None else {}),
+        )
+        if context_budget is not None and (
+            not isinstance(hints, list) or len(evidence) != len(hints)
+        ):
+            # Every advertised adaptive core is required; a partial saved-answer
+            # hit must not survive one failed local span or source check.
+            raise ValueError()
         if not evidence or capture(repo, context.repository_id) != context:
             raise ValueError()
     except (KeyError, TypeError, ValueError, OSError):
@@ -132,4 +193,14 @@ def verify_lookup(result, repo: Path, context: GitContext, *, whole_files=False)
             f"{item['ref']}:{item['line']}\n{item['text']}" for item in evidence
         )
         answer["recommendation"] = "Use only current local file evidence; saved answer withheld."
+    if context_budget is not None:
+        from colony.context_budget import fit_response
+
+        answer = fit_response(answer, context_budget)
+    if check_on_return and answer.get("hit"):
+        try:
+            for ref in path_allowed.targets:
+                repo_file(repo, ref, path_allowed=path_allowed)
+        except (ValueError, OSError):
+            return {"hit": False, "reason": "git_local_evidence_not_verified"}
     return answer

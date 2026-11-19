@@ -11,7 +11,7 @@ import time
 from collections import Counter
 from pathlib import Path, PurePosixPath
 
-from .protocol import ATTEMPT_ID_PATTERN
+from .protocol import ATTEMPT_ID_PATTERN, evaluation_arms, validate_authorization
 
 
 def _sha(path):
@@ -62,7 +62,7 @@ def prepare(manifest_path, output_dir):
                 frozen.append((workload["id"], snapshot["id"], relative, source, digest))
     output.mkdir(parents=True)
     arms = {}
-    for arm in ("no_colony", "colony"):
+    for arm in evaluation_arms(manifest):
         workspace = output / "workspaces" / arm
         workspace.mkdir(parents=True)
         for workload, snapshot, relative, source, digest in frozen:
@@ -106,18 +106,19 @@ def _verify(run):
             for relative, digest in snapshot["files"].items():
                 if _sha(_inside(source_root, f'{snapshot["id"]}/{relative}')) != digest:
                     raise ValueError("Original fixture source drift")
-    target = manifest["target"]
-    code = "import hashlib,json,pathlib,colony; r=pathlib.Path(colony.__file__).parent; print(json.dumps({p.relative_to(r).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in r.rglob('*.py')}))"
-    expected = target["runtime_hashes"]
-    normalized = {key.removeprefix("colony/"): value for key, value in expected.items()}
-    if not normalized:
-        raise ValueError("Runtime hashes required")
-    for relative in normalized:
-        if Path(relative).is_absolute() or ".." in Path(relative).parts:
-            raise ValueError("Invalid runtime path")
-    checked = subprocess.run([target["python"], "-I", "-c", code, json.dumps(list(normalized))], capture_output=True, text=True, timeout=30, check=True)
-    if json.loads(checked.stdout) != normalized:
-        raise ValueError("Installed target runtime drift")
+    for target in ([manifest["target"], manifest["main_target"]]
+                   if "main_target" in manifest else [manifest["target"]]):
+        code = "import hashlib,json,pathlib,colony; r=pathlib.Path(colony.__file__).parent; print(json.dumps({p.relative_to(r).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in r.rglob('*.py')}))"
+        expected = target["runtime_hashes"]
+        normalized = {key.removeprefix("colony/"): value for key, value in expected.items()}
+        if not normalized:
+            raise ValueError("Runtime hashes required")
+        for relative in normalized:
+            if Path(relative).is_absolute() or ".." in Path(relative).parts:
+                raise ValueError("Invalid runtime path")
+        checked = subprocess.run([target["python"], "-I", "-c", code, json.dumps(list(normalized))], capture_output=True, text=True, timeout=30, check=True)
+        if json.loads(checked.stdout) != normalized:
+            raise ValueError("Installed target runtime drift")
     client = manifest["client"]
     if _sha(client["executable"]) != client["sha256"]:
         raise ValueError("Client executable drift")
@@ -149,11 +150,7 @@ def execute(run_dir, authorization_path=None, auth_home=None, execute_native=Fal
         if not authorization_path or not auth_home:
             raise ValueError("Native execution requires authorization_path and explicit auth_home")
         authorization = _read(authorization_path)
-        manifest = run["protocol"]
-        expected = {"protocol_sha256": run["protocol_sha256"], "revision": manifest["target"]["revision"],
-                    "model": manifest["client"]["model"], "limits": manifest["limits"]}
-        if any(authorization.get(key) != value for key, value in expected.items()) or not authorization.get("owner_intent"):
-            raise ValueError("Native authorization does not bind protocol, revision, model, limits and owner intent")
+        validate_authorization(authorization, run)
         _verify(run)
         for relative, digest in run["files"].items():
             if _sha(_inside(root.resolve(), relative)) != digest:
