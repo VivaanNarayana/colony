@@ -18,13 +18,27 @@ MAX_SAVED_ANSWER = 4000
 SAVED_ANSWER_TRUST = "untrusted_saved_answer_not_source_evidence"
 SUBMITTED_FINDING_TRUST = "untrusted_submitted_finding_not_source_evidence"
 MAX_PATHS = 16
+LOOKUP_REASONS = {
+    "no_pull_scope", "no_relevant_trail", "below_threshold", "no_active_trails",
+    "git_context_mismatch", "git_no_verified_hit", "git_invalid_receipt",
+    "git_local_evidence_not_verified", "git_context_unsupported", "budget_limited",
+    "context_budget_unsupported", "context_budget_invalid_profile", "context_budget_invalid_receipt",
+    "invalid_evidence", "server_unavailable",
+}
+REASONS_BY_TOOL = {
+    "ask": LOOKUP_REASONS,
+    "research": LOOKUP_REASONS | {"lookup_unavailable"},
+    "publish": {"publication_not_eligible", "finding_and_scope_required", "finding_too_large",
+                "publication_failed_or_outcome_unknown"},
+    "push": set(),
+}
 TOOLS = {
     "repository.fixture_files", "repository.fixture_read", "repository.fixture_search",
     "colony.ask", "colony.push", "colony.read", "colony.research", "colony.publish",
     "colony.fixture_files", "colony.fixture_search",
 }
 LIMITS = {
-    "contract": "colony.review-tool-receipts/5",
+    "contract": "colony.review-tool-receipts/6",
     "max_receipts": MAX_RECEIPTS,
     "max_text_chars": MAX_TEXT,
     "max_saved_answer_chars": MAX_SAVED_ANSWER,
@@ -171,8 +185,7 @@ def _outcome(item, arguments, files):
             if type(value.get(key)) is bool:
                 out[key] = value[key]
         for key, allowed in {
-            "reason": {"no_relevant_trail", "git_context_mismatch", "git_no_verified_hit",
-                       "git_invalid_receipt", "git_local_evidence_not_verified", "budget_limited"},
+            "reason": REASONS_BY_TOOL[tool],
             "status": {"validated", "unverified", "stale", "rejected"},
             "match_kind": {"answer", "evidence", "memory", "trail"},
         }.items():
@@ -330,8 +343,7 @@ def validate(receipts, limits, files):
             elif key in {"error", "reason", "status", "match_kind"}:
                 enums = {
                     "error": {"tool_error", "research_call_limit"},
-                    "reason": {"no_relevant_trail", "git_context_mismatch", "git_no_verified_hit",
-                               "git_invalid_receipt", "git_local_evidence_not_verified", "budget_limited", "other"},
+                    "reason": REASONS_BY_TOOL.get(tool, set()) | {"other"},
                     "status": {"validated", "unverified", "stale", "rejected", "other"},
                     "match_kind": {"answer", "evidence", "memory", "trail", "other"},
                 }

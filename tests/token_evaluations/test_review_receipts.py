@@ -245,9 +245,9 @@ def test_end_to_end_receipts_are_bound_and_reconstructed_from_raw_log(run, forge
     assert not (root / "must-not-exist.json").exists()
 
 
-@pytest.mark.parametrize("legacy_version", [9, 17])
+@pytest.mark.parametrize("legacy_version", [9, 17, 18])
 def test_prospective_contract_rejects_legacy_packets_without_upgrading_them(subject, legacy_version):
-    assert CONTRACT == "colony.token-evaluation/18"
+    assert CONTRACT == "colony.token-evaluation/19"
     before = copy.deepcopy(subject)
     legacy = {"contract": f"colony.token-evaluation/{legacy_version}"}
     with pytest.raises(ValueError, match="original pinned collector"):
@@ -258,7 +258,7 @@ def test_prospective_contract_rejects_legacy_packets_without_upgrading_them(subj
         validate_reviews(subject, advice)
     assert subject == before
     assert "tool_receipts_sha256" in BINDINGS
-    assert LIMITS["contract"] == "colony.review-tool-receipts/5"
+    assert LIMITS["contract"] == "colony.review-tool-receipts/6"
 
 
 def test_missing_completion_is_not_defaulted_to_a_pass(subject):
@@ -430,7 +430,7 @@ def test_saved_text_cannot_drop_trust_or_bounds_or_scrubbing(change):
         validate(projection["tool_receipts"], projection["tool_receipt_limits"], {})
 
 
-@pytest.mark.parametrize("legacy_version", [1, 4])
+@pytest.mark.parametrize("legacy_version", [1, 4, 5])
 def test_legacy_receipt_contract_is_rejected_without_modification(legacy_version):
     projection = project([])
     projection["tool_receipt_limits"]["contract"] = f"colony.review-tool-receipts/{legacy_version}"
@@ -438,6 +438,39 @@ def test_legacy_receipt_contract_is_rejected_without_modification(legacy_version
     with pytest.raises(ValueError):
         validate(projection["tool_receipts"], projection["tool_receipt_limits"], {})
     assert projection == before
+
+
+@pytest.mark.parametrize("tool,reason", [
+    ("publish", "finding_too_large"), ("publish", "finding_and_scope_required"),
+    ("publish", "publication_not_eligible"), ("publish", "publication_failed_or_outcome_unknown"),
+    ("research", "lookup_unavailable"), ("research", "context_budget_invalid_receipt"),
+    ("ask", "server_unavailable"),
+])
+def test_masked_receipt_preserves_the_reported_reason_without_granting_evidence(subject, tool, reason):
+    flag = "stored" if tool == "publish" else "hit"
+    event = call("colony." + tool, {"content": "PRIVATE_SUBMISSION"}, {flag: False, "reason": reason})
+    projection = project([event])
+    receipt = projection["tool_receipts"][0]
+    assert receipt["event_sha256"] == digest(event)
+    assert receipt["outcome"][flag] is False and receipt["outcome"]["reason"] == reason
+    assert "PRIVATE_SUBMISSION" not in json.dumps(projection)
+    before = copy.deepcopy(subject[0]["observed_current_evidence"])
+    bind_projection(subject[0], projection)
+    validate_packet(subject)
+    assert subject[0]["observed_current_evidence"] == before
+
+
+@pytest.mark.parametrize("tool,reason", [
+    ("publish", "PRIVATE_ERROR"), ("publish", "lookup_unavailable"),
+    ("research", "finding_too_large"), ("push", "publication_not_eligible"),
+])
+def test_unrecognized_or_foreign_reason_is_masked_and_forgery_rejected(tool, reason):
+    projection = project([call("colony." + tool, payload={"reason": reason})])
+    outcome = projection["tool_receipts"][0]["outcome"]
+    assert outcome["reason"] == "other" and reason not in json.dumps(projection)
+    outcome["reason"] = reason
+    with pytest.raises(ValueError, match="unsafe tool receipt"):
+        validate(projection["tool_receipts"], projection["tool_receipt_limits"], {})
 
 
 @pytest.mark.parametrize("tool", ["publish", "push"])

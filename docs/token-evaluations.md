@@ -1,5 +1,11 @@
 # Memory-use token evaluations
 
+## Publication and lookup reasons in prospective reviews (version /19)
+
+Offline review receipts preserve recognized reason codes for each tool. Reviewers
+can distinguish an oversized finding from a publication with an unknown outcome.
+Unrecognized reason text maps to `other`. Historical runs use their pinned collectors.
+
 ## Submitted findings in prospective reviews (version /18)
 
 Reviewers can check what a successful publication submitted using up to 1,024
