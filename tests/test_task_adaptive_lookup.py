@@ -57,7 +57,8 @@ def test_task_lookup_preserves_ordinary_adaptive_evidence_and_cost(identity, mon
         assert actual == expected
     assert len(actual[0].text.encode('utf-8')) <= limit
     assert len(seen) == 2  # Exactly one request for each explicit call; no automatic retry.
-    assert seen[0] == seen[1]
+    assert seen[0][0] == seen[1][0]
+    assert seen[0][1] == {**seen[1][1], 'repo': repo, 'verify_task_checkout': True}
     assert seen[0][1]['context_budget'].max_tokens == limit
     assert seen[0][1]['response_profile']
     assert {t.name for t in asyncio.run(task.list_tools())} == {'read', 'research'}

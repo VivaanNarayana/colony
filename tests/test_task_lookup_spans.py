@@ -153,7 +153,8 @@ def test_validated_hit_then_only_the_missing_source_read(transport, monkeypatch,
     else:
         receipt = call("read", batch=[{"path": path} for path in missing])
         page = receipt["results"][-1]
-    assert paths_read == missing and receipt["lookup_if"] == "recall or gap"
+    assert paths_read == missing
+    assert "lookup_if" not in receipt
     assert "attempts = 2" in page["content"] and page["complete_file"]
     assert task._read_access.admitted == len(missing) and len(responses) == 1
     # Reading the implementation still leaves selection by the injected caller open.

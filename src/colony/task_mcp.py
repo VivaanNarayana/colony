@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import json
 import threading
 import time
 from contextlib import suppress
@@ -65,6 +66,20 @@ PUBLICATION_CUE = (
 )
 
 
+def _settled_availability(receipt, previous_state):
+    """Remember the availability at a completed lookup so a new finding can reopen routing."""
+    if receipt.get("hit") is True and receipt.get("status") == "validated":
+        return "present"
+    if receipt.get("hit") is False:
+        reason = receipt.get("reason")
+        if reason == "no_active_trails":
+            return "empty"
+        if reason in ("no_relevant_trail", "below_threshold", "budget_limited",
+                      "task_checkout_unverified", "git_local_evidence_not_verified"):
+            return previous_state
+    return None
+
+
 class ReadRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -105,6 +120,7 @@ class TaskMCP(FastMCP):
         self._empty_memory_routing = empty_memory_routing and direct_path is None
         self._availability_until = 0.0
         self._availability_state = "unknown"
+        self._settled_lookup_state: str | None = None
         self._availability_generation = 0
         self._read_access = ReadAccess(self.evidence, read_admission)
         # Trusted host classification; tool/source arguments cannot promote this.
@@ -158,7 +174,7 @@ class TaskMCP(FastMCP):
                 return response
             # Put the routing decision beside the delivered evidence, once per
             # response. Discovery can be deferred. This never initiates a lookup.
-            if any("content" in page for page in results):
+            if self._settled_lookup_state is None and any("content" in page for page in results):
                 response["lookup_if"] = "requested" if self._availability_state == "empty" else "recall or gap"
             return to_json(response).decode("utf-8")
 
@@ -173,13 +189,11 @@ class TaskMCP(FastMCP):
         def research() -> dict | str:
             # A direct route never forbids promotion or independent source tools.
             try:
-                options = ({"repo": workflow.repo, "repository_id": workflow.repository_id}
-                           if workflow.repository_id else {})
-                if read_path_allowed is not None:
-                    options.update(repo=workflow.repo, path_allowed=read_path_allowed)
                 from colony.context_budget import render_ordinary_task_lookup
 
-                result = workflow.client.ask(self.question, workflow.namespace, **options)
+                result = workflow.client.ask(self.question, workflow.namespace, repo=workflow.repo,
+                                             repository_id=workflow.repository_id, path_allowed=read_path_allowed,
+                                             verify_task_checkout=True)
                 return render_ordinary_task_lookup(result)
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
@@ -281,6 +295,9 @@ class TaskMCP(FastMCP):
             if state not in ("empty", "present"):
                 state = "unknown"
         changed = state != self._availability_state
+        if self._settled_lookup_state is not None and state != "unknown":
+            previously_empty = self._settled_lookup_state == "empty"
+            self._settled_lookup_state = None if previously_empty and state == "present" else state
         self._availability_state = state
         self._availability_until = time.monotonic() + (3 if state == "empty" else 30)
         return changed
@@ -315,6 +332,10 @@ class TaskMCP(FastMCP):
         if name == "research":
             # An explicit current lookup needs no preliminary availability request.
             self._availability_generation += 1
+            generation = self._availability_generation
+            prior_state = self._availability_state
+            if prior_state == "unknown":
+                prior_state = self._settled_lookup_state or "unknown"
             availability_changed = self._availability_state == "empty"
             self._availability_state = "unknown"
             self._availability_until = time.monotonic() + 30
@@ -323,6 +344,10 @@ class TaskMCP(FastMCP):
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
+            if name == "research" and generation == self._availability_generation:
+                # The bound question has already been tried at this budget.
+                # The receipt describes any limit; deliberate retries stay live.
+                self._settled_lookup_state = _settled_availability(json.loads(result[0].text), prior_state)
         except ToolError:
             # FastMCP/Pydantic errors can echo arbitrary rejected input.
             raise ToolError("Task tool failed; adjust the request or use other research tools") from None
@@ -330,6 +355,7 @@ class TaskMCP(FastMCP):
             if name == "publish":
                 # Invalidate even after failed/unknown writes; never reuse an empty hint.
                 self._availability_generation += 1
+                self._settled_lookup_state = None
                 self._availability_until = 0
                 availability_changed |= self._availability_state != "unknown"
                 self._availability_state = "unknown"

@@ -331,6 +331,7 @@ class Client:
         context_budget: ContextBudget | None = None,
         response_profile: str | None = None,
         path_allowed=None,
+        verify_task_checkout: bool = False,
     ):
         budget = None
         negotiated_profile = False
@@ -355,6 +356,8 @@ class Client:
             return fit_response(value, budget, question=question) if budget is not None else value
 
         context = None
+        if verify_task_checkout and repo is None:
+            raise ValueError("Task lookup requires the task checkout")
         if path_allowed is not None:
             if repo is None:
                 raise ValueError("Restricted lookups require an explicit repository")
@@ -437,6 +440,20 @@ class Client:
                         result["context_budget"] = receipt
                     elif receipt["limited"]:
                         result["context_budget"]["limited"] = True
+            elif verify_task_checkout and result.get("hit") and result.get("status") == "validated":
+                # Legacy validation is against the server checkout. Bind every
+                # cited source (including support outside the returned excerpts)
+                # before a task can treat the server's spans as covered locally.
+                from colony.git_client import checked_sources
+
+                try:
+                    sources = result.get("sources")
+                    if not isinstance(sources, list) or not 1 <= len(sources) <= 50:
+                        raise ValueError()
+                    checked_sources(repo, [Source.model_validate(s) for s in sources],
+                                    path_allowed=path_allowed)
+                except (OSError, ValueError):
+                    return finish({"hit": False, "reason": "task_checkout_unverified"})
             result = finish(result)
             if path_allowed is not None and result.get("hit"):
                 # Check the delivered bundle, including remote-only hits and

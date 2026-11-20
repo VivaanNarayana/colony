@@ -27,8 +27,18 @@ A successful research-route `read` returns one `lookup_if` hint alongside the
 evidence. `recall or gap` means to use memory if recall was requested or a
 lookup could replace further research on an unresolved claim. With a scoped
 empty snapshot the hint is `requested`. Either way, `research` remains
-available. A settled answer needs no trailing lookup. Direct-file reads retain
+available. Once a lookup returns a validated hit, a miss, a checkout mismatch
+or a budget limit, subsequent reads omit the hint. A transport failure leaves
+the hint available. Explicit rechecks still run. Publication or an
+observed change from empty to present reopens the hint. A budget-limited lookup
+can still be retried with more room. Direct-file reads retain
 their ordinary receipt. The hint carries no evidence or publication authority.
+
+Before returning a validated hit, the adapter's client checks every cited file
+against the task checkout, including files outside the excerpts. A missing,
+denied or changed source withholds the hit. These fingerprint checks run inside
+the requested lookup and issue no publication references. Git-aware tasks use
+their existing checkout verification.
 
 On a validated adaptive hit, each entry in `current_repository_reads` carries
 its path, start line, content and, when available, end line. Ordinary hits

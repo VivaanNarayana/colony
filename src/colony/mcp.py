@@ -202,6 +202,8 @@ def create_mcp(
             if workflow and workflow.repository_id is not None
             else {}
         )
+        if _task_lookup:
+            git_options.update(repo=workflow.repo, verify_task_checkout=True)
         if _lookup_path_allowed is not None:
             git_options.update(repo=workflow.repo, path_allowed=_lookup_path_allowed)
         if budget is not None:
