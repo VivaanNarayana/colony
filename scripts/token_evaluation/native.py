@@ -12,7 +12,7 @@ from pathlib import Path
 
 from colony.onboard_io import private_directory, write_new
 
-from . import runtime
+from . import citation_host, runtime
 from .adapters import task_args, task_mode
 from .host_discovery import required_host_features, validate_host_discovery
 from .output import instruction
@@ -237,6 +237,9 @@ def _client_args(protocol, repo, team, task, root, arm, env, source_files, *, cl
             intent = task.get('host_intent', {})
             eligible = role == 'a' and (not intent.get('direct_path') or intent.get('remember') is True)
             identity = Path(client_workspace or repo).name
+            if citation_host.enabled(protocol, arm, task):
+                child = [protocol['target']['python'], '-I', '-m', 'colony.cited_host',
+                         str(citation_host.endpoint(root, identity))]
             settings['mcp_servers.colony.args'] = [
                 '-I', str(observer_path()), '--output', str(trace_path(root, identity)),
                 *(['--eligible'] if eligible else []), '--', *child]
@@ -399,11 +402,17 @@ def execute_live(run_dir, authorization, auth_home):
                                       "guidance_sha256": hashlib.sha256(guidance.encode("utf-8")).hexdigest(),
                                       "protocol_sha256": run["protocol_sha256"], "frozenclient_executable_sha256": protocol["client"]["sha256"],
                                       "configuration": config, "client_workspace": str(client_workspace)}
+                        channel = citation_host.endpoint(root, ident)
+                        host_args = None
+                        if citation_host.enabled(selected, arm, task):
+                            host_args = citation_host.command(selected, repo, team, task, snapshot["files"], channel)
+                            invocation["completion_host_args"] = host_args
                         _save(control / (ident + "-invocation.json"), invocation)
                         log = root / "logs" / (ident + ".events.jsonl")
                         start = time.monotonic()
                         state = "completed"
-                        with log.open("xb") as stdout, (control / (ident + ".stderr.log")).open("xb") as stderr:
+                        with (log.open("xb") as stdout, (control / (ident + ".stderr.log")).open("xb") as stderr,
+                              citation_host.completion(host_args, channel, env, stderr, deadline) as finish):
                             _wall_remaining(deadline)
                             process = subprocess.Popen(args, cwd=client_workspace, env=env, stdin=subprocess.PIPE,
                                                        stdout=stdout, stderr=stderr, start_new_session=os.name != "nt",
@@ -417,12 +426,17 @@ def execute_live(run_dir, authorization, auth_home):
                             except BaseException:
                                 runtime._stop(process)
                                 raise
-                        if process.returncode and state == "completed":
-                            state = "failed"
-                        answer = extract_answer(log, protocol["output"]["answer_policy"])
+                            if process.returncode and state == "completed":
+                                state = "failed"
+                            answer = extract_answer(log, protocol["output"]["answer_policy"])
+                            completion = finish(answer["text"] if state == "completed" else None)
                         row = {**{k: invocation[k] for k in ("id", "arm", "workload", "task")}, "state": state,
                                "seconds": time.monotonic() - start, "events": log.name,
                                "events_sha256": _sha(log), "answer_sha256": answer["answer_sha256"]}
+                        if completion is not None:
+                            receipt = control / (ident + "-citations.json")
+                            _save(receipt, {"answer_sha256": answer["answer_sha256"], "result": completion})
+                            row["citation_receipt_sha256"] = _sha(receipt)
                         if arm != 'no_colony' and task_mode(selected):
                             row['publication_trace_sha256'] = trace_hash(trace_path(root, ident))
                         with (control / "attempts.jsonl").open("a", encoding="utf-8") as stream:

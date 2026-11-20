@@ -81,6 +81,10 @@ class MemoryAvailability(Model):
     repository_id: str | None = Field(default=None, pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
 
 
+class AvailabilityProbe(MemoryAvailability):
+    include_citations: bool = False
+
+
 class Scope(Model):
     namespace: str = Field(pattern=r"^[a-zA-Z0-9_.-]{1,80}$")
     push: bool = False

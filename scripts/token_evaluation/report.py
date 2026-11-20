@@ -246,6 +246,14 @@ def _load(run_dir):
                      **native_usage(path)})
         # native_usage hashes all agent messages; preserve declared answer selection.
         rows[-1].update(answer)
+        if "citation_receipt_sha256" in result:
+            from .citation_host import enabled
+            _require(enabled(arm_protocol(manifest, key[0]), key[0], task), "Unexpected completion receipt")
+            receipt = root / "control" / (identity + "-citations.json")
+            _require(_sha(receipt) == result["citation_receipt_sha256"], "Completion receipt changed")
+            captured = _read(receipt)
+            _require(captured["answer_sha256"] == answer["answer_sha256"], "Completion answer changed")
+            rows[-1]["citation_completion"] = captured["result"]
         from .publication_diagnostics import observation
         rows[-1]['publication_diagnostics'] = observation(
             root, identity, result.get('publication_trace_sha256'))

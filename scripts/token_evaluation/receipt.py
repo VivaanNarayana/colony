@@ -80,6 +80,7 @@ def validate_native_receipts(root, run, manifest, rows):
     execution or provider billing. Relocated read-only replay uses captured launch
     paths from run.run_dir while reading prompt bytes in the replay directory.
     """
+    from . import citation_host
     from .host_discovery import validate_host_discovery
     from .native import _client_args
     from .protocol import arm_order, arm_protocol, cohort_root
@@ -130,6 +131,11 @@ def validate_native_receipts(root, run, manifest, rows):
             expected_args = _client_args(manifest, repo, team, task, launch, row["arm"], env,
                                          snapshot["files"], client_workspace=workspace)
             _require(args == expected_args, "arguments differ from the frozen configuration")
+            selected = arm_protocol(manifest, row["arm"])
+            host_args = (citation_host.command(selected, repo, team, task, snapshot["files"],
+                                               citation_host.endpoint(launch, row["id"]))
+                         if citation_host.enabled(selected, row["arm"], task) else None)
+            _require(invocation.get("completion_host_args") == host_args, "completion host arguments changed")
             _prompt(root, invocation, arm_protocol(manifest, row["arm"]), task, row["arm"])
         except (OSError, KeyError, TypeError, StopIteration):
             raise ValueError("Native receipt is incomplete or malformed") from None

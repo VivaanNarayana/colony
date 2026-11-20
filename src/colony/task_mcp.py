@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import json
 import threading
 import time
 from contextlib import suppress
@@ -76,7 +77,7 @@ class TaskMCP(FastMCP):
     def __init__(self, workflow, question: str, *, direct_path: str | None = None,
                  remember: bool = False, context_budget: ContextBudget | None = None,
                  empty_memory_routing: bool = True, trace_reads: bool = False,
-                 read_admission=None, read_path_allowed=None):
+                 read_admission=None, read_path_allowed=None, reuse_citations: bool = False):
         if not isinstance(question, str) or not question.strip():
             raise ValueError("A focused task question is required")
         self.workflow = workflow
@@ -96,7 +97,10 @@ class TaskMCP(FastMCP):
                 _lookup_path_allowed=read_path_allowed,
             )
             context_budget = ContextBudget.model_validate(context_budget)
-        self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed)
+        self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed, pin_reads=reuse_citations)
+        self._reuse_citations = reuse_citations
+        self._context_budget = context_budget
+        self._completed = False
         self._availability_enabled = False
         self._empty_memory_routing = empty_memory_routing and direct_path is None
         self._availability_until = 0.0
@@ -218,7 +222,7 @@ class TaskMCP(FastMCP):
             to publish. Publication failures/limits never restrict the answer or research.
             """
             with self._publication_lock:
-                if (not self._publication_ready or not self._may_publish
+                if (self._completed or not self._publication_ready or not self._may_publish
                         or self._publication_attempted or (kind == "value" and not self._remember)):
                     return {"stored": False, "reason": "publication_not_eligible"}
                 if not applicability.strip() or not content.strip():
@@ -239,6 +243,17 @@ class TaskMCP(FastMCP):
         self.add_tool(publish, annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
                       structured_output=False)
 
+    def complete(self, sources):
+        """Trusted host callback after final answer delivery and before evidence.close()."""
+        with self._publication_lock:
+            if not self._reuse_citations or not self._may_publish or self._publication_attempted or self._completed:
+                return {"stored": False, "reason": "not_eligible"}
+            self._completed = True
+            try:
+                return self.evidence.save_citations(self.question, sources)
+            except Exception:
+                return {"stored": False, "reason": "save_unavailable"}
+
     async def _refresh_availability(self):
         if not self._availability_enabled:
             return False
@@ -254,7 +269,8 @@ class TaskMCP(FastMCP):
             generation = self._availability_generation
             try:
                 state = await asyncio.to_thread(self.workflow.client.memory_availability,
-                                                self.workflow.namespace, self.workflow.repository_id)
+                                                self.workflow.namespace, self.workflow.repository_id,
+                                                **({"include_citations": True} if self._reuse_citations else {}))
                 self.evidence._authorize()
             except Exception:
                 state = "unknown"
@@ -277,10 +293,10 @@ class TaskMCP(FastMCP):
                 "Explicit lookup remains available. " + (t.description or "")})
                 if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
-            self._publication_ready and self._may_publish and not self._publication_attempted
+            self._publication_ready and self._may_publish and not self._publication_attempted and not self._completed
         )]
 
-    async def run_stdio_async(self):
+    async def run_stdio_async(self, stdin=None, stdout=None):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
         if self._availability_state == "empty":
@@ -289,7 +305,7 @@ class TaskMCP(FastMCP):
                 "Explicit research remains available and always checks current memory. "
                 + self._base_instructions)
         # Advertise dynamic discovery; supported hosts refresh on the notification.
-        async with stdio_server() as (reader, writer):
+        async with stdio_server(stdin, stdout) as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
                 notification_options=NotificationOptions(tools_changed=True),
             ))
@@ -306,6 +322,22 @@ class TaskMCP(FastMCP):
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
+            if self._reuse_citations and name == "research":
+                # Preserve the original miss if this optional fallback is unavailable.
+                with suppress(Exception):
+                    base = json.loads(result[0].text)
+                    restricted_wrapper = self.evidence.path_allowed is None and self.evidence.read != self._read_access.read
+                    if (not restricted_wrapper and base.get("hit") is False
+                            and base.get("reason") == "no_relevant_trail"):
+                        budget = self._context_budget
+                        override = (arguments or {}).get("max_context_tokens")
+                        if budget is not None and override is not None:
+                            budget = budget.model_copy(update={"max_tokens": override})
+                        hit = await asyncio.to_thread(self.evidence.lookup_citations, self.question, budget)
+                        if hit is not None:
+                            from colony.context_budget import serialize_response
+
+                            result = [result[0].model_copy(update={"text": serialize_response(hit)})]
         except ToolError:
             # FastMCP/Pydantic errors can echo arbitrary rejected input.
             raise ToolError("Task tool failed; adjust the request or use other research tools") from None
@@ -342,6 +374,10 @@ def main(argv=None):
     parser.add_argument("--remember", action="store_true", help="Trusted explicit user request to remember")
     parser.add_argument("--repository-id")
     parser.add_argument("--no-empty-memory-routing", action="store_true")
+    parser.add_argument("--reuse-citations", action="store_true",
+                        help="Reuse verified cited lines from completed tasks")
+    parser.add_argument("--completion-channel", type=Path,
+                        help="New endpoint file in a trusted host's private task directory")
     parser.add_argument("--trace-reads", action="store_true",
                         help="Enable bounded static-import bundles; external quota hosts need per-entry admission")
     parser.add_argument("--read-unit-limit", type=int,
@@ -363,14 +399,21 @@ def main(argv=None):
             return True
     server = TaskMCP(workflow, args.question, direct_path=args.direct_path, remember=args.remember,
                      context_budget=budget, empty_memory_routing=not args.no_empty_memory_routing,
-                     trace_reads=args.trace_reads, read_admission=admit)
+                     trace_reads=args.trace_reads, read_admission=admit, reuse_citations=args.reuse_citations)
     if args.read_unit_limit is not None:
         server._base_instructions += (
             f" Host source-read allowance: {args.read_unit_limit} units total, shared by "
             "single reads, each batch/trace entry and continuation, including failures.")
         server._mcp_server.instructions = server._base_instructions
     try:
-        server.run(transport="stdio")
+        if args.completion_channel:
+            from colony.cited_host import serve
+
+            if not args.reuse_citations:
+                parser.error("--completion-channel requires --reuse-citations")
+            serve(server, args.completion_channel)
+        else:
+            server.run(transport="stdio")
     finally:
         server.evidence.close()
 

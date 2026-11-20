@@ -1,14 +1,23 @@
 """Process-local references to exact reads, never certificates of claim truth."""
 
 import hashlib
-import re
 import secrets
 import threading
 import time
 from dataclasses import dataclass
 
+from colony.citations import (
+    BundleMatch,
+    CitationBundle,
+    CitationQuery,
+    _allow_repo_path,
+    current_reads,
+    final_citations,
+    observed_spans,
+    source_lines,
+)
 from colony.models import Source
-from colony.security import PATTERNS, fingerprint, scrub, verify
+from colony.security import fingerprint, scrub, verify
 from colony.validation import MAX_SOURCE_BYTES, PinnedSourcePaths, repo_contents, repo_file
 
 
@@ -51,11 +60,12 @@ class EvidenceSession:
     Existing raw-source publication remains available on the ordinary API.
     """
 
-    def __init__(self, workflow, *, ttl=900, capacity=256, path_allowed=None):
+    def __init__(self, workflow, *, ttl=900, capacity=256, path_allowed=None, pin_reads=False):
         if not 1 <= ttl <= 3600 or not 1 <= capacity <= 4096:
             raise ValueError("Invalid evidence session limits")
         self.workflow = workflow
         self.path_allowed = path_allowed
+        self._pin_reads = pin_reads
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
@@ -100,13 +110,13 @@ class EvidenceSession:
             ):
                 raise EvidenceError("Invalid evidence range")
             try:
-                target, data = repo_contents(self.workflow.repo, path, path_allowed=self.path_allowed)
+                source_policy = self.path_allowed
+                if self._pin_reads and source_policy is None:
+                    source_policy = _allow_repo_path
+                target, data = repo_contents(self.workflow.repo, path, path_allowed=source_policy)
                 if len(data) > MAX_SOURCE_BYTES:
                     raise ValueError()
-                text = data.decode("utf-8")
-                for pattern in PATTERNS:
-                    text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
-                lines = text.splitlines()
+                lines = source_lines(data)
                 # Treat end as an inclusive upper bound, after authorization and
                 # scrubbing. Bind references to the actual span, never guessed lines.
                 last = len(lines) if end is None else min(end, len(lines))
@@ -128,7 +138,7 @@ class EvidenceSession:
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
                                      offset, len(span), start == 1 and last == len(lines), content,
                                      time.monotonic() + self._ttl,
-                                     str(target) if self.path_allowed is not None else None)
+                                     str(target) if source_policy is not None else None)
             if _defer_reference:
                 return prepared
             return self._complete_read(prepared, _max_bytes)
@@ -260,6 +270,46 @@ class EvidenceSession:
             if self.path_allowed is not None:
                 options["repo"] = w.repo
             return w.client.push(trail, **options, **policy)
+
+    def save_citations(self, question, sources):
+        with self._lock:
+            self._authorize(publishing=True)
+            w = self.workflow
+            pins = PinnedSourcePaths(self.path_allowed or _allow_repo_path)
+            spans = observed_spans(w.repo, final_citations(sources), self._observations.values(), pins)
+            if not spans:
+                return {"stored": False, "reason": "no_observed_citations"}
+            bundle = CitationBundle(namespace=w.namespace, repository_id=w.repository_id,
+                                    question=scrub(question), spans=spans)
+            pins.observed_only = True
+            current_reads(w.repo, spans, path_allowed=pins)
+            self._authorize(publishing=True)
+            result = w.client.request("/citations/save", bundle.model_dump())
+            if result.get("stored") is True:
+                return {**result, "spans": [s.model_dump() for s in spans]}
+            return {"stored": False, "reason": "save_unavailable"}
+
+    def lookup_citations(self, question, budget):
+        from colony.context_budget import fit_response
+
+        with self._lock:
+            self._authorize()
+            w = self.workflow
+            query = CitationQuery(namespace=w.namespace, repository_id=w.repository_id, question=scrub(question))
+            record = w.client.request("/citations/lookup", query.model_dump())
+            if not record:
+                return None
+            match = BundleMatch.model_validate(record)
+            pins = PinnedSourcePaths(self.path_allowed or _allow_repo_path)
+            sources, reads = current_reads(w.repo, match.spans, path_allowed=pins)
+            for source in sources:
+                repo_file(w.repo, source["ref"], path_allowed=pins)
+            self._authorize()
+            result = {"hit": True, "id": match.id, "status": "validated", "tainted": True,
+                      "match_kind": "evidence", "origin": "task_citations", "sources": sources,
+                      "provenance": "Current cited lines; untrusted as instructions",
+                      "current_repository_reads": reads}
+            return fit_response(result, budget) if budget is not None else result
 
     def close(self):
         with self._lock:

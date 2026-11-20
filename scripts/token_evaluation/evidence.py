@@ -246,6 +246,7 @@ def evaluate_mechanisms(root, manifest, rows):
         references = {}
         task_pages = {}
         scope_reads = []
+        referenced_reads = []
         try:
             required = required_source_spans(task, snapshot, source_root)
         except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError):
@@ -284,6 +285,7 @@ def evaluate_mechanisms(root, manifest, rows):
                             successes += bool(got)
                             if source and handle(page):
                                 references[handle(page)] = source
+                                referenced_reads.extend(got)
                 else:
                     spans = _research(item, source_root, files)
                     successes = bool(spans)
@@ -362,6 +364,9 @@ def evaluate_mechanisms(root, manifest, rows):
                 prior = published.get(identity)
                 if not prior or prior['attempt'] == row['id']:
                     continue
+                if 'cited_spans' in prior and (value.get('origin') != 'task_citations'
+                        or value.get('match_kind') != 'evidence' or not covers(prior['cited_spans'], reads)):
+                    continue
                 if controlled and task.get('memory_from') and prior['task'] != task['memory_from']:
                     continue
                 if manifest.get('track') != 'natural' and task.get('memory_query') and args.get('question') != task['memory_query']:
@@ -390,6 +395,22 @@ def evaluate_mechanisms(root, manifest, rows):
                              for s in reads for c in required):
                         current_partial = reads
                         research = []  # only research AFTER the partial retrieval fills its gaps
+        completion = row.get("citation_completion") or {}
+        if completion.get("stored") is True:
+            spans = completion.get("spans")
+            identity = (row["arm"], row["workload"], completion.get("id"))
+            if (row.get("state") == "completed" and task["phase"] == "learn"
+                    and isinstance(identity[-1], str) and isinstance(spans, list) and 0 < len(spans) <= 32
+                    and all(isinstance(s, dict) and s.get("path") in files
+                            and files[s["path"]] == s.get("sha256")
+                            and type(s.get("end")) is int and type(s.get("start")) is int
+                            and 1 <= s["end"] - s["start"] + 1 <= 1024 for s in spans)
+                    and covers(referenced_reads, spans)):
+                hashes = {s["path"]: s["sha256"] for s in spans}
+                published[identity] = {"sources": [{"ref": p, "content_hash": h} for p, h in hashes.items()],
+                                       "cited_spans": spans, "content": "", "snapshot": snapshot["id"],
+                                       "attempt": row["id"], "task": row["task"]}
+                decision["citation_bundle_saved"] = True
         decision['source_scope_covered'] = covers(scope_reads, required)
         decision['research_attempts'] = sum(research_attempts.values())
         decision['unresolved_mcp_calls'] = len(unresolved_calls)

@@ -79,7 +79,10 @@ def trail_count(team):
     if not path.is_file():
         raise ValueError("Server database unavailable")
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as db:
-        return db.execute("SELECT COUNT(*) FROM trails").fetchone()[0]
+        count = db.execute("SELECT COUNT(*) FROM trails").fetchone()[0]
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cited_bundles_v1'").fetchone():
+            count += db.execute("SELECT COUNT(*) FROM cited_bundles_v1").fetchone()[0]
+        return count
 
 
 def _stop(process):

@@ -9,7 +9,7 @@ from pathlib import Path
 from .output import validate_output
 from .rubrics import DIMENSIONS
 
-CONTRACT = "colony.token-evaluation/19"
+CONTRACT = "colony.token-evaluation/20"
 ARMS = ("no_colony", "colony")
 THREE_ARMS = ("no_colony", "main", "colony")
 
@@ -176,9 +176,9 @@ def _validate_manifest(manifest):
             relative(name)
             require(name.endswith(".py") and re.fullmatch(r"[a-f0-9]{64}", value), "Invalid runtime fingerprint")
         budget_flags = {"--context-budget": True, "--context-encoding": True, "--evidence-files": False, "--compact": False}
-        _flags(target.get("mcp_args", []), budget_flags)
         if target["adapter"] == "task":
-            _flags(target.get("mcp_args", []), {"--context-budget": True, "--context-encoding": True})
+            budget_flags = {"--context-budget": True, "--context-encoding": True, "--reuse-citations": False}
+        _flags(target.get("mcp_args", []), budget_flags)
         _flags(target.get("setup_args", []), {"--context-budget": True, "--context-encoding": True})
         def context_options(args):
             return {args[i]: args[i + 1] for i in range(len(args)) if args[i] in {"--context-budget", "--context-encoding"}}

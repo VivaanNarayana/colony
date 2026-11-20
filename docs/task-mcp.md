@@ -1,5 +1,56 @@
 # Task-scoped MCP integration
 
+## Reuse final-answer citations
+
+Hosts that already receive a structured final answer can enable `reuse_citations=True`
+on the task adapter. After the answer is final and before closing that task's evidence
+session, pass its cited ranges to the host-only callback:
+
+```python
+adapter = TaskMCP(workflow, question, reuse_citations=True)
+# Let the agent use the adapter normally, and deliver its answer.
+try:
+    receipt = adapter.complete(final_answer.get("sources", []))
+finally:
+    adapter.evidence.close()
+```
+
+For example, `[{"path":"settings.py","start":4,"end":5},"client.py:1-5"]`
+selects up to those lines. The host sends only the citations to this callback.
+Missing coordinates, unread characters, changed files, expired references and
+redacted lines earn no coverage. Overlapping pages can jointly cover a whole
+line. Each successful completion sends at most one evidence bundle. Explicit
+publication attempts take precedence, including queued or uncertain outcomes.
+Read-only and ordinary direct-file tasks skip capture. The callback returns a
+fixed failure receipt on errors and has no effect on the delivered answer.
+
+A separate stdio host can start `python -m colony.task_mcp` with its usual
+arguments plus `--reuse-citations --completion-channel /private/task/endpoint`.
+Use a new file inside a private per-task directory outside the source checkout.
+Keep the adapter process's stdin/stdout private. After the endpoint appears,
+give the worker a stdio MCP connection running `python -m colony.cited_host
+/private/task/endpoint`. This relays the normal task tools over an authenticated
+one-use loopback connection. After the worker disconnects, send one UTF-8 JSON
+array of final citations followed by a newline on the adapter process's **control
+stdin**. Read its JSON receipt on control stdout. On cancellation close control
+stdin without supplying citations and tear down the owned process. Embedded hosts
+can call the Python method directly. A plain stdio client can enable
+`--reuse-citations` to consume bundles without providing a completion channel.
+
+The server stores the scrubbed task question, paths, digests and line ranges
+encrypted under its storage key, plus a local question embedding and scope
+metadata. Its additive SQLite table is separate from authored findings. The
+server scopes candidates to the authenticated namespace and configured repository
+ID, applies its maximum age, and ranks questions using local models. A normal
+validated trail has priority. On an ordinary no-match response, the enabled
+adapter can return an evidence-only hit after both checkouts validate the cited
+files. Only the cited lines are returned. Task path permissions, whole-file
+redaction and the configured context budget also apply. A changed or oversized
+bundle leaves the agent free to research. A hit establishes observed lines;
+the agent still has to check whether they support its answer.
+
+
+
 This opt-in adapter is launched once per task by a trusted host:
 
 ```sh

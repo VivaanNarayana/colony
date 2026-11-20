@@ -36,7 +36,7 @@ except ImportError:  # Launched as a pinned absolute script with target Python -
 
 
 def create_server(home, repo, question, files, max_calls, *, read_only=False,
-                  direct_path=None, remember=False, context_budget=None):
+                  direct_path=None, remember=False, context_budget=None, reuse_citations=False):
     research = Research(repo, max_calls, files)
     lock = asyncio.Lock()
 
@@ -72,6 +72,8 @@ def create_server(home, repo, question, files, max_calls, *, read_only=False,
                 return research.annotate(result, admitted, denied)
 
     options = {} if context_budget is None else {'context_budget': context_budget}
+    if reuse_citations:
+        options.update(reuse_citations=True, read_path_allowed=lambda path: path in files)
     server = BoundedTaskMCP(Workflow(Client(home), 'bench', repo, read_only=read_only), question,
                             direct_path=direct_path, remember=remember, **options)
     original_read = server.evidence.read
@@ -102,6 +104,8 @@ def main():
     parser.add_argument('--read-only', action='store_true')
     parser.add_argument('--context-budget', type=int)
     parser.add_argument('--context-encoding', choices=('utf8_bytes', 'o200k_base'))
+    parser.add_argument('--reuse-citations', action='store_true')
+    parser.add_argument('--completion-channel', type=Path)
     args = parser.parse_args()
     budget = None
     if args.context_budget is not None or args.context_encoding is not None:
@@ -110,9 +114,13 @@ def main():
         budget = _context_budget(args)
     server = create_server(args.home, args.repo, args.question, args.files, args.max_calls,
                            direct_path=args.direct_path, remember=args.remember,
-                           read_only=args.read_only, context_budget=budget)
+                           read_only=args.read_only, context_budget=budget, reuse_citations=args.reuse_citations)
     try:
-        server.run(transport='stdio')
+        if args.completion_channel:
+            from colony.cited_host import serve
+            serve(server, args.completion_channel)
+        else:
+            server.run(transport='stdio')
     finally:
         server.evidence.close()
 
