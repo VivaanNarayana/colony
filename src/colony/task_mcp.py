@@ -243,14 +243,14 @@ class TaskMCP(FastMCP):
         self.add_tool(publish, annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
                       structured_output=False)
 
-    def complete(self, sources):
+    def complete(self, sources, *, received_refs=None):
         """Trusted host callback after final answer delivery and before evidence.close()."""
         with self._publication_lock:
             if not self._reuse_citations or not self._may_publish or self._publication_attempted or self._completed:
                 return {"stored": False, "reason": "not_eligible"}
             self._completed = True
             try:
-                return self.evidence.save_citations(self.question, sources)
+                return self.evidence.save_citations(self.question, sources, received_refs=received_refs)
             except Exception:
                 return {"stored": False, "reason": "save_unavailable"}
 

@@ -429,7 +429,7 @@ def execute_live(run_dir, authorization, auth_home):
                             if process.returncode and state == "completed":
                                 state = "failed"
                             answer = extract_answer(log, protocol["output"]["answer_policy"])
-                            completion = finish(answer["text"] if state == "completed" else None)
+                            completion = finish(answer["text"] if state == "completed" else None, log)
                         row = {**{k: invocation[k] for k in ("id", "arm", "workload", "task")}, "state": state,
                                "seconds": time.monotonic() - start, "events": log.name,
                                "events_sha256": _sha(log), "answer_sha256": answer["answer_sha256"]}

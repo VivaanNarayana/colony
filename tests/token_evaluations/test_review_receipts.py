@@ -245,9 +245,9 @@ def test_end_to_end_receipts_are_bound_and_reconstructed_from_raw_log(run, forge
     assert not (root / "must-not-exist.json").exists()
 
 
-@pytest.mark.parametrize("legacy_version", [9, 17, 18, 19])
+@pytest.mark.parametrize("legacy_version", [9, 17, 18, 19, 20])
 def test_prospective_contract_rejects_legacy_packets_without_upgrading_them(subject, legacy_version):
-    assert CONTRACT == "colony.token-evaluation/20"
+    assert CONTRACT == "colony.token-evaluation/21"
     before = copy.deepcopy(subject)
     legacy = {"contract": f"colony.token-evaluation/{legacy_version}"}
     with pytest.raises(ValueError, match="original pinned collector"):

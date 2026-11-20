@@ -1,5 +1,13 @@
 # Memory-use token evaluations
 
+## Native relay disconnects in prospective runs (version /21)
+
+The collector forwards evidence handles from completed worker read results over
+the existing private completion channel. This lets the host finish an answered
+task after the worker force-closes its relay. A missing final answer, an
+unacknowledged read, or a failed read provides no new authority to store evidence.
+Use the originally pinned /20 collector to inspect the PR #44 benchmark.
+
 ## Host completion and cited evidence in prospective runs (version /20)
 
 For a natural task-adapter candidate, add `--mcp-arg=--reuse-citations` to the

@@ -33,7 +33,11 @@ give the worker a stdio MCP connection running `python -m colony.cited_host
 one-use loopback connection. After the worker disconnects, send one UTF-8 JSON
 array of final citations followed by a newline on the adapter process's **control
 stdin**. Read its JSON receipt on control stdout. On cancellation close control
-stdin without supplying citations and tear down the owned process. Embedded hosts
+stdin without supplying citations and tear down the owned process. If the worker can
+forcibly close its relay, send a control object with `sources` and `received_refs`.
+The latter lists evidence handles from successful read results the worker actually
+received. On a connection reset the adapter intersects only those acknowledged
+reads with final citations. A reset alone never authorizes a save. Embedded hosts
 can call the Python method directly. A plain stdio client can enable
 `--reuse-citations` to consume bundles without providing a completion channel.
 

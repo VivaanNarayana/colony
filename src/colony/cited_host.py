@@ -34,13 +34,27 @@ def serve(server, endpoint: Path):
                 if not hmac.compare_digest(reader.readline(66), key + "\n"):
                     raise ValueError("Invalid task connection")
                 conn.settimeout(None)
-                asyncio.run(server.run_stdio_async(anyio.wrap_file(reader), anyio.wrap_file(writer)))
+                disconnected = False
+                try:
+                    asyncio.run(server.run_stdio_async(anyio.wrap_file(reader), anyio.wrap_file(writer)))
+                except* (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+                    # A native worker may terminate its MCP relay after producing the answer.
+                    # Completion still needs the private host signal and acknowledged reads.
+                    disconnected = True
         finally:
             endpoint.unlink(missing_ok=True)
     # EOF or a failed worker never publishes. The host supplies only structured citations.
     line = sys.stdin.buffer.readline(131073)
-    sources = json.loads(line) if line and len(line) <= 131072 else []
-    print(json.dumps(server.complete(sources)), flush=True)
+    request = json.loads(line) if line and len(line) <= 131072 else []
+    if isinstance(request, dict):
+        sources = request.get("sources", [])
+        confirmed = request.get("received_refs")
+        if not isinstance(confirmed, list):
+            confirmed = []
+    else:
+        sources = request
+        confirmed = [] if disconnected else None
+    print(json.dumps(server.complete(sources, received_refs=confirmed)), flush=True)
 
 
 def relay(endpoint: Path):

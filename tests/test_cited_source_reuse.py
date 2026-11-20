@@ -62,6 +62,15 @@ def test_joined_pages_can_cover_a_line_but_gaps_cannot(identity, monkeypatch):
         assert server.complete(["x:1"])["stored"] is expected
 
 
+@pytest.mark.parametrize("confirmed", [[], ["x" * 24], ["other-task"]])
+def test_unacknowledged_read_cannot_be_saved(identity, monkeypatch, confirmed):
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "request", lambda *a: pytest.fail("unexpected save"))
+    server = TaskMCP(Workflow(client, "team", repo), "q", reuse_citations=True)
+    assert call(server, "read", {"path": "settings.py"})["evidence_ref"]
+    assert not server.complete(["settings.py:1"], received_refs=confirmed)["stored"]
+
+
 def test_accepts_structured_final_answer_citations_only():
     citations = final_citations(["src/file.py:2–4", {"path": "x", "lines": [1, 2]},
                                 {"path": "x", "lines": 3}, {"path": "x", "start": 5, "end": 5},
@@ -99,7 +108,42 @@ def test_catalog_paraphrase_reuses_the_same_verified_ranges(team, workload_id):
     assert http.post("/citations/lookup", json=query, headers=auth(key)).json() is None
 
 
-def test_final_citation_round_trip(running_team, tmp_path):
+def reset_after_read(endpoint, path, log):
+    """Exercise abrupt relay exit with a real authenticated MCP session and TCP reset."""
+    import socket
+    import struct
+    import sys
+
+    port, key = json.loads(endpoint.read_text())
+    with socket.create_connection(("127.0.0.1", port), timeout=10) as sock, sock.makefile("rb") as reader:
+        sock.sendall(key.encode() + b"\n")
+
+        def send(message):
+            sock.sendall(json.dumps({"jsonrpc": "2.0", **message}).encode() + b"\n")
+
+        def response(number):
+            while line := reader.readline():
+                value = json.loads(line)
+                if value.get("id") == number:
+                    return value["result"]
+            raise AssertionError("Connection ended before MCP response")
+
+        send({"id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18",
+              "capabilities": {}, "clientInfo": {"name": "test", "version": "1"}}})
+        response(1)
+        send({"method": "notifications/initialized"})
+        send({"id": 2, "method": "tools/call", "params": {"name": "read", "arguments": {"path": path}}})
+        result = response(2)
+        assert not result.get("isError")
+        log.write_text(json.dumps({"type": "item.completed", "item": {
+            "id": "r", "type": "mcp_tool_call", "server": "colony", "tool": "read",
+            "status": "completed", "result": result}}), encoding="utf-8")
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER,
+                        struct.pack("hh" if sys.platform == "win32" else "ii", 1, 0))
+
+
+@pytest.mark.parametrize("reset", [False, True], ids=["graceful", "forced-disconnect"])
+def test_final_citation_round_trip(running_team, tmp_path, reset):
     """Two fresh task sessions, a live authenticated HTTP server and a stdio completion relay."""
     import subprocess
     import sys
@@ -122,12 +166,19 @@ def test_final_citation_round_trip(running_team, tmp_path):
                 await session.initialize()
                 assert not (await session.call_tool("read", {"path": path})).isError
 
-        asyncio.run(worker())
-        result = finish(json.dumps({"facts": "NEVER STORE THIS PROSE", "sources": [f"{path}:1-2"]}))
+        log = None
+        if reset:
+            log = tmp_path / "worker.jsonl"
+            reset_after_read(endpoint, path, log)
+        else:
+            asyncio.run(worker())
+        result = finish(json.dumps({"facts": "NEVER STORE THIS PROSE", "sources": [f"{path}:1-2"]}), log)
         assert result["stored"], result
     reader = Client(home_b)
-    assert reader.memory_availability("team", include_citations=True) == "present"
-    assert reader.memory_availability("team") == "empty"
+    for include, expected in ((True, "present"), (False, "empty")):
+        # The routing hint's one-second deadline deliberately permits transient 'unknown'.
+        query = {"namespace": "team", "include_citations": include}
+        assert reader.request("/memory/availability", query)["state"] == expected
     follow = TaskMCP(Workflow(reader, "team", repo, read_only=True), "How does the build function operate?",
                      context_budget=ContextBudget(), reuse_citations=True)
     hit = call(follow, "research", {})

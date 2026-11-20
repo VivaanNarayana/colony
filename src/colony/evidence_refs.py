@@ -271,12 +271,18 @@ class EvidenceSession:
                 options["repo"] = w.repo
             return w.client.push(trail, **options, **policy)
 
-    def save_citations(self, question, sources):
+    def save_citations(self, question, sources, *, received_refs=None):
         with self._lock:
             self._authorize(publishing=True)
             w = self.workflow
             pins = PinnedSourcePaths(self.path_allowed or _allow_repo_path)
-            spans = observed_spans(w.repo, final_citations(sources), self._observations.values(), pins)
+            observations = self._observations.values()
+            if received_refs is not None:
+                if (not isinstance(received_refs, list) or len(received_refs) > self._capacity
+                        or not all(isinstance(handle, str) for handle in received_refs)):
+                    return {"stored": False, "reason": "invalid_read_receipts"}
+                observations = [self._observations[h] for h in set(received_refs) if h in self._observations]
+            spans = observed_spans(w.repo, final_citations(sources), observations, pins)
             if not spans:
                 return {"stored": False, "reason": "no_observed_citations"}
             bundle = CitationBundle(namespace=w.namespace, repository_id=w.repository_id,
