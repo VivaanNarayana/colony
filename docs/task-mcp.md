@@ -31,12 +31,14 @@ quota, and evidence checks.
 
 This opt-in hint accepts up to eight repository-relative POSIX names made of
 ASCII letters, digits, dots, underscores, hyphens and path separators. The
-entire hint must fit in 96 bytes. If any name is unsafe, unavailable or
-unauthorized at startup, or the hint exceeds either bound, the task uses
-ordinary discovery. Explicit direct-file tasks already know their starting
-path. The adapter never walks the repository to build hints. A host that
-wraps source reads must supply its metadata policy via `read_path_allowed`
-for names to be shown.
+entire hint must fit in 96 bytes. The adapter checks the names when it sends the
+initialization reply. If any name is unsafe, unavailable or unauthorized, or
+the hint exceeds either bound, the task uses ordinary discovery. Explicit
+direct-file tasks already know their starting path. The adapter never walks
+the repository to build hints. A host that
+wraps source reads or supplies a per-path `read_path_allowed` callback uses
+ordinary discovery. A callback can change its decision between filenames.
+Read quotas alone still permit hints.
 
 For a call chain, batch independent known paths for the caller, governing configuration,
 operation and relevant backend within the host's allowance. Follow a newly discovered

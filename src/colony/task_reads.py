@@ -129,7 +129,11 @@ def _local_candidate(access, path):
 
 def source_path_hint(access, paths):
     """Return a small host-supplied batch of path names, or fall back to discovery."""
-    if not paths:
+    def unrestricted():
+        # A per-path callback cannot authorize the whole list as one disclosure.
+        return access.evidence.path_allowed is None and access.evidence.read == access.read
+
+    if not paths or not unrestricted():
         return ""
     # Plain relative names keep untrusted filenames out of the instruction syntax.
     # Use all or none: truncating the list could silently omit the relevant file.
@@ -142,12 +146,12 @@ def source_path_hint(access, paths):
     hint = "Path hints: " + json.dumps(unique, separators=(",", ":")) + ". "
     if len(hint) > 96 or not all(_local_candidate(access, path) for path in unique):
         return ""
-    # A host metadata callback may have changed the task binding during the checks.
+    # The task binding or host read policy can change during metadata validation.
     try:
         access.evidence._authorize()
     except EvidenceError:
         return ""
-    return hint
+    return hint if unrestricted() else ""
 
 
 def _trace_error(path, exc):

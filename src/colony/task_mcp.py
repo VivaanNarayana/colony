@@ -8,11 +8,13 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Annotated, Literal
 
+from anyio.abc import ObjectSendStream
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
-from mcp.types import ToolAnnotations
+from mcp.shared.message import SessionMessage
+from mcp.types import JSONRPCResponse, ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from colony.client import Client
@@ -75,6 +77,28 @@ class ReadRequest(BaseModel):
     offset: StrictInt = 0
 
 
+class _PathHintWriter(ObjectSendStream[SessionMessage]):
+    """Add path hints only when handing the SDK's initialize reply to stdio."""
+
+    def __init__(self, writer, instructions, access, paths):
+        self.writer = writer
+        self.instructions = instructions
+        self.access = access
+        self.paths = paths
+
+    async def send(self, message: SessionMessage):
+        response = message.message.root
+        if (isinstance(response, JSONRPCResponse)
+                and {"protocolVersion", "capabilities", "serverInfo"} <= response.result.keys()
+                and response.result.get("instructions") == self.instructions):
+            # The SDK serializes each reply into a fresh dict before sending it.
+            response.result["instructions"] = source_path_hint(self.access, self.paths) + self.instructions
+        await self.writer.send(message)
+
+    async def aclose(self):
+        await self.writer.aclose()
+
+
 class TaskMCP(FastMCP):
     """The host supplies task intent; source text cannot select a cheaper mode."""
 
@@ -88,7 +112,7 @@ class TaskMCP(FastMCP):
         self.question = question
         self.direct_path = direct_path
         # A trusted host may already know a batch-sized set of relevant names.
-        # Copy it now and authorize its disclosure when the stdio session starts.
+        # Copy it now and authorize its disclosure when sending the initialize reply.
         self._known_paths = tuple(known_paths) if (
             direct_path is None and isinstance(known_paths, (tuple, list)) and len(known_paths) <= 8
         ) else ()
@@ -293,9 +317,11 @@ class TaskMCP(FastMCP):
         if self._availability_state == "empty":
             routing = "Memory started empty. " + self._read_instructions + EMPTY_RECALL_ROUTING
         instructions = routing + LIST_ROUTING + self._answer_instructions
-        self._mcp_server.instructions = source_path_hint(self._read_access, self._known_paths) + instructions
+        self._mcp_server.instructions = instructions
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
+            if self._known_paths:
+                writer = _PathHintWriter(writer, instructions, self._read_access, self._known_paths)
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
                 notification_options=NotificationOptions(tools_changed=True),
             ))
