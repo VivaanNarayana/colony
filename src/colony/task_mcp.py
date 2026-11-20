@@ -142,14 +142,12 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Omit path for direct read and end for EOF. For a value, read its definition. For a call
-            chain, batch relevant caller, config, operation and backend within remaining read units and bytes.
-            List unknown paths once.
-            For absence, reuse the listing and cover relevant files. Literal misses, denied entries and
-            partial reads leave gaps. If clipping risks needed evidence, reserve a continuation or read
-            separately. Continue at next_offset with the same path/start/end. Qualify unbound backend
-            limits. Follow returns and uncaught exception propagation before counting actual calls and
-            additional retries.
+            """Omit path for direct read, end for EOF. For a value, read its definition.
+            Batch relevant caller/config/operation/backend within remaining read units and bytes.
+            List unknown paths once. For absence, cover relevant files in the listing.
+            Literal misses and denied or partial reads leave gaps. Reserve for clipping or read separately.
+            Resume at next_offset with the same path/start/end. Qualify unbound backend limits.
+            Trace returns and uncaught exception propagation to count calls and additional retries.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
