@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import sys
+from pathlib import Path
 
 import pytest
 from mcp import ClientSession, StdioServerParameters
@@ -127,28 +128,77 @@ def test_adaptive_budget_preserves_batch_content_offsets_and_publication(identit
         assert result['stored']
 
 
-def test_real_adaptive_task_transport_publication_and_evidence_reuse(running_team):
+def test_real_adaptive_task_publication_hands_off_current_evidence(running_team):
     _, homes, repo, _ = running_team
+    settings = repo / 'settings.py'
+    initial = 'DEFAULT_TIMEOUT_SECONDS = 37'
+    changed = 'DEFAULT_TIMEOUT_SECONDS = 71'
+    settings.write_text(initial, encoding='utf-8')
+    (repo / 'build.py').write_text(
+        'from settings import DEFAULT_TIMEOUT_SECONDS\n\n'
+        'def build(run):\n    return run(timeout=DEFAULT_TIMEOUT_SECONDS)',
+        encoding='utf-8',
+    )
+    paths = ['settings.py', 'build.py']
+    batch = {'batch': [{'path': path} for path in paths]}
+
+    def parameters(member, question, *options):
+        return StdioServerParameters(command=sys.executable, args=[
+            '-m', 'colony.task_mcp', '--home', str(homes[member]), '--repo', str(repo),
+            '--ns', 'team', '--question', question,
+            '--context-budget', '3072', '--context-encoding', 'utf8_bytes', *options],
+            env={**os.environ, 'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'src')})
 
     async def exercise():
-        params = StdioServerParameters(command=sys.executable, args=[
-            '-m', 'colony.task_mcp', '--home', str(homes['a']), '--repo', str(repo),
-            '--ns', 'team', '--question', 'How does the timeout default work?',
-            '--context-budget', '3072', '--context-encoding', 'utf8_bytes'], env=dict(os.environ))
-        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
-            await session.initialize()
-            observed = await session.call_tool('read', {'path': 'settings.py'})
-            reference = json.loads(observed.content[0].text)['evidence_ref']
-            published = await session.call_tool('publish', {'content': 'The timeout defaults to 30.',
-                'applicability': 'settings.py', 'evidence_refs': [reference]})
-            assert json.loads(published.content[0].text)['stored']
-            response = await session.call_tool('research', {})
+        learn = parameters('a', 'How does the build use the default timeout in seconds?')
+        async with stdio_client(learn) as (read, write), ClientSession(read, write) as learner:
+            await learner.initialize()
+            assert 'publish' not in {t.name for t in (await learner.list_tools()).tools}
+            observed = await learner.call_tool('read', batch)
+            assert not observed.isError
+            pages = json.loads(observed.content[0].text)['results']
+            assert [p['path'] for p in pages] == paths
+            assert all(p['complete_file'] and p['evidence_ref'] for p in pages)
+            publish = next(t for t in (await learner.list_tools()).tools if t.name == 'publish')
+            assert 'applicability' in publish.inputSchema['required']
+            published = await learner.call_tool('publish', {
+                'kind': 'behavior',
+                'applicability': 'When build invokes the supplied runner with the default build timeout',
+                'content': 'The default build timeout is 37 seconds. build passes it to run as timeout.',
+                'evidence_refs': [p['evidence_ref'] for p in pages],
+            })
+            assert not published.isError
+            stored = json.loads(published.content[0].text)
+            assert stored['stored'] and stored['id']
+            assert {t.name for t in (await learner.list_tools()).tools} == {'read', 'research'}
+            assert not (await learner.call_tool('read', {'path': 'settings.py'})).isError
+
+        recall = parameters('b', 'What is the default build timeout in seconds?', '--read-only')
+        async with stdio_client(recall) as (read, write), ClientSession(read, write) as reader:
+            await reader.initialize()
+            # One lookup suffices for the scalar without separate discovery or reads.
+            response = await reader.call_tool('research', {})
             assert not response.isError and len(response.content[0].text.encode('utf-8')) <= 3072
             value = json.loads(response.content[0].text)
-            assert value['hit'] and value['status'] == 'validated'
-            assert value['current_repository_reads'][0]['content'] == 'TIMEOUT = 30'
-            assert 'publish' not in {t.name for t in (await session.list_tools()).tools}
-            # Publication completion never removes research or limits answer content.
-            assert not (await session.call_tool('read', {'path': 'settings.py'})).isError
+            assert value['hit'] and value['status'] == 'validated' and value['match_kind'] == 'answer'
+            assert value['id'] == stored['id'] and not value['context_budget']['limited']
+            excerpts = {p['path']: p for p in value['current_repository_reads']}
+            assert excerpts['settings.py']['complete_file']
+            assert excerpts['settings.py']['content'] == initial
 
-    asyncio.run(asyncio.wait_for(exercise(), 30))
+            settings.write_text(changed, encoding='utf-8')
+            lookup = await reader.call_tool('research', {})
+            assert not lookup.isError
+            stale = json.loads(lookup.content[0].text)
+            assert stale['hit'] and stale['id'] == stored['id']
+            assert stale['status'] == stale['content_withheld'] == 'stale'
+            assert 'content' not in stale and not stale.get('current_repository_reads')
+            names = [source['ref'] for source in stale['sources']]
+            assert set(names) == set(paths)
+            fallback = await reader.call_tool('read', {'batch': [{'path': name} for name in names]})
+            assert not fallback.isError
+            fresh = {p['path']: p for p in json.loads(fallback.content[0].text)['results']}
+            assert all(fresh[path]['complete_file'] and fresh[path]['evidence_ref'] for path in paths)
+            assert fresh['settings.py']['content'] == changed
+
+    asyncio.run(asyncio.wait_for(exercise(), 60))
