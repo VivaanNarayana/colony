@@ -14,19 +14,24 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive lookup share the same routing guidance: look up saved findings
-when useful, read known paths directly, and batch independent reads. Prioritize evidence
-needed for requested claims (including callers and dependencies) before auxiliary searches,
-and size batches to any allowance imposed by the host. Use available research to close gaps
-and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
+Ordinary and adaptive task tools use the same routing guidance. Use `research` when
+the user requests recall or when a saved finding could fill a specific evidence gap.
+Once current sources support the requested answer, skip a final speculative lookup.
+Explicit recall still checks current memory, even after an empty startup snapshot.
+Eligible publication can proceed using the existing read references.
 
-Answer guidance distinguishes concrete implementations from injected interfaces and total
-attempts from retries. For example, a concrete adapter allowing two attempts does not prove
-that an arbitrary injected transport has that limit; two total attempts permit one retry.
-Preserve useful explanations by stating their verified conditions. Failed entries, partial
-pages and literal search misses do not prove repository-wide absence. The read tool also
-exposes the coverage warning; it adds no repeated warning to source responses. These are
-evidence and precision requirements, not caps on examples, citations or answer detail.
+For a call chain, batch independent known paths for the caller, governing configuration,
+operation and relevant backend within the host's allowance. Follow a newly discovered
+dependency when the claim requires it. A caller that accepts an injected transport
+establishes no concrete retry ceiling until the wiring or the question selects the
+implementation. Count both return and exception paths. For example, two total sends
+allow one additional retry, and an uncaught exception can end an outer loop early.
+
+For an absence claim about a bounded scope, reuse its listing and read the relevant
+files. A literal search can locate a match. If a needed batch might clip a page,
+reserve units for continuation or use separate reads. When evidence remains unread
+or denied, identify the gap in the answer. Successful references support only
+the delivered excerpts. The routing guidance adds no fields to read responses.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,
 including single long lines, return bounded pages with `next_offset`; continue

@@ -4,11 +4,79 @@ import asyncio
 import json
 import os
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+import anyio
+import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.shared.memory import create_client_server_memory_streams
 from test_integration import running_team as running_team
+from test_workflow import identity as identity
+
+from colony.task_mcp import ANSWER_POLICY, TaskMCP
+from colony.workflow import Workflow
+
+
+@pytest.mark.parametrize("state", ["direct", "empty", "present", "unknown"])
+def test_mcp_initialization_delivers_routing_and_keeps_explicit_recall(identity, monkeypatch, state):
+    client, repo, _ = identity
+    probes, lookups = [], []
+    monkeypatch.setattr(client, "memory_availability", lambda *args: probes.append(args) or state)
+    miss = {"hit": False, "reason": "no_relevant_trail"}
+    monkeypatch.setattr(client, "ask", lambda *args, **kwargs: lookups.append(args) or miss)
+    question = "What timeout is configured?"
+    direct_path = "settings.py" if state == "direct" else None
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True), question, direct_path=direct_path)
+
+    async def check():
+        async with (
+            create_client_server_memory_streams() as (client_streams, server_streams),
+            anyio.create_task_group() as group,
+        ):
+            @asynccontextmanager
+            async def memory_stdio():
+                yield server_streams
+
+            monkeypatch.setattr("colony.task_mcp.stdio_server", memory_stdio)
+            group.start_soon(server.run_stdio_async)
+            try:
+                async with ClientSession(*client_streams) as session:
+                    init = await session.initialize()
+                    routing = init.instructions.partition(ANSWER_POLICY)[0].casefold()
+                    assert "requested recall" in routing and "missing evidence" in routing
+                    assert all(term in routing for term in ("skip", "lookup", "sources suffice"))
+                    assert all(term in routing for term in ("batch", "caller", "config", "operation", "backend"))
+                    assert all(term in routing for term in ("qualify", "absence", "coverage", "incomplete"))
+                    assert ("path first" in routing) == (state == "direct")
+                    assert ("start" in routing and "empty" in routing) == (state == "empty")
+                    assert len(probes) == (0 if state == "direct" else 1)
+
+                    tools = {tool.name: tool for tool in (await session.list_tools()).tools}
+                    assert set(tools) == {"read", "research"}
+                    description = tools["research"].description.casefold()
+                    assert all(term in description for term in ("requested recall", "verify", "current"))
+                    assert ("empty at last check" in description) == (state == "empty")
+                    read_description = tools["read"].description.casefold()
+                    assert all(term in read_description for term in (
+                        "unbound backend", "calls", "additional retries", "returns", "uncaught",
+                    ))
+
+                    args = {} if direct_path else {"path": "settings.py"}
+                    read = await session.call_tool("read", args)
+                    assert not read.isError and not lookups
+                    page = json.loads(read.content[0].text)
+                    assert page["content"] == "TIMEOUT = 30" and page["complete_file"]
+                    assert "lookup_if" not in page and "next_offset" not in page
+
+                    recall = await session.call_tool("research", {})
+                    assert not recall.isError and json.loads(recall.content[0].text) == miss
+                    assert lookups == [(question, "team")]
+            finally:
+                group.cancel_scope.cancel()
+
+    asyncio.run(asyncio.wait_for(check(), timeout=10))
 
 
 def test_live_empty_hint_bundle_quota_and_readonly(running_team):
@@ -42,7 +110,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             ClientSession(reader, writer) as session,
         ):
             init = await session.initialize()
-            assert "Memory was empty at task startup" in init.instructions
+            assert "started empty" in init.instructions
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
