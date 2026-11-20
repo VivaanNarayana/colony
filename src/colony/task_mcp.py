@@ -49,13 +49,13 @@ PUBLICATION_POLICY = (
 
 RESEARCH_GUIDANCE = (
     "Recall this task when useful. Answer from sufficient current excerpts. "
-    "For stale or withheld content, read relevant cited files. After a miss, use sources. "
+    "Read cited files for stale evidence or gaps. After a miss, use sources. "
     "Repeat lookup for changed conditions or explicit recall."
 )
 READ_ROUTING = (
-    "For absence, list once if needed. Batch relevant files before search if they fit. "
-    "Search larger scopes. Read named values at their definitions. "
-    "Resolve contradictions. Stop when current evidence suffices. "
+    "For absence, list once if needed. Batch before search if files fit. "
+    "Read value definitions. End discovery when evidence suffices. "
+    "Search to narrow larger scopes. Resolve conflicting evidence. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -183,7 +183,7 @@ class TaskMCP(FastMCP):
             units = "UTF-8 bytes (estimate)" if context_budget.encoding == "utf8_bytes" else "o200k_base tokens"
             adaptive_research.__doc__ = (
                 RESEARCH_GUIDANCE + f" Full reply budget: default {context_budget.max_tokens} {units}, override 256..8192. "
-                "budget_limited may hide a match. No automatic retry or cap on answers or source reads."
+                "budget_limited may hide a match. No automatic retry. This budget applies only to lookup."
             )
             research = adaptive_research
 
@@ -285,7 +285,7 @@ class TaskMCP(FastMCP):
         await self._refresh_availability()
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
-                "Memory was empty at task startup. Start with source reads. Explicit recall checks live memory. "
+                "Memory was empty at task startup. Read sources. Explicit recall is live. "
                 + self._base_instructions)
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):

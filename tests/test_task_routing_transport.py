@@ -45,13 +45,16 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             # The pinned native host shows a 247-character preview followed by an ellipsis.
             preview = init.instructions[:247]
             assert "Memory was empty at task startup" in preview
-            assert "Batch relevant files before search if they fit" in preview
+            assert "Explicit recall is live" in preview
+            assert "Batch before search if files fit" in preview
+            assert "Read value definitions." in preview
+            assert "End discovery when evidence suffices." in preview
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
             research = tools["research"].description
             assert "empty at last check" in research
-            assert "current excerpts" in research and "stale or withheld" in research
+            assert "sufficient current excerpts" in research and "stale evidence or gaps" in research
             assert "After a miss, use sources" in research
             assert "remaining units and bytes" in tools["read"].description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})

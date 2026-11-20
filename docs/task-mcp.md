@@ -14,10 +14,11 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive lookup can replace source discovery when a saved finding returns
-current excerpts that support the answer. If content is stale or withheld, use relevant
-cited paths for fresh reads. After a miss, read the missing evidence. A changed store,
-a different lookup budget or an explicit recall request can warrant another lookup.
+Ordinary and adaptive lookup can replace source discovery when the returned current
+excerpts support the answer, even if the reply omits the saved prose. Read relevant
+cited files when evidence is stale, incomplete or conflicting. After a miss, turn to
+sources. A changed store, a different lookup budget or an explicit recall request
+can warrant another lookup.
 
 For a named value, read its definition as soon as the path is known. For absence across
 a bounded scope, list once if needed, then batch the relevant listed files before

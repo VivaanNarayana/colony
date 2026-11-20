@@ -23,12 +23,12 @@ def call(server, name, **args):
 
 
 @pytest.mark.parametrize('limit', [256, 3072, 8192])
-@pytest.mark.parametrize('hit', [False, True])
-def test_task_lookup_matches_ordinary_adaptive_wire_response(identity, monkeypatch, limit, hit):
+@pytest.mark.parametrize('match_kind', [None, 'answer', 'evidence'])
+def test_task_lookup_matches_ordinary_adaptive_wire_response(identity, monkeypatch, limit, match_kind):
     client, repo, sources = identity
     seen = []
-    result = {'hit': False, 'reason': 'no_relevant_trail'} if not hit else {
-        'hit': True, 'match_kind': 'answer', 'status': 'validated',
+    result = {'hit': False, 'reason': 'no_relevant_trail'} if match_kind is None else {
+        'hit': True, 'match_kind': match_kind, 'status': 'validated',
         'content': 'TIMEOUT defaults to 30. ' * 100,
         'sources': [sources[0].model_dump()],
         'evidence': [{'ref': 'settings.py', 'line': 1, 'text': 'TIMEOUT = 30', 'complete_file': True}],
@@ -45,6 +45,11 @@ def test_task_lookup_matches_ordinary_adaptive_wire_response(identity, monkeypat
     expected = call(ordinary, 'ask', question='Explain timeout', max_context_tokens=limit)
     assert actual == expected
     assert len(actual[0].text.encode('utf-8')) <= limit
+    if match_kind == 'evidence' and limit >= 3072:
+        reply = json.loads(actual[0].text)
+        assert reply['status'] == 'validated' and 'content' not in reply
+        excerpt, = reply['current_repository_reads']
+        assert excerpt['complete_file'] and excerpt['content'] == 'TIMEOUT = 30'
     assert len(seen) == 2  # Exactly one request for each explicit call; no automatic retry.
     assert seen[0] == seen[1]
     assert seen[0][1]['context_budget'].max_tokens == limit
