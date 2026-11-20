@@ -43,7 +43,7 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
         assert all(term in ANSWER_POLICY.casefold() for term in (
-            "all requested", "detail", "example", "citation",
+            "every requested deliverable", "detail", "example", "citation",
         ))
 
         result = json.loads((await server.call_tool("read", {"batch": [
