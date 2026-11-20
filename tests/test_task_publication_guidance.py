@@ -62,7 +62,8 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
                 assert set(tool.inputSchema["required"]) == {"content", "applicability", "evidence_refs"}
                 assert "question" not in tool.inputSchema["properties"]
                 assert "4,000 characters" in tool.description
-                assert "Before final" in tool.description
+                assert "supporting evidence_refs from successful reads" in tool.description
+                assert 'kind="value"' in tool.description
             # Policy delivery cannot trigger a publication or limit later research.
             later = await session.call_tool("read", {"path": "README.md"})
             assert not later.isError
@@ -70,19 +71,24 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
     asyncio.run(check())
 
 
-def test_example_supports_multiple_sources_and_never_caps_reads(identity, monkeypatch):
+def test_publish_can_store_condition_and_resolved_behavior_from_multiple_reads(identity, monkeypatch):
     client, repo, _ = identity
+    (repo / "sender.py").write_text("from settings import TIMEOUT\ndef send(client):\n    client.flush(TIMEOUT)")
     sent = []
     monkeypatch.setattr(client, "push", lambda trail, **kw: sent.append(trail) or {"stored": True})
     server = TaskMCP(Workflow(client, "team", repo), "Original question")
     def call(name, args):
         return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
-    refs = [call("read", {"path": p})["evidence_ref"] for p in ("settings.py", "README.md")]
+    read = call("read", {"batch": [{"path": "settings.py"}, {"path": "sender.py"}]})
+    assert "condition and concrete outcome" in read["publication_guidance"]
+    assert "resolved settings" in read["publication_guidance"]
+    refs = [entry["evidence_ref"] for entry in read["results"]]
     assert not sent
-    result = call("publish", {"content": "A scoped finding", "applicability": "Repository settings",
+    result = call("publish", {"content": "The sender passes 30 to flush.", "applicability": "When send(client) runs",
                               "evidence_refs": refs, "kind": "behavior"})
     assert result["stored"] and len(sent) == 1
-    assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
+    assert sent[0].content == "When send(client) runs\nThe sender passes 30 to flush."
+    assert {s.ref for s in sent[0].sources} == {"settings.py", "sender.py"}
     assert sent[0].question == "Original question" and sent[0].tainted
     assert call("read", {"path": "settings.py"})["content"]
 

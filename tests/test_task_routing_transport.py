@@ -44,31 +44,33 @@ def test_mcp_initialization_delivers_routing_and_keeps_explicit_recall(identity,
             try:
                 async with ClientSession(*client_streams) as session:
                     init = await session.initialize()
-                    routing = init.instructions.partition(ANSWER_POLICY)[0].casefold()
+                    instructions = init.instructions.casefold()
                     # The pinned host keeps roughly 250 characters including its ellipsis.
-                    preview = routing[:247]
-                    read_first = "read the specified path first" if direct_path else "batch known paths first"
+                    preview = instructions[:247]
+                    read_first = "read the specified path first" if direct_path else "batch known paths"
                     assert preview.index(read_first) < preview.index("recall")
-                    assert "batch listed scope for absence if it fits" in preview
-                    assert "note gaps" in preview and "uncaught errors exit loops" in preview
+                    assert preview.index("for absence, batch listed scope first if it fits") < preview.index("recall")
+                    assert "note gaps" in preview and "trace caller and operation" in preview
                     assert "list unknown paths once" in preview
+                    assert "read value definitions" in preview and "count the requested layer" in preview
                     assert ("started empty" in preview) == (state == "empty")
                     assert ("recall only if asked" in preview) == (state == "empty")
                     assert ("to replace discovery" in preview) == (state != "empty")
-                    assert "skip speculative lookups once sources suffice" in init.instructions.casefold()
+                    assert instructions.count(ANSWER_POLICY.casefold()) == 1
                     assert len(probes) == (0 if state == "direct" else 1)
 
                     tools = {tool.name: tool for tool in (await session.list_tools()).tools}
                     assert set(tools) == {"read", "research"}
                     description = tools["research"].description.casefold()
-                    assert all(term in description for term in ("requested recall", "verify", "current"))
+                    assert all(term in description for term in ("requested recall", "verify", "sources"))
                     assert ("empty at last check" in description) == (state == "empty")
-                    assert ("would replace discovery" in description) == (state != "empty")
+                    assert ("fresh lookup" in description) == (state == "empty")
+                    assert ("to replace discovery" in description) == (state != "empty")
                     read_description = tools["read"].description.casefold()
                     assert all(term in read_description for term in (
-                        "read its definition", "caller", "config", "operation", "unbound backend",
-                        "calls", "additional retries", "returns", "uncaught exception propagation", "remaining read units", "bytes",
-                        "list unknown paths once",
+                        "listings give names", "read value definitions", "caller", "config", "operation",
+                        "requested boundary", "backend if needed", "requested layer", "wiring or premise",
+                        "returns", "first uncaught raise", "remaining units", "bytes",
                     ))
 
                     args = {} if direct_path else {"path": "settings.py"}

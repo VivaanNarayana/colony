@@ -40,12 +40,12 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
         tools = {t.name: t for t in await server.list_tools()}
         description = tools["read"].description.casefold()
         assert all(term in description for term in (
-            "absence", "listing", "partial", "literal", "denied", "next_offset", "clip",
+            "absence", "listing", "search to narrow scope", "unread", "literal", "denied", "next_offset", "clip",
         ))
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
         assert all(term in ANSWER_POLICY.casefold() for term in (
-            "every requested deliverable", "detail", "example", "citation",
+            "every requested deliverable", "in its format", "detail", "example", "citation",
         ))
 
         result = json.loads((await server.call_tool("read", {"batch": [
@@ -81,31 +81,49 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("bound", [False, True], ids=["injected", "bound"])
-def test_batch_delivers_config_caller_and_operation_with_relevant_binding(identity, bound):
+@pytest.mark.parametrize("binding", ["injected", "wired", "selected"])
+def test_batch_delivers_the_requested_retry_boundary(identity, binding):
     client, repo, _ = identity
-    config = "ATTEMPTS = 2"
-    call = "from config import ATTEMPTS\nfrom operation import run\n\n"
-    if bound:
+    config = "ATTEMPTS = 2\nDELAY = 11"
+    call = "from limits import ATTEMPTS, DELAY\nfrom engine import run\n\n"
+    if binding == "wired":
         call += (
-            "from backend import RetryingBackend\n\n"
-            "def call():\n"
-            "    return run(RetryingBackend(), ATTEMPTS)"
+            "from relay import Relay\n\n"
+            "def handle(send, pause):\n"
+            "    return run(Relay(send), ATTEMPTS, DELAY, pause)"
         )
     else:
-        call += "def call(backend):\n    return run(backend, ATTEMPTS)"
+        call += "def handle(adapter, pause):\n    return run(adapter, ATTEMPTS, DELAY, pause)"
     operation = (
-        "def run(backend, attempts):\n"
+        "def run(adapter, attempts, delay, pause):\n"
         "    for attempt in range(attempts):\n"
-        "        result = backend.submit()\n"
+        "        result = adapter.submit()\n"
         "        if not result.retryable or attempt == attempts - 1:\n"
-        "            return result"
+        "            return result\n"
+        "        pause(delay)"
     )
-    backend = "class RetryingBackend:\n    def submit(self):\n        raise ConnectionError()"
-    sources = {"config.py": config, "caller.py": call, "operation.py": operation, "backend.py": backend}
+    backend = (
+        "class Relay:\n"
+        "    def __init__(self, send):\n"
+        "        self.send = send\n"
+        "    def submit(self):\n"
+        "        for attempt in range(3):\n"
+        "            try:\n"
+        "                return self.send()\n"
+        "            except ConnectionError:\n"
+        "                if attempt == 2:\n"
+        "                    raise"
+    )
+    sources = {"limits.py": config, "entry.py": call, "engine.py": operation, "relay.py": backend}
     for path, content in sources.items():
         (repo / path).write_text(content, encoding="utf-8")
-    required = tuple(sources) if bound else ("config.py", "caller.py", "operation.py")
+    required = tuple(sources)
+    if binding == "injected":
+        question = "How many submits and waits can handle make when the adapter returns retryable results?"
+        required = ("limits.py", "entry.py", "engine.py")
+    else:
+        premise = "Use Relay. " if binding == "selected" else ""
+        question = premise + "When send always raises ConnectionError, how many sends occur before handle raises?"
     attempts = 0
 
     def admit():
@@ -113,9 +131,7 @@ def test_batch_delivers_config_caller_and_operation_with_relevant_binding(identi
         attempts += 1
         return attempts <= len(required)
 
-    server = TaskMCP(Workflow(client, "team", repo, read_only=True),
-                     "How many attempts and retries occur if submit raises?",
-                     read_admission=admit)
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True), question, read_admission=admit)
 
     response = asyncio.run(server.call_tool("read", {"batch": [{"path": path} for path in required]}))
     pages = json.loads(response[0].text)["results"]
@@ -125,7 +141,45 @@ def test_batch_delivers_config_caller_and_operation_with_relevant_binding(identi
         assert page["evidence_ref"] and "next_offset" not in page
     assert attempts == len(required)
     policy = ANSWER_POLICY.casefold()
-    assert "qualify backend limits" in policy and "wiring" in policy and "question" in policy
+    assert "condition backend limits on wiring or the question" in policy
     assert all(term in policy for term in (
-        "actual calls", "configured max", "additional retries", "uncaught exceptions", "returns",
+        "requested layer", "actual calls", "configured max", "additional retries", "first uncaught raise",
+        "returns",
     ))
+
+
+def test_listing_and_batch_cover_a_small_absence_scope_within_six_units(identity):
+    client, repo, _ = identity
+    paths = tuple(f"section-{i}.txt" for i in range(5))
+    content = "Current notes on inventory routing."
+    for path in paths:
+        (repo / path).write_text(content, encoding="utf-8")
+    remaining = 6
+
+    def admit():
+        nonlocal remaining
+        if remaining == 0:
+            return False
+        remaining -= 1
+        return True
+
+    def list_scope() -> dict:
+        assert admit()
+        return {"paths": paths}
+
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True),
+                     "Does this scope describe a cancellation policy?",
+                     read_admission=admit, read_path_allowed=paths.__contains__)
+    server.add_tool(list_scope, structured_output=False)
+
+    async def check():
+        listing = json.loads((await server.call_tool("list_scope", {}))[0].text)
+        assert listing == {"paths": list(paths)} and remaining == 5
+        assert not server.evidence._observations
+        batch = {"batch": [{"path": path} for path in listing["paths"]]}
+        pages = json.loads((await server.call_tool("read", batch))[0].text)["results"]
+        assert tuple(page["path"] for page in pages) == paths
+        assert all(page["complete_file"] and page["content"] == content for page in pages)
+        assert all(page["evidence_ref"] for page in pages) and remaining == 0
+
+    asyncio.run(check())

@@ -15,7 +15,7 @@ read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
 Ordinary and adaptive task tools start with known source paths. When paths are
-unknown, discover them once and batch the relevant reads. For an empty memory
+unknown, list once. Go straight to the definition for a named value. For an empty memory
 snapshot, use `research` for explicit recall. That call checks current memory
 and can see a later write. When availability is unknown or findings exist,
 a lookup can also replace a specific source discovery step. Eligible
@@ -40,17 +40,17 @@ wraps source reads or supplies a per-path `read_path_allowed` callback uses
 ordinary discovery. A callback can change its decision between filenames.
 Read quotas alone still permit hints.
 
-For a call chain, batch independent known paths for the caller, governing configuration,
-operation and relevant backend within the host's allowance. Follow a newly discovered
-dependency when the claim requires it. A caller that accepts an injected transport
-establishes no concrete retry ceiling until the wiring or the question selects the
-implementation. Count both return and exception paths. For example, two total sends
-allow one additional retry, and an uncaught exception can end an outer loop early.
+For a retry question, count calls at the requested layer. Batch the caller, governing
+configuration and executing operation through the boundary named in the question.
+Include a backend when the claim depends on it. Wiring or an explicit premise must
+select that implementation for its retry limit to apply. Before combining limits,
+check which returns allow another outer iteration and where the first uncaught
+exception ends it.
 
 For an absence claim about a bounded scope, batch its relevant listed files
-immediately when they fit the remaining allowance. Use literal search when it
-can narrow a larger or unknown scope. If a needed batch might clip a page,
-reserve units for continuation or use separate reads. When evidence remains unread
+immediately when they fit the remaining units and bytes. A listing supplies names.
+Use search or optional recall when it replaces necessary discovery. If a needed batch
+might clip a page, reserve units for continuation or use separate reads. When evidence remains unread
 or denied, identify the gap in the answer. Successful references support only
 the delivered excerpts. The routing guidance adds no fields to read responses.
 
@@ -128,8 +128,9 @@ research task as direct merely because it mentions a filename.
 
 The first successful eligible read also returns a short `publication_guidance` field
 alongside the read result, or alongside `results` for a batch. This constant adapter
-cue is separate from source content and is not evidence. It reminds the model to
-publish an eligible supported finding or skip publication and complete the answer.
+cue is separate from source content and is not evidence. For a new reusable behavior,
+record its observed condition and concrete outcome. Include resolved settings when they
+explain that outcome. Skip restatements.
 It appears at most once per task, never once per batch entry or continuation page.
 Failed reads and reads without evidence references do not consume the cue. Read-only
 and direct tasks without explicit remember intent receive no cue. The cue does not
@@ -176,15 +177,10 @@ Direct reads, continuation offsets and publication eligibility are unchanged.
 Without a budget, the legacy lookup interface and representation are unchanged.
 This does not change retrieval. End-to-end gross savings remain unproven.
 
-Writable eligible tasks receive a conditional before-final publication instruction and
-an evidence-reference payload example once in MCP initialization. Direct tasks without
-remember intent and read-only tasks receive no publication workflow. This guidance does
-not auto-publish, require a successful write, add a decision call, or limit answers.
-Requested publication status and failure explanations remain part of the answer;
-only unsolicited abstention reports are omitted. Unknown outcomes stay uncertain.
-Use all supporting read references for multi-source findings; never send the example's
-variable names as references. The ordinary AGENTS.md ask/push payload is not this API.
-Local transport tests establish delivery and capability, not model compliance or savings.
+Eligible writable tasks receive the before-final publication policy at initialization.
+The discovered tool describes its arguments. Pass all supporting references returned by
+successful reads, or narrow the finding to the observed spans. Honor the requested answer
+format and explain the publication outcome when asked, including any uncertainty.
 
 
 ## Empty-memory source-first routing

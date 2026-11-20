@@ -138,7 +138,7 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
     async def check():
         first = await server.list_tools()
         description = next(t.description for t in first if t.name == "research")
-        assert "empty at last check" in description and "only for requested recall" in description
+        assert "empty at last check" in description and "requested recall only" in description
         assert "replace discovery" not in description
         assert len(probes) == 1 and not asks
         state[0] = "present"  # Concurrent publication after snapshot, before TTL.
@@ -147,7 +147,7 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
         server._availability_until = 0
         second = await server.list_tools()
         description = next(t.description for t in second if t.name == "research")
-        assert "empty at last check" not in description and "would replace discovery" in description
+        assert "empty at last check" not in description and "to replace discovery" in description
         assert len(probes) == 2
         state[0] = "unknown"
         server._availability_until = 0
@@ -167,7 +167,7 @@ def test_empty_adaptive_catalog_preserves_lookup_budget(identity, monkeypatch):
     server._availability_enabled = True
     tools = asyncio.run(server.list_tools())
     description = next(t.description for t in tools if t.name == "research")
-    assert "only for requested recall" in description and "replace discovery" not in description
+    assert "requested recall only" in description and "replace discovery" not in description
     assert "default 512 UTF-8 bytes" in description and "budget_limited" in description
 
 
