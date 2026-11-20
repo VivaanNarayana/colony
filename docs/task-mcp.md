@@ -22,6 +22,14 @@ what was remembered, check memory as well. Once the sources cover every requeste
 claim, finish the answer and any eligible publication. A later lookup is useful
 for an explicit memory request or a remaining gap or conflict. Checking memory
 status alone adds a call. A memory miss provides no evidence of repository absence.
+
+A successful research-route `read` returns one `lookup_if` hint alongside the
+evidence. `recall or gap` means to use memory if recall was requested or a
+lookup could replace further research on an unresolved claim. With a scoped
+empty snapshot the hint is `requested`. Either way, `research` remains
+available. A settled answer needs no trailing lookup. Direct-file reads retain
+their ordinary receipt. The hint carries no evidence or publication authority.
+
 On a validated adaptive hit, each entry in `current_repository_reads` carries
 its path, start line, content and, when available, end line. Ordinary hits
 can include `observed_lines` as inclusive `[path, first_line, last_line]` ranges
@@ -38,6 +46,8 @@ and contradictions, then explain remaining limitations. No source quota is impos
 
 For a propagation question, group the known files for the requested caller, the
 operation it invokes, and any intervening wrappers in one batch when they fit.
+After a hit, subtract the spans already supported by current excerpts before
+building that batch. If one known gap remains, read it directly.
 For example, a worker's configured limit, dispatcher and executor can together
 establish the caller's outcome. Include configuration when it affects that path,
 such as a flag that controls whether the caller re-raises an error. For a gateway

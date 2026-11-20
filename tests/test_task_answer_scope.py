@@ -227,7 +227,7 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     units = iter(range(3 if configured else 2))
     server = TaskMCP(Workflow(client, "team", repo), "Does send's ConnectionError reach handle's caller?",
                      read_admission=lambda: next(units, None) is not None)
-    assert "Batch caller through operation including relevant wrappers/config." in server.instructions[:247]
+    assert "Batch missing caller through operation with governing config." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(page["complete_file"] for page in pages)
     assert [page["content"] for page in pages] == [sources[path] for path in paths]
@@ -254,9 +254,9 @@ def test_propagation_needs_evidence_through_requested_caller(identity, catch_at,
         (repo / path).write_text(source, encoding="utf-8")
     server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach the caller of handle?",
                      read_path_allowed=lambda path: path != "gateway.py" or can_read_endpoint)
-    assert "Batch caller through operation including relevant wrappers/config." in server.instructions[:247]
+    assert "Batch missing caller through operation with governing config." in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "Batch alone, max 8 ordered entries" in tool.description
+    assert "Batch gaps alone. Max 8 ordered entries" in tool.description
     pages = read(server, batch=[{"path": path} for path in sources])["results"]
     assert [p["content"] for p in pages[:2]] == [backend, wrapper]
     refs = [p["evidence_ref"] for p in pages if p["evidence_ref"]]
@@ -353,7 +353,7 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present, ada
     tool = tools["read"]
     assert "tight quota" in tool.description and "Mark uncovered scope unknown" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])
-    assert set(batch) == ({"results", "publication_guidance"} if remaining else {"results"})
+    assert set(batch) == ({"results", "publication_guidance", "lookup_if"} if remaining else {"results"})
     pages = batch["results"]
     observed, denied = pages[:remaining], pages[remaining:]
     assert len(pages) == len(paths)

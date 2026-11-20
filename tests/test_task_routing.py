@@ -56,7 +56,7 @@ def test_listed_policy_on_ordinary_route(identity, monkeypatch, delegated):
     monkeypatch.setattr(client, "push", lambda *args, **kw: pytest.fail("automatic publication"))
     assert "Read identifiable settings." in server.instructions[:247]
     tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
-    assert "Batch alone, max 8 ordered entries" in tools["read"].description
+    assert "Batch gaps alone. Max 8 ordered entries" in tools["read"].description
 
     # The host has listed the files but provided no explicit direct path.
     page = call(server, "read", {"path": "policy.py"})

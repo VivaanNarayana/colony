@@ -15,7 +15,9 @@ def test_oversized_end_matches_omitted_end_and_binds_actual_span(identity, batch
     server = make(identity)
     expected = call(server, path="small.txt", start=start)
     request = {"path": "small.txt", "start": start, "end": 120}
-    actual = (call(server, batch=[request])["results"][0] if batch else call(server, **request))
+    envelope = call(server, batch=[request]) if batch else call(server, **request)
+    assert envelope.pop("lookup_if") == expected.pop("lookup_if") == "recall or gap"
+    actual = envelope["results"][0] if batch else envelope
     metadata = {"evidence_ref", "publication_guidance"}
     assert {k: v for k, v in actual.items() if k not in metadata} == {
         k: v for k, v in expected.items() if k not in metadata}

@@ -16,11 +16,60 @@ from colony.context_budget import (
     serialize_response,
     with_reuse_guidance,
 )
+from colony.evidence_refs import EvidenceError
 from colony.mcp import create_mcp
 from colony.models import ContextBudget, Trail
 from colony.task_mcp import TaskMCP
 from colony.validation import snapshot
 from colony.workflow import Workflow
+
+
+@pytest.mark.parametrize("state", ["empty", "present", "unknown"])
+@pytest.mark.parametrize("batched", [False, True], ids=["settled-setting", "changed-worker-policy"])
+@pytest.mark.parametrize("read_only", [False, True])
+def test_settled_source_receipt_skips_trailing_lookup_within_previous_wire_cost(
+    transport, monkeypatch, state, batched, read_only,
+):
+    client, repo, _, lookups = transport
+    sources = {
+        "policy.py": "MAX_AGE = 30",
+        "dispatcher.py": "from executor import run\nfrom policy import MAX_AGE\n"
+                         "def dispatch(age, job): return run(age, MAX_AGE, job)",
+        "executor.py": "def run(age, limit, job): return 'expired' if age >= limit else job()",
+    }
+    for name, source in sources.items():
+        (repo / name).write_text(source, encoding="utf8")
+    (repo / "backend.py").write_text("def job(): return 'ok'", encoding="utf8")
+    monkeypatch.setattr(client, "memory_availability", lambda *args: state)
+    question = "What happens to expired jobs under the new policy?" if batched else "What is MAX_AGE?"
+    task = TaskMCP(Workflow(client, "team", repo, read_only=read_only), question)
+    task._availability_enabled = True
+    args = {"batch": [{"path": path} for path in sources]} if batched else {"path": "policy.py"}
+    wire = asyncio.run(task.call_tool("read", args))[0].text
+    receipt = json.loads(wire)
+    assert receipt.pop("lookup_if") == ("requested" if state == "empty" else "recall or gap")
+    assert ("publication_guidance" in receipt) == (not read_only)
+    pages = receipt["results"] if batched else [receipt]
+    expected = list(sources) if batched else ["policy.py"]
+    assert [page["content"] for page in pages] == [sources[path] for path in expected]
+    refs = [p["evidence_ref"] for p in pages]
+    if read_only:
+        with pytest.raises(EvidenceError):
+            task.evidence.resolve(refs)
+    else:
+        assert [ref.ref for ref in task.evidence.resolve(refs)] == expected
+    assert all("lookup_if" not in page for page in pages)
+    assert not lookups and task._read_access.admitted == len(expected)
+    assert {t.name for t in asyncio.run(task.list_tools())} == (
+        {"read", "research"} if read_only else {"read", "research", "publish"}
+    )
+    # Same evidence and publication cue in the prior FastMCP dict rendering.
+    before = to_json(receipt, indent=2).decode("utf8")
+    assert len(wire.encode()) <= len(before.encode())
+    if tokenizer := os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER"):
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
+        count = _counter(ContextBudget(encoding="o200k_base"))
+        assert count(wire) <= count(before)
 
 
 @pytest.mark.parametrize("encoding", [None, "utf8_bytes", "o200k_base"])
@@ -51,7 +100,7 @@ def test_validated_hit_then_only_the_missing_source_read(transport, monkeypatch,
         return json.loads(asyncio.run(task.call_tool(name, args))[0].text)
 
     research = next(t for t in asyncio.run(task.list_tools()) if t.name == "research")
-    assert "Use shown spans; read gaps directly." in research.description[:247]
+    assert "Use covered spans; read missing paths directly." in research.description[:247]
     hit_wire = asyncio.run(task.call_tool("research", {}))[0].text
     hit = json.loads(hit_wire)
     assert hit["hit"] and hit["status"] == "validated"
@@ -88,10 +137,23 @@ def test_validated_hit_then_only_the_missing_source_read(transport, monkeypatch,
         seen == path and start <= first <= last <= end for seen, start, end in spans)]
     # Ordinary lookup can return fewer excerpts than cited files.
     assert missing == (["transport.py"] if "client.py" in excerpts else ["client.py", "transport.py"])
+    read_tool = next(t for t in asyncio.run(task.list_tools()) if t.name == "read")
+    assert "Batch gaps alone" in read_tool.description[:247]
+    # Check the actual source-read boundary, including the entries inside a batch.
+    original_read = task.evidence.read
+    paths_read = []
+
+    def record_read(path, *args, **kwargs):
+        paths_read.append(path)
+        return original_read(path, *args, **kwargs)
+
+    monkeypatch.setattr(task.evidence, "read", record_read)
     if len(missing) == 1:
-        page = call("read", path=missing[0])
+        receipt = page = call("read", path=missing[0])
     else:
-        page = call("read", batch=[{"path": path} for path in missing])["results"][-1]
+        receipt = call("read", batch=[{"path": path} for path in missing])
+        page = receipt["results"][-1]
+    assert paths_read == missing and receipt["lookup_if"] == "recall or gap"
     assert "attempts = 2" in page["content"] and page["complete_file"]
     assert task._read_access.admitted == len(missing) and len(responses) == 1
     # Reading the implementation still leaves selection by the injected caller open.
@@ -127,7 +189,7 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
         return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
 
     learning = task(question)
-    assert "Batch caller through operation including relevant wrappers/config." in learning.instructions[:247]
+    assert "Batch missing caller through operation with governing config." in learning.instructions[:247]
     batch = call(learning, "read", batch=[{"path": name} for name in sources])
     pages = batch["results"]
     assert {p["path"]: p["content"] for p in pages} == sources
@@ -164,6 +226,7 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
     assert "Changes or semantic absence: read sources first." in research.description[:247]
     current = call(changed, "read", path="policy.py")
     assert current["complete_file"] and current["content"] == "MAX_AGE = 120"
+    assert current["lookup_if"] == "recall or gap"
     assert changed._read_access.admitted == 1 and len(lookups) == 1
 
 

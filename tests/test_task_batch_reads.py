@@ -39,9 +39,12 @@ def test_batch_returns_same_evidence_in_one_call_without_lookup_or_push(identity
     server = make(identity)
     requests = [{"path": "settings.py"}, {"path": "README.md"}]
     individual = [call(server, **r) for r in requests]
-    together = call(server, batch=requests)["results"]
+    batch = call(server, batch=requests)
+    assert batch["lookup_if"] == "recall or gap"
+    together = batch["results"]
     assert len(together) == len(requests)
     for one, many in zip(individual, together, strict=True):
+        assert one.pop("lookup_if") == batch["lookup_if"] and "lookup_if" not in many
         assert {k: v for k, v in one.items() if k not in {"evidence_ref", "publication_guidance"}} == {
             k: v for k, v in many.items() if k != "evidence_ref"}
         assert one["evidence_ref"] != many["evidence_ref"]

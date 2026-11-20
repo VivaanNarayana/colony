@@ -55,8 +55,8 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Batch alone, max 8 ordered entries" in description
-            assert "max 8 ordered entries share 16000 UTF-8 bytes" in description
+            assert "Batch gaps alone. Max 8 ordered entries" in description
+            assert "8 ordered entries share 16000 UTF-8 bytes" in description
             assert "Full coverage, tight quota: read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
             assert not result.isError
@@ -102,7 +102,10 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
             assert "Two attempts allow one retry. Uncaught errors exit the loop." in read.description[:247]
             result = await session.call_tool("read", {} if route == "direct" else {"path": "settings.py"})
             assert not result.isError
-            assert json.loads(result.content[0].text)["complete_file"]
+            receipt = json.loads(result.content[0].text)
+            assert receipt["complete_file"]
+            expected = {"direct": None, "empty": "requested", "research": "recall or gap"}
+            assert receipt.get("lookup_if") == expected[route]
             after_read = (await session.list_tools()).tools
         preview = instructions[:247] + "..."
         assert READ_ROUTING.strip() in preview
@@ -112,11 +115,11 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         early = "Research first for requested recall or to replace reads."
         late = "Changes or semantic absence: read sources first."
         assert (early in preview) == (route == "research")
-        purpose = "Recall this question's saved findings. Skip if settled unless asked."
+        purpose = "Recall saved findings if asked or to save reads."
         assert (purpose in research.description[:247]) == (route != "empty")
         assert late in research.description[:247]
         if route == "empty":
-            assert "Explicit lookup checks this question's saved findings." in research.description[:247]
+            assert "Skip unless recall requested." in research.description[:247]
         catalog_limits = {
             "direct": ((1610, 403), (1990, 492)),
             "research": ((1602, 401), (1982, 490)),

@@ -14,6 +14,7 @@ from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic_core import to_json
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -48,13 +49,13 @@ PUBLICATION_POLICY = (
 )
 
 MEMORY_ROUTING = "Research first for requested recall or to replace reads. "
-RECALL_PURPOSE = "Recall this question's saved findings. Skip if settled unless asked. "
+RECALL_PURPOSE = "Recall saved findings if asked or to save reads. "
 RESEARCH_GUIDANCE = (
     RECALL_PURPOSE + "Changes or semantic absence: read sources first. "
-    "Use shown spans; read gaps directly."
+    "Use covered spans; read missing paths directly."
 )
 READ_ROUTING = (
-    "Read identifiable settings. Batch caller through operation including relevant wrappers/config. "
+    "Read identifiable settings. Batch missing caller through operation with governing config. "
     "Backend limits need wiring or user selection. Semantic absence requires reading sources first. "
 )
 PUBLICATION_CUE = (
@@ -137,25 +138,34 @@ class TaskMCP(FastMCP):
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
-                 ) -> dict:
+                 ) -> dict | str:
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
                 results = self.evidence.read_batch([request.model_dump() for request in batch])
-                return observe(results, {"results": results})
-            selected = path if path is not None else self.direct_path
-            if selected is None:
-                raise ToolError("A repository-relative path is required")
-            try:
-                result = self.evidence.read(selected, start, end, offset=offset)
-                return observe([result], result)
-            except EvidenceError as exc:
-                raise ToolError(str(exc)) from None
+                response = {"results": results}
+            else:
+                selected = path if path is not None else self.direct_path
+                if selected is None:
+                    raise ToolError("A repository-relative path is required")
+                try:
+                    response = self.evidence.read(selected, start, end, offset=offset)
+                except EvidenceError as exc:
+                    raise ToolError(str(exc)) from None
+                results = [response]
+            observe(results, response)
+            if self.direct_path is not None:
+                return response
+            # Put the routing decision beside the delivered evidence, once per
+            # response. Discovery can be deferred. This never initiates a lookup.
+            if any("content" in page for page in results):
+                response["lookup_if"] = "requested" if self._availability_state == "empty" else "recall or gap"
+            return to_json(response).decode("utf-8")
 
         single_read = "Single read defaults to host path." if direct_path is not None else "Single read requires path."
         read.__doc__ = (
             f"{single_read} End defaults/clips to EOF. {RETRY_GUIDANCE} "
-            "Batch alone, max 8 ordered entries share 16000 UTF-8 bytes. "
+            "Batch gaps alone. Max 8 ordered entries share 16000 UTF-8 bytes. "
             "Full coverage, tight quota: read unknown sizes singly. "
             "Keep path/start/end at next_offset. Mark uncovered scope unknown."
         )
@@ -281,8 +291,7 @@ class TaskMCP(FastMCP):
         if self._availability_state == "empty":
             # Alter only the returned catalog, never accumulate description text.
             tools = [t.model_copy(update={"description":
-                "Scoped memory was empty at last check; start with source reads. "
-                "Explicit lookup checks this question's saved findings. "
+                "Memory empty at last check. Skip unless recall requested. "
                 + (t.description or "").removeprefix(RECALL_PURPOSE)})
                 if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
