@@ -136,7 +136,7 @@ def create_mcp(
     workflow_repository_id: str | None = None,
     context_budget: ContextBudget | None = None,
     _lookup_path_allowed=None,
-    _task_read_spans: bool = False,
+    _task_lookup: bool = False,
 ):
     if context_budget is not None:
         from colony.context_budget import count_response
@@ -311,17 +311,14 @@ def create_mcp(
                 serialize_response,
                 with_citation_bounds,
                 with_reuse_guidance,
-                with_task_read_spans,
             )
 
-            if _task_read_spans:
+            if _task_lookup:
                 response.pop("observed_lines", None)
             _deduplicate_adaptive_sources(response)
             response = fit_response(response, budget, question=question)
             response = with_citation_bounds(response, budget)
-            response = with_reuse_guidance(response, budget)
-            if _task_read_spans:
-                response = with_task_read_spans(response, budget)
+            response = with_reuse_guidance(response, budget, task_lookup=_task_lookup)
             text = serialize_response(response)
         else:
             text = json.dumps(response, separators=(",", ":"), ensure_ascii=False)

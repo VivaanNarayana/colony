@@ -14,7 +14,6 @@ from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
-from pydantic_core import to_json
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -95,7 +94,7 @@ class TaskMCP(FastMCP):
                 workflow.client.home, workflow_namespace=workflow.namespace,
                 workflow_repo=workflow.repo, workflow_read_only=workflow.read_only,
                 workflow_repository_id=workflow.repository_id, context_budget=context_budget,
-                _lookup_path_allowed=read_path_allowed, _task_read_spans=True,
+                _lookup_path_allowed=read_path_allowed, _task_lookup=True,
             )
             context_budget = ContextBudget.model_validate(context_budget)
         self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed)
@@ -166,18 +165,10 @@ class TaskMCP(FastMCP):
                            if workflow.repository_id else {})
                 if read_path_allowed is not None:
                     options.update(repo=workflow.repo, path_allowed=read_path_allowed)
-                from colony.context_budget import with_task_read_spans
+                from colony.context_budget import render_ordinary_task_lookup
 
                 result = workflow.client.ask(self.question, workflow.namespace, **options)
-                indexed = with_task_read_spans(result)
-                if "observed_lines" in indexed:
-                    # Ordinary MCP dicts use indented JSON. Spend framing bytes
-                    # on the index only if the compact message still fits.
-                    wire = to_json(indexed)
-                    if len(wire) <= len(to_json(result, indent=2)):
-                        return wire.decode("utf-8")
-                    indexed.pop("observed_lines")
-                return indexed
+                return render_ordinary_task_lookup(result)
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 

@@ -18,8 +18,12 @@ Ordinary and adaptive lookup share the same routing guidance. Use memory when th
 user asks about it or when a prior finding could fill a gap, including on a repeat
 question. Once current source settles the requested facts, continue to the answer
 and any eligible publication. A memory miss provides no evidence of repository absence.
-On a validated hit, `observed_lines`, when present, lists the delivered excerpts
-as `[path, first_line, last_line]` (inclusive). Use the source text for claims it
+On a validated adaptive hit, each entry in `current_repository_reads` carries
+its path, start line, content and, when available, end line. Ordinary hits
+can include `observed_lines` as inclusive `[path, first_line, last_line]` ranges
+when the local tokenizer confirms the index fits. An ordinary excerpt can
+end mid-line. Its index excludes the final line unless the whole file is established.
+Use the source text for claims it
 settles. Read a known missing path or range directly, including caller wiring
 when selection matters. A listed span can cover only part of a file. Saved
 claims still need support from the current source, and conflicts can require a fresh read.

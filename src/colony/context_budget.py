@@ -176,7 +176,7 @@ def with_citation_bounds(response: dict, budget) -> dict:
     return annotated if annotated["context_budget"]["used"] <= budget.max_tokens else base
 
 
-def with_reuse_guidance(response: dict, budget) -> dict:
+def with_reuse_guidance(response: dict, budget, *, task_lookup=False) -> dict:
     """Spend spare bytes on a trusted cue; never repack or evict source evidence."""
     budget = _budget(budget)
     counter = _counter(budget)
@@ -189,11 +189,15 @@ def with_reuse_guidance(response: dict, budget) -> dict:
         raise ContextBudgetError("Reuse guidance requires a fitted response")
     if not base.get("hit") or base.get("status") != "validated" or not base.get("current_repository_reads"):
         return base
-    for cue in (
+    # Task discovery already directs workers to the shown spans. The fitted
+    # reads carry their own paths and line coordinates, including on large hits.
+    short_cue = "Use reads; check gaps."
+    cues = (short_cue,) if task_lookup else (
         "Use current excerpts for covered claims; read only gaps or conflicting evidence. "
         "Saved prose may be withheld; cited-file coverage is not whole-repository coverage.",
-        "Use reads; check gaps.",
-    ):
+        short_cue,
+    )
+    for cue in cues:
         annotated = copy.deepcopy(base)
         annotated["next_action"] = cue
         annotated = _receipt(annotated, budget, counter, limited)
@@ -202,51 +206,70 @@ def with_reuse_guidance(response: dict, budget) -> dict:
     return base
 
 
-def with_task_read_spans(response: dict, budget=None) -> dict:
-    """Index only the delivered lines of a validated task lookup, after any packing."""
+def _matches_whole_excerpt(text: str, digest: str) -> bool:
+    # Legacy excerpts join split lines with LF. A match certifies the last
+    # line without another read, even when the source used CRLF or a final EOL.
+    for newline in ("\n", "\r\n"):
+        raw = text.replace("\n", newline).encode("utf-8")
+        if not text.endswith("\n") and hashlib.sha256(raw).hexdigest() == digest:
+            return True
+        if hashlib.sha256(raw + newline.encode()).hexdigest() == digest:
+            return True
+    return False
+
+
+def _ordinary_read_spans(response: dict) -> list:
+    """Index provably complete lines of ordinary (character-limited) excerpts."""
     from colony.compact import _identities
 
-    base = response.copy()
-    base.pop("observed_lines", None)
-    if base.get("hit") is not True or base.get("status") != "validated":
-        return base
-    # The ordinary client supplies evidence in its legacy shape. The adaptive
-    # renderer has already bound current_repository_reads to source identities.
-    if budget is None:
-        reads = base.get("evidence")
-        path_key, start_key, text_key = "ref", "line", "text"
-    else:
-        reads = base.get("current_repository_reads")
-        path_key, start_key, text_key = "path", "start_line", "content"
+    if response.get("hit") is not True or response.get("status") != "validated":
+        return []
+    reads = response.get("evidence")
     if not isinstance(reads, list) or not reads:
-        return base
+        return []
     try:
-        identities = _identities(base.get("sources"))
+        identities = _identities(response.get("sources"))
     except ValueError:
-        return base
+        return []
     spans = []
     for read in reads:
         if not isinstance(read, dict):
-            return base
-        path, start, text = read.get(path_key), read.get(start_key), read.get(text_key)
+            return []
+        path, start, text = read.get("ref"), read.get("line"), read.get("text")
         if (not isinstance(path, str) or path not in identities or type(start) is not int
                 or start < 1 or not isinstance(text, str) or not text):
-            return base
-        if budget is not None and read.get("sha256") != identities[path]:
-            return base
-        spans.append([path, start, start + text.count("\n")])
-    indexed = {"observed_lines": spans, **base}
-    if budget is None:
-        return indexed
-    # Trade the old prose cue for the index. Never trim evidence, spend more
-    # than the original reply, or imply that a subset is the whole index.
-    receipt = base["context_budget"]
-    indexed.pop("next_action", None)
+            return []
+        # A newline establishes the preceding line boundary. The final segment
+        # of a legacy excerpt can stop mid-line, even if it is the only line.
+        end = start + text.count("\n") - 1
+        if start == 1 and (read.get("complete_file") is True or _matches_whole_excerpt(text, identities[path])):
+            end += 1
+        if end >= start:
+            spans.append([path, start, end])
+    return spans
+
+
+def render_ordinary_task_lookup(response: dict) -> dict | str:
+    """Admit an optional index only when it fits the original bytes and tokens."""
+    from pydantic_core import to_json
+
+    base = response.copy()
+    base.pop("observed_lines", None)
+    if not os.environ.get("COLONY_CONTEXT_TOKENIZER"):
+        return base
+    spans = _ordinary_read_spans(base)
+    if not spans:
+        return base
+    original = to_json(base, indent=2)  # FastMCP serializes a dict with this indentation.
+    candidate = to_json({"observed_lines": spans, **base})
+    if len(candidate) > len(original):
+        return base
     try:
-        _receipt(indexed, budget, _counter(budget), receipt["limited"])
+        count = _counter(_budget({"encoding": "o200k_base"}))
     except ContextBudgetError:
-        return base  # An optional index must never turn an already fitted hit into a miss.
-    return indexed if indexed["context_budget"]["used"] <= receipt["used"] else base
+        return base
+    wire = candidate.decode("utf-8")
+    return wire if count(wire) <= count(original.decode("utf-8")) else base
 
 
 def _rebuild(response):

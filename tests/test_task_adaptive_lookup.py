@@ -44,13 +44,13 @@ def test_task_lookup_preserves_ordinary_adaptive_evidence_and_cost(identity, mon
     actual = call(task, 'research', max_context_tokens=limit)
     expected = call(ordinary, 'ask', question='Explain timeout', max_context_tokens=limit)
     delivered, baseline = [json.loads(blocks[0].text) for blocks in (actual, expected)]
-    if 'observed_lines' in delivered:
-        assert delivered['observed_lines'] == [['settings.py', 1, 1]]
+    assert 'observed_lines' not in delivered
+    if delivered.get('hit') and baseline.get('next_action'):
         assert delivered['context_budget']['used'] == count_response(delivered, budget)
         assert delivered['context_budget']['used'] <= baseline['context_budget']['used']
         assert {k: v for k, v in delivered['context_budget'].items() if k != 'used'} == {
             k: v for k, v in baseline['context_budget'].items() if k != 'used'}
-        presentation = {'next_action', 'observed_lines', 'context_budget'}
+        presentation = {'next_action', 'context_budget'}
         assert {k: v for k, v in delivered.items() if k not in presentation} == {
             k: v for k, v in baseline.items() if k not in presentation}
     else:
