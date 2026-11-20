@@ -272,7 +272,7 @@ class Client:
         response.raise_for_status()
         return response.json()
 
-    def memory_availability(self, namespace: str, repository_id: str | None = None) -> str:
+    def memory_availability(self, namespace: str, repository_id: str | None = None, *, include_citations=False) -> str:
         """A fresh scoped hint, never a cached answer or evidence of relevance/absence."""
         from colony.models import MemoryAvailability
 
@@ -285,7 +285,10 @@ class Client:
                 return "unknown"
             identity = fingerprint(self.keyfile)
             # Short bounded probe; do not send credentials across a redirect.
-            response = httpx.post(self.url + "/memory/availability", json=query.model_dump(),
+            payload = query.model_dump()
+            if include_citations:
+                payload["include_citations"] = True
+            response = httpx.post(self.url + "/memory/availability", json=payload,
                                   headers={"Authorization": f"Bearer {token(self.keyfile)}"},
                                   timeout=1, follow_redirects=False)
             response.raise_for_status()

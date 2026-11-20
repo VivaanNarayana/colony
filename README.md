@@ -365,6 +365,12 @@ Stale and unverified hits are candidates for further research, not trusted answe
 
 ## Agent integration (MCP)
 
+The opt-in [task-scoped adapter](docs/task-mcp.md#reuse-final-answer-citations) can remember
+verified source lines cited in a completed task. A trusted host passes final citations to
+the adapter after answer delivery. Later tasks can reuse current lines through `research()`
+without storing the final answer or asking the agent to write a second summary.
+
+
 Add this stdio server entry to your agent's MCP configuration. Use an absolute executable
 path if `colony` is not on its PATH, and an absolute home path:
 

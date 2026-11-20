@@ -10,6 +10,7 @@ from pathlib import Path
 import sqlite_vec
 from cryptography.fernet import Fernet
 
+from colony.citations import SCHEMA as CITATION_SCHEMA
 from colony.context import excerpts, source_chunks
 from colony.git_context import capture as capture_git_context
 from colony.git_context import compare as compare_git_context
@@ -127,6 +128,7 @@ class Store:
         self._operation_mac_key = derive_operation_mac_key(storage_key)
         with self.connect() as db:
             db.executescript(SCHEMA)
+            db.executescript(CITATION_SCHEMA)
             self.migrate_memory(db)
             # Keep provenance additive: legacy trail rows and their hashes remain intact.
             db.execute(

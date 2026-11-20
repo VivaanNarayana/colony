@@ -44,6 +44,34 @@ def trace(tmp_path):
     return tmp_path, manifest, events, answer, read, evaluate
 
 
+@pytest.mark.parametrize('mode', ['valid', 'unread', 'wrong_digest', 'different_origin', 'failed'])
+def test_completion_bundle_reuse_requires_prior_observed_lines(trace, mode):
+    root, manifest, _, answer, read, _ = trace
+    manifest['track'] = 'natural'
+    learn, reuse = manifest['workloads'][0]['tasks'][:2]
+    learn.update(phase='learn', question='original task')
+    reuse.update(phase='reuse', question='related task')
+    span = {'path': 'a.py', 'sha256': read['sha256'], 'start': 1, 'end': 2}
+    page = {'path': 'a.py', 'content': read['content'], 'start_line': 1, 'end_line': 2,
+            'complete_file': True, 'evidence_ref': 'r' * 24}
+    if mode == 'unread':
+        span['end'] = 3
+    if mode == 'wrong_digest':
+        span['sha256'] = '0' * 64
+    answer.update(origin='other' if mode == 'different_origin' else 'task_citations', match_kind='evidence')
+    answer.pop('content')
+    rows = []
+    for name, event in [('learn', call('colony', 'read', {'path': 'a.py'}, page)),
+                        ('reuse', call('colony', 'research', {}, answer))]:
+        path = root / (name + '.jsonl')
+        path.write_text(json.dumps(event), encoding='utf-8')
+        rows.append({'id': name, 'task': name, 'arm': 'colony', 'workload': 'w',
+                     'events_path': str(path), 'state': 'completed'})
+    rows[0]['citation_completion'] = {'id': answer['id'], 'stored': mode != 'failed', 'spans': [span]}
+    proof = evaluate_mechanisms(root, manifest, rows)
+    assert proof['reuse']['useful_reuse'] == (mode == 'valid')
+
+
 def test_chronological_publication_and_hit(trace):
     *_, evaluate = trace
     proof = evaluate()

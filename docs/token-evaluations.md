@@ -1,5 +1,37 @@
 # Memory-use token evaluations
 
+## Fact-level citations in prospective runs (version /22)
+
+The completion host collects explicit citation ranges from the final answer's
+source list and its individual facts. A filename alone supplies no range.
+The adapter still intersects citations with acknowledged reads. Startup routing
+can suggest a lookup, but only an actual worker-received result counts as retrieval.
+
+## Native relay disconnects in prospective runs (version /21)
+
+The collector forwards evidence handles from completed worker read results over
+the existing private completion channel. This lets the host finish an answered
+task after the worker force-closes its relay. A missing final answer, an
+unacknowledged read, or a failed read provides no new authority to store evidence.
+Use the originally pinned /20 collector to inspect the PR #44 benchmark.
+
+## Host completion and cited evidence in prospective runs (version /20)
+
+For a natural task-adapter candidate, add `--mcp-arg=--reuse-citations` to the
+template command. Pin main with the task adapter and the same context settings.
+The evaluator owns the writable candidate adapter through final-answer delivery.
+It passes only the worker's final JSON `sources` to the installed product, via a
+private control channel outside the worker's tools. Failed workers supply no
+citations. The host command, completion receipt, final-answer binding and raw
+worker events are retained. Review and gross accounting include the same tasks,
+model turns, research limits and answer obligations across arms. Fresh-store
+checks include citation bundles. In the mechanism report, a saved bundle can
+support a later evidence hit only when the captured spans match earlier verified
+reads, the later reads match current bytes, and the task's required scope is
+covered. The existing useful-reuse measure also requires zero research attempts.
+Historical campaigns retain their pinned collectors.
+
+
 ## Publication and lookup reasons in prospective reviews (version /19)
 
 Offline review receipts preserve recognized reason codes for each tool. Reviewers

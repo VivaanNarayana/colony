@@ -1,4 +1,5 @@
 import base64
+import time
 from pathlib import Path
 from typing import Annotated
 
@@ -6,13 +7,14 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 
+from colony.citations import CitationBundle, CitationQuery, lookup_bundle, save_bundle
 from colony.memory import MemoryConflict, MemoryForbidden, MemoryInvalid, MemoryNotFound
 from colony.models import (
     Ask,
+    AvailabilityProbe,
     GitContext,
     Grant,
     Keyfile,
-    MemoryAvailability,
     MemoryChange,
     MemoryCorrection,
     MemoryFeedback,
@@ -156,7 +158,7 @@ def create_app(
         return result
 
     @app.post("/memory/availability")
-    def memory_availability(query: MemoryAvailability, grant: Annotated[Grant, Depends(member)]):
+    def memory_availability(query: AvailabilityProbe, grant: Annotated[Grant, Depends(member)]):
         if not any(s.namespace == query.namespace and s.pull for s in grant.scopes):
             raise HTTPException(403, "Namespace pull denied")
         if query.repository_id is not None and query.repository_id != repository_id:
@@ -168,8 +170,32 @@ def create_app(
                 "SELECT 1 FROM trails t JOIN memory_state_v1 m ON m.trail_id=t.id "
                 "WHERE t.namespace=? AND m.state='active' LIMIT 1", (query.namespace,),
             ).fetchone() is not None
+            if not present and query.include_citations:
+                present = db.execute("SELECT 1 FROM cited_bundles_v1 WHERE namespace=? AND repo_id=? "
+                                     "AND created>=? LIMIT 1",
+                                     (query.namespace, query.repository_id or "", time.time() - max_age)
+                                     ).fetchone() is not None
         return {"contract": "colony.memory-availability/1", "namespace": query.namespace,
                 "repository_id": repository_id, "state": "present" if present else "empty"}
+
+    @app.post("/citations/save")
+    def save_citations(bundle: CitationBundle, grant: Annotated[Grant, Depends(member)]):
+        if not any(s.namespace == bundle.namespace and s.push for s in grant.scopes):
+            raise HTTPException(403, "Namespace push denied")
+        if bundle.repository_id != repository_id:
+            raise HTTPException(409, "Repository binding unavailable")
+        try:
+            return save_bundle(store, bundle, grant.member_id)
+        except (OSError, ValueError):
+            raise HTTPException(422, "Cited evidence unavailable") from None
+
+    @app.post("/citations/lookup")
+    def lookup_citations(query: CitationQuery, grant: Annotated[Grant, Depends(member)]):
+        if not any(s.namespace == query.namespace and s.pull for s in grant.scopes):
+            raise HTTPException(403, "Namespace pull denied")
+        if query.repository_id != repository_id:
+            raise HTTPException(409, "Repository binding unavailable")
+        return lookup_bundle(store, query, max_age, threshold)
 
     @app.post("/memory/inspect")
     def memory_inspect(query: MemoryInspect, grant: Annotated[Grant, Depends(member)]):
