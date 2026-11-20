@@ -10,9 +10,10 @@ The host supplies `--direct-path` only for an explicit direct-file request, not 
 keyword guess or an instruction embedded in a source. Without it the adapter
 uses research guidance. The model sees two small tools: `read` and `research`.
 Reading uses trusted evidence references and makes no Colony lookup or push.
-`research` looks up the original bound task question. Other paths can always be
-read; direct routing never prevents deeper research, contradictions, examples or
-requested answer detail. The host's other authorized research tools remain usable.
+`research` searches saved findings for the host's original question. A fresh
+question with an identifiable source can start with a read even when the store
+contains unrelated findings. The worker can read other paths or use the host's
+other authorized research tools for contradictions, examples and requested detail.
 
 On either lookup route, check memory before reading files when the user requests
 memory or a prior finding could save work on a repeated question. Start with
@@ -45,8 +46,9 @@ settle the outcome in one batch. Add a concrete transport when the question name
 it or the evidence needs its behavior and the wiring selects it.
 Two configured attempts permit one retry. If an injected transport raises on its first
 call and the wrapper lets the exception propagate, the wrapper makes one call.
-For example, if a backend exhausts three sends and raises on the first wrapper
-attempt, two configured wrapper attempts still yield three sends on that path.
+For example, if a named backend makes two sends and re-raises on the first
+wrapper attempt, report two sends, one backend retry and zero wrapper retries.
+If the question specifies returned statuses, trace the wrapper's status branch.
 Count a second wrapper attempt only if a return or catch leads back to that loop.
 A catch outside the loop can change the caller's outcome without adding a retry.
 An implementation in the repository establishes what that class does. To apply
@@ -89,18 +91,17 @@ together. Read files of unknown size individually so each gets its own
 Inspect computed values, continue needed pages at their
 returned offsets, and state any scope that access or allowance leaves uncovered.
 For example, if three of five relevant files were read and two were denied,
-report what the three establish and identify the two still unchecked. In a
-structured answer, express that uncertainty in the field reporting the finding
-whenever the format permits. A caveat in prose cannot support a categorical
-false value for the whole repository.
+report what the three establish and identify the two still unchecked. Put the
+uncertainty in the requested field when the format permits, for example,
+`configured limit: unknown (settings.py and policy.py were unread)`.
 A targeted search remains useful when it can establish presence or narrow a larger scope.
 
-The adapter puts direct reads, caller batching, backend selection and quota
-priority near the start of its MCP instructions. The
+The adapter puts lookup timing, direct reads, caller batching, backend selection
+and the scope of absence claims near the start of its MCP instructions. The
 pinned Codex native host previews the first 247 characters of a long namespace
 description followed by an ellipsis on its initial request. The direct-file route
-still starts with the requested path. The discovered `read` tool also explains
-when an outer retry is reachable. For a single read, supply `path` unless the
+still starts with the requested path. The discovered `read` tool explains how
+to count retries and when an uncaught error ends a loop. For a single read, supply `path` unless the
 host provided `--direct-path`, in which case omitting `path` reads that file.
 
 `read` accepts an optional integer `offset` (default 0). Large selected ranges,

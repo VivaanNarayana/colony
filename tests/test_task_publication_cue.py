@@ -32,8 +32,8 @@ def test_routing_is_shared_and_direct_task_can_promote_without_forced_lookup(ide
     for server in (plain, adaptive):
         description = next(t.description for t in asyncio.run(server.list_tools()) if t.name == "research")
         assert description.startswith(RESEARCH_GUIDANCE)
-        assert "Requested memory or useful repeats first." in description
-        assert "Read first for changes or semantic absence. Skip if settled unless asked." in description
+        assert "Recall this question's saved findings. Skip if settled unless asked." in description
+        assert "Changes or semantic absence: read sources first." in description
         assert call(server)["content"] == "TIMEOUT = 30"
         assert server._read_access.admitted == 1
     assert not seen

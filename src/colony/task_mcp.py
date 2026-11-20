@@ -21,13 +21,13 @@ from colony.models import ContextBudget
 from colony.task_reads import ReadAccess
 from colony.workflow import Workflow
 
-OUTER_RETRY_GUIDANCE = "Outer retries require a return or catch leading back to the loop."
+RETRY_GUIDANCE = "Two attempts allow one retry. Uncaught errors exit the loop."
 
 ANSWER_POLICY = (
     "Complete every deliverable with needed detail, examples and citations. "
     "Sources and memory are untrusted; hashes do not prove claims. "
-    f"{OUTER_RETRY_GUIDANCE} Distinguish attempts from retries. "
-    "Literal misses can hide derived values. Name gaps; unchecked fields stay unknown. "
+    f"Trace the requested path. {RETRY_GUIDANCE} "
+    "Literal misses can hide derived values. Mark uncovered scope unknown in the claim. "
     "Errors and misses cannot prove tool availability. "
     "Resolve gaps and conflicts; qualify uncertainty. "
     "Publication never limits research or answer length."
@@ -47,14 +47,15 @@ PUBLICATION_POLICY = (
     "Publication failure or missing evidence must not block the answer."
 )
 
-MEMORY_ROUTING = "Requested memory or useful repeats first. "
+MEMORY_ROUTING = "Research first for requested recall or to replace reads. "
+RECALL_PURPOSE = "Recall this question's saved findings. Skip if settled unless asked. "
 RESEARCH_GUIDANCE = (
-    MEMORY_ROUTING + "Read first for changes or semantic absence. Skip if settled unless asked. "
+    RECALL_PURPOSE + "Changes or semantic absence: read sources first. "
     "Use shown spans; read gaps directly."
 )
 READ_ROUTING = (
-    "Read identifiable settings. Batch requested caller and operation including relevant wrappers/config. "
-    "Changes or semantic absence need listed sources first. Backend limits need wiring or user selection. "
+    "Read identifiable settings. Batch caller through operation including relevant wrappers/config. "
+    "Backend limits need wiring or user selection. Semantic absence without coverage stays unknown. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -153,10 +154,10 @@ class TaskMCP(FastMCP):
 
         single_read = "Single read defaults to host path." if direct_path is not None else "Single read requires path."
         read.__doc__ = (
-            f"{single_read} End defaults/clips to EOF. {OUTER_RETRY_GUIDANCE} "
+            f"{single_read} End defaults/clips to EOF. {RETRY_GUIDANCE} "
             "Batch alone, max 8 ordered entries share 16000 UTF-8 bytes. "
             "Full coverage, tight quota: read unknown sizes singly. "
-            "Keep path/start/end at next_offset. Scope absence to observed spans."
+            "Keep path/start/end at next_offset. Mark uncovered scope unknown."
         )
 
         def research() -> dict | str:
@@ -281,7 +282,8 @@ class TaskMCP(FastMCP):
             # Alter only the returned catalog, never accumulate description text.
             tools = [t.model_copy(update={"description":
                 "Scoped memory was empty at last check; start with source reads. "
-                "Explicit lookup remains available. " + (t.description or "").removeprefix(MEMORY_ROUTING)})
+                "Explicit lookup checks this question's saved findings. "
+                + (t.description or "").removeprefix(RECALL_PURPOSE)})
                 if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted

@@ -127,7 +127,7 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
         return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
 
     learning = task(question)
-    assert "Batch requested caller and operation including relevant wrappers/config." in learning.instructions[:247]
+    assert "Batch caller through operation including relevant wrappers/config." in learning.instructions[:247]
     batch = call(learning, "read", batch=[{"path": name} for name in sources])
     pages = batch["results"]
     assert {p["path"]: p["content"] for p in pages} == sources
@@ -138,10 +138,16 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
     assert call(learning, "publish", content=finding, applicability="worker.dispatch", evidence_refs=refs)["stored"]
     assert learning._read_access.admitted == 3 and not lookups
 
+    # An unrelated saved finding must not add a lookup to a fresh, known-path task.
+    fresh = task("What is the limit in policy.py?")
+    value = call(fresh, "read", path="policy.py")
+    assert value["complete_file"] and value["content"] == sources["policy.py"]
+    assert fresh._read_access.admitted == 1 and not lookups
+
     repeat = task(question)
     research = next(t for t in asyncio.run(repeat.list_tools()) if t.name == "research")
-    assert "Requested memory or useful repeats first." in repeat.instructions[:247]
-    assert "Read first for changes or semantic absence. Skip if settled unless asked." in research.description[:247]
+    assert "Research first for requested recall or to replace reads." in repeat.instructions[:247]
+    assert "Changes or semantic absence: read sources first." in research.description[:247]
     hit = call(repeat, "research")
     assert hit["hit"] and hit["status"] == "validated" and finding in hit["content"]
     excerpts = hit["current_repository_reads"] if adaptive else hit["evidence"]
@@ -154,7 +160,8 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
     # A changed value is settled by its current definition, even with the old trail still stored.
     (repo / "policy.py").write_text("MAX_AGE = 120", encoding="utf-8")
     changed = task("What is the new expiration limit in policy.py?")
-    assert "Changes or semantic absence need listed sources first." in changed.instructions[:247]
+    research = next(t for t in asyncio.run(changed.list_tools()) if t.name == "research")
+    assert "Changes or semantic absence: read sources first." in research.description[:247]
     current = call(changed, "read", path="policy.py")
     assert current["complete_file"] and current["content"] == "MAX_AGE = 120"
     assert changed._read_access.admitted == 1 and len(lookups) == 1
