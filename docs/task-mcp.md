@@ -8,17 +8,35 @@ python -m colony.task_mcp --home /private/identity --repo /project --ns team --q
 
 The host supplies `--direct-path` only for an explicit direct-file request, not a
 keyword guess or an instruction embedded in a source. Without it the adapter
-uses research guidance. The model sees two small tools: `read` and `research`.
+starts with the relevant repository sources. The model sees two small tools: `read` and `research`.
 Reading uses trusted evidence references and makes no Colony lookup or push.
 `research` looks up the original bound task question. Other paths can always be
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive task tools use the same routing guidance. Use `research` when
-the user requests recall or when a saved finding could fill a specific evidence gap.
-Once current sources support the requested answer, skip a final speculative lookup.
-Explicit recall still checks current memory, even after an empty startup snapshot.
-Eligible publication can proceed using the existing read references.
+Ordinary and adaptive task tools start with known source paths. When paths are
+unknown, discover them once and batch the relevant reads. For an empty memory
+snapshot, use `research` for explicit recall. That call checks current memory
+and can see a later write. When availability is unknown or findings exist,
+a lookup can also replace a specific source discovery step. Eligible
+publication uses the existing read references.
+
+A host that already knows a small set of authorized paths can pass repeated
+`--known-path` options (or `known_paths` to the Python stdio adapter). For
+example, `--known-path src/settings.py --known-path src/client.py` puts those
+names at the front of the initial instructions, so the first call can be a
+single batch read. The names are hints. Claims about file contents or the
+whole repository still require evidence. Each read follows its usual access,
+quota, and evidence checks.
+
+This opt-in hint accepts up to eight repository-relative POSIX names made of
+ASCII letters, digits, dots, underscores, hyphens and path separators. The
+entire hint must fit in 96 bytes. If any name is unsafe, unavailable or
+unauthorized at startup, or the hint exceeds either bound, the task uses
+ordinary discovery. Explicit direct-file tasks already know their starting
+path. The adapter never walks the repository to build hints. A host that
+wraps source reads must supply its metadata policy via `read_path_allowed`
+for names to be shown.
 
 For a call chain, batch independent known paths for the caller, governing configuration,
 operation and relevant backend within the host's allowance. Follow a newly discovered
@@ -27,8 +45,9 @@ establishes no concrete retry ceiling until the wiring or the question selects t
 implementation. Count both return and exception paths. For example, two total sends
 allow one additional retry, and an uncaught exception can end an outer loop early.
 
-For an absence claim about a bounded scope, reuse its listing and read the relevant
-files. A literal search can locate a match. If a needed batch might clip a page,
+For an absence claim about a bounded scope, batch its relevant listed files
+immediately when they fit the remaining allowance. Use literal search when it
+can narrow a larger or unknown scope. If a needed batch might clip a page,
 reserve units for continuation or use separate reads. When evidence remains unread
 or denied, identify the gap in the answer. Successful references support only
 the delivered excerpts. The routing guidance adds no fields to read responses.

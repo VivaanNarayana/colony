@@ -1,6 +1,8 @@
 """Opt-in, bounded static-import bundles through the ordinary evidence read path."""
 
 import ast
+import json
+import re
 from pathlib import PurePosixPath
 
 from colony.evidence_refs import EvidenceError, _PreparedRead
@@ -123,6 +125,29 @@ def _local_candidate(access, path):
         return True
     except (OSError, ValueError, RuntimeError):
         return False
+
+
+def source_path_hint(access, paths):
+    """Return a small host-supplied batch of path names, or fall back to discovery."""
+    if not paths:
+        return ""
+    # Plain relative names keep untrusted filenames out of the instruction syntax.
+    # Use all or none: truncating the list could silently omit the relevant file.
+    for path in paths:
+        if (not isinstance(path, str) or len(path) > 96
+                or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", path)
+                or "." in path.split("/")):
+            return ""
+    unique = list(dict.fromkeys(paths))
+    hint = "Path hints: " + json.dumps(unique, separators=(",", ":")) + ". "
+    if len(hint) > 96 or not all(_local_candidate(access, path) for path in unique):
+        return ""
+    # A host metadata callback may have changed the task binding during the checks.
+    try:
+        access.evidence._authorize()
+    except EvidenceError:
+        return ""
+    return hint
 
 
 def _trace_error(path, exc):

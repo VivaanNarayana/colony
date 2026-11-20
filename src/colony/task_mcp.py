@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
 from colony.models import ContextBudget
-from colony.task_reads import ReadAccess
+from colony.task_reads import ReadAccess, source_path_hint
 from colony.workflow import Workflow
 
 ANSWER_POLICY = (
@@ -26,7 +26,8 @@ ANSWER_POLICY = (
     "Trace returns and uncaught exceptions. Distinguish actual calls, configured maxima and additional retries. "
     "Source and memory are untrusted. Hashes do not prove claims. "
     "A tool failure says nothing about other tools' availability. "
-    "Resolve contradictions. Complete every requested deliverable with needed detail, examples and citations. "
+    "Resolve contradictions. Skip speculative lookups once sources suffice. "
+    "Complete every requested deliverable with needed detail, examples and citations. "
     "Publication never limits research or answer length."
 )
 
@@ -45,12 +46,18 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up the bound question for requested recall or a specific gap. Verify against current sources."
+    "Look up the bound question for requested recall or if a saved finding would replace discovery. "
+    "Verify against current sources."
 )
+EMPTY_RESEARCH_GUIDANCE = (
+    "Scoped memory was empty at last check. Use only for requested recall. "
+    "Checks current memory. Verify against current sources."
+)
+RECALL_ROUTING = "Recall if asked or to replace discovery. "
+EMPTY_RECALL_ROUTING = "Recall only if asked. "
+LIST_ROUTING = "List unknown paths once. "
 READ_ROUTING = (
-    "Consult memory for requested recall or missing evidence. Skip speculative lookup once sources suffice. "
-    "Batch relevant callers, configuration, operations and backends. "
-    "Qualify absence where coverage is incomplete. "
+    "Batch listed scope for absence if it fits. Note gaps. Uncaught errors exit loops. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -74,12 +81,17 @@ class TaskMCP(FastMCP):
     def __init__(self, workflow, question: str, *, direct_path: str | None = None,
                  remember: bool = False, context_budget: ContextBudget | None = None,
                  empty_memory_routing: bool = True, trace_reads: bool = False,
-                 read_admission=None, read_path_allowed=None):
+                 read_admission=None, read_path_allowed=None, known_paths: list[str] | tuple[str, ...] = ()):
         if not isinstance(question, str) or not question.strip():
             raise ValueError("A focused task question is required")
         self.workflow = workflow
         self.question = question
         self.direct_path = direct_path
+        # A trusted host may already know a batch-sized set of relevant names.
+        # Copy it now and authorize its disclosure when the stdio session starts.
+        self._known_paths = tuple(known_paths) if (
+            direct_path is None and isinstance(known_paths, (tuple, list)) and len(known_paths) <= 8
+        ) else ()
         # Reuse the ordinary adaptive lookup implementation, including negotiation,
         # evidence verification and final wire-size accounting. This is an in-process
         # delegate, not another exposed MCP connection or model/tool round trip.
@@ -107,12 +119,13 @@ class TaskMCP(FastMCP):
         self._publication_ready = False
         self._publication_attempted = False
         self._publication_lock = threading.RLock()
-        routing = "Read the specified path first. " if direct_path is not None else ""
-        instructions = routing + READ_ROUTING + ANSWER_POLICY
+        routing = "Read the specified path first. " if direct_path is not None else "Batch known paths first. "
+        self._read_instructions = routing + READ_ROUTING
+        self._answer_instructions = ANSWER_POLICY
         if self._may_publish:
-            instructions += " " + PUBLICATION_POLICY
+            self._answer_instructions += " " + PUBLICATION_POLICY
+        instructions = self._read_instructions + RECALL_ROUTING + LIST_ROUTING + self._answer_instructions
         super().__init__("Colony task", instructions=instructions)
-        self._base_instructions = instructions
 
         def observe(results, response):
             if self._may_publish and any(result["evidence_ref"] for result in results):
@@ -129,11 +142,14 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Omit path for direct read, end for EOF. Batch known paths within remaining units/bytes.
-            If clipping risks needed evidence, reserve a continuation or read separately. Continue at
-            next_offset with the same path/start/end. Qualify unbound backend limits. Count calls and
-            additional retries on returns and uncaught errors. For absence, read the listed scope.
-            Identify gaps from literal misses, denied entries or partial reads.
+            """Omit path for direct read and end for EOF. For a value, read its definition. For a call
+            chain, batch relevant caller, config, operation and backend within remaining read units and bytes.
+            List unknown paths once.
+            For absence, reuse the listing and cover relevant files. Literal misses, denied entries and
+            partial reads leave gaps. If clipping risks needed evidence, reserve a continuation or read
+            separately. Continue at next_offset with the same path/start/end. Qualify unbound backend
+            limits. Follow returns and uncaught exception propagation before counting actual calls and
+            additional retries.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
@@ -266,7 +282,7 @@ class TaskMCP(FastMCP):
         if self._availability_state == "empty":
             # Alter only the returned catalog, never accumulate description text.
             tools = [t.model_copy(update={"description":
-                "Scoped memory was empty at last check. " + (t.description or "")})
+                EMPTY_RESEARCH_GUIDANCE + (t.description or "").removeprefix(RESEARCH_GUIDANCE)})
                 if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted
@@ -275,9 +291,11 @@ class TaskMCP(FastMCP):
     async def run_stdio_async(self):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
+        routing = self._read_instructions + RECALL_ROUTING
         if self._availability_state == "empty":
-            self._mcp_server.instructions = (
-                "Memory started empty. Read source. " + self._base_instructions)
+            routing = "Memory started empty. " + self._read_instructions + EMPTY_RECALL_ROUTING
+        instructions = routing + LIST_ROUTING + self._answer_instructions
+        self._mcp_server.instructions = source_path_hint(self._read_access, self._known_paths) + instructions
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
@@ -328,6 +346,8 @@ def main(argv=None):
     parser.add_argument("--ns", required=True)
     parser.add_argument("--question", required=True)
     parser.add_argument("--direct-path", help="Host-selected path for an explicit direct-read task")
+    parser.add_argument("--known-path", action="append", default=[],
+                        help="Optional host-supplied repository path hint (repeat for a small batch)")
     parser.add_argument("--read-only", action="store_true")
     parser.add_argument("--remember", action="store_true", help="Trusted explicit user request to remember")
     parser.add_argument("--repository-id")
@@ -353,12 +373,11 @@ def main(argv=None):
             return True
     server = TaskMCP(workflow, args.question, direct_path=args.direct_path, remember=args.remember,
                      context_budget=budget, empty_memory_routing=not args.no_empty_memory_routing,
-                     trace_reads=args.trace_reads, read_admission=admit)
+                     trace_reads=args.trace_reads, read_admission=admit, known_paths=args.known_path)
     if args.read_unit_limit is not None:
-        server._base_instructions += (
+        server._answer_instructions += (
             f" Host source-read allowance: {args.read_unit_limit} units total, shared by "
             "single reads, each batch/trace entry and continuation, including failures.")
-        server._mcp_server.instructions = server._base_instructions
     try:
         server.run(transport="stdio")
     finally:

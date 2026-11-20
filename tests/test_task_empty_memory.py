@@ -6,7 +6,7 @@ import pytest
 from conftest import auth
 from test_workflow import identity as identity
 
-from colony.models import Scope
+from colony.models import ContextBudget, Scope
 from colony.security import issue
 from colony.task_mcp import TaskMCP
 from colony.workflow import Workflow
@@ -137,16 +137,17 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
 
     async def check():
         first = await server.list_tools()
-        assert "empty at last check" in next(t.description for t in first if t.name == "research")
+        description = next(t.description for t in first if t.name == "research")
+        assert "empty at last check" in description and "only for requested recall" in description
+        assert "replace discovery" not in description
         assert len(probes) == 1 and not asks
         state[0] = "present"  # Concurrent publication after snapshot, before TTL.
         result = json.loads((await server.call_tool("research", {}))[0].text)
         assert result["hit"] and len(asks) == 1
         server._availability_until = 0
         second = await server.list_tools()
-        assert "empty at last check" not in next(
-            t.description for t in second if t.name == "research"
-        )
+        description = next(t.description for t in second if t.name == "research")
+        assert "empty at last check" not in description and "would replace discovery" in description
         assert len(probes) == 2
         state[0] = "unknown"
         server._availability_until = 0
@@ -156,6 +157,18 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
         ]
 
     asyncio.run(check())
+
+
+def test_empty_adaptive_catalog_preserves_lookup_budget(identity, monkeypatch):
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "memory_availability", lambda *args: "empty")
+    server = TaskMCP(Workflow(client, "team", repo), "Explain behavior",
+                     context_budget=ContextBudget(max_tokens=512))
+    server._availability_enabled = True
+    tools = asyncio.run(server.list_tools())
+    description = next(t.description for t in tools if t.name == "research")
+    assert "only for requested recall" in description and "replace discovery" not in description
+    assert "default 512 UTF-8 bytes" in description and "budget_limited" in description
 
 
 def test_write_invalidates_hint_even_when_outcome_unknown(identity, monkeypatch):

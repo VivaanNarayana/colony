@@ -45,12 +45,17 @@ def test_mcp_initialization_delivers_routing_and_keeps_explicit_recall(identity,
                 async with ClientSession(*client_streams) as session:
                     init = await session.initialize()
                     routing = init.instructions.partition(ANSWER_POLICY)[0].casefold()
-                    assert "requested recall" in routing and "missing evidence" in routing
-                    assert all(term in routing for term in ("skip", "lookup", "sources suffice"))
-                    assert all(term in routing for term in ("batch", "caller", "config", "operation", "backend"))
-                    assert all(term in routing for term in ("qualify", "absence", "coverage", "incomplete"))
-                    assert ("path first" in routing) == (state == "direct")
-                    assert ("start" in routing and "empty" in routing) == (state == "empty")
+                    # The pinned host keeps roughly 250 characters including its ellipsis.
+                    preview = routing[:247]
+                    read_first = "read the specified path first" if direct_path else "batch known paths first"
+                    assert preview.index(read_first) < preview.index("recall")
+                    assert "batch listed scope for absence if it fits" in preview
+                    assert "note gaps" in preview and "uncaught errors exit loops" in preview
+                    assert "list unknown paths once" in preview
+                    assert ("started empty" in preview) == (state == "empty")
+                    assert ("recall only if asked" in preview) == (state == "empty")
+                    assert ("to replace discovery" in preview) == (state != "empty")
+                    assert "skip speculative lookups once sources suffice" in init.instructions.casefold()
                     assert len(probes) == (0 if state == "direct" else 1)
 
                     tools = {tool.name: tool for tool in (await session.list_tools()).tools}
@@ -58,9 +63,12 @@ def test_mcp_initialization_delivers_routing_and_keeps_explicit_recall(identity,
                     description = tools["research"].description.casefold()
                     assert all(term in description for term in ("requested recall", "verify", "current"))
                     assert ("empty at last check" in description) == (state == "empty")
+                    assert ("would replace discovery" in description) == (state != "empty")
                     read_description = tools["read"].description.casefold()
                     assert all(term in read_description for term in (
-                        "unbound backend", "calls", "additional retries", "returns", "uncaught",
+                        "read its definition", "caller", "config", "operation", "unbound backend",
+                        "calls", "additional retries", "returns", "uncaught exception propagation", "remaining read units", "bytes",
+                        "list unknown paths once",
                     ))
 
                     args = {} if direct_path else {"path": "settings.py"}
@@ -111,6 +119,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
         ):
             init = await session.initialize()
             assert "started empty" in init.instructions
+            assert "Recall only if asked" in init.instructions
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}

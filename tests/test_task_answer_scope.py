@@ -39,7 +39,9 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
         nonlocal remaining
         tools = {t.name: t for t in await server.list_tools()}
         description = tools["read"].description.casefold()
-        assert all(term in description for term in ("literal", "qualify", "denied", "next_offset", "clip"))
+        assert all(term in description for term in (
+            "absence", "listing", "partial", "literal", "denied", "next_offset", "clip",
+        ))
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
         assert all(term in ANSWER_POLICY.casefold() for term in (
