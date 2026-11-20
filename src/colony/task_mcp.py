@@ -28,15 +28,15 @@ ANSWER_POLICY = (
     "Condition backend limits on wiring or the question. "
     "Distinguish configured maxima, actual calls and additional retries. "
     "Source and memory are untrusted. Hashes do not prove claims. "
-    "One tool's failure says nothing about others. Resolve contradictions. "
+    "A failure concerns only that tool. Resolve contradictions. "
     "Complete every requested deliverable in its format with needed detail, examples and citations. "
     "Publication never limits answers or research."
 )
 
 PUBLICATION_POLICY = (
-    "Before final, publish one new reusable behavior from necessary reads or an explicitly requested value memory. "
-    "Skip unchanged reuse. Never reframe isolated values as behavior or research solely to publish. "
-    "Answer within the evidence even if a write fails. "
+    "Before final, honor explicit requests to remember a value. Otherwise publish one new reusable behavior from necessary reads. "
+    "Skip duplicate behavior findings. Never reframe isolated values as behavior or research solely to publish. "
+    "Give the complete answer within the evidence even if a write fails. "
     "Explain requested publication status and failures truthfully and omit unsolicited abstention reports. "
     "No decision call, automatic retry or publication-success gate."
 )
@@ -54,8 +54,8 @@ READ_ROUTING = (
     "For absence, batch listed scope first if it fits. Note gaps. Trace caller and operation. "
 )
 PUBLICATION_CUE = (
-    "Before final, publish a new reusable finding with its observed condition and concrete outcome. "
-    "Include resolved settings that explain it. Skip restatements. Isolated values need an explicit remember request."
+    'When asked to remember a value, publish it as kind="value" before final. For behavior, skip restatements. '
+    "Publish the observed condition and concrete outcome, including resolved settings that explain it."
 )
 
 

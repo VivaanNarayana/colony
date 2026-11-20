@@ -53,6 +53,10 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             assert PUBLICATION_POLICY not in result.content[0].text
             page = json.loads(result.content[0].text)
             assert page.get("publication_guidance") == (PUBLICATION_CUE if eligible else None)
+            if direct and remember and eligible:
+                cue = page["publication_guidance"]
+                assert 'When asked to remember a value, publish it as kind="value"' in cue
+                assert "For behavior, skip restatements" in cue
             tools = (await session.list_tools()).tools
             read = next(t for t in tools if t.name == "read")
             assert "next_offset" in read.description and "denied" in read.description

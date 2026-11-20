@@ -130,7 +130,8 @@ The first successful eligible read also returns a short `publication_guidance` f
 alongside the read result, or alongside `results` for a batch. This constant adapter
 cue is separate from source content and is not evidence. For a new reusable behavior,
 record its observed condition and concrete outcome. Include resolved settings when they
-explain that outcome. Skip restatements.
+explain that outcome. Skip behavior that merely restates the answer. An explicit request to
+remember an isolated value qualifies that value for publication.
 It appears at most once per task, never once per batch entry or continuation page.
 Failed reads and reads without evidence references do not consume the cue. Read-only
 and direct tasks without explicit remember intent receive no cue. The cue does not
@@ -187,8 +188,9 @@ format and explain the publication outcome when asked, including any uncertainty
 
 On stdio startup, a non-direct task makes a short authenticated
 `POST /memory/availability` request. The response contains only a contract,
-namespace, configured repository identity and `empty`/`present` state. Only a
-zero active-row result in the authorized namespace enables the source-first hint.
+namespace, configured repository identity and `empty`/`present` state. Start with
+known source files in every state. Only a zero active-row result in the authorized
+namespace narrows the memory guidance to explicit recall.
 Stale, unverified and unrelated active memories conservatively count as present;
 a search miss never becomes an empty-store proof. Repository-ID mismatch, old
 servers, denied/expired credentials and transport failures yield `unknown` and
@@ -203,7 +205,7 @@ snapshot, including failed/unknown write outcomes. Catalog changes are notified
 even when a tool call fails. Notification transport errors cannot replace a tool
 result or its sanitized error. Explicit `research` always performs the normal current
 lookup; it is never hidden and never returns a cached miss. The startup hint is
-historical ("empty at task startup"); it does not claim continued emptiness.
+historical and describes availability at initialization.
 Sources, other research and all requested answer detail remain available.
 Use `--no-empty-memory-routing` to disable the probe. Explicit direct-file tasks
 already route to reads and do not make the startup probe. Embedded hosts can opt
