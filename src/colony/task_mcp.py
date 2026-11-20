@@ -13,7 +13,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
-from mcp.types import ToolAnnotations
+from mcp.types import TextContent, ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from colony.client import Client
@@ -163,9 +163,13 @@ class TaskMCP(FastMCP):
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 
-        def research() -> dict:
+        async def research():
             """Look up the original task when useful, including gaps in a direct-read task."""
             # A direct route never forbids promotion or independent source tools.
+            if self._matched_citations:
+                hit = await self._cited_lookup()
+                if hit and hit.get("hit"):
+                    return self._citation_content(hit)
             try:
                 options = ({"repo": workflow.repo, "repository_id": workflow.repository_id}
                            if workflow.repository_id else {})
@@ -180,6 +184,10 @@ class TaskMCP(FastMCP):
             async def adaptive_research(
                 max_context_tokens: Annotated[int, Field(strict=True, ge=256, le=8192)] | None = None,
             ):
+                if self._matched_citations:
+                    hit = await self._cited_lookup(max_context_tokens)
+                    if hit and hit.get("hit"):
+                        return self._citation_content(hit)
                 try:
                     return await lookup.call_tool("ask", {
                         "question": self.question, "max_context_tokens": max_context_tokens,
@@ -315,16 +323,25 @@ class TaskMCP(FastMCP):
                 "Explicit research remains available and always checks current memory. "
                 + self._base_instructions)
         elif self._availability_enabled and self.workflow.read_only and self._reuse_citations:
-            match = await self._cited_lookup(self._context_budget)
+            match = await self._cited_lookup()
             if match and match.get("hit"):
                 self._matched_citations = True
                 self._mcp_server.instructions = CITATION_ROUTING + self._base_instructions
 
-    async def _cited_lookup(self, budget):
+    @staticmethod
+    def _citation_content(hit):
+        from colony.context_budget import serialize_response
+
+        return [TextContent(type="text", text=serialize_response(hit))]
+
+    async def _cited_lookup(self, max_tokens=None):
         # Wrappers with restricted reads must supply the same path policy for citation lookup.
         if self.evidence.path_allowed is None and self.evidence.read != self._read_access.read:
             return None
         with suppress(Exception):
+            budget = self._context_budget
+            if budget is not None and max_tokens is not None:
+                budget = budget.model_copy(update={"max_tokens": max_tokens})
             return await asyncio.to_thread(self.evidence.lookup_citations, self.question, budget)
         return None
 
@@ -348,23 +365,15 @@ class TaskMCP(FastMCP):
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
-            if self._reuse_citations and name == "research":
+            if self._reuse_citations and name == "research" and not self._matched_citations:
                 # Preserve the original miss if this optional fallback is unavailable.
                 with suppress(Exception):
                     base = json.loads(result[0].text)
                     if ((base.get("hit") is False and base.get("reason") == "no_relevant_trail")
-                            or (base.get("hit") is True and base.get("status") == "stale")
-                            or (self._matched_citations and base.get("hit") is True
-                                and base.get("match_kind") == "evidence")):
-                        budget = self._context_budget
-                        override = (arguments or {}).get("max_context_tokens")
-                        if budget is not None and override is not None:
-                            budget = budget.model_copy(update={"max_tokens": override})
-                        hit = await self._cited_lookup(budget)
+                            or (base.get("hit") is True and base.get("status") == "stale")):
+                        hit = await self._cited_lookup((arguments or {}).get("max_context_tokens"))
                         if hit is not None and (not base.get("hit") or hit.get("hit")):
-                            from colony.context_budget import serialize_response
-
-                            result = [result[0].model_copy(update={"text": serialize_response(hit)})]
+                            result = self._citation_content(hit)
         except ToolError:
             # FastMCP/Pydantic errors can echo arbitrary rejected input.
             raise ToolError("Task tool failed; adjust the request or use other research tools") from None

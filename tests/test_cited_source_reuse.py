@@ -116,6 +116,24 @@ def test_match_routing_is_scoped_and_rechecks_delivery(identity, monkeypatch, di
         assert len(probes) == 2
 
 
+@pytest.mark.parametrize("budget", [None, ContextBudget()])
+def test_announced_match_delivers_citations_before_ordinary_answer(identity, monkeypatch, budget):
+    client, repo, _ = identity
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True), "q", reuse_citations=True, context_budget=budget)
+    monkeypatch.setattr(client, "memory_availability", lambda *a, **kw: "present")
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: pytest.fail("unexpected ordinary lookup"))
+    budgets = []
+
+    def match(question, cap):
+        budgets.append(cap.max_tokens if cap else None)
+        return {"hit": True, "origin": "task_citations"}
+
+    monkeypatch.setattr(server.evidence, "lookup_citations", match)
+    asyncio.run(server._startup_routing())
+    assert call(server, "research", {"max_context_tokens": 512} if budget else {})["origin"] == "task_citations"
+    assert budgets == ([budget.max_tokens, 512] if budget else [None, None])
+
+
 @pytest.mark.parametrize("workload_id", ["gateway", "worker"])
 def test_catalog_paraphrase_reuses_the_same_verified_ranges(team, workload_id):
     from conftest import auth

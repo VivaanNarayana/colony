@@ -51,9 +51,10 @@ ID, applies its maximum age, and ranks questions using local models. For a
 read-only general task, startup checks for a matching bundle. A verified match
 adds a short cue to start with `research`. Explicit direct-file tasks start
 with the requested file. The cue contains no source text. Delivery rechecks
-current permissions, file hashes and the requested response budget. Validated
-saved answers retain priority. Current cited lines can also fill a miss or
-replace a stale result. Task path permissions, whole-file
+current permissions, file hashes and the requested response budget. When a task
+starts on this route, `research` returns the verified lines first. If they are
+unavailable, it runs the ordinary lookup. On other routes current cited lines
+can fill a miss or replace a stale result. Task path permissions, whole-file
 redaction and the configured context budget also apply. A changed or oversized
 bundle leaves the agent free to research. A hit establishes observed lines;
 the agent still has to check whether they support its answer.
