@@ -127,7 +127,7 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
         return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
 
     learning = task(question)
-    assert "Batch requested caller and operation with applicable configuration." in learning.instructions[:247]
+    assert "Batch requested caller and operation including relevant wrappers/config." in learning.instructions[:247]
     batch = call(learning, "read", batch=[{"path": name} for name in sources])
     pages = batch["results"]
     assert {p["path"]: p["content"] for p in pages} == sources
@@ -141,7 +141,7 @@ def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(trans
     repeat = task(question)
     research = next(t for t in asyncio.run(repeat.list_tools()) if t.name == "research")
     assert "Requested memory or useful repeats first." in repeat.instructions[:247]
-    assert "Read first for changes or absence. Skip once sources suffice unless asked." in research.description[:247]
+    assert "Read first for changes or semantic absence. Skip if settled unless asked." in research.description[:247]
     hit = call(repeat, "research")
     assert hit["hit"] and hit["status"] == "validated" and finding in hit["content"]
     excerpts = hit["current_repository_reads"] if adaptive else hit["evidence"]

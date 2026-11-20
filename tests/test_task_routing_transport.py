@@ -72,9 +72,8 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
 
 def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
     _, homes, repo, _ = running_team
-    # Byte and o200k_base ceilings from the preceding PR41 head (5f18db4).
-    instruction_limits = {"direct": (708, 123), "research": (1571, 271), "empty": (1648, 284)}
-    preview_limits = {"direct": 41, "research": 41, "empty": 40}
+    # Startup and catalog ceilings from PR41 before the wrapper and absence fixes (bda4c7f).
+    instruction_limits = {"direct": (698, 121), "research": (1570, 270), "empty": (1605, 276)}
     tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
     if tokenizer:
         monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
@@ -108,7 +107,7 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
         research = next(t for t in tools if t.name == "research")
         early = "Requested memory or useful repeats first."
-        late = "Read first for changes or absence. Skip once sources suffice unless asked."
+        late = "Read first for changes or semantic absence. Skip if settled unless asked."
         assert (early in preview) == (route == "research")
         assert (early in research.description[:247]) == (route != "empty")
         assert late in research.description[:247]
@@ -117,12 +116,12 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         catalog_limits = {
             "direct": ((1617, 403), (1997, 492)),
             "research": ((1609, 401), (1989, 490)),
-            "empty": ((1708, 419), (2088, 508)),
+            "empty": ((1666, 412), (2046, 501)),
         }[route][int(adaptive)]
         assert len(instructions.encode()) <= instruction_limits[route][0]
         if tokenizer:
             assert count(instructions) <= instruction_limits[route][1]
-            assert count(preview) <= preview_limits[route]
+            assert count(preview) <= 40
         # The previous head exposed publish after eligible evidence, costing
         # 1079 serialized bytes and 226 tokens. A plain direct read adds nothing.
         for observed, publish_visible in ((tools, False), (after_read, route != "direct")):

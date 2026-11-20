@@ -49,12 +49,12 @@ PUBLICATION_POLICY = (
 
 MEMORY_ROUTING = "Requested memory or useful repeats first. "
 RESEARCH_GUIDANCE = (
-    MEMORY_ROUTING + "Read first for changes or absence. Skip once sources suffice unless asked. "
+    MEMORY_ROUTING + "Read first for changes or semantic absence. Skip if settled unless asked. "
     "Use shown spans; read gaps directly."
 )
 READ_ROUTING = (
-    "Read known settings directly. Batch requested caller and operation with applicable configuration. "
-    "Changes or semantic absence need listed sources first. Backend limits require wiring or user selection. "
+    "Read identifiable settings. Batch requested caller and operation including relevant wrappers/config. "
+    "Changes or semantic absence need listed sources first. Backend limits need wiring or user selection. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "

@@ -118,6 +118,25 @@ def test_invalid_batch_charged_before_validation(batch_server, batch):
         call(server, 'read', path='settings.py')
 
 
+@pytest.mark.parametrize('present', [False, True], ids=['absent', 'last-file-match'])
+def test_exact_single_line_literal_across_files_with_one_unit(batch_server, identity, present):
+    _, repo, _ = identity
+    paths = ['config.py', 'handler.py', 'worker.py']
+    for path in paths:
+        (repo / path).write_text('deprecated_flag = True\n', encoding='utf-8')
+    if present:
+        (repo / paths[-1]).write_text('DEPRECATED_FLAG = True\n', encoding='utf-8')
+    server = batch_server(question='Does the exact uppercase text DEPRECATED_FLAG occur in these files?',
+                          files=paths, max_calls=1, read_only=True)
+    result = asyncio.run(server.call_tool('fixture_search', {'query': 'DEPRECATED_FLAG'}))
+    blocks = result.content if hasattr(result, 'content') else result
+    assert json.loads(blocks[-1].text)['research_budget'] == {
+        'admitted': 1, 'denied': 0, 'succeeded': 1, 'remaining': 0}
+    matches = [json.loads(block.text) for block in blocks[:-1]]
+    assert [(m['path'], m['matches']) for m in matches] == (
+        [('worker.py', ['1: DEPRECATED_FLAG = True'])] if present else [])
+
+
 @pytest.mark.parametrize('derived', [False, True], ids=['absent', 'computed'])
 @pytest.mark.parametrize(('search_first', 'request_all'), [
     (False, True), (True, False), (True, True),

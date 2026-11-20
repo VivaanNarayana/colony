@@ -226,7 +226,7 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     units = iter(range(3 if configured else 2))
     server = TaskMCP(Workflow(client, "team", repo), "Does send's ConnectionError reach handle's caller?",
                      read_admission=lambda: next(units, None) is not None)
-    assert "Batch requested caller and operation with applicable configuration." in server.instructions[:247]
+    assert "Batch requested caller and operation including relevant wrappers/config." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(page["complete_file"] for page in pages)
     assert [page["content"] for page in pages] == [sources[path] for path in paths]
@@ -234,19 +234,26 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     assert server._read_access.admitted == len(paths) and server._read_access.denied == 0
 
 
-@pytest.mark.parametrize("caught", [False, True], ids=["propagates", "caught-by-endpoint"])
+@pytest.mark.parametrize("catch_at", [None, "wrapper", "endpoint"],
+                         ids=["propagates", "wrapper-catches", "endpoint-catches"])
 @pytest.mark.parametrize("can_read_endpoint", [False, True], ids=["wrapper-only", "through-endpoint"])
-def test_propagation_needs_evidence_through_requested_caller(identity, caught, can_read_endpoint):
+def test_propagation_needs_evidence_through_requested_caller(identity, catch_at, can_read_endpoint):
     client, repo, _ = identity
     backend = "def send():\n    raise ConnectionError()"
-    wrapper = "from backend import send\ndef fetch():\n    return send()"
-    body = "try:\n        return fetch()\n    except ConnectionError:\n        return None" if caught else "return fetch()"
-    endpoint = f"from client import fetch\ndef handle():\n    {body}"
+
+    def forward(name, catches):
+        if catches:
+            return f"try:\n        return {name}()\n    except ConnectionError:\n        return None"
+        return f"return {name}()"
+
+    wrapper = "from backend import send\ndef fetch():\n    " + forward("send", catch_at == "wrapper")
+    endpoint = "from client import fetch\ndef handle():\n    " + forward("fetch", catch_at == "endpoint")
     sources = {"backend.py": backend, "client.py": wrapper, "gateway.py": endpoint}
     for path, source in sources.items():
         (repo / path).write_text(source, encoding="utf-8")
     server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach the caller of handle?",
                      read_path_allowed=lambda path: path != "gateway.py" or can_read_endpoint)
+    assert "Batch requested caller and operation including relevant wrappers/config." in server.instructions[:247]
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
     assert "Batch alone, max 8 ordered entries" in tool.description
     pages = read(server, batch=[{"path": path} for path in sources])["results"]
@@ -254,6 +261,9 @@ def test_propagation_needs_evidence_through_requested_caller(identity, caught, c
     refs = [p["evidence_ref"] for p in pages if p["evidence_ref"]]
     if can_read_endpoint:
         assert pages[2]["complete_file"] and pages[2]["content"] == endpoint
+        assert [p["path"] for p in pages if "except ConnectionError:" in p["content"]] == {
+            None: [], "wrapper": ["client.py"], "endpoint": ["gateway.py"],
+        }[catch_at]
         assert [s.ref for s in server.evidence.resolve(refs)] == list(sources)
     else:
         assert pages[2]["evidence_ref"] is None and "content" not in pages[2]
@@ -308,7 +318,7 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wi
         question += " Which backend does main supply?"
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Backend limits require wiring or user selection." in server.instructions[:247]
+    assert "Backend limits need wiring or user selection." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(p["complete_file"] for p in pages)
     assert [p["content"] for p in pages] == [files[path] for path in paths]
@@ -336,7 +346,7 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present, ada
                      read_admission=lambda: next(permits, None) is not None)
     assert "Changes or semantic absence need listed sources first." in server.instructions[:247]
     tools = {t.name: t for t in asyncio.run(server.list_tools())}
-    assert "Read first for changes or absence. Skip once sources suffice unless asked." in tools["research"].description
+    assert "Read first for changes or semantic absence. Skip if settled unless asked." in tools["research"].description
     tool = tools["read"]
     assert "tight quota" in tool.description and "Scope absence to observed spans" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])

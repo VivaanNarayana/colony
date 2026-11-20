@@ -222,7 +222,9 @@ configured units. No automatic retry or budget escalation occurs. This is a
 lookup-response limit, never an answer-length or source-research limit. Missing,
 limited or unavailable memories leave source reads and fuller answers available.
 Direct reads, continuation offsets and publication eligibility are unchanged.
-Without a budget, the legacy lookup interface and representation are unchanged.
+Without a context budget, task `research` keeps the ordinary lookup fields.
+A validated hit can also include `observed_lines` in compact JSON when the
+index fits within both the original byte count and the measured token count.
 This does not change retrieval. End-to-end gross savings remain unproven.
 
 Writable eligible tasks receive a conditional before-final publication instruction and
