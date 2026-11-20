@@ -9,7 +9,7 @@ from test_integration import running_team as running_team
 from test_task_routing import call
 from test_workflow import identity as identity
 
-from colony.citations import final_citations
+from colony.citations import answer_citations, final_citations
 from colony.client import Client
 from colony.models import ContextBudget
 from colony.task_mcp import TaskMCP
@@ -77,6 +77,43 @@ def test_accepts_structured_final_answer_citations_only():
                                 {"path": "y"}, "free text", {"path": "x", "lines": True}])
     assert [(s.path, s.start, s.end) for s in citations] == [
         ("src/file.py", 2, 4), ("x", 1, 2), ("x", 3, 3), ("x", 5, 5)]
+
+
+def test_fact_citations_with_filename_only_summary():
+    answer = {"sources": ["settings.py", "handler.py:5-7"], "facts": [
+        {"text": "other.py:1", "citations": [{"path": "settings.py", "lines": "1-5"}]},
+        {"citations": ["handler.py:5-7"], "example": {"path": "other.py", "lines": "1-9"}}]}
+    assert sorted((c["path"], c["start"], c["end"]) for c in answer_citations(answer)) == [
+        ("handler.py", 5, 7), ("settings.py", 1, 5)]
+
+
+@pytest.mark.parametrize(("direct", "read_only", "enabled", "should_probe"), [
+    (None, True, True, True), ("settings.py", True, True, False),
+    (None, False, True, False), (None, True, False, False),
+])
+def test_match_routing_is_scoped_and_rechecks_delivery(identity, monkeypatch, direct, read_only, enabled, should_probe):
+    from colony.task_mcp import CITATION_ROUTING
+
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "memory_availability", lambda *a, **kw: "present")
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: {"hit": False, "reason": "no_relevant_trail"})
+    server = TaskMCP(Workflow(client, "team", repo, read_only=read_only), "q",
+                     direct_path=direct, reuse_citations=enabled)
+    probes = []
+
+    def lookup(*args):
+        probes.append(args)
+        return {"hit": True} if len(probes) == 1 else None
+
+    monkeypatch.setattr(server.evidence, "lookup_citations", lookup)
+    asyncio.run(server._startup_routing())
+    assert bool(probes) is should_probe
+    listing = asyncio.run(server.list_tools())
+    assert (CITATION_ROUTING in next(t.description for t in listing if t.name == "research")) is should_probe
+    assert (CITATION_ROUTING in server._mcp_server.instructions) is should_probe
+    if should_probe:
+        assert call(server, "research", {}) == {"hit": False, "reason": "no_relevant_trail"}
+        assert len(probes) == 2
 
 
 @pytest.mark.parametrize("workload_id", ["gateway", "worker"])

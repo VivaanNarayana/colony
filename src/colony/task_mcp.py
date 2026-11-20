@@ -50,6 +50,10 @@ RESEARCH_GUIDANCE = (
     "Look up the original task when saved findings could help, including gaps in a direct-read task. "
     "Use sufficient current evidence; research gaps or contradictions."
 )
+CITATION_ROUTING = (
+    "Start with research. Current cited source lines matched this task. "
+    "Read additional files for any claims those lines do not cover. "
+)
 READ_ROUTING = (
     "Read known paths directly; batch independent reads, prioritizing evidence for requested "
     "claims before auxiliary searches. Size batches to any host research allowance. "
@@ -99,6 +103,7 @@ class TaskMCP(FastMCP):
             context_budget = ContextBudget.model_validate(context_budget)
         self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed, pin_reads=reuse_citations)
         self._reuse_citations = reuse_citations
+        self._matched_citations = False
         self._context_budget = context_budget
         self._completed = False
         self._availability_enabled = False
@@ -292,18 +297,39 @@ class TaskMCP(FastMCP):
                 "Scoped memory was empty at last check; start with source reads. "
                 "Explicit lookup remains available. " + (t.description or "")})
                 if t.name == "research" else t for t in tools]
+        elif self._matched_citations:
+            tools = [t.model_copy(update={"description": CITATION_ROUTING + (t.description or "")})
+                     if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted and not self._completed
         )]
 
-    async def run_stdio_async(self, stdin=None, stdout=None):
+    async def _startup_routing(self):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
+        self._matched_citations = False
+        self._mcp_server.instructions = self._base_instructions
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
                 "Memory was empty at task startup; start with source reads. "
                 "Explicit research remains available and always checks current memory. "
                 + self._base_instructions)
+        elif self._availability_enabled and self.workflow.read_only and self._reuse_citations:
+            match = await self._cited_lookup(self._context_budget)
+            if match and match.get("hit"):
+                self._matched_citations = True
+                self._mcp_server.instructions = CITATION_ROUTING + self._base_instructions
+
+    async def _cited_lookup(self, budget):
+        # Wrappers with restricted reads must supply the same path policy for citation lookup.
+        if self.evidence.path_allowed is None and self.evidence.read != self._read_access.read:
+            return None
+        with suppress(Exception):
+            return await asyncio.to_thread(self.evidence.lookup_citations, self.question, budget)
+        return None
+
+    async def run_stdio_async(self, stdin=None, stdout=None):
+        await self._startup_routing()
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server(stdin, stdout) as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
@@ -326,15 +352,16 @@ class TaskMCP(FastMCP):
                 # Preserve the original miss if this optional fallback is unavailable.
                 with suppress(Exception):
                     base = json.loads(result[0].text)
-                    restricted_wrapper = self.evidence.path_allowed is None and self.evidence.read != self._read_access.read
-                    if (not restricted_wrapper and base.get("hit") is False
-                            and base.get("reason") == "no_relevant_trail"):
+                    if ((base.get("hit") is False and base.get("reason") == "no_relevant_trail")
+                            or (base.get("hit") is True and base.get("status") == "stale")
+                            or (self._matched_citations and base.get("hit") is True
+                                and base.get("match_kind") == "evidence")):
                         budget = self._context_budget
                         override = (arguments or {}).get("max_context_tokens")
                         if budget is not None and override is not None:
                             budget = budget.model_copy(update={"max_tokens": override})
-                        hit = await asyncio.to_thread(self.evidence.lookup_citations, self.question, budget)
-                        if hit is not None:
+                        hit = await self._cited_lookup(budget)
+                        if hit is not None and (not base.get("hit") or hit.get("hit")):
                             from colony.context_budget import serialize_response
 
                             result = [result[0].model_copy(update={"text": serialize_response(hit)})]

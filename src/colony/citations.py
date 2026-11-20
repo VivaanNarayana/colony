@@ -85,6 +85,35 @@ def final_citations(sources) -> list[Citation]:
     return result
 
 
+def answer_citations(answer) -> list[dict]:
+    """Extract declared ranges from a structured final answer, including per-fact citations."""
+    if not isinstance(answer, dict):
+        return []
+    pending = [answer.get("facts")]
+    fields = [answer.get("sources")]
+    visited = 0
+    while pending:
+        node = pending.pop()
+        visited += 1
+        if visited > 512:
+            return []
+        if isinstance(node, dict):
+            for key, child in node.items():
+                if key in ("citations", "sources", "source", "citation"):
+                    fields.append(child if isinstance(child, list) else [child])
+                elif isinstance(child, (list, dict)):
+                    pending.append(child)
+        elif isinstance(node, list):
+            pending.extend(child for child in node if isinstance(child, (list, dict)))
+    unique = {}
+    for field in fields:
+        for cite in final_citations(field):
+            unique[cite.path, cite.start, cite.end] = cite.model_dump()
+            if len(unique) > MAX_RANGES * 4:
+                return []
+    return list(unique.values())
+
+
 def observed_spans(repo, citations, observations, path_allowed):
     """Intersect citations with actually delivered characters of the same current bytes."""
     spans = []

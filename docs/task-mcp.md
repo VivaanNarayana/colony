@@ -7,10 +7,12 @@ on the task adapter. After the answer is final and before closing that task's ev
 session, pass its cited ranges to the host-only callback:
 
 ```python
+from colony.citations import answer_citations
+
 adapter = TaskMCP(workflow, question, reuse_citations=True)
 # Let the agent use the adapter normally, and deliver its answer.
 try:
-    receipt = adapter.complete(final_answer.get("sources", []))
+    receipt = adapter.complete(answer_citations(final_answer))
 finally:
     adapter.evidence.close()
 ```
@@ -45,10 +47,13 @@ The server stores the scrubbed task question, paths, digests and line ranges
 encrypted under its storage key, plus a local question embedding and scope
 metadata. Its additive SQLite table is separate from authored findings. The
 server scopes candidates to the authenticated namespace and configured repository
-ID, applies its maximum age, and ranks questions using local models. A normal
-validated trail has priority. On an ordinary no-match response, the enabled
-adapter can return an evidence-only hit after both checkouts validate the cited
-files. Only the cited lines are returned. Task path permissions, whole-file
+ID, applies its maximum age, and ranks questions using local models. For a
+read-only general task, startup checks for a matching bundle. A verified match
+adds a short cue to start with `research`. Explicit direct-file tasks start
+with the requested file. The cue contains no source text. Delivery rechecks
+current permissions, file hashes and the requested response budget. Validated
+saved answers retain priority. Current cited lines can also fill a miss or
+replace a stale result. Task path permissions, whole-file
 redaction and the configured context budget also apply. A changed or oversized
 bundle leaves the agent free to research. A hit establishes observed lines;
 the agent still has to check whether they support its answer.

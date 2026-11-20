@@ -60,11 +60,13 @@ def completion(args, channel, env, stderr, deadline):
                 time.sleep(0.03)
 
             def finish(answer, log=None):
+                from colony.citations import answer_citations
+
                 try:
                     value = json.loads(answer) if answer else {}
-                except ValueError:
+                except (ValueError, RecursionError):
                     value = {}
-                sources = value.get("sources", []) if isinstance(value, dict) else []
+                sources = answer_citations(value)
                 payload = sources
                 if log is not None:
                     payload = {"sources": sources, "received_refs": received_references(log) if answer else []}

@@ -1,5 +1,12 @@
 # Memory-use token evaluations
 
+## Fact-level citations in prospective runs (version /22)
+
+The completion host collects explicit citation ranges from the final answer's
+source list and its individual facts. A filename alone supplies no range.
+The adapter still intersects citations with acknowledged reads. Startup routing
+can suggest a lookup, but only an actual worker-received result counts as retrieval.
+
 ## Native relay disconnects in prospective runs (version /21)
 
 The collector forwards evidence handles from completed worker read results over
