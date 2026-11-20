@@ -33,8 +33,8 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
 
     async def check():
         tools = {t.name: t for t in await server.list_tools()}
-        assert "Limit absence claims to observed spans" in tools["read"].description
-        assert "8 ordered entries sharing 16000 UTF-8 content bytes" in tools["read"].description
+        assert "Scope absence to observed spans" in tools["read"].description
+        assert "8 ordered entries share 16000 UTF-8 bytes" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
         assert "qualify uncertainty" in server.instructions
@@ -226,7 +226,7 @@ def test_propagation_batch_spends_quota_on_deciding_sources(identity, configured
     units = iter(range(3 if configured else 2))
     server = TaskMCP(Workflow(client, "team", repo), "Does send's ConnectionError reach handle's caller?",
                      read_admission=lambda: next(units, None) is not None)
-    assert "Batch the requested caller chain with relevant config." in server.instructions[:247]
+    assert "Batch requested caller and operation with applicable configuration." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(page["complete_file"] for page in pages)
     assert [page["content"] for page in pages] == [sources[path] for path in paths]
@@ -248,7 +248,7 @@ def test_propagation_needs_evidence_through_requested_caller(identity, caught, c
     server = TaskMCP(Workflow(client, "team", repo), "Does send's error reach the caller of handle?",
                      read_path_allowed=lambda path: path != "gateway.py" or can_read_endpoint)
     tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
-    assert "Batch alone: group needed files that fit" in tool.description
+    assert "Batch alone, max 8 ordered entries" in tool.description
     pages = read(server, batch=[{"path": path} for path in sources])["results"]
     assert [p["content"] for p in pages[:2]] == [backend, wrapper]
     refs = [p["evidence_ref"] for p in pages if p["evidence_ref"]]
@@ -308,7 +308,7 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wi
         question += " Which backend does main supply?"
     server = TaskMCP(Workflow(client, "team", repo), question,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Backend limits require selection by wiring or the question." in server.instructions[:247]
+    assert "Backend limits require wiring or user selection." in server.instructions[:247]
     pages = read(server, batch=[{"path": path} for path in paths])["results"]
     assert all(p["complete_file"] for p in pages)
     assert [p["content"] for p in pages] == [files[path] for path in paths]
@@ -334,11 +334,11 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present, ada
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository set STEP_LIMIT?",
                      context_budget=ContextBudget() if adaptive else None,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Check listed sources before searching for semantic absence." in server.instructions[:247]
+    assert "Changes or semantic absence need listed sources first." in server.instructions[:247]
     tools = {t.name: t for t in asyncio.run(server.list_tools())}
-    assert "Check sources first for absence" in tools["research"].description
+    assert "Read first for changes or absence. Skip once sources suffice unless asked." in tools["research"].description
     tool = tools["read"]
-    assert "tight quota" in tool.description and "Limit absence claims to observed spans" in tool.description
+    assert "tight quota" in tool.description and "Scope absence to observed spans" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])
     assert set(batch) == {"results", "publication_guidance"}
     pages = batch["results"]
@@ -356,10 +356,15 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present, ada
 
 
 @pytest.mark.parametrize("adaptive", [False, True])
-def test_explicit_memory_check_for_absence_remains_available(identity, monkeypatch, adaptive):
+@pytest.mark.parametrize(("question", "check_doc"), [
+    ("Do any files configure a step limit? Also check our prior finding.", False),
+    ("Which service overrides the default timeout?", False),
+    ("Which timeout applies when the documented default and setting disagree?", True),
+], ids=["explicit-memory", "missing-caller", "conflict"])
+def test_requested_or_unresolved_lookup_after_reads(identity, monkeypatch, adaptive, question, check_doc):
     client, repo, _ = identity
     lookups = []
-    question = "Do any files configure a step limit? Also check our prior finding."
+    (repo / "README.md").write_text("The default TIMEOUT is 45.", encoding="utf-8")
 
     def ask(bound_question, *args, **kwargs):
         lookups.append(bound_question)
@@ -369,11 +374,14 @@ def test_explicit_memory_check_for_absence_remains_available(identity, monkeypat
     monkeypatch.setattr("colony.mcp.Client", lambda home: client)
     server = TaskMCP(Workflow(client, "team", repo), question,
                      context_budget=ContextBudget() if adaptive else None)
-    assert read(server, path="settings.py")["complete_file"]
+    settings = read(server, path="settings.py")
+    assert settings["complete_file"] and settings["content"] == "TIMEOUT = 30"
+    if check_doc:
+        assert read(server, path="README.md")["content"] == "The default TIMEOUT is 45."
     assert lookups == []
     lookup = json.loads(asyncio.run(server.call_tool("research", {}))[0].text)
     assert lookup["hit"] is False and lookups == [question]
-    assert server._read_access.admitted == 1
+    assert server._read_access.admitted == (2 if check_doc else 1)
 
 
 @pytest.mark.parametrize(("bytes_per_file", "batched", "complete"), [

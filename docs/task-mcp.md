@@ -14,10 +14,13 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive lookup share the same routing guidance. Use memory when the
-user asks about it or when a prior finding could fill a gap, including on a repeat
-question. Once current source settles the requested facts, continue to the answer
-and any eligible publication. A memory miss provides no evidence of repository absence.
+On either lookup route, check memory before reading files when the user requests
+memory or a prior finding could save work on a repeated question. Start with
+current sources for changed behavior or semantic absence. If the user also asks
+what was remembered, check memory as well. Once the sources cover every requested
+claim, finish the answer and any eligible publication. A later lookup is useful
+for an explicit memory request or a remaining gap or conflict. Checking memory
+status alone adds a call. A memory miss provides no evidence of repository absence.
 On a validated adaptive hit, each entry in `current_repository_reads` carries
 its path, start line, content and, when available, end line. Ordinary hits
 can include `observed_lines` as inclusive `[path, first_line, last_line]` ranges
@@ -32,11 +35,14 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-For a propagation question, batch the operation and the wrappers through the
-caller whose outcome the user asked about. Include
-configuration when it affects that path, such as a flag that controls whether
-the caller re-raises an error. Include a concrete dependency
-when the requested explanation depends on it.
+For a propagation question, group the known files for the requested caller, the
+operation it invokes, and any intervening wrappers in one batch when they fit.
+For example, a worker's configured limit, dispatcher and executor can together
+establish the caller's outcome. Include configuration when it affects that path,
+such as a flag that controls whether the caller re-raises an error. For a gateway
+receiving repeated HTTP 503 responses, the retry settings, handler and client may
+settle the outcome in one batch. Add a concrete transport when the question names
+it or the evidence needs its behavior and the wiring selects it.
 Two configured attempts permit one retry. If an injected transport raises on its first
 call and the wrapper lets the exception propagate, the wrapper makes one call.
 For example, if a backend exhausts three sends and raises on the first wrapper

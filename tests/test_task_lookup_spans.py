@@ -104,6 +104,62 @@ def test_validated_hit_then_only_the_missing_source_read(transport, monkeypatch,
     assert call("read", path="settings.py")["content"] == "TIMEOUT = 1200"
 
 
+@pytest.mark.parametrize("adaptive", [False, True], ids=["ordinary", "adaptive"])
+def test_caller_batch_publishes_without_lookup_and_repeat_can_lookup_first(transport, adaptive):
+    client, repo, _, lookups = transport
+    sources = {
+        "policy.py": "MAX_AGE = 60",
+        "worker.py": "from policy import MAX_AGE\nfrom executor import run\ndef dispatch(age, job):\n"
+                     "    return run(age, MAX_AGE, job)",
+        "executor.py": "def run(age, limit, job):\n    if age >= limit:\n        return 'expired'\n    return job()",
+    }
+    for name, content in sources.items():
+        (repo / name).write_text(content, encoding="utf-8")
+    (repo / "backend.py").write_text("def job(): return 'completed'", encoding="utf-8")
+    (repo / "README.md").write_text("Stale work always runs.", encoding="utf-8")
+    question = "What does dispatch return for an expired job and does it invoke the job?"
+    budget = ContextBudget(encoding="utf8_bytes", max_tokens=3072) if adaptive else None
+
+    def task(prompt):
+        return TaskMCP(Workflow(client, "team", repo), prompt, context_budget=budget)
+
+    def call(server, name, **args):
+        return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
+
+    learning = task(question)
+    assert "Batch requested caller and operation with applicable configuration." in learning.instructions[:247]
+    batch = call(learning, "read", batch=[{"path": name} for name in sources])
+    pages = batch["results"]
+    assert {p["path"]: p["content"] for p in pages} == sources
+    assert all(p["complete_file"] for p in pages) and "publication_guidance" in batch
+    refs = [p["evidence_ref"] for p in pages]
+    assert [s.ref for s in learning.evidence.resolve(refs)] == list(sources)
+    finding = "dispatch returns 'expired' without invoking the job when its age reaches MAX_AGE."
+    assert call(learning, "publish", content=finding, applicability="worker.dispatch", evidence_refs=refs)["stored"]
+    assert learning._read_access.admitted == 3 and not lookups
+
+    repeat = task(question)
+    research = next(t for t in asyncio.run(repeat.list_tools()) if t.name == "research")
+    assert "Requested memory or useful repeats first." in repeat.instructions[:247]
+    assert "Read first for changes or absence. Skip once sources suffice unless asked." in research.description[:247]
+    hit = call(repeat, "research")
+    assert hit["hit"] and hit["status"] == "validated" and finding in hit["content"]
+    excerpts = hit["current_repository_reads"] if adaptive else hit["evidence"]
+    assert excerpts
+    for page in excerpts:
+        path, text = (page["path"], page["content"]) if adaptive else (page["ref"], page["text"])
+        assert text and text in sources[path]
+    assert len(lookups) == 1 and repeat._read_access.admitted == 0
+
+    # A changed value is settled by its current definition, even with the old trail still stored.
+    (repo / "policy.py").write_text("MAX_AGE = 120", encoding="utf-8")
+    changed = task("What is the new expiration limit in policy.py?")
+    assert "Changes or semantic absence need listed sources first." in changed.instructions[:247]
+    current = call(changed, "read", path="policy.py")
+    assert current["complete_file"] and current["content"] == "MAX_AGE = 120"
+    assert changed._read_access.admitted == 1 and len(lookups) == 1
+
+
 def test_index_only_delivered_spans_and_ignore_upstream_index():
     text = {"ref": "settings.py", "line": 8, "text": "first\nsecond", "end_line": 99}
     result = {"hit": True, "status": "validated", "sources": [{"ref": "settings.py", "content_hash": "a" * 64}],

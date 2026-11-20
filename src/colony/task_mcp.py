@@ -47,13 +47,14 @@ PUBLICATION_POLICY = (
     "Publication failure or missing evidence must not block the answer."
 )
 
+MEMORY_ROUTING = "Requested memory or useful repeats first. "
 RESEARCH_GUIDANCE = (
-    "Look up requested memory or gaps. Use shown spans; read gaps directly. Check sources first for absence."
+    MEMORY_ROUTING + "Read first for changes or absence. Skip once sources suffice unless asked. "
+    "Use shown spans; read gaps directly."
 )
 READ_ROUTING = (
-    "Read identifiable settings directly. Batch the requested caller chain with relevant config. "
-    "Check listed sources before searching for semantic absence. "
-    "Backend limits require selection by wiring or the question. "
+    "Read known settings directly. Batch requested caller and operation with applicable configuration. "
+    "Changes or semantic absence need listed sources first. Backend limits require wiring or user selection. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -114,7 +115,7 @@ class TaskMCP(FastMCP):
         if direct_path is not None:
             routing = "Read the explicit path first. " + READ_ROUTING
         else:
-            routing = READ_ROUTING + "Use prior findings for gaps. "
+            routing = MEMORY_ROUTING + READ_ROUTING
         instructions = routing + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -153,9 +154,9 @@ class TaskMCP(FastMCP):
         single_read = "Single read defaults to host path." if direct_path is not None else "Single read requires path."
         read.__doc__ = (
             f"{single_read} End defaults/clips to EOF. {OUTER_RETRY_GUIDANCE} "
-            "Batch alone: group needed files that fit, max 8 ordered entries sharing 16000 UTF-8 content bytes. "
+            "Batch alone, max 8 ordered entries share 16000 UTF-8 bytes. "
             "Full coverage, tight quota: read unknown sizes singly. "
-            "Keep path/start/end at next_offset. Limit absence claims to observed spans."
+            "Keep path/start/end at next_offset. Scope absence to observed spans."
         )
 
         def research() -> dict | str:
@@ -280,7 +281,7 @@ class TaskMCP(FastMCP):
             # Alter only the returned catalog, never accumulate description text.
             tools = [t.model_copy(update={"description":
                 "Scoped memory was empty at last check; start with source reads. "
-                "Explicit lookup remains available. " + (t.description or "")})
+                "Explicit lookup remains available. " + (t.description or "").removeprefix(MEMORY_ROUTING)})
                 if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted
@@ -292,7 +293,7 @@ class TaskMCP(FastMCP):
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
                 "Memory started empty. Read sources. "
-                + self._base_instructions + " Explicit research checks current memory.")
+                + self._base_instructions.removeprefix(MEMORY_ROUTING) + " Explicit research checks current memory.")
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(

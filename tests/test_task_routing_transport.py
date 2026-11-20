@@ -55,8 +55,8 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
             assert set(tools) == {"read", "research", "trace_read"}
             assert "empty at last check" in tools["research"].description
             description = tools["read"].description
-            assert "Batch alone: group needed files that fit" in description
-            assert "max 8 ordered entries sharing 16000 UTF-8 content bytes" in description
+            assert "Batch alone, max 8 ordered entries" in description
+            assert "max 8 ordered entries share 16000 UTF-8 bytes" in description
             assert "Full coverage, tight quota: read unknown sizes singly." in description
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
             assert not result.isError
@@ -106,8 +106,14 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         assert READ_ROUTING.strip() in preview
         assert preview.startswith("Memory started empty. Read sources.") == (route == "empty")
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
-        if route == "research":
-            assert "Use prior findings for gaps." in instructions[:247]
+        research = next(t for t in tools if t.name == "research")
+        early = "Requested memory or useful repeats first."
+        late = "Read first for changes or absence. Skip once sources suffice unless asked."
+        assert (early in preview) == (route == "research")
+        assert (early in research.description[:247]) == (route != "empty")
+        assert late in research.description[:247]
+        if route == "empty":
+            assert "Explicit lookup remains available." in research.description[:247]
         catalog_limits = {
             "direct": ((1617, 403), (1997, 492)),
             "research": ((1609, 401), (1989, 490)),

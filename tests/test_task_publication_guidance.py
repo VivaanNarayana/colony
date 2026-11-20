@@ -55,7 +55,7 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             assert page.get("publication_guidance") == (PUBLICATION_CUE if eligible else None)
             tools = (await session.list_tools()).tools
             read = next(t for t in tools if t.name == "read")
-            assert "Limit absence claims to observed spans" in read.description
+            assert "Scope absence to observed spans" in read.description
             assert ("publish" in {t.name for t in tools}) == eligible
             if eligible:
                 tool = next(t for t in tools if t.name == "publish")
