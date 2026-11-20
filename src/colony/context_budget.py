@@ -202,6 +202,53 @@ def with_reuse_guidance(response: dict, budget) -> dict:
     return base
 
 
+def with_task_read_spans(response: dict, budget=None) -> dict:
+    """Index only the delivered lines of a validated task lookup, after any packing."""
+    from colony.compact import _identities
+
+    base = response.copy()
+    base.pop("observed_lines", None)
+    if base.get("hit") is not True or base.get("status") != "validated":
+        return base
+    # The ordinary client supplies evidence in its legacy shape. The adaptive
+    # renderer has already bound current_repository_reads to source identities.
+    if budget is None:
+        reads = base.get("evidence")
+        path_key, start_key, text_key = "ref", "line", "text"
+    else:
+        reads = base.get("current_repository_reads")
+        path_key, start_key, text_key = "path", "start_line", "content"
+    if not isinstance(reads, list) or not reads:
+        return base
+    try:
+        identities = _identities(base.get("sources"))
+    except ValueError:
+        return base
+    spans = []
+    for read in reads:
+        if not isinstance(read, dict):
+            return base
+        path, start, text = read.get(path_key), read.get(start_key), read.get(text_key)
+        if (not isinstance(path, str) or path not in identities or type(start) is not int
+                or start < 1 or not isinstance(text, str) or not text):
+            return base
+        if budget is not None and read.get("sha256") != identities[path]:
+            return base
+        spans.append([path, start, start + text.count("\n")])
+    indexed = {"observed_lines": spans, **base}
+    if budget is None:
+        return indexed
+    # Trade the old prose cue for the index. Never trim evidence, spend more
+    # than the original reply, or imply that a subset is the whole index.
+    receipt = base["context_budget"]
+    indexed.pop("next_action", None)
+    try:
+        _receipt(indexed, budget, _counter(budget), receipt["limited"])
+    except ContextBudgetError:
+        return base  # An optional index must never turn an already fitted hit into a miss.
+    return indexed if indexed["context_budget"]["used"] <= receipt["used"] else base
+
+
 def _rebuild(response):
     evidence = response.get("evidence")
     if isinstance(evidence, list):

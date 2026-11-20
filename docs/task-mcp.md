@@ -18,6 +18,11 @@ Ordinary and adaptive lookup share the same routing guidance. Use memory when th
 user asks about it or when a prior finding could fill a gap, including on a repeat
 question. Once current source settles the requested facts, continue to the answer
 and any eligible publication. A memory miss provides no evidence of repository absence.
+On a validated hit, `observed_lines`, when present, lists the delivered excerpts
+as `[path, first_line, last_line]` (inclusive). Use the source text for claims it
+settles. Read a known missing path or range directly, including caller wiring
+when selection matters. A listed span can cover only part of a file. Saved
+claims still need support from the current source, and conflicts can require a fresh read.
 Read known paths directly and batch independent reads. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
@@ -59,7 +64,8 @@ read the adjacent lines at candidate matches. If the results are capped or files
 were skipped, check the remaining scope before claiming absence, or name the gap.
 A question about a fact also covers indirect expressions,
 such as a value computed from two settings. For that question, use already observed
-evidence and batch the remaining listed files when the scope fits.
+evidence and start with the remaining listed sources, batching them when the scope fits.
+An explicit request to check memory still calls for lookup.
 Reuse the existing listing and the remaining allowance in the latest receipt.
 Reserve units for required listed reads before spending one on an auxiliary search.
 For example, if five units remain for five required files, a literal search would

@@ -72,7 +72,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
 
 def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
     _, homes, repo, _ = running_team
-    # Byte and o200k_base ceilings from the preceding PR41 head (cdb5781).
+    # Byte and o200k_base ceilings from the preceding PR41 head (5f18db4).
     instruction_limits = {"direct": (708, 123), "research": (1571, 271), "empty": (1648, 284)}
     preview_limits = {"direct": 41, "research": 41, "empty": 40}
     tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
@@ -107,10 +107,12 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
         assert preview.startswith("Memory started empty. Read sources.") == (route == "empty")
         assert preview.startswith("Read the explicit path first.") == (route == "direct")
         if route == "research":
-            assert "Look up relevant prior findings." in instructions[:247]
-        catalog_limits = (2000, 493) if adaptive else (1620, 404)
-        if route == "empty":
-            catalog_limits = (2099, 511) if adaptive else (1719, 422)
+            assert "Use prior findings for gaps." in instructions[:247]
+        catalog_limits = {
+            "direct": ((1617, 403), (1997, 492)),
+            "research": ((1609, 401), (1989, 490)),
+            "empty": ((1708, 419), (2088, 508)),
+        }[route][int(adaptive)]
         assert len(instructions.encode()) <= instruction_limits[route][0]
         if tokenizer:
             assert count(instructions) <= instruction_limits[route][1]

@@ -320,7 +320,8 @@ def test_concrete_retry_limit_needs_selection_evidence(identity, wired, check_wi
 
 @pytest.mark.parametrize("remaining", [3, 4, 5], ids=["two-denied", "one-spent-on-search", "complete"])
 @pytest.mark.parametrize("present", [False, True], ids=["absent", "present-in-last-file"])
-def test_absence_scope_after_five_listed_paths(identity, remaining, present):
+@pytest.mark.parametrize("adaptive", [False, True], ids=["ordinary", "adaptive"])
+def test_absence_scope_after_five_listed_paths(identity, remaining, present, adaptive, monkeypatch):
     client, repo, _ = identity
     paths = ["README.md", "backend.py", "caller.py", "operation.py", "settings.py"]
     for path in paths:
@@ -328,10 +329,15 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
         (repo / path).write_text(source, encoding="utf-8")
     # Start at the product boundary with the host's listing and remaining units.
     permits = iter(range(remaining))
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: pytest.fail("implicit lookup before source coverage"))
+    monkeypatch.setattr("colony.mcp.Client", lambda home: client)
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository set STEP_LIMIT?",
+                     context_budget=ContextBudget() if adaptive else None,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Reserve listed reads before searching for semantic absence." in server.instructions[:247]
-    tool = next(t for t in asyncio.run(server.list_tools()) if t.name == "read")
+    assert "Check listed sources before searching for semantic absence." in server.instructions[:247]
+    tools = {t.name: t for t in asyncio.run(server.list_tools())}
+    assert "Check sources first for absence" in tools["research"].description
+    tool = tools["read"]
     assert "tight quota" in tool.description and "Limit absence claims to observed spans" in tool.description
     batch = read(server, batch=[{"path": path} for path in paths])
     assert set(batch) == {"results", "publication_guidance"}
@@ -347,6 +353,27 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present):
     if remaining == len(paths) and present:
         expected[-1] = "STEP_LIMIT = 12"
     assert [p["content"] for p in observed] == expected
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+def test_explicit_memory_check_for_absence_remains_available(identity, monkeypatch, adaptive):
+    client, repo, _ = identity
+    lookups = []
+    question = "Do any files configure a step limit? Also check our prior finding."
+
+    def ask(bound_question, *args, **kwargs):
+        lookups.append(bound_question)
+        return {"hit": False, "reason": "no_relevant_trail"}
+
+    monkeypatch.setattr(client, "ask", ask)
+    monkeypatch.setattr("colony.mcp.Client", lambda home: client)
+    server = TaskMCP(Workflow(client, "team", repo), question,
+                     context_budget=ContextBudget() if adaptive else None)
+    assert read(server, path="settings.py")["complete_file"]
+    assert lookups == []
+    lookup = json.loads(asyncio.run(server.call_tool("research", {}))[0].text)
+    assert lookup["hit"] is False and lookups == [question]
+    assert server._read_access.admitted == 1
 
 
 @pytest.mark.parametrize(("bytes_per_file", "batched", "complete"), [

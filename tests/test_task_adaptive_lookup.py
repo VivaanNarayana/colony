@@ -11,6 +11,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from test_integration import running_team as running_team
 from test_workflow import identity as identity
 
+from colony.context_budget import count_response
 from colony.mcp import create_mcp
 from colony.models import ContextBudget
 from colony.task_mcp import ANSWER_POLICY, TaskMCP, main
@@ -23,7 +24,7 @@ def call(server, name, **args):
 
 @pytest.mark.parametrize('limit', [256, 3072, 8192])
 @pytest.mark.parametrize('hit', [False, True])
-def test_task_lookup_matches_ordinary_adaptive_wire_response(identity, monkeypatch, limit, hit):
+def test_task_lookup_preserves_ordinary_adaptive_evidence_and_cost(identity, monkeypatch, limit, hit):
     client, repo, sources = identity
     seen = []
     result = {'hit': False, 'reason': 'no_relevant_trail'} if not hit else {
@@ -42,7 +43,18 @@ def test_task_lookup_matches_ordinary_adaptive_wire_response(identity, monkeypat
     task = TaskMCP(Workflow(client, 'team', repo), 'Explain timeout', context_budget=budget)
     actual = call(task, 'research', max_context_tokens=limit)
     expected = call(ordinary, 'ask', question='Explain timeout', max_context_tokens=limit)
-    assert actual == expected
+    delivered, baseline = [json.loads(blocks[0].text) for blocks in (actual, expected)]
+    if 'observed_lines' in delivered:
+        assert delivered['observed_lines'] == [['settings.py', 1, 1]]
+        assert delivered['context_budget']['used'] == count_response(delivered, budget)
+        assert delivered['context_budget']['used'] <= baseline['context_budget']['used']
+        assert {k: v for k, v in delivered['context_budget'].items() if k != 'used'} == {
+            k: v for k, v in baseline['context_budget'].items() if k != 'used'}
+        presentation = {'next_action', 'observed_lines', 'context_budget'}
+        assert {k: v for k, v in delivered.items() if k not in presentation} == {
+            k: v for k, v in baseline.items() if k not in presentation}
+    else:
+        assert actual == expected
     assert len(actual[0].text.encode('utf-8')) <= limit
     assert len(seen) == 2  # Exactly one request for each explicit call; no automatic retry.
     assert seen[0] == seen[1]

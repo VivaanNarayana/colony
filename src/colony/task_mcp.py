@@ -14,6 +14,7 @@ from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic_core import to_json
 
 from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
@@ -48,11 +49,11 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up memory only if requested or prior findings could fill a gap. Absence needs current source coverage."
+    "Look up requested memory or gaps. Use shown spans; read gaps directly. Check sources first for absence."
 )
 READ_ROUTING = (
     "Read identifiable settings directly. Batch the requested caller chain with relevant config. "
-    "Reserve listed reads before searching for semantic absence. "
+    "Check listed sources before searching for semantic absence. "
     "Backend limits require selection by wiring or the question. "
 )
 PUBLICATION_CUE = (
@@ -94,7 +95,7 @@ class TaskMCP(FastMCP):
                 workflow.client.home, workflow_namespace=workflow.namespace,
                 workflow_repo=workflow.repo, workflow_read_only=workflow.read_only,
                 workflow_repository_id=workflow.repository_id, context_budget=context_budget,
-                _lookup_path_allowed=read_path_allowed,
+                _lookup_path_allowed=read_path_allowed, _task_read_spans=True,
             )
             context_budget = ContextBudget.model_validate(context_budget)
         self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed)
@@ -114,7 +115,7 @@ class TaskMCP(FastMCP):
         if direct_path is not None:
             routing = "Read the explicit path first. " + READ_ROUTING
         else:
-            routing = READ_ROUTING + "Look up relevant prior findings. "
+            routing = READ_ROUTING + "Use prior findings for gaps. "
         instructions = routing + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -158,14 +159,25 @@ class TaskMCP(FastMCP):
             "Keep path/start/end at next_offset. Limit absence claims to observed spans."
         )
 
-        def research() -> dict:
+        def research() -> dict | str:
             # A direct route never forbids promotion or independent source tools.
             try:
                 options = ({"repo": workflow.repo, "repository_id": workflow.repository_id}
                            if workflow.repository_id else {})
                 if read_path_allowed is not None:
                     options.update(repo=workflow.repo, path_allowed=read_path_allowed)
-                return workflow.client.ask(self.question, workflow.namespace, **options)
+                from colony.context_budget import with_task_read_spans
+
+                result = workflow.client.ask(self.question, workflow.namespace, **options)
+                indexed = with_task_read_spans(result)
+                if "observed_lines" in indexed:
+                    # Ordinary MCP dicts use indented JSON. Spend framing bytes
+                    # on the index only if the compact message still fits.
+                    wire = to_json(indexed)
+                    if len(wire) <= len(to_json(result, indent=2)):
+                        return wire.decode("utf-8")
+                    indexed.pop("observed_lines")
+                return indexed
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 
