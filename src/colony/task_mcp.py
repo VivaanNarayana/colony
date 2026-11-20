@@ -27,7 +27,7 @@ ANSWER_POLICY = (
     "Trace the requested call chain through returns and the first uncaught raise. "
     "Distinguish configured maxima, actual calls and additional retries. "
     "Condition concrete backend claims on wiring or selection in the question. "
-    "Qualify unverified bindings and scope. "
+    "Qualify unverified bindings and uncovered scope. "
     "Failed or partial reads and search/lookup misses do not establish repository-wide "
     "absence or other tools' availability. "
     "Research and answer length are unrestricted by publication policy."
@@ -48,13 +48,14 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up the original task when saved findings could help, including gaps in a direct-read task. "
-    "Use sufficient current evidence; research gaps or contradictions."
+    "Recall this task when useful. Answer from sufficient current excerpts. "
+    "For stale or withheld content, read relevant cited files. After a miss, use sources. "
+    "Repeat lookup for changed conditions or explicit recall."
 )
 READ_ROUTING = (
-    "Read known paths directly; batch independent reads, prioritizing evidence for requested "
-    "claims before auxiliary searches. Size batches to any host research allowance. "
-    "Use available research to close gaps and contradictions; explain remaining limitations. "
+    "For absence, list once if needed. Batch relevant files before search if they fit. "
+    "Search larger scopes. Read named values at their definitions. "
+    "Resolve contradictions. Stop when current evidence suffices. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
@@ -136,13 +137,10 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Read source; omit end for ordinary reads (end beyond EOF is clipped).
-            Omit path for direct path. Use batch for independent reads instead of
-            single-read arguments; results/errors are ordered. Continue each at next_offset
-            with the same path/start/end. Within the host allowance, batch known caller, config
-            and operation through the requested boundary. Include a wired or selected backend
-            when relevant. Trace returns and uncaught raises.
-            Failed entries and partial pages leave coverage gaps.
+            """Omit path for direct reads, end for EOF. Use batch alone for ordered reads within remaining units and bytes.
+            For a call chain, batch known caller, config and operation through the requested boundary.
+            Include a wired or selected backend when relevant. Trace returns and uncaught raises.
+            Continue at next_offset with the same path/start/end. Failed entries and partial pages leave coverage gaps.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
@@ -184,10 +182,8 @@ class TaskMCP(FastMCP):
 
             units = "UTF-8 bytes (estimate)" if context_budget.encoding == "utf8_bytes" else "o200k_base tokens"
             adaptive_research.__doc__ = (
-                RESEARCH_GUIDANCE + " max_context_tokens caps the "
-                f"full lookup response: default {context_budget.max_tokens} {units}; override 256..8192. "
-                "budget_limited is not proof of no match; no automatic retry. "
-                "This cap never limits the answer or necessary source research."
+                RESEARCH_GUIDANCE + f" Full reply budget: default {context_budget.max_tokens} {units}, override 256..8192. "
+                "budget_limited may hide a match. No automatic retry or cap on answers or source reads."
             )
             research = adaptive_research
 
@@ -289,8 +285,7 @@ class TaskMCP(FastMCP):
         await self._refresh_availability()
         if self._availability_state == "empty":
             self._mcp_server.instructions = (
-                "Memory was empty at task startup; start with source reads. "
-                "Explicit research remains available and always checks current memory. "
+                "Memory was empty at task startup. Start with source reads. Explicit recall checks live memory. "
                 + self._base_instructions)
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
