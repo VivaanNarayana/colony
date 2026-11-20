@@ -97,7 +97,7 @@ uncertainty in the requested field when the format permits, for example,
 A targeted search remains useful when it can establish presence or narrow a larger scope.
 
 The adapter puts lookup timing, direct reads, caller batching, backend selection
-and the scope of absence claims near the start of its MCP instructions. The
+and source-first guidance for semantic absence near the start of its MCP instructions. The
 pinned Codex native host previews the first 247 characters of a long namespace
 description followed by an ellipsis on its initial request. The direct-file route
 still starts with the requested path. The discovered `read` tool explains how

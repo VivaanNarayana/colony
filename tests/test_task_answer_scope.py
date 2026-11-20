@@ -346,7 +346,8 @@ def test_absence_scope_after_five_listed_paths(identity, remaining, present, ada
     server = TaskMCP(Workflow(client, "team", repo), "Does this repository configure a step limit of 12?",
                      context_budget=ContextBudget() if adaptive else None,
                      read_admission=lambda: next(permits, None) is not None)
-    assert "Semantic absence without coverage stays unknown." in server.instructions[:247]
+    assert "Semantic absence requires reading sources first." in server.instructions[:247]
+    assert "Mark uncovered scope unknown in the claim." in server.instructions
     tools = {t.name: t for t in asyncio.run(server.list_tools())}
     assert "Changes or semantic absence: read sources first." in tools["research"].description
     tool = tools["read"]

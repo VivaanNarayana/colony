@@ -92,6 +92,9 @@ def test_initialized_guidance_fits_pr41_budget(running_team, monkeypatch):
             env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")})
         async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
             instructions = (await session.initialize()).instructions
+            # Workers choose between reads and host search from this preview,
+            # before discovery can supply the research tool's description.
+            assert "Semantic absence requires reading sources first." in instructions[:247]
             tools = (await session.list_tools()).tools
             read = next(t for t in tools if t.name == "read")
             path_rule = "Single read defaults to host path." if route == "direct" else "Single read requires path."

@@ -55,7 +55,7 @@ RESEARCH_GUIDANCE = (
 )
 READ_ROUTING = (
     "Read identifiable settings. Batch caller through operation including relevant wrappers/config. "
-    "Backend limits need wiring or user selection. Semantic absence without coverage stays unknown. "
+    "Backend limits need wiring or user selection. Semantic absence requires reading sources first. "
 )
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
