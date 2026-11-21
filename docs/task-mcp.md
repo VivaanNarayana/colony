@@ -33,7 +33,9 @@ Hosts with restricted reads should supply their metadata authorization predicate
 and admission path.
 
 After a matching listing, `listed_scope` reports coverage of the fixed inventory as
-delivered. Full files and contiguous pages from the beginning of the same version count.
+delivered, including inventories that require multiple batches. Full files and contiguous
+pages from the beginning of the same version count, including delivered trace pages.
+Coverage is tracked even when the publication reference cache is full.
 Denied, redacted and incomplete files leave gaps. A detected target or file metadata
 change invalidates earlier coverage. This receipt describes observations over the task,
 not an atomic snapshot of a live repository. For a point-in-time determination, bind

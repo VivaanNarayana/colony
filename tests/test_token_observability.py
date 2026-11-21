@@ -40,6 +40,12 @@ def test_prospective_reader_preserves_turn_totals_and_explicit_request_metadata(
     assert metadata["records"][0]["usage"] == usage()
     assert metadata["tool_groups"] == {metadata["records"][0]["response_id_sha256"]: 1}
     assert metadata["reconciles_with_turn_totals"] is True
+    del item["item"]["id"]
+    path.write_bytes(raw(turn([response, item])))
+    incomplete = native_usage(path, request_metadata=True)
+    assert native_usage(path)["known_usage"] == incomplete["known_usage"] == missing["known_usage"]
+    assert incomplete["request_usage"]["records"] == metadata["records"]
+    assert incomplete["request_usage"]["tool_groups"] is None
     path.write_bytes(raw(turn([response, {"type": "unexpected.event"}])))
     with pytest.raises(ValueError, match="Unsupported native event format"):
         native_usage(path)

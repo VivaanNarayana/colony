@@ -61,53 +61,67 @@ class SourceScope:
 
     def plan(self, listed):
         self.evidence._authorize()
-        self.listed = (0 < len(self.paths) <= 8 and set(listed) == self.paths
+        self.listed = (bool(self.paths) and set(listed) == self.paths
                        and all(_public_path(p) for p in self.paths))
         if not self.listed:
             self.covered.clear()
             return {"status": "unverified_scope", "guidance": "Qualify uninspected files."}
-        versions = self.versions()
+        versions = self.versions(())
         missing = [p for p in listed if p not in self.covered or not self.covered[p].complete]
         if not missing:
             return {"status": "complete", "listed_files": len(listed)}
-        units = self.remaining() if self.remaining is not None else None
-        if (all(versions[p] is not None for p in missing)
-                and sum(versions[p][-1] for p in missing) <= 16000
-                and (units is None or len(missing) <= units)):
-            return {"next_tool": "read", "arguments": {"batch": [{"path": p} for p in missing]}}
-        return {"status": "partial", "guidance": "Prioritize evidence; qualify unread or partial files."}
+        if self.remaining is None:
+            fits_quota = self.access.admit is None and self.evidence.read == self.access.read
+        else:
+            try:
+                units = self.remaining()
+            except Exception:
+                units = None
+            fits_quota = type(units) is int and units >= len(missing)
+        partial = {"status": "partial", "guidance": "Prioritize evidence; qualify unread or partial files."}
+        if fits_quota and len(missing) <= 8:
+            versions.update((p, self.version(p)) for p in missing if p not in versions)
+            if any(versions[p] is None for p in missing):
+                return partial
+            # Offsets count characters. Each observed character consumed at least
+            # one source byte, so this conservatively bounds the remaining bytes.
+            offsets = {p: self.covered[p].stop if p in self.covered else 0 for p in missing}
+            if sum(versions[p][-1] - offsets[p] for p in missing) <= 16000:
+                batch = [{"path": p, **({"offset": offsets[p]} if offsets[p] else {})} for p in missing]
+                return {"next_tool": "read", "arguments": {"batch": batch}}
+        return partial
 
-    def versions(self):
+    def versions(self, requested):
         self.evidence._authorize()
-        versions = {p: self.version(p) for p in self.paths}
+        paths = self.paths.intersection(requested) | self.covered.keys()
+        versions = {p: self.version(p) for p in paths}
         for p in list(self.covered):
             if self.covered[p].version != versions[p]:
                 del self.covered[p]
         return versions
 
-    def record(self, before, results):
-        after = self.versions()
-        for result in results:
-            path = result.get("path")
-            if path not in after or not after[path] or before[path] != after[path]:
-                continue
-            obs = self.evidence._observations.get(result.get("evidence_ref"))
-            if obs is None or obs.ref != path:
+    def record(self, before, pages, results):
+        after = self.versions(before)
+        delivered = {id(result) for result in results}
+        for result, content, page, end_offset in pages:
+            path = page.ref
+            if (id(result) not in delivered or result.get("content") != content or result.get("path") != path
+                    or not after.get(path) or before[path] != after[path] or page.target != after[path][0]):
                 continue
             prior = self.covered.get(path)
-            if prior and prior.digest != obs.digest:
+            if prior and prior.digest != page.digest:
                 del self.covered[path]
                 prior = None
-            if not obs.whole_range or obs.redacted:
+            if not page.whole_range or page.redacted:
                 continue
             stop = prior.stop if prior else 0
-            if obs.start_offset <= stop:
-                stop = max(stop, obs.end_offset)
-                self.covered[path] = _Coverage(after[path], obs.digest, stop, stop == obs.span_length)
+            if page.offset <= stop:
+                stop = max(stop, end_offset)
+                self.covered[path] = _Coverage(after[path], page.digest, stop, stop == page.span_length)
         missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)
         result = {"status": "partial" if missing else "complete", "listed_files": len(self.paths)}
         if missing:
             # Only repeat names still authorized for disclosure.
             result["unverified_count"] = len(missing)
-            result["unverified_paths"] = [p for p in missing if after[p] is not None]
+            result["unverified_paths"] = [p for p in missing[:8] if self.version(p) is not None]
         return result

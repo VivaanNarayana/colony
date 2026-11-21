@@ -5,6 +5,7 @@ import re
 import secrets
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from colony.models import Source
@@ -24,9 +25,6 @@ class _Observation:
     end: int
     start_offset: int
     end_offset: int
-    whole_range: bool
-    span_length: int
-    redacted: bool
     expires: float
     target: str | None
 
@@ -63,8 +61,20 @@ class EvidenceSession:
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
+        self._deliveries = None
         self._closed = False
         self._lock = threading.RLock()
+
+    @contextmanager
+    def track_deliveries(self):
+        """Observe only finalized pages in one local operation, even without a publish handle."""
+        with self._lock:
+            previous = self._deliveries
+            self._deliveries = []
+            try:
+                yield self._deliveries
+            finally:
+                self._deliveries = previous
 
     def _identity(self):
         w = self.workflow
@@ -133,7 +143,7 @@ class EvidenceSession:
                                      offset, len(span), start == 1 and last == len(lines),
                                      text != original, content,
                                      time.monotonic() + self._ttl,
-                                     str(target) if self.path_allowed is not None else None)
+                                     str(target) if self.path_allowed is not None or self._deliveries is not None else None)
             if _defer_reference:
                 return prepared
             return self._complete_read(prepared, _max_bytes)
@@ -165,8 +175,7 @@ class EvidenceSession:
                 handle = secrets.token_urlsafe(18)
                 self._observations[handle] = _Observation(
                     prepared.ref, prepared.digest, prepared.start, prepared.end,
-                    prepared.offset, stop, prepared.whole_range, prepared.span_length,
-                    prepared.redacted, prepared.expires, prepared.target,
+                    prepared.offset, stop, prepared.expires, prepared.target,
                 )
             result = {"path": prepared.ref, "start_line": prepared.start, "end_line": prepared.end,
                       "content": content, "evidence_ref": handle,
@@ -177,6 +186,8 @@ class EvidenceSession:
             if prepared.offset or stop < prepared.span_length:
                 result.update(start_offset=prepared.offset, end_offset=stop,
                               next_offset=stop if stop < prepared.span_length else None)
+            if self._deliveries is not None:
+                self._deliveries.append((result, content, prepared, stop))
             return result
 
     def read_batch(self, requests: list[dict]) -> list[dict]:

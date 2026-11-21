@@ -69,6 +69,59 @@ def test_allowance_denial_preserves_gaps_and_research_can_find_positive_evidence
     assert result["listed_scope"]["unverified_paths"] == ["settings.py"]
 
 
+def test_opaque_quota_does_not_promise_a_full_batch(identity):
+    server = create(identity, ["README.md", "settings.py"], read_admission=lambda: True)
+    assert plan(server)["status"] == "partial"
+
+
+def test_multi_batch_listing_counts_pages_after_publication_cache_fills(identity):
+    _, repo, _ = identity
+    paths = [f"part-{i}.txt" for i in range(10)]
+    for name in paths:
+        (repo / name).write_text("data")
+    server = create(identity, paths)
+    server.evidence._capacity = 1
+    assert plan(server)["status"] == "partial"
+    first = read(server, batch=[{"path": p} for p in paths[:8]])
+    assert first["results"][1]["evidence_ref"] is None
+    assert first["listed_scope"]["unverified_paths"] == paths[8:]
+    action = plan(server)
+    assert action["arguments"] == {"batch": [{"path": p} for p in paths[8:]]}
+    assert read(server, **action["arguments"])["listed_scope"] == {"status": "complete", "listed_files": 10}
+
+
+def test_mismatched_target_is_not_credited(identity, monkeypatch):
+    server = create(identity, ["settings.py"])
+    plan(server)
+    actual = server._scope.version("settings.py")
+    monkeypatch.setattr(server._scope, "version", lambda path: ("another-target", *actual[1:]))
+    result = read(server, path="settings.py")
+    assert result["content"] and result["listed_scope"]["status"] == "partial"
+
+
+def test_only_delivered_trace_pages_count(identity):
+    _, repo, _ = identity
+    (repo / "caller.py").write_text("import settings")
+    server = create(identity, ["caller.py", "settings.py"], trace_reads=True)
+    plan(server)
+    result = json.loads(blocks(server, "trace_read", paths=["caller.py"])[0].text)
+    assert [entry["path"] for entry in result["results"]] == ["caller.py", "settings.py"]
+    assert result["listed_scope"]["status"] == "complete"
+
+
+def test_embedded_structured_listing_preserves_payload_and_adds_plan(identity):
+    server = create(identity, ["settings.py"], scope_list_tool="files")
+
+    @server.tool(structured_output=True)
+    def files() -> str:
+        return "settings.py"
+
+    content, structured = asyncio.run(server.call_tool("files", {}))
+    assert structured == {"result": "settings.py"} and content[0].text == "settings.py"
+    action = json.loads(content[1].text)["scope_read_plan"]
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+
+
 def test_coverage_only_joins_contiguous_pages_of_the_same_file_version(identity):
     _, repo, _ = identity
     path = repo / "long.txt"
@@ -83,6 +136,20 @@ def test_coverage_only_joins_contiguous_pages_of_the_same_file_version(identity)
     page = read(server, path=path.name)
     tail = read(server, path=path.name, offset=page["next_offset"])
     assert tail["listed_scope"]["status"] == "complete"
+
+
+def test_relisting_plans_only_the_undelivered_suffixes(identity):
+    _, repo, _ = identity
+    paths = ["README.md", "settings.py"]
+    for path in paths:
+        (repo / path).write_text("x" * 9500)
+    server = create(identity, paths)
+    assert plan(server)["status"] == "partial"
+    page = read(server, batch=[{"path": p} for p in paths])
+    assert page["listed_scope"]["status"] == "partial"
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": p, "offset": 8000} for p in paths]
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
 
 
 def test_redaction_revocation_and_changes_invalidate_coverage(identity):

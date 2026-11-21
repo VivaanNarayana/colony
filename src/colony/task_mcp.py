@@ -5,7 +5,7 @@ import asyncio
 import json
 import threading
 import time
-from contextlib import suppress
+from contextlib import nullcontext, suppress
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -139,15 +139,15 @@ class TaskMCP(FastMCP):
                         response["publication_guidance"] = PUBLICATION_CUE
             return response
 
-        def deliver(requests, *, batch):
+        def deliver(paths, operation):
             scope = self._scope
             with self.evidence._lock:
-                before = scope.versions() if scope is not None and scope.listed else None
-                results = (self.evidence.read_batch(requests) if batch
-                           else [self.evidence.read(**requests[0])])
-                response = {"results": results} if batch else results[0]
+                before = scope.versions(paths) if scope is not None and scope.listed else None
+                with self.evidence.track_deliveries() if before is not None else nullcontext() as pages:
+                    response = operation()
+                results = response.get("results", [response])
                 if before is not None:
-                    response["listed_scope"] = scope.record(before, results)
+                    response["listed_scope"] = scope.record(before, pages, results)
                 return observe(results, response)
 
         def read(path: str | None = None, start: int = 1, end: int | None = None,
@@ -163,12 +163,13 @@ class TaskMCP(FastMCP):
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
-                return deliver([request.model_dump() for request in batch], batch=True)
+                requests = [request.model_dump() for request in batch]
+                return deliver((r.path for r in batch), lambda: {"results": self.evidence.read_batch(requests)})
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
-                return deliver([dict(path=selected, start=start, end=end, offset=offset)], batch=False)
+                return deliver([selected], lambda: self.evidence.read(selected, start, end, offset=offset))
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 
@@ -225,8 +226,10 @@ class TaskMCP(FastMCP):
                 and injected implementations must be requested explicitly when relevant.
                 Continue partial pages using read and next_offset; coverage is not exhaustive.
                 """
-                result = read_bundle(self.evidence, self._read_access, paths, max_files)
-                return observe(result["results"], result)
+                # Import candidates are discovered inside the read; sample the declared
+                # inventory so final, delivered dependency pages can also count.
+                candidates = self._scope.paths if self._scope is not None else paths
+                return deliver(candidates, lambda: read_bundle(self.evidence, self._read_access, paths, max_files))
 
             self.add_tool(trace_read, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
                           structured_output=False)
@@ -331,7 +334,10 @@ class TaskMCP(FastMCP):
         try:
             result = await super().call_tool(name, arguments)
             if self._scope is not None and name == self._scope_list_tool:
-                blocks = result.content if isinstance(result, CallToolResult) else result
+                if isinstance(result, CallToolResult):
+                    blocks = result.content
+                else:
+                    blocks = result[0] if isinstance(result, tuple) else result
                 if (not getattr(result, "isError", False) and len(blocks) == 1
                         and isinstance(blocks[0], TextContent)):
                     with self.evidence._lock:
