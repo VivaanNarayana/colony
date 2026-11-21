@@ -141,6 +141,12 @@ def _outcome(item, arguments, files):
     texts = [b.get("text") for b in blocks
              if isinstance(b, dict) and b.get("type") == "text" and isinstance(b.get("text"), str)]
     tool = item["tool"]
+    if tool == "fixture_files" and len(texts) == 2 and len(texts[1]) <= 65536:
+        # The second block is procedural routing, never source evidence.
+        with suppress(ValueError, RecursionError):
+            plan = json.loads(texts[1])
+            if isinstance(plan, dict) and set(plan) == {"scope_read_plan"} and isinstance(plan["scope_read_plan"], dict):
+                texts = texts[:1]
     if tool == "fixture_files" and len(texts) == 1:
         paths = [_path(v, files) for v in texts[0].splitlines()]
         if all(p is not None for p in paths):

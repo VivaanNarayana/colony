@@ -243,7 +243,7 @@ def _load(run_dir):
                      "label_sha256": digest(task["rubric"]), **answer,
                      "activity": activity(path, 'ordinary' if invocation['arm'] == 'no_colony' else
                                           arm_protocol(manifest, invocation['arm']).get('target', {}).get('adapter', 'ordinary')),
-                     **native_usage(path)})
+                     **native_usage(path, request_metadata=True)})
         # native_usage hashes all agent messages; preserve declared answer selection.
         rows[-1].update(answer)
         from .publication_diagnostics import observation

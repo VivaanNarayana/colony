@@ -24,6 +24,9 @@ class _Observation:
     end: int
     start_offset: int
     end_offset: int
+    whole_range: bool
+    span_length: int
+    redacted: bool
     expires: float
     target: str | None
 
@@ -38,6 +41,7 @@ class _PreparedRead:
     offset: int
     span_length: int
     whole_range: bool
+    redacted: bool
     content: bytes
     expires: float
     target: str | None
@@ -103,7 +107,7 @@ class EvidenceSession:
                 target, data = repo_contents(self.workflow.repo, path, path_allowed=self.path_allowed)
                 if len(data) > MAX_SOURCE_BYTES:
                     raise ValueError()
-                text = data.decode("utf-8")
+                original = text = data.decode("utf-8")
                 for pattern in PATTERNS:
                     text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
                 lines = text.splitlines()
@@ -126,7 +130,8 @@ class EvidenceSession:
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
-                                     offset, len(span), start == 1 and last == len(lines), content,
+                                     offset, len(span), start == 1 and last == len(lines),
+                                     text != original, content,
                                      time.monotonic() + self._ttl,
                                      str(target) if self.path_allowed is not None else None)
             if _defer_reference:
@@ -160,7 +165,8 @@ class EvidenceSession:
                 handle = secrets.token_urlsafe(18)
                 self._observations[handle] = _Observation(
                     prepared.ref, prepared.digest, prepared.start, prepared.end,
-                    prepared.offset, stop, prepared.expires, prepared.target,
+                    prepared.offset, stop, prepared.whole_range, prepared.span_length,
+                    prepared.redacted, prepared.expires, prepared.target,
                 )
             result = {"path": prepared.ref, "start_line": prepared.start, "end_line": prepared.end,
                       "content": content, "evidence_ref": handle,

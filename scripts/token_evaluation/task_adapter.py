@@ -10,6 +10,7 @@ from pathlib import Path
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import TextContent
 
+from colony import task_mcp
 from colony.client import Client
 from colony.evidence_refs import EvidenceError
 from colony.task_mcp import TaskMCP
@@ -72,6 +73,19 @@ def create_server(home, repo, question, files, max_calls, *, read_only=False,
                 return research.annotate(result, admitted, denied)
 
     options = {} if context_budget is None else {'context_budget': context_budget}
+    # Historical installed targets use their own routing. The candidate gets only
+    # the host's existing public question, discovery boundary and real allowance.
+    route = getattr(task_mcp, 'containment_question', None)
+    if files is not None and direct_path is None and route and route(question):
+        def allowed(path):
+            try:
+                return research._path(path) is not None
+            except (OSError, ValueError, TypeError, RuntimeError):
+                return False
+
+        options.update(scope_files=research.allowed_files, scope_list_tool='fixture_files',
+                       remaining_units=lambda: research.max_calls - research.calls,
+                       read_path_allowed=allowed)
     server = BoundedTaskMCP(Workflow(Client(home), 'bench', repo, read_only=read_only), question,
                             direct_path=direct_path, remember=remember, **options)
     original_read = server.evidence.read

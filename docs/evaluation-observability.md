@@ -18,6 +18,12 @@ this reader does not make the current client expose per-response usage or alter 
 frozen collector's accepted format. Existing raw collectors already retain emitted
 JSONL; this explicit separate report can interpret additional receipts when available.
 
+Prospective contract `colony.token-evaluation/23` also includes `request_usage` in
+each attempt in the matched report, using the same reader for every arm. It accepts
+the two explicit response envelopes alongside ordinary native events. Missing counters
+and missing tool-to-response bindings stay unknown. Gross usage comes from the turn
+receipts. Historical protocols use their originally pinned collectors.
+
 Completed-tool-to-response grouping uses only explicit `response_id` fields, never event order.
 It reports validated lookup/cue presence, publication attempts/errors/stored or
 unknown outcomes, declared source counts and repeated observed excerpts. Attempts

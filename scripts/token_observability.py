@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
-from colony.report_io import bounded_bytes
+from colony.report_io import bounded_bytes, decode
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
@@ -115,7 +115,7 @@ def consistent_coverage(previous, observed):
 def analyze_bytes(source):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
-    events = [json.loads(line) for line in source.decode("utf-8").splitlines()]
+    events = [decode(line) for line in source.decode("utf-8").splitlines()]
     if any(not isinstance(e, dict) for e in events):
         raise ValueError("Native event must be an object")
     # Additional response receipts are observations, never extra billable turn totals.
