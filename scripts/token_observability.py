@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
-from colony.report_io import bounded_bytes
+from colony.report_io import bounded_bytes, decode
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
@@ -112,18 +112,54 @@ def consistent_coverage(previous, observed):
     return retained
 
 
-def analyze_bytes(source):
-    if len(source) > MAX_BYTES:
-        raise ValueError("Native log exceeds size limit")
-    events = [json.loads(line) for line in source.decode("utf-8").splitlines()]
-    if any(not isinstance(e, dict) for e in events):
-        raise ValueError("Native event must be an object")
-    # Additional response receipts are observations, never extra billable turn totals.
-    turn_bytes = "\n".join(
-        json.dumps(e, ensure_ascii=False) for e in events if e.get("type") not in RESPONSE_EVENTS
-    ).encode("utf-8")
-    authority = _native_usage_bytes(turn_bytes)
-    responses, started, duplicates, tool_groups = {}, set(), 0, {}
+def _response_metadata(events, authority):
+    responses, started, duplicates = {}, set(), 0
+    for event in events:
+        kind = event.get("type")
+        if kind not in RESPONSE_EVENTS:
+            continue
+        response = event.get("response")
+        if (
+            not isinstance(response, dict)
+            or not isinstance(response.get("id"), str)
+            or not response["id"]
+        ):
+            raise ValueError("Response receipt requires an ID")
+        identity = digest(response["id"])
+        if kind == "response.created":
+            started.add(identity)
+            continue
+        usage = response_usage(response)
+        if identity in responses:
+            if responses[identity] != usage:
+                raise ValueError("Conflicting duplicate response receipt")
+            duplicates += 1
+        responses[identity] = usage
+    complete_records = bool(responses) and all(
+        u is not None and all(u[k] is not None for k in FIELDS) for u in responses.values()
+    )
+    summed = (
+        {k: sum(u[k] for u in responses.values()) for k in FIELDS} if complete_records else None
+    )
+    reconciles = (
+        all(summed[k] == authority["known_usage"][k] for k in FIELDS)
+        if summed is not None and authority["usage_complete"]
+        else None
+    )
+    return {
+        "records": [{"response_id_sha256": k, "usage": u} for k, u in responses.items()],
+        "available": bool(responses),
+        "complete_records": complete_records,
+        "all_started_responses_completed": started <= responses.keys() if started else None,
+        "sum": summed,
+        "reconciles_with_turn_totals": reconciles,
+        "duplicate_receipts_ignored": duplicates,
+        "added_to_turn_totals": False,
+    }
+
+
+def _tool_metadata(events):
+    tool_groups = {}
     counts = dict.fromkeys(
         (
             "validated_lookup_hits",
@@ -145,25 +181,6 @@ def analyze_bytes(source):
     observed_calls = {}
     for event in events:
         kind = event.get("type")
-        if kind in RESPONSE_EVENTS:
-            response = event.get("response")
-            if (
-                not isinstance(response, dict)
-                or not isinstance(response.get("id"), str)
-                or not response["id"]
-            ):
-                raise ValueError("Response receipt requires an ID")
-            identity = digest(response["id"])
-            if kind == "response.created":
-                started.add(identity)
-                continue
-            usage = response_usage(response)
-            if identity in responses:
-                if responses[identity] != usage:
-                    raise ValueError("Conflicting duplicate response receipt")
-                duplicates += 1
-            responses[identity] = usage
-            continue
         if kind == "turn.started":
             covered = {}
             turn_index += 1
@@ -254,33 +271,41 @@ def analyze_bytes(source):
     counts["publication_incomplete"] = (
         counts["publication_attempts"] - counts["publication_completed"]
     )
-    complete_records = bool(responses) and all(
-        u is not None and all(u[k] is not None for k in FIELDS) for u in responses.values()
-    )
-    summed = (
-        {k: sum(u[k] for u in responses.values()) for k in FIELDS} if complete_records else None
-    )
-    reconciles = (
-        all(summed[k] == authority["known_usage"][k] for k in FIELDS)
-        if summed is not None and authority["usage_complete"]
-        else None
-    )
+    return counts, tool_groups or None, len(tools_seen) - sum(tool_groups.values())
+
+
+def analyze_bytes(source, *, optional_diagnostics=False):
+    if len(source) > MAX_BYTES:
+        raise ValueError("Native log exceeds size limit")
+    lines = source.decode("utf-8").splitlines()
+    events = [decode(line) for line in lines]
+    if any(not isinstance(e, dict) for e in events):
+        raise ValueError("Native event must be an object")
+    # Additional response receipts are observations, never extra billable turn totals.
+    # Preserve native JSON escapes in tool payloads. A malformed optional binding
+    # must not prevent a valid turn receipt from reaching the accounting reader.
+    turn_bytes = "\n".join(line for line, event in zip(lines, events, strict=True)
+                           if event.get("type") not in RESPONSE_EVENTS).encode("utf-8")
+    authority = _native_usage_bytes(turn_bytes)
+    try:
+        response = _response_metadata(events, authority)
+    except ValueError:
+        if not optional_diagnostics:
+            raise
+        response = None
+    try:
+        counts, groups, ungrouped = _tool_metadata(events)
+    except (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError):
+        if not optional_diagnostics:
+            raise
+        counts, groups, ungrouped = None, None, None
     return {
         "contract": "colony.token-observability/1",
         "events_sha256": hashlib.sha256(source).hexdigest(),
         "turn_accounting": authority,
-        "response_usage": {
-            "records": [{"response_id_sha256": k, "usage": u} for k, u in responses.items()],
-            "available": bool(responses),
-            "complete_records": complete_records,
-            "all_started_responses_completed": started <= responses.keys() if started else None,
-            "sum": summed,
-            "reconciles_with_turn_totals": reconciles,
-            "duplicate_receipts_ignored": duplicates,
-            "added_to_turn_totals": False,
-        },
-        "explicit_tool_response_groups": tool_groups or None,
-        "tool_calls_without_response_binding": len(tools_seen) - sum(tool_groups.values()),
+        "response_usage": response,
+        "explicit_tool_response_groups": groups,
+        "tool_calls_without_response_binding": ungrouped,
         "observations": counts,
         "semantic_source_coverage": "not_assessed",
         "limits": [

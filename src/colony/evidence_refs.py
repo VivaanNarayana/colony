@@ -5,6 +5,7 @@ import re
 import secrets
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from colony.models import Source
@@ -38,6 +39,7 @@ class _PreparedRead:
     offset: int
     span_length: int
     whole_range: bool
+    redacted: bool
     content: bytes
     expires: float
     target: str | None
@@ -59,8 +61,20 @@ class EvidenceSession:
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
+        self._deliveries = None
         self._closed = False
         self._lock = threading.RLock()
+
+    @contextmanager
+    def track_deliveries(self):
+        """Observe only finalized pages in one local operation, even without a publish handle."""
+        with self._lock:
+            previous = self._deliveries
+            self._deliveries = []
+            try:
+                yield self._deliveries
+            finally:
+                self._deliveries = previous
 
     def _identity(self):
         w = self.workflow
@@ -103,7 +117,7 @@ class EvidenceSession:
                 target, data = repo_contents(self.workflow.repo, path, path_allowed=self.path_allowed)
                 if len(data) > MAX_SOURCE_BYTES:
                     raise ValueError()
-                text = data.decode("utf-8")
+                original = text = data.decode("utf-8")
                 for pattern in PATTERNS:
                     text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
                 lines = text.splitlines()
@@ -126,9 +140,10 @@ class EvidenceSession:
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
-                                     offset, len(span), start == 1 and last == len(lines), content,
+                                     offset, len(span), start == 1 and last == len(lines),
+                                     text != original, content,
                                      time.monotonic() + self._ttl,
-                                     str(target) if self.path_allowed is not None else None)
+                                     str(target) if self.path_allowed is not None or self._deliveries is not None else None)
             if _defer_reference:
                 return prepared
             return self._complete_read(prepared, _max_bytes)
@@ -171,6 +186,8 @@ class EvidenceSession:
             if prepared.offset or stop < prepared.span_length:
                 result.update(start_offset=prepared.offset, end_offset=stop,
                               next_offset=stop if stop < prepared.span_length else None)
+            if self._deliveries is not None:
+                self._deliveries.append((result, content, prepared, stop))
             return result
 
     def read_batch(self, requests: list[dict]) -> list[dict]:

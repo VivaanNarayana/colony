@@ -20,6 +20,28 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
+For a task asking whether the repository contains something, a host with a fixed file
+inventory can pass one `--scope-file PATH` per authorized file. These flags restrict
+CLI source access to the listed paths. On a matching question, `source_files` lists the
+available files for one read unit. If the complete inventory fits within eight entries,
+16,000 source bytes and the known remaining units, the response includes the exact
+arguments for a single ordinary `read` batch. The caller can still use a positive memory
+hit or read an individual path. Embedded hosts can supply `scope_files`, `remaining_units`
+and the name of their existing newline-delimited inventory tool via `scope_list_tool`.
+Hosts with restricted reads should supply their metadata authorization predicate as
+`read_path_allowed`. Every batch entry and continuation uses the ordinary authorization
+and admission path.
+
+After a matching listing, `listed_scope` reports coverage of the fixed inventory as
+delivered, including inventories that require multiple batches. Full files and contiguous
+pages from the beginning of the same version count, including delivered trace pages.
+Coverage is tracked even when the publication reference cache is full.
+Denied, redacted and incomplete files leave gaps. A detected target or file metadata
+change invalidates earlier coverage. This receipt describes observations over the task,
+not an atomic snapshot of a live repository. For a point-in-time determination, bind
+the host inventory to an immutable checkout. Interpret the source text to answer
+containment and qualify any unverified scope.
+
 Answer guidance distinguishes concrete implementations from injected interfaces and total
 attempts from retries. For example, a concrete adapter allowing two attempts does not prove
 that an arbitrary injected transport has that limit; two total attempts permit one retry.

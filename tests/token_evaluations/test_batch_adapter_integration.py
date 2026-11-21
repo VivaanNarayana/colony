@@ -63,6 +63,31 @@ def batch_server(identity, monkeypatch):
         server.evidence.close()
 
 
+def test_containment_uses_disclosed_inventory_and_real_shared_budget(identity):
+    client, repo, _ = identity
+    paths = ["README.md", "adapter.py", "client.py", "handler.py", "settings.py"]
+    for path in paths:
+        (repo / path).write_text("local fixture")
+    server = create_server(client.home, repo, "Does this repo contain the measurement?", paths, 6,
+                           read_only=True)
+    if not hasattr(server, "_scope"):
+        pytest.skip("Historical target has no source scope planner")
+    try:
+        listed = asyncio.run(server.call_tool("fixture_files", {})).content
+        assert listed[0].text.splitlines() == paths
+        assert json.loads(listed[-1].text)["research_budget"]["remaining"] == 5
+        action = json.loads(listed[1].text)["scope_read_plan"]
+        response = asyncio.run(server.call_tool(action["next_tool"], action["arguments"]))
+        assert json.loads(response[0].text)["listed_scope"] == {"status": "complete", "listed_files": 5}
+        assert json.loads(response[-1].text)["research_budget"] == {
+            "admitted": 5, "denied": 0, "succeeded": 5, "remaining": 0,
+        }
+        with pytest.raises(ValueError, match="Research call limit"):
+            asyncio.run(server.call_tool("fixture_search", {"query": "measurement"}))
+    finally:
+        server.evidence.close()
+
+
 @pytest.mark.parametrize('serialized', [False, True])
 def test_real_batch_shares_quota_and_preserves_per_entry_errors(batch_server, identity, serialized):
     _, repo, _ = identity

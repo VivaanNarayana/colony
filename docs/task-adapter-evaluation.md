@@ -1,6 +1,6 @@
 # Prospective task-adapter evaluation
 
-Contract `colony.token-evaluation/19` requires an explicit `--adapter ordinary|task`
+Contract `colony.token-evaluation/23` requires an explicit `--adapter ordinary|task`
 and, for a three-arm campaign, `--main-adapter ordinary|task`. The choice, target
 revision, options, collector, client and workload bytes are frozen together. Old
 contracts require their original pinned collectors; do not upgrade or regrade

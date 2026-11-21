@@ -23,6 +23,41 @@ def usage(n=100):
     return {"input_tokens": n, "cached_input_tokens": n // 2, "output_tokens": 10}
 
 
+def test_prospective_reader_preserves_turn_totals_and_explicit_request_metadata(tmp_path):
+    from token_evaluation.usage import native_usage
+
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn()))
+    missing = native_usage(path, request_metadata=True)
+    assert missing["request_usage"]["status"] == "unavailable"
+    response = {"type": "response.completed", "response": {"id": "r1", "usage": usage()}}
+    item = {"type": "item.completed", "response_id": "r1",
+            "item": {"type": "mcp_tool_call", "id": "t1", "server": "colony", "tool": "read"}}
+    path.write_bytes(raw(turn([response, item])))
+    observed = native_usage(path, request_metadata=True)
+    assert observed["known_usage"] == missing["known_usage"] == native_usage(path)["known_usage"]
+    metadata = observed["request_usage"]
+    assert metadata["records"][0]["usage"] == usage()
+    assert metadata["tool_groups"] == {metadata["records"][0]["response_id_sha256"]: 1}
+    assert metadata["reconciles_with_turn_totals"] is True
+    del item["item"]["id"]
+    path.write_bytes(raw(turn([response, item])))
+    incomplete = native_usage(path, request_metadata=True)
+    assert native_usage(path)["known_usage"] == incomplete["known_usage"] == missing["known_usage"]
+    assert incomplete["request_usage"]["records"] == metadata["records"]
+    assert incomplete["request_usage"]["tool_groups"] is None
+    item["item"]["id"] = "t1"
+    item["response_id"] = "\ud800"
+    path.write_bytes(raw(turn([response, item])))
+    malformed = native_usage(path, request_metadata=True)
+    assert native_usage(path)["known_usage"] == malformed["known_usage"] == missing["known_usage"]
+    assert malformed["request_usage"]["records"] == metadata["records"]
+    assert malformed["request_usage"]["tool_groups"] is None
+    path.write_bytes(raw(turn([response, {"type": "unexpected.event"}])))
+    with pytest.raises(ValueError, match="Unsupported native event format"):
+        native_usage(path)
+
+
 def turn(items=(), counters=None):
     return [
         {"type": "turn.started"},
