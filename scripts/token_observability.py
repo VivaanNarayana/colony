@@ -277,13 +277,15 @@ def _tool_metadata(events):
 def analyze_bytes(source, *, optional_diagnostics=False):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
-    events = [decode(line) for line in source.decode("utf-8").splitlines()]
+    lines = source.decode("utf-8").splitlines()
+    events = [decode(line) for line in lines]
     if any(not isinstance(e, dict) for e in events):
         raise ValueError("Native event must be an object")
     # Additional response receipts are observations, never extra billable turn totals.
-    turn_bytes = "\n".join(
-        json.dumps(e, ensure_ascii=False) for e in events if e.get("type") not in RESPONSE_EVENTS
-    ).encode("utf-8")
+    # Preserve native JSON escapes in tool payloads. A malformed optional binding
+    # must not prevent a valid turn receipt from reaching the accounting reader.
+    turn_bytes = "\n".join(line for line, event in zip(lines, events, strict=True)
+                           if event.get("type") not in RESPONSE_EVENTS).encode("utf-8")
     authority = _native_usage_bytes(turn_bytes)
     try:
         response = _response_metadata(events, authority)
