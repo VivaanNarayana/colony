@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass
 
+from colony.evidence_refs import BATCH_CONTENT_BYTES
 from colony.task_reads import _public_path
 from colony.validation import repo_file
 
@@ -13,13 +14,21 @@ _ANSWER_FORMAT = (
     r"|yes\s*+(?:or|/)\s*+no|true\s*+(?:or|/)\s*+false|briefly)"
 )
 _ANSWER_SUFFIX = rf"(?:\s*+(?:\(\s*+{_ANSWER_FORMAT}\s*+\)|[,;]\s*+{_ANSWER_FORMAT}))?"
-# Bare "if" introduces a condition. Only an explicit request to check it needs an inventory.
-_CHECK_IF = (
-    r"(?:^|[?!.:;,]|\b(?:and|then)\b)\s*(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?"
-    r"(?:check|confirm|determine|verify|state|report|see|find\s+out|tell\s+(?:me|us))\s+if"
+# A subordinate clause can describe the code's behavior. Route an explicit request
+# to determine existence, such as "state whether", "check if", or "I want to know if".
+_CHECK = r"(?:check|confirm|determine|verify|state|report|see|find\s+out|tell\s+(?:me|us))"
+# Allow a short preceding imperative in the same sentence, including a dotted filename.
+_SEQUENCE = (
+    r"(?:(?:read|inspect|review|summarize|trace|list)\s+(?:[^?!.;:,\n]|\.(?=\w)){1,200}?"
+    r"\s+(?:and(?:\s+then)?|then)\s+)?"
+)
+_EXISTENCE_REQUEST = (
+    r"(?:^|[?!.:;,])\s*(?:(?:and\s+then|and|then)\s+)?"
+    rf"(?:(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?{_SEQUENCE}{_CHECK}"
+    r"|i\s+(?:want|need)\s+to\s+know|do\s+you\s+know)\s+(?:whether|if)"
 )
 _CONTAINMENT = re.compile(
-    rf"(?:\bwhether|{_CHECK_IF}|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
+    rf"(?:{_EXISTENCE_REQUEST}|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
     rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b"
     rf"(?={_ANSWER_SUFFIX}\s*+(?:[?!.]|$))",
     re.IGNORECASE,
@@ -41,16 +50,12 @@ class _Coverage:
     digest: str
     stop: int
     at_eof: bool
-    redacted_bytes_left: int | None
+    redacted: bool
+    bytes_left: int
 
     @property
     def complete(self):
-        return self.at_eof and self.redacted_bytes_left is None
-
-    def remaining_bytes_bound(self, file_size):
-        if self.redacted_bytes_left is not None:
-            return self.redacted_bytes_left
-        return file_size - self.stop
+        return self.at_eof and not self.redacted
 
 
 class SourceScope:
@@ -118,8 +123,8 @@ class SourceScope:
                 return partial
             coverage = self.covered.get(path)
             file_size = version[-1]
-            remaining_bytes += coverage.remaining_bytes_bound(file_size) if coverage else file_size
-            if remaining_bytes > 16000:
+            remaining_bytes += coverage.bytes_left if coverage else file_size
+            if remaining_bytes > BATCH_CONTENT_BYTES:
                 return partial
             entry = {"path": path}
             if coverage and coverage.stop:
@@ -146,15 +151,14 @@ class SourceScope:
             if prior and prior.digest != page.digest:
                 del self.covered[path]
                 prior = None
-            if not page.whole_range:
+            if not page.whole_range or page.planning_bytes_from_offset is None:
                 continue
             stop = prior.stop if prior else 0
             if page.offset <= stop <= end_offset:
-                redacted_bytes_left = page.redacted_bytes_from_offset
-                if redacted_bytes_left is not None:
-                    redacted_bytes_left -= len(result["content"].encode("utf-8"))
+                bytes_left = min(BATCH_CONTENT_BYTES + 1,
+                                 page.planning_bytes_from_offset - len(result["content"].encode("utf-8")))
                 self.covered[path] = _Coverage(after[path], page.digest, end_offset,
-                                               end_offset == page.span_length, redacted_bytes_left)
+                                               end_offset == page.span_length, page.redacted, bytes_left)
         missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)
         result = {"status": "partial" if missing else "complete", "listed_files": len(self.paths)}
         if missing:

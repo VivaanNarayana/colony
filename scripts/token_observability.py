@@ -112,31 +112,43 @@ def consistent_coverage(previous, observed):
     return retained
 
 
-def _response_metadata(events, authority):
+def _response_metadata(events, authority, *, optional=False):
     responses, started, duplicates = {}, set(), 0
+    unidentified = set()
+    invalid_completions = set()
     for event in events:
         kind = event.get("type")
         if kind not in RESPONSE_EVENTS:
             continue
         response = event.get("response")
-        if (
-            not isinstance(response, dict)
-            or not isinstance(response.get("id"), str)
-            or not response["id"]
-        ):
-            raise ValueError("Response receipt requires an ID")
-        identity = digest(response["id"])
-        if kind == "response.created":
-            started.add(identity)
-            continue
-        usage = response_usage(response)
-        if identity in responses:
-            if responses[identity] != usage:
-                raise ValueError("Conflicting duplicate response receipt")
-            duplicates += 1
-        responses[identity] = usage
-    complete_records = bool(responses) and all(
-        u is not None and all(u[k] is not None for k in FIELDS) for u in responses.values()
+        identity = None
+        try:
+            if not isinstance(response, dict) or not isinstance(response.get("id"), str) or not response["id"]:
+                raise ValueError("Response receipt requires an ID")
+            identity = digest(response["id"])
+            if kind == "response.created":
+                started.add(identity)
+                continue
+            if identity in invalid_completions:
+                continue
+            usage = response_usage(response)
+            if identity in responses:
+                if responses[identity] != usage:
+                    raise ValueError("Conflicting duplicate response receipt")
+                duplicates += 1
+            responses[identity] = usage
+        except ValueError:
+            if not optional:
+                raise
+            if identity is None:
+                unidentified.add(kind)
+            else:
+                # A disputed completion cannot supply counts, including on replay.
+                responses.pop(identity, None)
+                invalid_completions.add(identity)
+    complete_records = (
+        bool(responses) and not invalid_completions and "response.completed" not in unidentified
+        and all(u is not None and all(u[k] is not None for k in FIELDS) for u in responses.values())
     )
     summed = (
         {k: sum(u[k] for u in responses.values()) for k in FIELDS} if complete_records else None
@@ -150,7 +162,9 @@ def _response_metadata(events, authority):
         "records": [{"response_id_sha256": k, "usage": u} for k, u in responses.items()],
         "available": bool(responses),
         "complete_records": complete_records,
-        "all_started_responses_completed": started <= responses.keys() if started else None,
+        "all_started_responses_completed": (
+            started <= (responses.keys() | invalid_completions) if started and not unidentified else None
+        ),
         "sum": summed,
         "reconciles_with_turn_totals": reconciles,
         "duplicate_receipts_ignored": duplicates,
@@ -291,12 +305,7 @@ def analyze_bytes(source, *, optional_diagnostics=False):
     turn_bytes = "\n".join(line for line, event in zip(lines, events, strict=True)
                            if event.get("type") not in RESPONSE_EVENTS).encode("utf-8")
     authority = _native_usage_bytes(turn_bytes)
-    try:
-        response = _response_metadata(events, authority)
-    except ValueError:
-        if not optional_diagnostics:
-            raise
-        response = None
+    response = _response_metadata(events, authority, optional=optional_diagnostics)
     try:
         counts, groups, ungrouped = _tool_metadata(events)
     except (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError):

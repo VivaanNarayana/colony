@@ -12,6 +12,8 @@ from colony.models import Source
 from colony.security import PATTERNS, fingerprint, scrub, verify
 from colony.validation import MAX_SOURCE_BYTES, PinnedSourcePaths, repo_contents, repo_file
 
+BATCH_CONTENT_BYTES = 16_000
+
 
 class EvidenceError(ValueError):
     """Fixed public error; never includes rejected paths or source content."""
@@ -79,7 +81,8 @@ class _PreparedRead:
     offset: int
     span_length: int
     whole_range: bool
-    redacted_bytes_from_offset: int | None
+    redacted: bool
+    planning_bytes_from_offset: int | None
     content: bytes
     expires: float
     target: str | None
@@ -140,7 +143,7 @@ class EvidenceSession:
             raise EvidenceError("Evidence session permission unavailable") from None
 
     def read(self, path: str, start: int = 1, end: int | None = None, *, offset: int = 0,
-             _max_bytes: int = 16000, _defer_reference: bool = False) -> dict | _PreparedRead:
+             _max_bytes: int = BATCH_CONTENT_BYTES, _defer_reference: bool = False) -> dict | _PreparedRead:
         """Read a bounded exact span; scrub whole-file secrets before slicing.
 
         Large spans return a UTF-8-safe page and next_offset. Offsets count
@@ -153,7 +156,7 @@ class EvidenceSession:
                 type(offset) is not int or offset < 0
                 or type(start) is not int or start < 1
                 or (end is not None and (type(end) is not int or end < start))
-                or type(_max_bytes) is not int or not 4 <= _max_bytes <= 16000
+                or type(_max_bytes) is not int or not 4 <= _max_bytes <= BATCH_CONTENT_BYTES
                 or type(_defer_reference) is not bool
             ):
                 raise EvidenceError("Invalid evidence range")
@@ -183,14 +186,16 @@ class EvidenceSession:
                 raise
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
-            redacted_bytes = None
-            if text != original:
-                # Scrubbing can expand or shrink the source. Continuation offsets
-                # count characters, while a shared batch is limited in UTF-8 bytes.
-                redacted_bytes = len(span) - offset if span.isascii() else len(span[offset:].encode("utf-8"))
+            whole_range = start == 1 and last == len(lines)
+            planning_bytes = None
+            if self._deliveries is not None and whole_range:
+                # Each character uses at least one byte. Beyond this page plus one
+                # batch, the remaining suffix cannot fit even if this page is delivered in full.
+                window = span[offset:offset + _max_bytes + BATCH_CONTENT_BYTES + 1]
+                planning_bytes = len(window) if window.isascii() else len(window.encode("utf-8"))
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
-                                     offset, len(span), start == 1 and last == len(lines),
-                                     redacted_bytes, content,
+                                     offset, len(span), whole_range, text != original,
+                                     planning_bytes, content,
                                      time.monotonic() + self._ttl,
                                      str(target) if self.path_allowed is not None or self._deliveries is not None else None)
             if _defer_reference:
@@ -202,7 +207,7 @@ class EvidenceSession:
         with self._lock:
             self._authorize()
             if (not isinstance(prepared, _PreparedRead) or prepared.owner is not self
-                    or type(max_bytes) is not int or not 0 <= max_bytes <= 16000):
+                    or type(max_bytes) is not int or not 0 <= max_bytes <= BATCH_CONTENT_BYTES):
                 raise EvidenceError("Invalid prepared evidence")
             if prepared.target is not None or self.path_allowed is not None:
                 try:
@@ -257,7 +262,7 @@ class EvidenceSession:
                     prepared.append(None)
             sizes = [len(p.content) if p is not None else 0 for p in prepared]
             allowances = [0] * len(sizes)
-            remaining = 16000
+            remaining = BATCH_CONTENT_BYTES
             active = [i for i, size in enumerate(sizes) if size]
             while active and remaining:
                 share, extra = divmod(remaining, len(active))

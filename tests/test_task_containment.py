@@ -179,6 +179,41 @@ def test_relisting_plans_only_the_undelivered_suffixes(identity):
     assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
 
 
+@pytest.mark.parametrize("text", ["水" * 8000, "🌱" * 6000, "水\r\n" * 8000],
+                         ids=["three-byte", "four-byte", "normalized-lines"])
+def test_relisting_plans_a_multibyte_continuation_with_one_unit_left(identity, text):
+    _, repo, _ = identity
+    path = repo / "inventory.txt"
+    path.write_bytes(text.encode("utf-8"))
+    units = [True] * 4
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    assert plan(server)["status"] == "partial"
+    first = read(server, path=path.name)
+    action = plan(server)
+    assert len(units) == 1
+    assert action["arguments"] == {"batch": [{"path": path.name, "offset": first["next_offset"]}]}
+    tail = read(server, **action["arguments"])
+    assert tail["listed_scope"] == {"status": "complete", "listed_files": 1}
+    assert first["content"] + tail["results"][0]["content"] == "\n".join(text.splitlines())
+    assert not units
+
+
+def test_overlapping_multibyte_pages_do_not_double_count_delivered_bytes(identity):
+    _, repo, _ = identity
+    path = repo / "inventory.txt"
+    path.write_bytes(("🌱" * 12500).encode("utf-8"))
+    server = create(identity, [path.name])
+    assert plan(server)["status"] == "partial"
+    assert read(server, path=path.name)["next_offset"] == 4000
+    assert read(server, path=path.name, offset=3000)["next_offset"] == 7000
+    assert plan(server)["status"] == "partial"  # 22,000 bytes remain.
+    assert read(server, path=path.name, offset=6900)["next_offset"] == 10900
+    args = plan(server)["arguments"]
+    assert args == {"batch": [{"path": path.name, "offset": 10900}]}
+    assert read(server, **args)["listed_scope"]["status"] == "complete"
+
+
 @pytest.mark.parametrize("altered", [False, True])
 def test_host_copied_pages_need_intact_fields_for_coverage(identity, monkeypatch, altered):
     paths = {"settings.py"}
@@ -260,6 +295,11 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
     ("What should I check if this repository contains a timeout?", None),
     ("Does the script check if the project defines a timeout?", None),
     ("If the project defines a timeout, explain its retry behavior.", None),
+    ("Explain how settings.py handles retries regardless of whether the project defines a timeout.", None),
+    ("How does settings.py check whether the project defines a timeout?", None),
+    ("How does settings.py load and check whether the project defines a timeout?", None),
+    ("Read settings.py. How does the caller log and check whether the project defines a timeout?", None),
+    ("Whether the project defines a timeout or not, explain the retry order.", None),
     (QUESTION, "settings.py"),
 ])
 def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, direct):
@@ -276,6 +316,9 @@ def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, 
     "Does the project define a timeout?", "Check if the project defines a timeout.",
     "Can you check if the project defines a timeout?", "Please tell me if the repo contains a timeout.",
     "Read the policy, then verify if this repository documents the default.",
+    "State whether the project defines a timeout.", "Could you tell me whether this repo defines a timeout?",
+    "I want to know whether the project defines a timeout.",
+    "Read settings.py and check whether this project defines a timeout.",
     "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
     "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
     "Is the timeout in this repository (answer with yes or no)?",

@@ -21,7 +21,9 @@ JSONL; this explicit separate report can interpret additional receipts when avai
 Prospective contract `colony.token-evaluation/23` also includes `request_usage` in
 each attempt in the matched report, using the same reader for every arm. It accepts
 the two explicit response envelopes alongside ordinary native events. Missing counters
-and missing tool-to-response bindings stay unknown. Gross usage comes from the turn
+and missing tool-to-response bindings stay unknown. If a completion receipt is
+unreadable or conflicting, the matched report retains independently observed
+response IDs and counts and leaves reconciliation unknown. Gross usage comes from the turn
 receipts. Historical protocols use their originally pinned collectors.
 
 Completed-tool-to-response grouping uses only explicit `response_id` fields, never event order.

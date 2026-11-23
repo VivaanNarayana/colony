@@ -72,6 +72,47 @@ def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
             analyze_bytes(path.read_bytes())
 
 
+@pytest.mark.parametrize("unreadable_first", [True, False])
+def test_matched_reader_keeps_independent_receipts_when_one_is_too_deep(tmp_path, unreadable_first):
+    from token_evaluation.usage import native_usage
+
+    half = {"input_tokens": 50, "cached_input_tokens": 25, "output_tokens": 5}
+    good = response("first", half)
+    deep = []
+    for _ in range(70):
+        deep = [deep]
+    other = {**response("second", half), "unused": deep}
+    completions = [other, good] if unreadable_first else [good, other]
+    events = [{"type": "response.created", "response": {"id": "second"}}, *completions]
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn(events)))
+    result = native_usage(path, request_metadata=True)
+    assert result["known_usage"]["gross_tokens"] == 110 and result["usage_complete"]
+    metadata = result["request_usage"]
+    assert metadata["status"] == "observed"
+    assert metadata["records"] == analyze_bytes(raw(turn([good])))["response_usage"]["records"]
+    assert metadata["complete_records"] is False
+    assert metadata["reconciles_with_turn_totals"] is None
+    assert metadata["all_started_responses_completed"] is None
+    assert analyze_bytes(path.read_bytes())["response_usage"]["reconciles_with_turn_totals"] is True
+
+
+@pytest.mark.parametrize("other_counts", [usage(60), {"input_tokens": -1}])
+def test_matched_reader_quarantines_only_disputed_response_counts(other_counts):
+    good = response("good")
+    disputed = response("disputed", usage(50))
+    events = [{"type": "response.created", "response": {"id": "disputed"}},
+              good, disputed, response("disputed", other_counts), disputed]
+    report = analyze_bytes(raw(turn(events)), optional_diagnostics=True)
+    metadata = report["response_usage"]
+    assert metadata["records"] == analyze_bytes(raw(turn([good])))["response_usage"]["records"]
+    assert metadata["all_started_responses_completed"] is True
+    assert not metadata["complete_records"] and metadata["sum"] is None
+    assert metadata["reconciles_with_turn_totals"] is None
+    with pytest.raises(ValueError):
+        analyze_bytes(raw(turn(events)))
+
+
 def test_optional_envelope_beyond_python_recursion_limit(tmp_path):
     from token_evaluation.report import activity, extract_answer
     from token_evaluation.usage import native_usage
