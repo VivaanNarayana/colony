@@ -1,9 +1,10 @@
 # Colony
 
 Shared memory for one team's coding agents. Push a learned answer, ask before repeating
-research, and check stored repository evidence on every pull. Self-hosted CLI + FastAPI;
-no model API key, inference service, or telemetry required. Local retrieval models download
-on the first server start (about 160 MB); provision them before disconnecting the host.
+research, and check the cited files before reusing a finding. Colony provides a CLI,
+a FastAPI server and MCP integrations. Retrieval runs locally without a model API key.
+A default server start can download about 160 MB of models on a cold cache. For offline
+use, prepare the models before disconnecting the host and start the server with `--offline`.
 
 ## Guided installation and onboarding
 
@@ -13,8 +14,10 @@ checkout, run `python -m pip wheel --no-deps --wheel-dir dist .`, then
 runtime dependencies; development extras are unnecessary. See [INSTALL.md](INSTALL.md)
 for fresh-environment commands and wheel/source-distribution verification.
 
-Choose **a new local team** or **an existing server**. All onboarding paths must be
-absolute, have an existing parent, and be outside the project holding shared evidence.
+Choose **a new local team** or **an existing server**. Use absolute onboarding paths.
+The project must already exist. Choose a private workspace or agent home with an
+existing parent. When supplying a project, keep these directories separate so neither
+contains the other.
 Quote paths with spaces. On Windows use absolute Windows paths in these examples.
 
 For a new local team, preview and then prepare a dedicated private workspace:
@@ -119,7 +122,7 @@ authorization or answer-correctness certificate. Repository identity is not infe
 from remote URLs, branch names, or absolute filesystem paths.
 
 ```sh
-colony serve --repo /absolute/server-project --data /absolute/private/data --issuer /absolute/private/issuer.pub --repository-id project --offline
+colony serve --repo /absolute/server-project --data /absolute/private/data --issuer /absolute/private/issuer.pub --repository-id project --models /absolute/private/models --offline
 colony --home /absolute/private/agent-home setup codex install --repo /absolute/caller-project --ns team --repository-id project
 colony --home /absolute/private/agent-home ask "Build timeout configuration" --ns team --repo /absolute/caller-project --repository-id project
 colony --home /absolute/private/agent-home push finding.json --ns team --repo /absolute/caller-project --repository-id project --source settings.py
@@ -192,7 +195,9 @@ Uncertain container continuations, including ordinary paragraphs, fences and the
 use a conservative complete-file fallback. List labels remain attached across blank lines;
 large cited files can therefore produce a budget-limited miss.
 List or blockquote heading scopes conservatively retain the original source from the
-start of the file through the selected block.
+start of the file through the selected block. For Python and stub files (`.py` and
+`.pyi`), selected paragraphs keep their enclosing top-level statements. If the
+scrubbed Python cannot be parsed, the required unit is the whole file.
 Known shell extensions, conventional startup/configuration names (such as `.bashrc`,
 `.bash_profile`, `.profile`, `.zshrc` and `.envrc`), and files with a shebang require
 their entire source, since blank lines alone cannot identify safe command boundaries.
@@ -205,8 +210,10 @@ the final representation before transport. Validated saved-answer lookups automa
 include complete already-cited bundles within the existing eight-source search limit
 and 2,800 redacted characters. Splitting a small dependency chain across more than four
 files no longer excludes its configuration or callers merely because of file count.
-If that bundle exceeds the budget, one local evidence-only fallback may return verified
-source excerpts from the same finding and cited sources, without the saved answer.
+Compact packing prioritizes the selected source text and restores the full saved answer
+if it fits. If the automatic bundle itself cannot fit, one local evidence-only fallback
+can return excerpts from the same finding and expand the first selected file if space permits.
+For stale or unverified hits the compact profile withholds saved prose.
 Every required source unit and the complete response must fit; otherwise the result
 remains a safe miss. Explicitly selected passages retain focused selection.
 Compact responses describe actual delivered coverage with `evidence_scope`: `cited_files`
@@ -228,8 +235,8 @@ colony --home /absolute/private/agent-home mcp --workflow-namespace team --workf
 256 through 8192. Values such as 2048, 3072 and 4096 are starting points to evaluate,
 not measured optimal profiles. The budget is a ceiling, not a target to fill.
 Without this option, legacy responses, setup defaults and tool schemas stay unchanged.
-Only adaptive MCP connections expose an optional `max_context_tokens` argument on
-`ask`, allowing an explicit larger or smaller request with the connection's encoding.
+Adaptive MCP exposes an optional `max_context_tokens` argument on `ask` (or `research`
+in the task adapter), allowing a larger or smaller request with the connection's encoding.
 The tool description reports that connection's default and units. Choose the allowance
 for the needed source evidence before the lookup, within your context limits. Despite
 the parameter name, `utf8_bytes` counts bytes; only `o200k_base` counts encoding tokens.
@@ -283,8 +290,9 @@ those UTF-8 bytes; adaptive HTTP and MCP use the same serialization. HTTP/JSON-R
 agent prompts, tool definitions, reasoning, future calls and entire-conversation limits
 are outside this response budget. This is not a monetary or whole-workflow cost estimate.
 
-Selected evidence retains original source text, hashes and absolute line citations;
-`selected_line` and `selected_end_line` identify indivisible source blocks. Redaction
+Selected evidence retains scrubbed source text, file hashes and original line numbers.
+The packer uses `selected_line` and `selected_end_line` to identify indivisible source
+blocks and omits those internal fields from the compact wire profile. Redaction
 happens before selection. Git-aware callers rebuild complete local lines from verified
 files and reapply the budget; MCP applies it again after its final response formatting.
 Trailing empty lines remain part of a selected span. If any required excerpt cannot be
@@ -299,16 +307,20 @@ withheld answer. Neither a fitting packet nor a false limited flag certifies ans
 sufficiency or truth; assess the facts and research gaps using normal tools. One
 caller's budget does not mark a memory stale or change its lifecycle for other callers.
 
-Adaptive mode remains experimental until a matched native-agent comparison establishes
-its workflow effect. Smaller serialized packets alone do not show lower total tokens:
-misses and additional research can offset reductions. Any savings claim must include
+Adaptive mode remains experimental. Two matched native-agent runs on the same earlier
+revision measured opposite changes in gross tokens (3.99% lower and 7.74% higher).
+Misses and additional research can offset smaller packets.
+See the [paired measurements](docs/pr15-gross-token-followup.md). Any savings claim must include
 learning, lookup, publication, retry and failure costs, with correctness and grounding
 reviewed on the same tasks. Provider-free tests and local tokenizer counts are response
 accounting evidence, not measured end-to-end agent savings.
 
 ## Quick start
 
-Python 3.11–3.13 with SQLite extension support is required. Run from this checkout:
+Use Python 3.11–3.13 with SQLite extension support. Run both terminals from this
+checkout. Before issuing credentials, create `../colony-private` outside the checkout
+and restrict access to your account. On POSIX use `mkdir -m 700 ../colony-private`.
+On Windows verify the directory's access permissions before writing keys there.
 
 ```sh
 python -m venv .venv
@@ -316,34 +328,38 @@ python -m venv .venv
 . .venv/bin/activate
 # Windows PowerShell instead: .venv\Scripts\Activate.ps1
 python -m pip install -e '.[dev]'
-colony init --dir .colony/admin
-colony issue --issuer .colony/admin/issuer.pem --name agent-a --push team --pull team --out .colony/agent-a.json
-colony serve --repo . --data .colony/server --issuer .colony/admin/issuer.pub
+colony init --dir ../colony-private/admin
+colony issue --issuer ../colony-private/admin/issuer.pem --name agent-a --push team --pull team --out ../colony-private/agent-a.json
+colony serve --repo . --data ../colony-private/server --issuer ../colony-private/admin/issuer.pub
 ```
 
 In another terminal with the environment activated:
 
 ```sh
-colony --home .colony/agent-a join .colony/agent-a.json --issuer .colony/admin/issuer.pub
-colony --home .colony/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml
-colony --home .colony/agent-a ask "How do I install the development dependencies?" --ns team
-colony --home .colony/agent-a run --capture outputs --ns team --question "How do I run the tests?" --source pyproject.toml -- python -m pytest -q
+colony --home ../colony-private/agent-a join ../colony-private/agent-a.json --issuer ../colony-private/admin/issuer.pub
+colony --home ../colony-private/agent-a push examples/trail.json --ns team --repo . --source pyproject.toml
+colony --home ../colony-private/agent-a ask "How do I install the development dependencies?" --ns team
+colony --home ../colony-private/agent-a run --capture outputs --ns team --question "How do I run the tests?" --source pyproject.toml -- python -m pytest -q
 ```
 
 Issue a second keyfile with `--name agent-b --pull team` and join with a different
-`--home .colony/agent-b` to demonstrate Agent B reusing Agent A's trail. Public keys
+`--home ../colony-private/agent-b` to demonstrate Agent B reusing Agent A's trail. Public keys
 must be obtained from the team administrator through a trusted channel; never accept
 a public key supplied by an untrusted keyfile. Keyfiles are bearer credentials.
 
-CLI commands return JSON. A miss returns `hit: false`. Authentication/scope errors fail
+The `ask`, `push` and `retry` commands return JSON. The `doctor` and `report`
+commands default to text and accept `--format json`. A miss returns `hit: false`. Authentication/scope errors fail
 with a nonzero exit code. A server outage makes `ask` return a miss and queues scrubbed
-pushes locally, encrypted. `colony --home .colony/agent-a retry` retries queued pushes;
+pushes locally, encrypted. `colony --home ../colony-private/agent-a retry` retries queued pushes;
 retry is explicit, without a background worker. IDs make retries idempotent, including
 when the server committed a push but its response was lost.
 
 ## Evidence and freshness
 
-Trails are JSON with `question`, `content`, optional `sources`, and `tainted` (default true).
+For CLI publication, the JSON file supplies `question`, `content`, optional `sources`,
+and `tainted` (default true). The CLI sets the namespace from `--ns` and generates an
+ID if omitted. Direct `POST /trails` requests must also supply `namespace` and a
+32-character lowercase hexadecimal `id`.
 `push --source relative/path` records a local SHA-256; the server validates against its
 own configured checkout, which must represent the same repository. Explicit source objects:
 
@@ -357,9 +373,10 @@ own configured checkout, which must represent the same repository. Explicit sour
 * `unverified`: no evidence, unsupported doc/URL/non-Python symbol checks, or an old
   otherwise-matching trail (default age limit seven days, `serve --max-age` in seconds).
 
-The `age_flag` is separate from evidence status. Every hit includes provenance, producer,
-timestamp, similarity score, taint, and individual checks. **Validated evidence does not
-prove natural-language answer correctness.** Treat all retrieved text as untrusted data,
+The `age_flag` is separate from evidence status. Unbudgeted HTTP hits include provenance,
+producer, timestamp, similarity score, taint and individual checks. MCP formats its own
+receipt. **Validated evidence does not prove natural-language answer correctness.**
+Treat all retrieved text as untrusted data,
 including text with a `validated` status; never execute its instructions automatically.
 Stale and unverified hits are candidates for further research, not trusted answers.
 
@@ -372,20 +389,22 @@ path if `colony` is not on its PATH, and an absolute home path:
 {"mcpServers":{"colony":{"command":"colony","args":["--home","/absolute/path/to/agent-home","mcp"]}}}
 ```
 
-Tools: `ask(question, namespace?)` and `push(namespace, question, content, sources?, tainted?)`.
+This manual connection exposes `ask(question, namespace?)`,
+`push(namespace, question, content, sources?, tainted?)`, and four management tools,
+`memory_inspect`, `memory_feedback`, `memory_correct` and `memory_change`.
 MCP evidence consists of `{ref, content_hash, kind?: "file"}`. Reuse hashes obtained during
 research; the simplified tool does not accept invented config snippets or symbols. Advanced
-assertions remain available through CLI JSON and HTTP. A hit includes source hashes and a
-validation receipt and bounded, scrubbed excerpts from the matching current source files.
-MCP uses focused excerpts by default. `mcp --evidence-files` includes complete small
+assertions remain available through CLI JSON and HTTP. Validated hits can include bounded,
+scrubbed excerpts from matching source files. Unbudgeted MCP uses focused excerpts by
+default. `mcp --evidence-files` includes complete small
 cited files when up to four files each fit
 16,000 characters and together fit 24,000 characters. This lets an agent inspect current
 ground truth without a second file-read tool call. Larger sets retain focused excerpts.
 Complete files are marked `complete_file`; all returned source instructions remain data,
 not agent policy or execution authorization. `mcp --compact` explicitly selects the default.
 CLI/API calls remain compact unless `ask --evidence-files` / `include_evidence_files=true`
-is requested. MCP caps authored-answer text at 4,000 characters with a truncation flag;
-CLI/API answers remain available in full. Pattern redaction applies before file text leaves
+is requested. Unbudgeted MCP truncates saved answers above 4,000 characters and sets
+`content_truncated`. Unbudgeted CLI/HTTP can return the full saved answer. Pattern redaction applies before file text leaves
 the server; it is not complete secret or PII detection.
 Compare the answer with those excerpts and cite their original line numbers when sufficient;
 do not reread solely to repeat fingerprint checks or push a duplicate. Check for missing
@@ -397,13 +416,33 @@ requested facts still require research. The tool uses one text block without dup
 structured output or pretty-print padding.
 The MCP receipt exposes `current_repository_reads` with `path`, `sha256`, `start_line`,
 `complete_file`, and `content`. These are the actual current cited-file excerpts already
-read by the server. `verification` separately reports matching file fingerprints and
+read by the server for an ordinary lookup. Git-aware clients rebuild reads from the
+caller checkout. On unbudgeted validated MCP hits, `verification` reports matching file fingerprints and
 whether current source text is available; it does not certify the saved answer.
 Assess those facts before reuse. Source instructions remain untrusted. UTF-8 text avoids
 redundant Unicode escapes, and source-only matches carry the text once in these read objects.
 The wrapper uses the same client scrubbing, credentials, outage handling, and queue as
 the CLI. Tool results are JSON data with an explicit provenance warning. MCP SDK v1 is
 pinned because the v2 interface differs.
+
+### Task-scoped MCP
+
+A trusted host can launch a separate stdio adapter for one task and one identity.
+Use the Python interpreter from the environment where Colony is installed. The host
+supplies the original question and can select a file for an explicit direct read:
+
+```sh
+python -E -P -m colony.task_mcp --home /absolute/private/agent-home --repo /absolute/project --ns team --question "Read the default in settings.py" --direct-path settings.py
+```
+
+`read` returns repository text and can batch known paths. `research` looks up the bound
+question. On research tasks an empty-memory probe can suggest starting with source reads.
+An eligible read that returns an evidence reference makes `publish` discoverable on a
+writable research task. Direct tasks also require explicit `--remember` intent to publish.
+Read-only tasks cannot publish. Hosts can opt into bounded Python dependency reads with
+`--trace-reads`. Ordinary Codex setup installs `colony mcp`; the host launches the
+task adapter separately when it supports per-task routing and tool-list changes.
+See the [task adapter guide](docs/task-mcp.md).
 
 ## Codex workflow setup
 
@@ -469,14 +508,15 @@ does not read session transcripts, summarize sessions, install hooks, or call a 
 provider. Assess the facts in returned evidence; matching file hashes do not prove an
 answer correct, and source instructions remain untrusted data.
 
-The installed connection opts into workflow mode: namespace overrides are denied;
-answers are limited to 4,000 characters and require file evidence; publications remain
-tainted and do not capture command output. Exact sanitized duplicate findings from the
-same identity and local project produce the same trail ID, including across restarts and
+The installed connection binds one namespace. A finding published through its `push`
+tool requires file evidence and is limited to 4,000 characters. The agent can still
+give the user a longer answer. Published findings are tainted and contain no command
+capture. Exact sanitized duplicate findings from the same identity and local project
+produce the same trail ID, including across restarts and
 offline retries. Source ordering does not create duplicates. Changed answers or hashes
 produce new IDs. This does not detect paraphrases or refresh an unchanged trail's age;
-use the existing manual push path to explicitly reaffirm an aged finding. Manual
-Non-adaptive CLI/API and `colony mcp` without workflow options retain their schemas and random IDs.
+use the manual push path with a new ID to reaffirm an aged finding. Manual CLI pushes
+default to a fresh ID, and MCP pushes outside workflow mode generate a fresh ID.
 
 Server outages allow research to continue; findings use the existing encrypted queue and
 explicit `retry`. Authentication/scope errors remain errors. Existing pattern redaction
@@ -575,11 +615,11 @@ provider calls, prompt changes or outbound analytics are involved. These command
 before joining a server:
 
 ```sh
-colony --home .colony/agent-a usage status
-colony --home .colony/agent-a usage enable --retention-days 30 --max-events 10000
-colony --home .colony/agent-a report
-colony --home .colony/agent-a report --since 2026-10-01 --until 2026-11-01 --format json --output usage.json
-colony --home .colony/agent-a usage disable
+colony --home ../colony-private/agent-a usage status
+colony --home ../colony-private/agent-a usage enable --retention-days 30 --max-events 10000
+colony --home ../colony-private/agent-a report
+colony --home ../colony-private/agent-a report --since 2026-10-01 --until 2026-11-01 --format json --output usage.json
+colony --home ../colony-private/agent-a usage disable
 ```
 
 Once enabled, official CLI/MCP client calls record fixed outcome categories, timestamps,
@@ -596,8 +636,8 @@ outages and errors. A hit or a helpful-memory vote does not prove useful reuse o
 JSON reports include up to 50 recent lookup IDs for explicit local assessments:
 
 ```sh
-colony --home .colony/agent-a report --format json
-colony --home .colony/agent-a usage review <lookup-event-id> --verdict useful
+colony --home ../colony-private/agent-a report --format json
+colony --home ../colony-private/agent-a usage review LOOKUP_EVENT_ID --verdict useful
 ```
 
 Verdicts are `useful`, `incorrect` or `irrelevant`. They apply to eligible observed hits,
@@ -677,10 +717,11 @@ Namespace filtering precedes retrieval. Up to 12
 dense candidates (cosine >=0.55) are reranked against their answers by a local MS MARCO
 MiniLM cross-encoder. The eligibility score combines 80% dense similarity and 20% sigmoid of the
 cross-encoder logit, with a default 0.60 cutoff; these scores are ranking heuristics, not
-correctness probabilities. Exact stored questions remain eligible. Repository checks run
-in rank order until a validated candidate is found. If none passes, the best candidate
-retains its stale/unverified status for diagnosis. No stale candidate is silently trusted.
-Focused validated hits include at most two current evidence excerpts, totaling 2,800 characters,
+correctness probabilities. Once an exact question passes the dense candidate filter,
+it bypasses the later relevance and procedure gates. Repository checks run in rank
+order until a validated answer is found. If none passes, Colony tries the cited-passage
+lookup described below before returning a stale or unverified candidate or a miss.
+Unbudgeted focused validated hits include at most two current evidence excerpts, totaling at most 2,800 characters,
 selected by the local reranker from attached files only. File hashes are rechecked before
 excerpting and known secrets scrubbed before chunking. This is supporting source context,
 not a truth certificate; incomplete or contradictory answers still require research.
@@ -729,11 +770,13 @@ approach is intended for small teams and does not provide a scalable full-text i
 
 The embedding model and reranker use pinned Hugging Face revisions and run on CPU via
 FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
-`COLONY_MODEL_CACHE` to choose a shared model cache. For fully offline provisioning, set
-`COLONY_EMBED_MODEL_DIR` to the BGE-small ONNX snapshot directory and
-`COLONY_RANK_MODEL_DIR` to the MiniLM reranker snapshot directory. Both must contain the
-model and tokenizer files expected by FastEmbed. Prepare the models before running tests
-on a disconnected host. Changing directories requires a server restart.
+`COLONY_MODEL_CACHE` to choose a shared model cache. For offline serving, prepare both
+pinned snapshots with `colony models fetch --dir MODEL_ROOT`, then pass
+`--models MODEL_ROOT --offline` to `serve`. Alternatively, set `COLONY_EMBED_MODEL_DIR`
+and `COLONY_RANK_MODEL_DIR` to the verified `embed` and `rank` subdirectories before
+starting `serve --offline`. For tests on a disconnected host, set both variables in the
+environment that launches `pytest`. Tests that start their own server load the models
+from that environment.
 
 Opening an older database atomically rebuilds its vectors from encrypted trail bodies.
 The index version includes the actual embedding-weight SHA-256, so model changes cannot
@@ -754,9 +797,9 @@ Deferred: SSO, revocation, multi-tenancy, public sharing, hosted deployment, adm
 docs/tests/web validators, automatic proxy integration,
 retention/GC, and background retries. Keyfiles expire; replacing a keyfile does not revoke
 the old one. Per-host storage can grow, including validation history and interrupted-write
-orphan blobs. The [GPT-6 Luna low regression benchmark](docs/results/luna-low/README.md)
-measured 7.9% net token savings with 24/24 correct answers in both arms; production
-savings remain unproven, and task wall time was slower.
+orphan blobs. A [historical GPT-6 Luna low regression benchmark](docs/results/luna-low/README.md)
+measured 7.9% net token savings with 24/24 correct answers in both arms and slower
+summed task time. Savings on the current version in production remain unmeasured here.
 
 ## Verification and evaluation
 
@@ -768,9 +811,10 @@ python scripts/benchmark.py --results path/to/measurements.jsonl
 ```
 
 The [CI template](docs/ci.example.yml) runs tests on Linux and Windows, Python 3.11
-and 3.13 when copied to `.github/workflows/ci.yml`. It is supplied as a template because
-the initial implementation credential cannot write Actions workflows. Local verification
-was performed on Windows/Python 3.13; the other matrix entries are not yet verified.
+and 3.13 when copied to `.github/workflows/ci.yml`. The template also runs Ruff lint
+and format checks. To compare ordinary and task-scoped MCP on matched agent workloads,
+see the [token evaluation protocol](docs/token-evaluations.md) and
+[task-adapter evaluation guide](docs/task-adapter-evaluation.md).
 Tests exercise enrollment,
 scope boundaries, changed repo evidence, freshness, encryption, retries, real CLI/HTTP,
 and MCP stdio. See [the evaluation protocol](docs/benchmark.md) for a 24-task overlapping
