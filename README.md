@@ -318,8 +318,9 @@ accounting evidence, not measured end-to-end agent savings.
 ## Quick start
 
 Use Python 3.11–3.13 with SQLite extension support. Run both terminals from this
-checkout. The examples use a fresh, user-restricted sibling directory,
-`../colony-private`, for keys, client homes and server data.
+checkout. Before issuing credentials, create `../colony-private` outside the checkout
+and restrict access to your account. On POSIX use `mkdir -m 700 ../colony-private`.
+On Windows verify the directory's access permissions before writing keys there.
 
 ```sh
 python -m venv .venv
@@ -427,10 +428,11 @@ pinned because the v2 interface differs.
 ### Task-scoped MCP
 
 A trusted host can launch a separate stdio adapter for one task and one identity.
-The host supplies the original question and can select a file for an explicit direct read:
+Use the Python interpreter from the environment where Colony is installed. The host
+supplies the original question and can select a file for an explicit direct read:
 
 ```sh
-python -m colony.task_mcp --home /absolute/private/agent-home --repo /absolute/project --ns team --question "Read the default in settings.py" --direct-path settings.py
+python -E -P -m colony.task_mcp --home /absolute/private/agent-home --repo /absolute/project --ns team --question "Read the default in settings.py" --direct-path settings.py
 ```
 
 `read` returns repository text and can batch known paths. `research` looks up the bound
@@ -772,7 +774,9 @@ FastEmbed/ONNX, with two threads per model. Agent text stays on this host. Set
 pinned snapshots with `colony models fetch --dir MODEL_ROOT`, then pass
 `--models MODEL_ROOT --offline` to `serve`. Alternatively, set `COLONY_EMBED_MODEL_DIR`
 and `COLONY_RANK_MODEL_DIR` to the verified `embed` and `rank` subdirectories before
-starting `serve --offline`. Prepare the models before running tests on a disconnected host.
+starting `serve --offline`. For tests on a disconnected host, set both variables in the
+environment that launches `pytest`. Tests that start their own server load the models
+from that environment.
 
 Opening an older database atomically rebuilds its vectors from encrypted trail bodies.
 The index version includes the actual embedding-weight SHA-256, so model changes cannot
