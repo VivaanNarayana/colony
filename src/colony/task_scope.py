@@ -8,14 +8,15 @@ from colony.validation import repo_file
 
 _REPO = r"(?:repo(?:sitory)?|codebase|project)"
 _VERB = r"(?:contain|include|document|mention|record|implement|define|specify|provide)"
-_ANSWER_SUFFIX = (
-    r"(?:\s*(?:\([^()\r\n]*\)|[,;]\s*(?:(?:please\s+)?(?:answer|reply|respond|cite)\b[^?!.\n]*"
-    r"|yes\s*(?:or|/)\s*no|true\s*(?:or|/)\s*false|briefly)))?"
+_ANSWER_FORMAT = (
+    r"(?:(?:please\s++)?(?:answer|reply|respond|cite)\b[^()?!.\r\n]*+"
+    r"|yes\s*+(?:or|/)\s*+no|true\s*+(?:or|/)\s*+false|briefly)"
 )
+_ANSWER_SUFFIX = rf"(?:\s*+(?:\(\s*+{_ANSWER_FORMAT}\s*+\)|[,;]\s*+{_ANSWER_FORMAT}))?"
 _CONTAINMENT = re.compile(
     rf"(?:\b(?:whether|if)|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
     rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b"
-    rf"(?={_ANSWER_SUFFIX}\s*(?:[?!.]|$))",
+    rf"(?={_ANSWER_SUFFIX}\s*+(?:[?!.]|$))",
     re.IGNORECASE,
 )
 SCOPE_ROUTE = (

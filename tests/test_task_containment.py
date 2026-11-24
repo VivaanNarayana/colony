@@ -251,6 +251,8 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
 @pytest.mark.parametrize("question,direct", [
     ("Explain how the limit is applied.", None), ("What is the timeout in this repo?", None),
     ("Is the timeout in this repository applied before retry backoff?", None),
+    ("Is the timeout in this repository (applied before retry backoff)?", None),
+    ("Is the timeout in this repo, answer with details\nincluding the retry order", None),
     ("Where does the project define the timeout?", None),
     ("Where\ndoes the project define the timeout?", None),
     ("Why does this repository include vendored dependencies?", None),
