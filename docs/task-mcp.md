@@ -129,7 +129,9 @@ research task as direct merely because it mentions a filename.
 The publisher can name observed files in `applicability` to declare the finding's
 scope. Colony pins those files alongside the submitted evidence references. Use
 exact whitespace-delimited repository-relative paths (including extensionless
-files), or backticks for paths containing spaces or ambiguous punctuation. Each added
+files), or backticks for paths containing spaces or ambiguous punctuation. A
+complete quoted item names the path inside its delimiters. Supply the returned
+handle directly when the path itself could be mistaken for markup. Each added
 source must have a delivered task read and pass the same authorization and version
 checks as a submitted handle. A change to any pinned file invalidates the finding.
 If a named delivered file has no live reference, publication requires fresh evidence.

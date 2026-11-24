@@ -141,6 +141,15 @@ def test_quoted_path_does_not_pin_an_unrelated_suffix(identity, monkeypatch, sco
     assert {s.ref for s in sent[0].sources} == {"settings.py", "docs/release notes.md"}
 
 
+def test_scope_markup_cannot_attach_a_delivered_prefix_or_closing_punctuation():
+    from colony.evidence_refs import _scope_paths
+
+    observed = {"release notes.md", "`release", ")", "settings.py"}
+    for scope in ("`release notes.md`, settings.py", "(`release notes.md`,); settings.py"):
+        assert _scope_paths(scope, observed, set()) & observed == {"release notes.md", "settings.py"}
+    assert _scope_paths("`)`", observed, set()) & observed == {")"}
+
+
 @pytest.mark.parametrize("unavailable", ["full", "expired"])
 def test_named_delivered_dependency_requires_a_live_handle(identity, monkeypatch, unavailable):
     from dataclasses import replace

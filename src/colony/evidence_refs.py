@@ -24,14 +24,22 @@ _QUOTED_PATH = re.compile(r"""[([{"']*`([^`\r\n]+)`[.:!?)\]}"']*(?=[\s,;]|$)""")
 
 
 def _scope_paths(text, known, overflow):
-    """Read a prose list of paths; preserve exact filenames before interpreting markup."""
+    """Read complete quoted paths and exact bare names from a prose list."""
     named = set()
     offset = 0
     while start := _SCOPE_START.search(text, offset):
         pos = start.start()
+        quoted = _QUOTED_PATH.match(text, pos)
+        if quoted:
+            named.add(quoted[1])
+            offset = quoted.end()
+            continue
         word = _SCOPE_WORD.match(text, pos)
         raw = word[0]
         stripped = raw.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
+        if not stripped:
+            offset = word.end()
+            continue
         literal = raw if raw in known else stripped
         if literal in known:
             named.add(literal)
@@ -39,14 +47,11 @@ def _scope_paths(text, known, overflow):
             continue
         # An overflow fingerprint is conservative; still parse the other list items.
         named.update(x for x in (raw, stripped) if hash(x) % 4096 in overflow)
-        quoted = _QUOTED_PATH.match(text, pos)
-        if quoted:
-            named.add(quoted[1])
-            offset = quoted.end()
-            continue
         item = _SCOPE_ITEM.match(text, pos)
         name = item[0]
-        named.add(name if name in known else name.lstrip("([{\"'").rstrip(".:!?)]}\"'"))
+        plain = name.lstrip("([{\"'").rstrip(".:!?)]}\"'")
+        if plain:
+            named.add(name if name in known else plain)
         offset = item.end()
     return named
 
