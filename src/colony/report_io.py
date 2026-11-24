@@ -83,8 +83,8 @@ def _outer_event_type(text):
     return event_type if _SPACE.match(text, pos).end() == len(text) else None
 
 
-def decode_native_event(text, *, optional_responses=True, decoder=json.loads):
-    """Use the caller's decoder; only omit unreadable optional response metadata."""
+def decode_native_event(text, *, optional_responses=True, decoder=json.loads, deep_response_decoder=None):
+    """Apply a fallback only to a verified response envelope that exceeded the decoder depth."""
     try:
         return decoder(text)
     except (RecursionError, ValueError) as exc:
@@ -95,6 +95,8 @@ def decode_native_event(text, *, optional_responses=True, decoder=json.loads):
         except ValueError:
             raise exc from None
         if kind in ("response.created", "response.completed"):
+            if deep_response_decoder is not None:
+                return deep_response_decoder(text)
             return {"type": kind}
         raise
 
@@ -120,6 +122,11 @@ def decode(text):
         elif character in "}]":
             depth -= 1
 
+    return parse_json(text)
+
+
+def parse_json(text):
+    """Reject ambiguous keys and nonfinite numbers regardless of the enclosing format."""
     def pairs(items):
         result = {}
         for key, value in items:

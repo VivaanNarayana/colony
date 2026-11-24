@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
-from colony.report_io import bounded_bytes, decode, decode_native_event, jsonl_lines
+from colony.report_io import bounded_bytes, decode, decode_native_event, jsonl_lines, parse_json
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
@@ -278,7 +278,11 @@ def analyze_bytes(source, *, optional_diagnostics=False):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
     lines = jsonl_lines(source)
-    events = [decode_native_event(line, decoder=decode, optional_responses=optional_diagnostics) for line in lines]
+    # The standalone /1 reader retains supported receipt fields even if an unrelated
+    # response field exceeds the native turn depth limit.
+    deep_response_decoder = None if optional_diagnostics else parse_json
+    events = [decode_native_event(line, decoder=decode, deep_response_decoder=deep_response_decoder)
+              for line in lines]
     if any(not isinstance(e, dict) for e in events):
         raise ValueError("Native event must be an object")
     # Additional response receipts are observations, never extra billable turn totals.

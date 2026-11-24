@@ -13,8 +13,13 @@ _ANSWER_FORMAT = (
     r"|yes\s*+(?:or|/)\s*+no|true\s*+(?:or|/)\s*+false|briefly)"
 )
 _ANSWER_SUFFIX = rf"(?:\s*+(?:\(\s*+{_ANSWER_FORMAT}\s*+\)|[,;]\s*+{_ANSWER_FORMAT}))?"
+# Bare "if" introduces a condition. Only an explicit request to check it needs an inventory.
+_CHECK_IF = (
+    r"(?:^|[?!.:;,]|\b(?:and|then)\b)\s*(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?"
+    r"(?:check|confirm|determine|verify|state|report|see|find\s+out|tell\s+(?:me|us))\s+if"
+)
 _CONTAINMENT = re.compile(
-    rf"(?:\b(?:whether|if)|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
+    rf"(?:\bwhether|{_CHECK_IF}|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
     rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b"
     rf"(?={_ANSWER_SUFFIX}\s*+(?:[?!.]|$))",
     re.IGNORECASE,

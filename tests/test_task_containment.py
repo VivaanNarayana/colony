@@ -256,16 +256,26 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
     ("Where does the project define the timeout?", None),
     ("Where\ndoes the project define the timeout?", None),
     ("Why does this repository include vendored dependencies?", None),
+    ("What happens if the project defines a timeout in settings.py?", None),
+    ("What should I check if this repository contains a timeout?", None),
+    ("Does the script check if the project defines a timeout?", None),
+    ("If the project defines a timeout, explain its retry behavior.", None),
     (QUESTION, "settings.py"),
 ])
 def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, direct):
-    server = create(identity, ["settings.py"], question, direct_path=direct)
+    units = [True]
+    server = create(identity, ["settings.py"], question, direct_path=direct,
+                    read_admission=lambda: bool(units) and units.pop())
     assert {t.name for t in asyncio.run(server.list_tools())} == {"read", "research"}
-    assert "listed_scope" not in read(server, path="settings.py")
+    page = read(server, path="settings.py")
+    assert "listed_scope" not in page and page["content"] == "TIMEOUT = 30"
+    assert not units
 
 
 @pytest.mark.parametrize("question", [
     "Does the project define a timeout?", "Check if the project defines a timeout.",
+    "Can you check if the project defines a timeout?", "Please tell me if the repo contains a timeout.",
+    "Read the policy, then verify if this repository documents the default.",
     "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
     "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
     "Is the timeout in this repository (answer with yes or no)?",

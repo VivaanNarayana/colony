@@ -49,8 +49,13 @@ def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
     assert native_usage(path)["known_usage"]["gross_tokens"] == 110
     observed = native_usage(path, request_metadata=True)
     assert observed["usage_complete"] and observed["request_usage"]["status"] == "unavailable"
-    with pytest.raises(ValueError, match="nesting limit"):
-        analyze_bytes(path.read_bytes())
+    output = tmp_path / "observation.json"
+    subprocess.run([sys.executable, str(SCRIPTS / "token_observability.py"),
+                    "--events", str(path), "--output", str(output)], check=True, capture_output=True)
+    standalone = json.loads(output.read_bytes())
+    assert standalone["turn_accounting"]["known_usage"]["gross_tokens"] == 110
+    usual = analyze_bytes(raw(turn([response()])))
+    assert standalone["response_usage"] == usual["response_usage"]
     final = {"type": "item.completed", "item": {"type": "agent_message", "text": "done"}}
     path.write_bytes(raw(turn([{"type": "item.completed", "item": {"type": "mcp_tool_call",
                                "structuredContent": deep}}, final])))
@@ -63,6 +68,8 @@ def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
         path.write_bytes(raw(turn()).replace(b'\n', b'\n' + line.encode() + b'\n', 1))
         with pytest.raises(ValueError, match="nesting limit"):
             native_usage(path, request_metadata=True)
+        with pytest.raises(ValueError):
+            analyze_bytes(path.read_bytes())
 
 
 def test_optional_envelope_beyond_python_recursion_limit(tmp_path):
