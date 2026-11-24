@@ -89,6 +89,7 @@ def test_multifile_read_distinguishes_available_class_from_supplied_dependency(i
         first = await read("caller.py", "service.py")
         assert first["binding_guidance"] == BINDING_CUE
         assert "retries = attempts - 1" in first["binding_guidance"]
+        assert "Explain a requested implementation from its definition" in first["binding_guidance"]
         assert [r["path"] for r in first["results"]] == ["caller.py", "service.py"]
         assert all(r["complete_file"] and r["evidence_ref"] for r in first["results"])
         assert "binding_guidance" not in await read("caller.py", "service.py")

@@ -41,13 +41,13 @@ ANSWER_POLICY = (
 
 BINDING_CUE = (
     "Stop at the requested layer. In a nonempty retry sequence, retries = attempts - 1. "
-    "For requested internals, cite the wiring or say 'if X is supplied' and cite X. "
-    "Omit unrequested implementation details when the caller only accepts a dependency."
+    "Explain a requested implementation from its definition. To attribute it to a caller, "
+    "cite the wiring or the question's explicit selection. Omit unsolicited internals."
 )
 
 SAVED_TRACE_CUE = (
-    "Answer from the cited source lines in the requested format. Keep the finding's conditions. "
-    "Include implementation internals only if requested and the wiring or an explicit hypothetical supports them."
+    "Keep the finding's conditions and cite the requested behavior. Explain named implementations directly. "
+    "Omit unsolicited internals. Attribute an implementation to a caller only if the wiring or question selects it."
 )
 
 SCALAR_ROUTE = (
