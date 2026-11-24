@@ -117,6 +117,54 @@ def test_publication_pins_named_delivered_scope_files(identity, monkeypatch, cha
         assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
 
 
+def test_quoted_path_does_not_pin_an_unrelated_suffix(identity, monkeypatch):
+    client, repo, _ = identity
+    sent = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: sent.append(trail) or {"stored": True})
+    server = TaskMCP(Workflow(client, "team", repo), "Trace configuration")
+    (repo / "docs").mkdir()
+    for path in ("docs/release notes.md", "notes.md"):
+        (repo / path).write_text("Current notes")
+    async def check():
+        paths = ["settings.py", "docs/release notes.md", "notes.md"]
+        reply = await server.call_tool("read", {"batch": [{"path": p} for p in paths]})
+        ref = json.loads(reply[0].text)["results"][0]["evidence_ref"]
+        (repo / "notes.md").write_text("Unrelated change")
+        reply = await server.call_tool("publish", {"content": "finding", "applicability": "`docs/release notes.md`",
+                                                   "evidence_refs": [ref]})
+        assert json.loads(reply[0].text)["stored"]
+    asyncio.run(check())
+    assert {s.ref for s in sent[0].sources} == {"settings.py", "docs/release notes.md"}
+
+
+@pytest.mark.parametrize("unavailable", ["full", "expired"])
+def test_named_delivered_dependency_requires_a_live_handle(identity, monkeypatch, unavailable):
+    from dataclasses import replace
+
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "push", lambda *a, **k: pytest.fail("incomplete dependency set"))
+    server = TaskMCP(Workflow(client, "team", repo), "Trace configuration")
+    server.evidence._capacity = 1 if unavailable == "full" else 2
+    async def read(path):
+        reply = await server.call_tool("read", {"path": path})
+        return json.loads(reply[0].text)["evidence_ref"]
+    async def check():
+        if unavailable == "expired":
+            old = await read("README.md")
+            obs = server.evidence._observations
+            obs[old] = replace(obs[old], expires=0)
+        ref = await read("settings.py")
+        if unavailable == "full":
+            assert await read("README.md") is None
+        else:
+            assert old not in server.evidence._observations
+        (repo / "README.md").write_text("Changed dependency")
+        reply = await server.call_tool("publish", {"content": "finding", "applicability": "README.md",
+                                                   "evidence_refs": [ref]})
+        assert not json.loads(reply[0].text)["stored"]
+    asyncio.run(check())
+
+
 @pytest.mark.parametrize("failure", ["missing_evidence", "unknown_publication_outcome"])
 def test_requested_status_explanations_survive_failure_without_extra_calls(identity, monkeypatch, failure):
     from mcp.server.fastmcp.exceptions import ToolError

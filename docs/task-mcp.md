@@ -131,6 +131,9 @@ scope. Colony pins those files alongside the submitted evidence references. Use
 exact repository-relative paths and backticks for paths with spaces. Each added
 source must have a delivered task read and pass the same authorization and version
 checks as a submitted handle. A change to any pinned file invalidates the finding.
+If a named delivered file has no live reference, publication requires fresh evidence.
+Task-local path tracking is bounded. If it fills, an unaccounted named path also
+requires fresh evidence.
 
 The first successful eligible read also returns a short `publication_guidance` field
 alongside the read result, or alongside `results` for a batch. This constant adapter

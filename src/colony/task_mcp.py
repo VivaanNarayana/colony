@@ -266,8 +266,9 @@ class TaskMCP(FastMCP):
                 # normal client's explicit queue/replay path remains authoritative.
                 self._publication_attempted = True
                 try:
-                    references = self.evidence.scoped_references(evidence_refs, applicability)
-                    return self.evidence.publish(self.question, finding, references)
+                    with self.evidence._lock:
+                        references = self.evidence.scoped_references(evidence_refs, applicability)
+                        return self.evidence.publish(self.question, finding, references)
                 except Exception:
                     return {"stored": False, "reason": "publication_failed_or_outcome_unknown",
                             "answer_unblocked": True}

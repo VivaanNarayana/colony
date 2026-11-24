@@ -62,6 +62,8 @@ class EvidenceSession:
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
+        self._task_paths = set()
+        self._task_paths_overflow = False
         self._deliveries = None
         self._closed = False
         self._lock = threading.RLock()
@@ -243,11 +245,17 @@ class EvidenceSession:
         with self._lock:
             returned = {id(result) for result in results}
             for result, content, page, _ in pages:
+                if id(result) not in returned or result.get("path") != page.ref or result.get("content") != content:
+                    continue
+                # A delivered dependency remains in scope even if it never obtained
+                # a handle or subsequent reads prune its expired observation.
+                if len(self._task_paths) < self._capacity:
+                    self._task_paths.add(page.ref)
+                elif page.ref not in self._task_paths:
+                    self._task_paths_overflow = True
                 handle = result.get("evidence_ref")
                 observation = self._observations.get(handle) if isinstance(handle, str) else None
-                if (observation and id(result) in returned and result.get("path") == page.ref
-                        and result.get("content") == content and observation.ref == page.ref
-                        and observation.digest == page.digest):
+                if observation and observation.ref == page.ref and observation.digest == page.digest:
                     self._observations[handle] = replace(observation, delivered_for_task=True)
 
     def scoped_references(self, references, applicability):
@@ -256,8 +264,9 @@ class EvidenceSession:
             return references
         # Use whole repository-relative path tokens. Backticks allow spaces and
         # extensionless files. Never resolve free-form text against the filesystem.
-        named = set(re.findall(r"`([^`\r\n]+)`", applicability))
-        for token in re.findall(r"[\w./\\+@%-]+", applicability):
+        quoted_path = r"`([^`\r\n]+)`"
+        named = set(re.findall(quoted_path, applicability))
+        for token in re.findall(r"[\w./\\+@%-]+", re.sub(quoted_path, " ", applicability)):
             path = token.rstrip(".")
             if "/" in path or "." in path:
                 named.add(path)
@@ -265,8 +274,9 @@ class EvidenceSession:
             selected = {self._observations[h].ref for h in references if h in self._observations}
             named.difference_update(selected)
             extra = {}
+            now = time.monotonic()
             for handle, observation in self._observations.items():
-                if not observation.delivered_for_task or observation.ref not in named:
+                if not observation.delivered_for_task or observation.ref not in named or observation.expires <= now:
                     continue
                 prior = extra.get(observation.ref)
                 if prior:
@@ -274,6 +284,9 @@ class EvidenceSession:
                     if (previous.digest, previous.target) != (observation.digest, observation.target):
                         raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
                 extra[observation.ref] = handle
+            missing = named.difference(extra)
+            if missing.intersection(self._task_paths) or (missing and self._task_paths_overflow):
+                raise EvidenceError("Named dependency needs a current evidence reference")
             return [*references, *extra.values()]
 
     def _resolve(self, references, path_allowed):
@@ -326,3 +339,4 @@ class EvidenceSession:
         with self._lock:
             self._closed = True
             self._observations.clear()
+            self._task_paths.clear()
