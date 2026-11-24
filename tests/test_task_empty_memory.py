@@ -8,8 +8,37 @@ from test_workflow import identity as identity
 
 from colony.models import Scope
 from colony.security import issue
-from colony.task_mcp import TaskMCP
+from colony.task_mcp import PRESENT_FOLLOWUP_ROUTE, TaskMCP
 from colony.workflow import Workflow
+
+
+@pytest.mark.parametrize("question,state,path,expect_route", [
+    ("For the same deployment, explain its rollout.", "present", None, True),
+    ("Following up on the earlier trace, what is the retry limit?", "present", None, True),
+    ("For the same deployment, explain its rollout.", "empty", None, False),
+    ("For the same deployment, explain its rollout.", "unknown", None, False),
+    ("For the same deployment, explain its rollout.", "present", "settings.py", False),
+    ("For the same input, compare both implementations.", "present", None, False),
+    ("Explain the retry limit.", "present", None, False),
+])
+def test_saved_work_route_is_scoped_to_first_followup_action(identity, monkeypatch, question, state, path, expect_route):
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "memory_availability", lambda *args: state)
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: pytest.fail("unexpected automatic lookup"))
+    server = TaskMCP(Workflow(client, "team", repo), question, direct_path=path)
+    server._availability_enabled = server._empty_memory_routing
+
+    async def check():
+        async def has_route():
+            tools = {t.name: t for t in await server.list_tools()}
+            return PRESENT_FOLLOWUP_ROUTE.strip() in tools["research"].description
+
+        assert await has_route() is expect_route
+        assert await server.call_tool("read", {"path": "settings.py"})
+        server._availability_until = 0
+        assert not await has_route()
+
+    asyncio.run(check())
 
 
 def test_availability_auth_scope_repository_and_no_retrieval(team, monkeypatch):

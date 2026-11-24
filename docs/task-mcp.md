@@ -14,6 +14,9 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
+When a question refers back to an earlier setup and scoped memory contains
+saved work, the initial task instructions and lookup tool direct the worker to
+call `research` before file discovery. A miss or missing evidence leads back to sources.
 Ordinary and adaptive lookup share the same routing guidance. Use saved findings on
 follow-ups when they can replace source discovery or fill an identified gap. Once
 current sources answer the question, finish without a confirmation lookup. A lookup

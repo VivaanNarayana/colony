@@ -50,6 +50,10 @@ RESEARCH_GUIDANCE = (
     "Skip confirmation and pre-publication lookups."
 )
 FOLLOWUP_ROUTE = "For a follow-up, use saved work first if it can replace discovery. "
+PRESENT_FOLLOWUP_ROUTE = (
+    "Start this follow-up with research before listing or reading files. Scoped memory has saved work. "
+    "Cite validated current_repository_reads directly; use sources for a miss, gap, or conflict. "
+)
 EMPTY_ROUTE = "Memory was empty at task startup. Go directly to sources unless you need a later publication. "
 READ_ROUTING = (
     "Read known paths directly and batch independent reads within the allowance. "
@@ -72,6 +76,12 @@ _OVERRIDE_SCOPE = (
 _DEFAULT_VALUE = re.compile(
     rf"(?:what(?: is|'s) the default {_SCALAR}|(?:what|which) {_SCALAR} (?:applies|is used|is configured) by default)"
     rf"(?: (?:before|without) (?:{_OVERRIDE_SCOPE}(?: (?:and|or) {_OVERRIDE_SCOPE})? )?overrides?)?[?.]?",
+    re.IGNORECASE,
+)
+_PRIOR_WORK = re.compile(
+    r"^(?:(?:for|in|under|using|with|given) (?:the|that) (?:same|previous|earlier) "
+    r"(?:[\w-]+ ){0,3}(?:setup|scenario|case|configuration|deployment|environment|workflow|example)\b|"
+    r"following up\b|as (?:before|above)\b|based on (?:our|the) (?:previous|earlier) (?:work|findings?)\b)",
     re.IGNORECASE,
 )
 
@@ -119,9 +129,11 @@ class TaskMCP(FastMCP):
                        and containment_question(question) else None)
         self._scope_list_tool = scope_list_tool
         self._availability_enabled = False
-        value_only = not remember and bool(_DEFAULT_VALUE.fullmatch(" ".join(question.split())))
+        normalized_question = " ".join(question.split())
+        value_only = not remember and bool(_DEFAULT_VALUE.fullmatch(normalized_question))
         self._empty_memory_routing = (empty_memory_routing and direct_path is None
                                       and self._scope is None and not value_only)
+        self._followup_pending = bool(_PRIOR_WORK.match(normalized_question))
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
@@ -332,11 +344,15 @@ class TaskMCP(FastMCP):
     async def list_tools(self):
         await self._refresh_availability()
         tools = await super().list_tools()
-        if self._availability_state == "empty" or self._scope is not None:
+        warm_followup = self._availability_state == "present" and self._followup_pending
+        if self._availability_state == "empty" or self._scope is not None or warm_followup:
             # Replace only routing, preserving adaptive budget details and the live tool.
-            route = ("Scoped memory was empty at last check. Use source tools unless checking a later publication."
-                     if self._availability_state == "empty" else
-                     "Use current files for repository containment. A memory miss cannot establish absence.")
+            if self._scope is not None:
+                route = "Use current files for repository containment. A memory miss cannot establish absence."
+            elif warm_followup:
+                route = PRESENT_FOLLOWUP_ROUTE.rstrip()
+            else:
+                route = "Scoped memory was empty at last check. Use source tools unless checking a later publication."
             tools = [t.model_copy(update={"description": (t.description or "").replace(RESEARCH_GUIDANCE, route, 1)})
                      if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
@@ -348,6 +364,8 @@ class TaskMCP(FastMCP):
         await self._refresh_availability()
         if self._availability_state == "empty":
             self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
+        elif self._availability_state == "present" and self._followup_pending:
+            self._mcp_server.instructions = PRESENT_FOLLOWUP_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
@@ -355,6 +373,8 @@ class TaskMCP(FastMCP):
             ))
 
     async def call_tool(self, name, arguments):
+        used_followup_route = self._followup_pending and self._availability_state == "present"
+        self._followup_pending = False
         if name == "research":
             # An explicit current lookup needs no preliminary availability request.
             self._availability_generation += 1
@@ -386,7 +406,7 @@ class TaskMCP(FastMCP):
                 self._availability_until = 0
                 availability_changed |= self._availability_state != "unknown"
                 self._availability_state = "unknown"
-            if availability_changed or before != (self._publication_ready, self._publication_attempted):
+            if used_followup_route or availability_changed or before != (self._publication_ready, self._publication_attempted):
                 try:
                     context = self.get_context().request_context
                 except ValueError:  # In-process Python calls have no transport session.
