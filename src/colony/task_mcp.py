@@ -50,14 +50,16 @@ RESEARCH_GUIDANCE = (
     "Skip confirmation and pre-publication lookups."
 )
 FOLLOWUP_ROUTE = "For a follow-up, use saved work first if it can replace discovery. "
-PRESENT_FOLLOWUP_ROUTE = (
-    "Scoped memory had saved work at the last check. If source discovery has not started, call research first. "
-    "Cite validated current_repository_reads directly; use sources for a miss, gap, or conflict. "
+PRESENT_ROUTE = (
+    "Scoped memory contained saved work at last check. For a follow-up about a previously traced setup, "
+    "call research first, before any lookup or source discovery. Cite validated current_repository_reads directly. "
+    "For other tasks or remaining gaps, use current sources."
 )
 FOLLOWUP_START = (
-    "Before source discovery on this follow-up, call research first if its current tool description reports saved work. "
+    "For a follow-up about previously traced work, call research before source discovery "
+    "if its current tool description reports saved work. "
 )
-EMPTY_ROUTE = "Memory was empty at task startup. Go directly to sources unless you need a later publication. "
+EMPTY_ROUTE = "Memory was empty at task startup. Start with sources unless a newer research tool description reports saved work for a follow-up. "
 READ_ROUTING = (
     "Read known paths directly and batch independent reads within the allowance. "
     "Once sources answer the question, finish without a memory check. Investigate actual gaps. "
@@ -79,14 +81,6 @@ _OVERRIDE_SCOPE = (
 _DEFAULT_VALUE = re.compile(
     rf"(?:what(?: is|'s) the default {_SCALAR}|(?:what|which) {_SCALAR} (?:applies|is used|is configured) by default)"
     rf"(?: (?:before|without) (?:{_OVERRIDE_SCOPE}(?: (?:and|or) {_OVERRIDE_SCOPE})? )?overrides?)?[?.]?",
-    re.IGNORECASE,
-)
-_PRIOR_WORK = re.compile(
-    r"^(?:(?:for|in|under|using|with|given) (?:the|that) (?:same|previous|earlier) "
-    r"(?:[\w-]+ ){0,3}(?:setup|scenario|case|configuration|deployment|environment|workflow|example)[,:]|"
-    r"following up on (?:the|our|your|my) (?:previous|earlier|prior) "
-    r"(?:trace|work|analysis|investigation|findings?|answer|discussion)[,:]|as (?:before|above)[,:]|"
-    r"based on (?:our|the) (?:previous|earlier) (?:work|findings?)[,:])",
     re.IGNORECASE,
 )
 
@@ -134,11 +128,9 @@ class TaskMCP(FastMCP):
                        and containment_question(question) else None)
         self._scope_list_tool = scope_list_tool
         self._availability_enabled = False
-        normalized_question = " ".join(question.split())
-        value_only = not remember and bool(_DEFAULT_VALUE.fullmatch(normalized_question))
+        value_only = not remember and bool(_DEFAULT_VALUE.fullmatch(" ".join(question.split())))
         self._empty_memory_routing = (empty_memory_routing and direct_path is None
                                       and self._scope is None and not value_only)
-        self._followup_pending = bool(_PRIOR_WORK.match(normalized_question))
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
@@ -349,13 +341,12 @@ class TaskMCP(FastMCP):
     async def list_tools(self):
         await self._refresh_availability()
         tools = await super().list_tools()
-        warm_followup = self._availability_state == "present" and self._followup_pending
-        if self._availability_state == "empty" or self._scope is not None or warm_followup:
+        if self._availability_state in ("empty", "present") or self._scope is not None:
             # Replace only routing, preserving adaptive budget details and the live tool.
             if self._scope is not None:
                 route = "Use current files for repository containment. A memory miss cannot establish absence."
-            elif warm_followup:
-                route = PRESENT_FOLLOWUP_ROUTE.rstrip()
+            elif self._availability_state == "present":
+                route = PRESENT_ROUTE
             else:
                 route = "Scoped memory was empty at last check. Use source tools unless checking a later publication."
             tools = [t.model_copy(update={"description": (t.description or "").replace(RESEARCH_GUIDANCE, route, 1)})
@@ -367,10 +358,10 @@ class TaskMCP(FastMCP):
     async def _initialize_routing(self):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
-        if self._availability_enabled and self._followup_pending:
-            self._mcp_server.instructions = FOLLOWUP_START + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
-        elif self._availability_state == "empty":
+        if self._availability_state == "empty":
             self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
+        elif self._availability_state == "present":
+            self._mcp_server.instructions = FOLLOWUP_START + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
 
     async def run_stdio_async(self):
         await self._initialize_routing()
@@ -383,7 +374,6 @@ class TaskMCP(FastMCP):
     async def call_tool(self, name, arguments):
         if name == "research":
             # An explicit current lookup needs no preliminary availability request.
-            self._availability_generation += 1
             lookup_generation = self._availability_generation
             availability_changed = False
         else:
@@ -391,13 +381,12 @@ class TaskMCP(FastMCP):
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
-            if not getattr(result, "isError", False):
-                availability_changed |= self._followup_pending and self._availability_state == "present"
-                self._followup_pending = False
-                if name == "research" and self._availability_generation == lookup_generation:
-                    availability_changed |= self._availability_state == "empty"
-                    self._availability_state = "unknown"
-                    self._availability_until = time.monotonic() + 30
+            if (name == "research" and not getattr(result, "isError", False)
+                    and lookup_generation == self._availability_generation):
+                self._availability_generation += 1
+                availability_changed = self._availability_state in ("empty", "present")
+                self._availability_state = "unknown"
+                self._availability_until = time.monotonic() + 30
             if self._scope is not None and name == self._scope_list_tool:
                 if isinstance(result, CallToolResult):
                     blocks = result.content

@@ -4,76 +4,68 @@ import json
 import httpx
 import pytest
 from conftest import auth
-from mcp.server.fastmcp.exceptions import ToolError
 from test_workflow import identity as identity
 
 from colony.models import Scope
 from colony.security import issue
-from colony.task_mcp import FOLLOWUP_START, PRESENT_FOLLOWUP_ROUTE, TaskMCP
+from colony.task_mcp import EMPTY_ROUTE, FOLLOWUP_START, PRESENT_ROUTE, TaskMCP
 from colony.workflow import Workflow
 
 
-@pytest.mark.parametrize("question,state,path,expect_route", [
-    ("For the same deployment, explain its rollout.", "present", None, True),
-    ("Following up on the earlier trace, what is the retry limit?", "present", None, True),
-    ("For the same deployment, explain its rollout.", "empty", None, False),
-    ("For the same deployment, explain its rollout.", "unknown", None, False),
-    ("For the same deployment, explain its rollout.", "present", "settings.py", False),
-    ("For the same input, compare both implementations.", "present", None, False),
-    ("Following up-to-date runbooks, explain how the deployment rolls back.", "present", None, False),
-    ("Following up on failed deliveries requires retries. How is the delay chosen?", "present", None, False),
-    ("As before-tax deductions change, how does payroll calculate withholding?", "present", None, False),
-    ("Explain the retry limit.", "present", None, False),
-])
-def test_saved_work_route_is_scoped_to_first_followup_action(identity, monkeypatch, question, state, path, expect_route):
+@pytest.mark.parametrize("initial", ["empty", "present"])
+def test_current_catalog_routes_prior_work_without_looking_it_up(identity, monkeypatch, initial):
     client, repo, _ = identity
-    monkeypatch.setattr(client, "memory_availability", lambda *args: state)
-    monkeypatch.setattr(client, "ask", lambda *a, **kw: pytest.fail("unexpected automatic lookup"))
-    server = TaskMCP(Workflow(client, "team", repo), question, direct_path=path)
-    server._availability_enabled = server._empty_memory_routing
-
-    async def check():
-        async def has_route():
-            tools = {t.name: t for t in await server.list_tools()}
-            return PRESENT_FOLLOWUP_ROUTE.strip() in tools["research"].description
-
-        assert await has_route() is expect_route
-        assert await server.call_tool("read", {"path": "settings.py"})
-        server._availability_until = 0
-        assert not await has_route()
-
-    asyncio.run(check())
-
-
-def test_followup_startup_defers_to_refreshed_catalog(identity, monkeypatch):
-    client, repo, _ = identity
-    states = iter(["empty", "present", "empty"])
-    monkeypatch.setattr(client, "memory_availability", lambda *a: next(states))
-    server = TaskMCP(Workflow(client, "team", repo), "As before, explain the deployment.")
+    state = [initial]
+    monkeypatch.setattr(client, "memory_availability", lambda *a: state[0])
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: pytest.fail("automatic lookup"))
+    server = TaskMCP(Workflow(client, "team", repo), "For the same deployment, explain its behavior.")
 
     async def check():
         await server._initialize_routing()
-        assert server.instructions.startswith(FOLLOWUP_START)
-        for state in ("empty", "present", "empty"):
-            description = next(t.description for t in await server.list_tools() if t.name == "research")
-            assert (PRESENT_FOLLOWUP_ROUTE.strip() in description) == (state == "present")
-            assert ("empty at last check" in description) == (state == "empty")
+        assert server.instructions.startswith(EMPTY_ROUTE if initial == "empty" else FOLLOWUP_START)
+        for current in ("empty", "present", "unknown", "present"):
+            state[0] = current
             server._availability_until = 0
+            tools = {t.name: t for t in await server.list_tools()}
+            assert "read" in tools
+            description = tools["research"].description
+            assert (PRESENT_ROUTE in description) == (current == "present")
+            assert ("empty at last check" in description) == (current == "empty")
+        assert await server.call_tool("read", {"path": "settings.py"})
 
     asyncio.run(check())
 
 
-def test_rejected_read_preserves_followup_route(identity, monkeypatch):
+def test_rejected_lookup_does_not_invalidate_inflight_presence_check(identity, monkeypatch):
+    import threading
+
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    from colony.models import ContextBudget
+
     client, repo, _ = identity
-    monkeypatch.setattr(client, "memory_availability", lambda *a: "present")
-    server = TaskMCP(Workflow(client, "team", repo), "For the same setup, trace the deployment.")
+    started, release = threading.Event(), threading.Event()
+
+    def probe(*args):
+        started.set()
+        assert release.wait(3)
+        return "present"
+
+    monkeypatch.setattr(client, "memory_availability", probe)
+    monkeypatch.setattr("colony.mcp.Client", lambda home: client)
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the earlier finding.", context_budget=ContextBudget())
+    server._availability_enabled = True
+    server._availability_state = "empty"
 
     async def check():
-        await server._initialize_routing()
-        with pytest.raises(ToolError):
-            await server.call_tool("read", {})
-        description = next(t.description for t in await server.list_tools() if t.name == "research")
-        assert PRESENT_FOLLOWUP_ROUTE.strip() in description
+        catalog = asyncio.create_task(server.list_tools())
+        assert await asyncio.to_thread(started.wait, 3)
+        try:
+            with pytest.raises(ToolError):
+                await server.call_tool("research", {"max_context_tokens": 255})
+        finally:
+            release.set()
+        assert PRESENT_ROUTE in next(t.description for t in await catalog if t.name == "research")
 
     asyncio.run(check())
 
