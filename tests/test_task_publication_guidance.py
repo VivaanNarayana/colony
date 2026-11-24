@@ -165,6 +165,48 @@ def test_named_delivered_dependency_requires_a_live_handle(identity, monkeypatch
     asyncio.run(check())
 
 
+@pytest.mark.parametrize("filename", ["Makefile", "retry~legacy.py"])
+def test_copied_page_pins_exact_bare_name(identity, monkeypatch, filename):
+    client, repo, _ = identity
+    (repo / filename).write_text("configured")
+    sent = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: sent.append(trail) or {"stored": True})
+    server = TaskMCP(Workflow(client, "team", repo), "Explain behavior")
+    read = server.evidence.read
+    monkeypatch.setattr(server.evidence, "read", lambda *a, **kw: dict(read(*a, **kw)))
+    async def check():
+        await server.call_tool("read", {"path": filename})
+        reply = await server.call_tool("read", {"path": "settings.py"})
+        ref = json.loads(reply[0].text)["evidence_ref"]
+        reply = await server.call_tool("publish", {"content": "finding", "applicability": f"Under {filename}.",
+                                                   "evidence_refs": [ref]})
+        assert json.loads(reply[0].text)["stored"]
+    asyncio.run(check())
+    assert {s.ref for s in sent[0].sources} == {"settings.py", filename}
+
+
+def test_handleless_version_conflict_survives_restoration(identity, monkeypatch):
+    client, repo, _ = identity
+    server = TaskMCP(Workflow(client, "team", repo), "Explain behavior")
+    server.evidence._capacity = 2
+    monkeypatch.setattr(client, "push", lambda *a, **kw: pytest.fail("ambiguous dependency"))
+    async def read(path):
+        reply = await server.call_tool("read", {"path": path})
+        return json.loads(reply[0].text)["evidence_ref"]
+    async def check():
+        file = repo / "README.md"
+        file.write_text("version A")
+        ref = await read("settings.py")
+        assert await read("README.md")
+        file.write_text("version B")
+        assert await read("README.md") is None
+        file.write_text("version A")
+        reply = await server.call_tool("publish", {"content": "finding", "applicability": "README.md",
+                                                   "evidence_refs": [ref]})
+        assert not json.loads(reply[0].text)["stored"]
+    asyncio.run(check())
+
+
 @pytest.mark.parametrize("failure", ["missing_evidence", "unknown_publication_outcome"])
 def test_requested_status_explanations_survive_failure_without_extra_calls(identity, monkeypatch, failure):
     from mcp.server.fastmcp.exceptions import ToolError

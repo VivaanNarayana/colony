@@ -4,6 +4,7 @@ One process per task. No model invocation; no alternative product implementation
 """
 import argparse
 import asyncio
+import inspect
 import json
 from pathlib import Path
 
@@ -76,16 +77,17 @@ def create_server(home, repo, question, files, max_calls, *, read_only=False,
     # Historical installed targets use their own routing. The candidate gets only
     # the host's existing public question, discovery boundary and real allowance.
     route = getattr(task_mcp, 'containment_question', None)
-    if files is not None and direct_path is None and route and route(question):
+    if files is not None and 'read_path_allowed' in inspect.signature(TaskMCP).parameters:
         def allowed(path):
             try:
                 return research._path(path) is not None
             except (OSError, ValueError, TypeError, RuntimeError):
                 return False
 
+        options['read_path_allowed'] = allowed
+    if files is not None and direct_path is None and route and route(question):
         options.update(scope_files=research.allowed_files, scope_list_tool='fixture_files',
-                       remaining_units=lambda: research.max_calls - research.calls,
-                       read_path_allowed=allowed)
+                       remaining_units=lambda: research.max_calls - research.calls)
     server = BoundedTaskMCP(Workflow(Client(home), 'bench', repo, read_only=read_only), question,
                             direct_path=direct_path, remember=remember, **options)
     original_read = server.evidence.read

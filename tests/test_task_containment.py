@@ -157,6 +157,22 @@ def test_relisting_plans_only_the_undelivered_suffixes(identity):
     assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
 
 
+@pytest.mark.parametrize("altered", [False, True])
+def test_host_copied_pages_need_intact_fields_for_coverage(identity, monkeypatch, altered):
+    paths = {"settings.py"}
+    server = create(identity, paths, read_path_allowed=paths.__contains__)
+    assert plan(server)["next_tool"] == "read"
+    original = server.evidence.read
+    def copy(*args, **kwargs):
+        page = dict(original(*args, **kwargs))
+        if altered:
+            page["end_line"] += 1
+        return page
+    monkeypatch.setattr(server.evidence, "read", copy)
+    status = read(server, path="settings.py")["listed_scope"]["status"]
+    assert status == ("partial" if altered else "complete")
+
+
 def test_redaction_revocation_and_changes_invalidate_coverage(identity):
     _, repo, _ = identity
     paths = ["README.md", "settings.py"]

@@ -121,13 +121,11 @@ class SourceScope:
                 del self.covered[p]
         return versions
 
-    def record(self, before, pages, results):
+    def record(self, before, pages):
         after = self.versions(before)
-        delivered = {id(result) for result in results}
-        for result, content, page, end_offset in pages:
+        for result, page, end_offset, unambiguous in pages:
             path = page.ref
-            if (id(result) not in delivered or result.get("content") != content or result.get("path") != path
-                    or not after.get(path) or before[path] != after[path] or page.target != after[path][0]):
+            if not unambiguous or not after.get(path) or before[path] != after[path] or page.target != after[path][0]:
                 continue
             prior = self.covered.get(path)
             if prior and prior.digest != page.digest:
@@ -139,7 +137,7 @@ class SourceScope:
             if page.offset <= stop <= end_offset:
                 redacted_bytes_left = page.redacted_bytes_from_offset
                 if redacted_bytes_left is not None:
-                    redacted_bytes_left -= len(content.encode("utf-8"))
+                    redacted_bytes_left -= len(result["content"].encode("utf-8"))
                 self.covered[path] = _Coverage(after[path], page.digest, end_offset,
                                                end_offset == page.span_length, redacted_bytes_left)
         missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)

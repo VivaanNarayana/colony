@@ -150,10 +150,11 @@ class TaskMCP(FastMCP):
                 with self.evidence.track_deliveries() if track else nullcontext() as pages:
                     response = operation()
                 results = response.get("results", [response])
+                delivered = self.evidence.delivered_pages(pages, results) if track else ()
                 if self._may_publish:
-                    self.evidence.note_task_delivery(pages, results)
+                    self.evidence.note_task_delivery(delivered)
                 if before is not None:
-                    response["listed_scope"] = scope.record(before, pages, results)
+                    response["listed_scope"] = scope.record(before, delivered)
             # Publication resolves evidence while holding its own lock.
             return observe(results, response)
 

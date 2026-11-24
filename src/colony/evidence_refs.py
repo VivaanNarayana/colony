@@ -62,8 +62,10 @@ class EvidenceSession:
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
-        self._task_paths = set()
-        self._task_paths_overflow = False
+        self._task_versions = {}
+        # Overflow membership is bounded. A collision can require an explicit
+        # reference but can never attach a file or omit a delivered dependency.
+        self._overflow_buckets = set()
         self._deliveries = None
         self._closed = False
         self._lock = threading.RLock()
@@ -195,7 +197,7 @@ class EvidenceSession:
                 result.update(start_offset=prepared.offset, end_offset=stop,
                               next_offset=stop if stop < prepared.span_length else None)
             if self._deliveries is not None:
-                self._deliveries.append((result, content, prepared, stop))
+                self._deliveries.append((result.copy(), prepared, stop))
             return result
 
     def read_batch(self, requests: list[dict]) -> list[dict]:
@@ -240,19 +242,33 @@ class EvidenceSession:
         """Resolve all references atomically or fail; never substitute new hashes."""
         return self._resolve(references, self.path_allowed)
 
-    def note_task_delivery(self, pages, results):
-        """Mark finalized pages actually returned by the task tool, including host wrappers."""
+    @staticmethod
+    def delivered_pages(pages, results):
+        """Match immutable finalized fields; wrappers may copy a page or annotate it."""
+        delivered = []
+        for result in results:
+            if "error" in result:
+                continue
+            matches = [(page, stop) for receipt, page, stop in pages
+                       if all(result.get(k) == v for k, v in receipt.items() if k != "evidence_ref")
+                       and result.get("evidence_ref") in (None, receipt.get("evidence_ref"))
+                       and all(result.get(k) == receipt.get(k) for k in ("start_offset", "end_offset", "next_offset"))]
+            unique = len({(p.digest, p.target) for p, _ in matches}) == 1
+            delivered.extend((result, page, stop, unique) for page, stop in matches)
+        return delivered
+
+    def note_task_delivery(self, pages):
+        """Remember delivered versions even when a read could not mint a handle."""
         with self._lock:
-            returned = {id(result) for result in results}
-            for result, content, page, _ in pages:
-                if id(result) not in returned or result.get("path") != page.ref or result.get("content") != content:
-                    continue
-                # A delivered dependency remains in scope even if it never obtained
-                # a handle or subsequent reads prune its expired observation.
-                if len(self._task_paths) < self._capacity:
-                    self._task_paths.add(page.ref)
-                elif page.ref not in self._task_paths:
-                    self._task_paths_overflow = True
+            for result, page, _, _ in pages:
+                version = (page.digest, page.target)
+                if page.ref in self._task_versions:
+                    if self._task_versions[page.ref] != version:
+                        self._task_versions[page.ref] = None  # Ambiguous until explicitly selected.
+                elif len(self._task_versions) < self._capacity:
+                    self._task_versions[page.ref] = version
+                else:
+                    self._overflow_buckets.add(hash(page.ref) % 4096)
                 handle = result.get("evidence_ref")
                 observation = self._observations.get(handle) if isinstance(handle, str) else None
                 if observation and observation.ref == page.ref and observation.digest == page.digest:
@@ -264,13 +280,18 @@ class EvidenceSession:
             return references
         # Use whole repository-relative path tokens. Backticks allow spaces and
         # extensionless files. Never resolve free-form text against the filesystem.
-        quoted_path = r"`([^`\r\n]+)`"
-        named = set(re.findall(quoted_path, applicability))
-        for token in re.findall(r"[\w./\\+@%-]+", re.sub(quoted_path, " ", applicability)):
-            path = token.rstrip(".")
-            if "/" in path or "." in path:
-                named.add(path)
         with self._lock:
+            quoted_path = r"`([^`\r\n]+)`"
+            named = set(re.findall(quoted_path, applicability))
+            for word in re.sub(quoted_path, " ", applicability).split():
+                # Prefer the exact filename over prose punctuation or list separators.
+                if word in self._task_versions or hash(word) % 4096 in self._overflow_buckets:
+                    named.add(word)
+                if word not in self._task_versions:
+                    stripped = word.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
+                    named.add(stripped)
+                    if stripped not in self._task_versions:
+                        named.update(re.split("[,;]", stripped))
             selected = {self._observations[h].ref for h in references if h in self._observations}
             named.difference_update(selected)
             extra = {}
@@ -278,14 +299,12 @@ class EvidenceSession:
             for handle, observation in self._observations.items():
                 if not observation.delivered_for_task or observation.ref not in named or observation.expires <= now:
                     continue
-                prior = extra.get(observation.ref)
-                if prior:
-                    previous = self._observations[prior]
-                    if (previous.digest, previous.target) != (observation.digest, observation.target):
-                        raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
+                if self._task_versions.get(observation.ref) != (observation.digest, observation.target):
+                    raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
                 extra[observation.ref] = handle
             missing = named.difference(extra)
-            if missing.intersection(self._task_paths) or (missing and self._task_paths_overflow):
+            if missing.intersection(self._task_versions) or any(hash(path) % 4096 in self._overflow_buckets
+                                                               for path in missing):
                 raise EvidenceError("Named dependency needs a current evidence reference")
             return [*references, *extra.values()]
 
@@ -339,4 +358,5 @@ class EvidenceSession:
         with self._lock:
             self._closed = True
             self._observations.clear()
-            self._task_paths.clear()
+            self._task_versions.clear()
+            self._overflow_buckets.clear()

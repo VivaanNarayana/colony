@@ -63,6 +63,24 @@ def batch_server(identity, monkeypatch):
         server.evidence.close()
 
 
+@pytest.mark.parametrize("question", ["Explain settings", "Does this repo contain the measurement?"])
+def test_lookup_boundary_independent_of_containment_capability(identity, monkeypatch, question):
+    import inspect
+
+    from scripts.token_evaluation import task_adapter
+
+    if "read_path_allowed" not in inspect.signature(task_adapter.TaskMCP).parameters:
+        pytest.skip("Historical target has no lookup path policy")
+    monkeypatch.delattr(task_adapter.task_mcp, "containment_question", raising=False)
+    client, repo, _ = identity
+    server = create_server(client.home, repo, question, ["settings.py"], 6)
+    try:
+        assert server.evidence.path_allowed("settings.py")
+        assert not server.evidence.path_allowed("README.md")
+    finally:
+        server.evidence.close()
+
+
 def test_containment_uses_disclosed_inventory_and_real_shared_budget(identity):
     client, repo, _ = identity
     paths = ["README.md", "adapter.py", "client.py", "handler.py", "settings.py"]
