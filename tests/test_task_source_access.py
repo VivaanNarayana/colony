@@ -13,7 +13,7 @@ from colony.evidence_refs import EvidenceError
 from colony.git_client import checked_sources
 from colony.models import ContextBudget
 from colony.task_mcp import TaskMCP
-from colony.validation import snapshot
+from colony.validation import snapshot, validate
 from colony.workflow import Workflow
 
 
@@ -228,6 +228,68 @@ def matching_targets(repo, content="LIMIT = 7"):
         directory_link(alias, repo / "second")
 
     return switch
+
+
+def test_publication_through_link_pins_the_named_target(identity, monkeypatch):
+    client, repo, _ = identity
+    switch = matching_targets(repo)
+    allowed = {"README.md", "alias/value.py", "first/value.py"}
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the limit",
+                     read_path_allowed=allowed.__contains__)
+    stored = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: stored.append(trail) or {"stored": True})
+    pages = call(server, "read", batch=[{"path": "alias/value.py"}, {"path": "README.md"}])["results"]
+    result = call(server, "publish", content="The limit is 7.", applicability="first/value.py",
+                  evidence_refs=[pages[1]["evidence_ref"]])
+    assert result["stored"]
+    assert {s.ref for s in stored[0].sources} == allowed
+    switch()
+    (repo / "first/value.py").write_text("LIMIT = 8")
+    assert validate(repo, stored[0].sources)[0] == "stale"
+
+
+def test_merging_named_aliases_rejects_conflicting_resolved_hashes(identity, monkeypatch):
+    from colony import evidence_refs
+
+    client, repo, _ = identity
+    path = repo / "settings.py"
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the timeout")
+    path.write_text("TIMEOUT = 30")
+    alias = call(server, "read", path="./settings.py")["evidence_ref"]
+    path.write_text("TIMEOUT = 60")
+    canonical = call(server, "read", path="settings.py")["evidence_ref"]
+
+    # Each handle verifies individually, but the file changes between the two checks.
+    original = evidence_refs.repo_contents
+    def concurrent_edit(root, ref, **options):
+        if ref == "settings.py":
+            path.write_text("TIMEOUT = 60")
+        return original(root, ref, **options)
+
+    path.write_text("TIMEOUT = 30")
+    monkeypatch.setattr(evidence_refs, "repo_contents", concurrent_edit)
+    monkeypatch.setattr(client, "push", lambda *a, **kw: pytest.fail("conflicting sources were published"))
+    result = call(server, "publish", content="Timeout behavior", applicability="settings.py",
+                  evidence_refs=[alias, canonical])
+    assert result["reason"] == "scope_evidence_required"
+
+
+def test_listed_aliases_share_coverage_only_while_their_targets_match(identity):
+    client, repo, _ = identity
+    switch = matching_targets(repo)
+    paths = ["alias/value.py", "first/value.py", "second/value.py"]
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True), "Does the repo define a limit?",
+                     scope_files=paths, read_path_allowed=paths.__contains__)
+    def plan():
+        listed = asyncio.run(server.call_tool("source_files", {}))
+        return json.loads(listed[1].text)["scope_read_plan"]
+
+    # Both physical files have identical content. Each needs its own read.
+    assert plan()["arguments"]["batch"] == [{"path": paths[0]}, {"path": paths[2]}]
+    assert call(server, "read", path=paths[0])["listed_scope"]["unverified_paths"] == [paths[2]]
+    switch()
+    assert plan()["arguments"]["batch"] == [{"path": paths[0]}]
+    assert call(server, "read", path=paths[2])["listed_scope"] == {"status": "complete", "listed_files": 3}
 
 
 @pytest.mark.parametrize("max_files", [2, 6])

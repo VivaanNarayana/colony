@@ -124,6 +124,32 @@ def test_real_batch_shares_quota_and_preserves_per_entry_errors(batch_server, id
     assert 'publish' in {t.name for t in asyncio.run(server.list_tools())}
 
 
+@pytest.mark.parametrize("listed_first", [True, False])
+@pytest.mark.parametrize("spelling", ["./settings.py", "pkg/../settings.py"])
+def test_containment_credits_authorized_alias_with_two_units(identity, listed_first, spelling):
+    client, repo, _ = identity
+    (repo / "pkg").mkdir()
+    server = create_server(client.home, repo, "Does this repo contain a timeout?", ["settings.py"], 2,
+                           read_only=True)
+    if not hasattr(server, "_scope"):
+        pytest.skip("Historical target has no source scope planner")
+    try:
+        if listed_first:
+            asyncio.run(server.call_tool("fixture_files", {}))
+        result = asyncio.run(server.call_tool("read", {"path": spelling}))
+        page = json.loads(result[0].text)
+        assert page["complete_file"] and page["path"] == spelling
+        if listed_first:
+            coverage = page["listed_scope"]
+        else:
+            result = asyncio.run(server.call_tool("fixture_files", {})).content
+            coverage = json.loads(result[1].text)["scope_read_plan"]
+        assert json.loads(result[-1].text)["research_budget"]["remaining"] == 0
+        assert coverage == {"status": "complete", "listed_files": 1}
+    finally:
+        server.evidence.close()
+
+
 def test_over_limit_batch_returns_admitted_prefix_only(batch_server, monkeypatch):
     server = batch_server(max_calls=2)
     original, seen = server.evidence.read, []

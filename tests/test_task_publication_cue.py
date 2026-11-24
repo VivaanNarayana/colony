@@ -8,7 +8,13 @@ from test_workflow import identity as identity
 
 from colony.models import ContextBudget
 from colony.task_mcp import (
-    ANSWER_POLICY, PUBLICATION_CUE, READ_ROUTING, RESEARCH_GUIDANCE, SAVED_TRACE_CUE, SCALAR_ROUTE, TaskMCP,
+    ANSWER_POLICY,
+    PUBLICATION_CUE,
+    READ_ROUTING,
+    RESEARCH_GUIDANCE,
+    SAVED_TRACE_CUE,
+    SCALAR_ROUTE,
+    TaskMCP,
 )
 from colony.workflow import Workflow
 

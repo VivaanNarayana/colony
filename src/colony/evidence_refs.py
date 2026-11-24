@@ -8,6 +8,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from itertools import islice
+from pathlib import Path, PurePosixPath
 
 from colony.models import Source
 from colony.security import PATTERNS, fingerprint, scrub, verify
@@ -41,6 +42,12 @@ _SCOPE_ITEM = re.compile(r"[^\s,;]+")
 _QUOTED_PATH = re.compile(r"""[([{"']*`([^`\r\n]+)`[.:!?)\]}"']*(?=[\s,;]|$)""")
 
 
+def _scope_name(name):
+    # Drop redundant dots and separators only. Parent segments and symlinks
+    # have filesystem semantics and must never be resolved from prose.
+    return PurePosixPath(name).as_posix() if "/" in name else name
+
+
 def _scope_paths(text, known, overflow):
     """Read complete quoted paths and exact bare names from a prose list."""
     named = set()
@@ -49,12 +56,12 @@ def _scope_paths(text, known, overflow):
         pos = start.start()
         quoted = _QUOTED_PATH.match(text, pos)
         if quoted:
-            named.add(quoted[1])
+            named.add(_scope_name(quoted[1]))
             offset = quoted.end()
             continue
         word = _SCOPE_WORD.match(text, pos)
-        raw = word[0]
-        stripped = raw.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
+        raw = _scope_name(word[0])
+        stripped = _scope_name(word[0].lstrip("([{\"'").rstrip(".,;:!?)]}\"'"))
         if not stripped:
             offset = word.end()
             continue
@@ -66,8 +73,8 @@ def _scope_paths(text, known, overflow):
         # An overflow fingerprint is conservative; still parse the other list items.
         named.update(x for x in (raw, stripped) if hash(x) % 4096 in overflow)
         item = _SCOPE_ITEM.match(text, pos)
-        name = item[0]
-        plain = name.lstrip("([{\"'").rstrip(".:!?)]}\"'")
+        name = _scope_name(item[0])
+        plain = _scope_name(item[0].lstrip("([{\"'").rstrip(".:!?)]}\"'"))
         if plain:
             named.add(name if name in known else plain)
         offset = item.end()
@@ -324,46 +331,61 @@ class EvidenceSession:
             delivered.extend((result, page, stop, unique) for page, stop in matches)
         return delivered
 
+    def _observed_names(self, observation):
+        names = {_scope_name(observation.ref)}
+        if observation.target is not None:
+            names.add(Path(observation.target).relative_to(self.workflow.repo).as_posix())
+        return names
+
     def note_task_delivery(self, pages):
         """Remember delivered versions even when a read could not mint a handle."""
         with self._lock:
             for result, page, _, _ in pages:
                 version = (page.digest, page.target)
-                if page.ref in self._task_versions:
-                    if self._task_versions[page.ref] != version:
-                        self._task_versions[page.ref] = None  # Ambiguous until explicitly selected.
-                elif len(self._task_versions) < self._capacity:
-                    self._task_versions[page.ref] = version
-                else:
-                    self._overflow_buckets.add(hash(page.ref) % 4096)
+                for name in self._observed_names(page):
+                    if name in self._task_versions:
+                        if self._task_versions[name] != version:
+                            self._task_versions[name] = None  # Ambiguous until explicitly selected.
+                    elif len(self._task_versions) < 2 * self._capacity:
+                        # Each observation can bind the spelling and the resolved file.
+                        self._task_versions[name] = version
+                    else:
+                        self._overflow_buckets.add(hash(name) % 4096)
                 handle = result.get("evidence_ref")
                 observation = self._observations.get(handle) if isinstance(handle, str) else None
                 if observation and observation.ref == page.ref and observation.digest == page.digest:
                     self._observations[handle] = replace(observation, delivered_for_task=True)
 
     def scoped_references(self, references, applicability):
-        """Pin files explicitly named in the declared scope if the task actually read them."""
+        """Return the handles supporting the declared scope."""
+        handles, _ = self.publication_scope(references, applicability)
+        return handles
+
+    def publication_scope(self, references, applicability):
+        """Return supporting handles and the declared file names they cover."""
         if not references:
-            return references
+            return references, set()
         # Use whole repository-relative path tokens. Backticks allow spaces and
         # extensionless files. Never resolve free-form text against the filesystem.
         with self._lock:
             named = _scope_paths(applicability, self._task_versions, self._overflow_buckets)
-            selected = {self._observations[h].ref for h in references if h in self._observations}
-            named.difference_update(selected)
+            selected = {name for h in references if h in self._observations
+                        for name in self._observed_names(self._observations[h])}
+            pending = named - selected
             extra = {}
             now = time.monotonic()
             for handle, observation in self._observations.items():
-                if not observation.delivered_for_task or observation.ref not in named or observation.expires <= now:
+                if not observation.delivered_for_task or observation.expires <= now:
                     continue
-                if self._task_versions.get(observation.ref) != (observation.digest, observation.target):
-                    raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
-                extra[observation.ref] = handle
-            missing = named.difference(extra)
+                for name in pending.intersection(self._observed_names(observation)):
+                    if self._task_versions.get(name) != (observation.digest, observation.target):
+                        raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
+                    extra[name] = handle
+            missing = pending.difference(extra)
             if missing.intersection(self._task_versions) or any(hash(path) % 4096 in self._overflow_buckets
                                                                for path in missing):
                 raise EvidenceError("Named dependency needs a current evidence reference")
-            return [*references, *extra.values()]
+            return [*references, *dict.fromkeys(extra.values())], named - missing
 
     def _resolve(self, references, path_allowed):
         with self._lock:
@@ -385,19 +407,42 @@ class EvidenceSession:
                 sources[observation.ref] = Source(ref=observation.ref, content_hash=observation.digest)
             return list(sources.values())
 
-    def publish(self, question: str, content: str, references: list[str], *, before_push=None) -> dict:
+    def _pin_named_targets(self, sources, references, named_sources, pins):
+        # Resolution has just reauthorized the original handles and verified their
+        # hashes. Bind each named canonical path to that same target before push.
+        bound = {source.ref: source for source in sources}
+        for handle in references:
+            observation = self._observations[handle]
+            if observation.target is None or observation.ref not in bound:
+                continue
+            canonical = Path(observation.target).relative_to(self.workflow.repo).as_posix()
+            if canonical == observation.ref or canonical not in named_sources:
+                continue
+            if canonical in bound and bound[canonical].content_hash != observation.digest:
+                raise EvidenceError("Named dependency has conflicting source versions")
+            try:
+                repo_file(self.workflow.repo, canonical, path_allowed=pins, expected_target=observation.target)
+            except (OSError, ValueError):
+                raise EvidenceError("Named dependency changed or became unavailable") from None
+            bound[canonical] = bound[observation.ref].model_copy(update={"ref": canonical})
+            if _scope_name(observation.ref) == canonical:
+                del bound[observation.ref]
+        return list(bound.values())
+
+    def publish(self, question: str, content: str, references: list[str], *,
+                before_push=None, named_sources=()) -> dict:
         """Use ordinary sanitized, tainted, idempotent workflow publication.
 
         A reference records a span observed, not whether a claim follows from it.
         The host must keep claims within those spans and apply publication policy.
         """
         with self._lock:
-            if self.path_allowed is None:
-                sources = self.resolve(references)
-                policy = {}
-            else:
-                pins = PinnedSourcePaths(self.path_allowed)
-                sources = self._resolve(references, pins)
+            pins = PinnedSourcePaths(self.path_allowed) if self.path_allowed is not None else None
+            sources = self.resolve(references) if pins is None else self._resolve(references, pins)
+            if named_sources:
+                sources = self._pin_named_targets(sources, references, named_sources, pins)
+            policy = {}
+            if pins is not None:
                 # Sanitization may rewrite a ref. Only the observed names and targets
                 # may support the outgoing finding, including an offline queue entry.
                 if any(scrub(source.ref) != source.ref for source in sources):

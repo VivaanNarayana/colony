@@ -225,9 +225,9 @@ class TaskMCP(FastMCP):
                 if self._may_publish:
                     self.evidence.note_task_delivery(delivered)
                 if before is not None:
-                    scope.record(before, delivered)
-                    if scope.listed:
-                        response["listed_scope"] = scope.receipt()
+                    receipt = scope.record(before, delivered)
+                    if receipt is not None:
+                        response["listed_scope"] = receipt
             # Publication resolves evidence while holding its own lock.
             # These tools return a single MCP text block. Serialize once to avoid
             # replaying pretty-printed framing on each subsequent model request.
@@ -350,9 +350,10 @@ class TaskMCP(FastMCP):
 
                 try:
                     with self.evidence._lock:
-                        references = self.evidence.scoped_references(evidence_refs, applicability)
+                        references, named_sources = self.evidence.publication_scope(evidence_refs, applicability)
                         cold_trace = self._availability_state == "empty" and len(set(references)) > 1
-                        receipt = self.evidence.publish(self.question, finding, references, before_push=begin_push)
+                        receipt = self.evidence.publish(self.question, finding, references,
+                                                        before_push=begin_push, named_sources=named_sources)
                         if cold_trace and receipt.get("stored") is True:
                             return {**receipt, "answer_guidance": SAVED_TRACE_CUE}
                         return receipt

@@ -126,6 +126,22 @@ def test_inventory_malformed_failed_turn_retains_cost(tmp_path):
     assert not result["usage_complete"]
 
 
+def test_inventory_recovers_usage_around_deep_response_and_truncated_tail(tmp_path):
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    # Same supported optional envelope depth as the native receipt reader.
+    nested = '{"nested":[' * 2000 + 'null' + ']}' * 2000
+    receipt = json.dumps({"type": "turn.completed", "usage": {
+        "input_tokens": 100, "cached_input_tokens": 20, "output_tokens": 10}})
+    lines = ['{"type":"turn.started"}', receipt, '{"type":"response.completed","response":' + nested + '}',
+             '{"type":[]}', '{"type":"turn.started"}', receipt, '{"type":']
+    (logs / "interrupted.events.jsonl").write_text("\n".join(lines), encoding="utf-8")
+    result = inventory(tmp_path)
+    assert result["known_gross_tokens"] == 220
+    assert result["usage_complete"] is False
+    assert result["native_logs"][0]["unverified_observed_components"]["cached_input_tokens"] == 40
+
+
 def native_inventory_fixture(root, references, paths):
     """Synthetic accounting controls only; no measured model usage."""
     (root / 'control').mkdir()

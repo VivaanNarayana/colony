@@ -43,6 +43,9 @@ delivered, including inventories that require multiple batches. Line ranges and 
 from separate reads, batches and traces can arrive in any order. Once they cover the
 same version from start to finish without gaps, the file counts as fully read, subject to redaction.
 The first matching listing also credits earlier reads whose authorized file versions still match.
+An authorized alternative spelling such as `./settings.py` counts toward `settings.py`
+when both refer to the same observed file version. Distinct files with identical contents
+still need separate reads.
 If the end of a file was read first, the planner can request the missing prefix when
 that file's share of the batch reaches the observed tail.
 Coverage is tracked even when the publication reference cache is full.
@@ -149,6 +152,8 @@ complete quoted item names the path inside its delimiters. Supply the returned
 handle directly when the path itself could be mistaken for markup. Each added
 source must have a delivered task read and pass the same authorization and version
 checks as a submitted handle. A change to any pinned file invalidates the finding.
+When a declaration names the resolved target of an observed alias, publication rechecks
+the original read permission and pins the named file. A redundant `./` adds no duplicate source.
 If a named delivered file has no live reference, publication requires fresh evidence.
 Task-local path tracking is bounded. If it fills, an unaccounted named path also
 requires fresh evidence.

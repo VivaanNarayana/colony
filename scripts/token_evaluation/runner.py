@@ -285,9 +285,9 @@ def inventory(run_dir):
             for line in jsonl_lines(path.read_bytes(), errors="replace"):
                 try:
                     event = json.loads(line)
-                except ValueError:
+                except (ValueError, RecursionError):
                     continue
-                if not isinstance(event, dict) or event.get("type") not in {"turn.completed", "turn.failed"}:
+                if not isinstance(event, dict) or event.get("type") not in ("turn.completed", "turn.failed"):
                     continue
                 counts = event.get("usage")
                 if not isinstance(counts, dict):

@@ -8,7 +8,14 @@ from test_workflow import identity as identity
 
 from colony.models import Scope
 from colony.security import issue
-from colony.task_mcp import COLD_DISCOVERY, EMPTY_ROUTE, FOLLOWUP_START, PRESENT_ROUTE, PRESENT_STATUS, TaskMCP
+from colony.task_mcp import (
+    COLD_DISCOVERY,
+    EMPTY_ROUTE,
+    FOLLOWUP_START,
+    PRESENT_ROUTE,
+    PRESENT_STATUS,
+    TaskMCP,
+)
 from colony.workflow import Workflow
 
 

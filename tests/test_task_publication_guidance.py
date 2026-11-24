@@ -17,6 +17,7 @@ from colony.task_mcp import (
     READ_ROUTING,
     TaskMCP,
 )
+from colony.validation import validate
 from colony.workflow import Workflow
 
 
@@ -126,6 +127,46 @@ def test_publication_pins_named_delivered_scope_files(identity, monkeypatch, cha
         assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
 
 
+@pytest.mark.parametrize("spelling,named", [
+    ("./settings.py", "settings.py"), ("././settings.py", "`./settings.py`"),
+    ("pkg/../settings.py", "settings.py"), ("settings.py", "./settings.py"),
+])
+def test_named_alias_dependency_goes_stale_after_publication(identity, monkeypatch, spelling, named):
+    client, repo, _ = identity
+    (repo / "pkg").mkdir()
+    stored = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: stored.append(trail) or {"stored": True})
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the configured behavior",
+                     read_path_allowed=lambda path: path in {spelling, "settings.py", "README.md"})
+    pages = json.loads(asyncio.run(server.call_tool("read", {"batch": [
+        {"path": spelling}, {"path": "README.md"}]}))[0].text)["results"]
+    assert pages[0]["path"] == spelling and pages[0]["evidence_ref"]
+    args = {"content": "The configured timeout is 30.", "applicability": named,
+            "evidence_refs": [pages[1]["evidence_ref"]]}
+    assert server.evidence.scoped_references(args["evidence_refs"], named) == [
+        pages[1]["evidence_ref"], pages[0]["evidence_ref"]]
+    assert json.loads(asyncio.run(server.call_tool("publish", args))[0].text)["stored"]
+    assert "settings.py" in {source.ref for source in stored[0].sources}
+    if ".." not in spelling:
+        assert len(stored[0].sources) == 2
+    (repo / "settings.py").write_text("TIMEOUT = 60")
+    assert validate(repo, stored[0].sources)[0] == "stale"
+
+
+def test_named_alias_publication_rechecks_original_permission(identity, monkeypatch):
+    client, repo, _ = identity
+    allowed = {"./settings.py", "settings.py", "README.md"}
+    server = TaskMCP(Workflow(client, "team", repo), "Explain behavior",
+                     read_path_allowed=allowed.__contains__)
+    monkeypatch.setattr(client, "push", lambda *a, **kw: pytest.fail("revoked source was published"))
+    pages = json.loads(asyncio.run(server.call_tool("read", {"batch": [
+        {"path": "./settings.py"}, {"path": "README.md"}]}))[0].text)["results"]
+    allowed.remove("./settings.py")
+    result = asyncio.run(server.call_tool("publish", {"content": "The timeout is 30.",
+        "applicability": "settings.py", "evidence_refs": [pages[1]["evidence_ref"]]}))
+    assert json.loads(result[0].text)["reason"] == "scope_evidence_required"
+
+
 @pytest.mark.parametrize("scope", [
     "`docs/release notes.md`", "`docs/release notes.md`,settings.py",
     "settings.py;`docs/release notes.md`", "(`docs/release notes.md`),`settings.py`",
@@ -216,7 +257,8 @@ def test_copied_page_pins_exact_bare_name(identity, monkeypatch, filename):
     assert {s.ref for s in sent[0].sources} == {"settings.py", filename}
 
 
-def test_handleless_version_conflict_survives_restoration(identity, monkeypatch):
+@pytest.mark.parametrize("later_spelling", ["README.md", "./README.md"])
+def test_handleless_version_conflict_survives_restoration(identity, monkeypatch, later_spelling):
     client, repo, _ = identity
     server = TaskMCP(Workflow(client, "team", repo), "Explain behavior")
     server.evidence._capacity = 2
@@ -230,7 +272,7 @@ def test_handleless_version_conflict_survives_restoration(identity, monkeypatch)
         ref = await read("settings.py")
         assert await read("README.md")
         file.write_text("version B")
-        assert await read("README.md") is None
+        assert await read(later_spelling) is None
         file.write_text("version A")
         reply = await server.call_tool("publish", {"content": "finding", "applicability": "README.md",
                                                    "evidence_refs": [ref]})

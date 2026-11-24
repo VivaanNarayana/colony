@@ -38,9 +38,10 @@ _CONTAINMENT = re.compile(
 # A temporal qualifier on the repository's action asks about order. A dot inside
 # a filename is not a sentence boundary.
 _ORDERED_ACTION = re.compile(
-    r"(?:[^?.!;]|\.(?=\w))*?\b(?:before|after)\s+\w",
+    r"(?P<object>(?:[^?.!;]|\.(?=\w))*?)\b(?:before|after)\s+\w",
     re.IGNORECASE,
 )
+_RELATIVE_CLAUSE = re.compile(r"\S\s+(?:that|which|who|whose|where)\s+[^,;]*$", re.IGNORECASE)
 _REPORTED_CLAUSE = re.compile(r"\s+(?:how|when|why|whether|what|that)\b", re.IGNORECASE)
 SCOPE_ROUTE = (
     "For the repository containment question, list the authorized files once with {}. "
@@ -57,7 +58,10 @@ def containment_question(question):
         if (match["verb"].lower() in {"document", "mention", "record", "specify"}
                 and _REPORTED_CLAUSE.match(question, match.end())):
             return True
-        if not _ORDERED_ACTION.match(question, match.end()):
+        ordered = _ORDERED_ACTION.match(question, match.end())
+        # In "scripts that run after deployment", the relative clause describes
+        # the requested scripts. The repository's action has no time qualifier.
+        if ordered is None or _RELATIVE_CLAUSE.search(ordered["object"]):
             return True
     return False
 
@@ -74,7 +78,6 @@ class _Span:
 
 @dataclass
 class _Coverage:
-    version: tuple
     digest: str
     length: int
     byte_length: int
@@ -161,11 +164,17 @@ class SourceScope:
                        and all(_public_path(p) for p in self.paths))
         if not self.listed:
             return self.unverified_plan()
-        versions = self.versions(())
+        versions = self.versions(listed)
         partial = {"status": "partial", "guidance": "Prioritize evidence; qualify unread or partial files."}
-        pending = [p for p in listed if p not in self.covered or not self.covered[p].at_eof]
+        pending = {}
+        for path in listed:
+            version = versions[path]
+            if version is None:
+                return partial
+            if version not in self.covered or not self.covered[version].at_eof:
+                pending.setdefault(version, path)
         if not pending:
-            if all(self.covered[p].complete for p in listed):
+            if all(self.covered[v].complete for v in versions.values()):
                 return {"status": "complete", "listed_files": len(listed)}
             return partial
         if self.remaining is None:
@@ -177,11 +186,8 @@ class SourceScope:
             return partial
         batch = []
         sizes, needed = [], []
-        for path in pending:
-            version = versions[path] if path in versions else self.version(path)
-            if version is None:
-                return partial
-            coverage = self.covered.get(path)
+        for version, path in pending.items():
+            coverage = self.covered.get(version)
             prefix = coverage.prefix if coverage else None
             offset_bytes = prefix.byte_stop if prefix else 0
             length = coverage.byte_length if coverage else version[-1]
@@ -201,43 +207,44 @@ class SourceScope:
 
     def versions(self, requested):
         self.evidence._authorize()
-        paths = self.paths.intersection(requested)
-        if self.listed:
-            paths |= self.covered.keys()
+        paths = set(requested)
+        if not paths.issubset(self.paths):
+            # An accepted alternative spelling can refer to any listed target.
+            # Probe only host-declared names and match the actual delivered target.
+            paths = set(self.paths)
         versions = {p: self.version(p) for p in paths}
-        for p, version in versions.items():
-            if p in self.covered and self.covered[p].version != version:
-                del self.covered[p]
+        if paths == self.paths:
+            current = set(versions.values())
+            self.covered = {v: evidence for v, evidence in self.covered.items() if v in current}
         return versions
 
     def record(self, before, pages):
-        after = self.versions(before)
+        after = self.versions(self.paths)
+        stable = {v[0]: v for path, v in before.items() if v and v == after[path]}
         for result, page, end_offset, unambiguous in pages:
-            path = page.ref
-            if not unambiguous or not after.get(path) or before[path] != after[path] or page.target != after[path][0]:
-                continue
-            prior = self.covered.get(path)
-            if prior and prior.digest != page.digest:
-                del self.covered[path]
-                prior = None
             position = page.position
-            if position is None:
+            if not unambiguous or position is None or page.target not in stable:
                 continue
-            if prior is None:
-                prior = _Coverage(after[path], page.digest, position.length, position.byte_length, page.redacted)
             # A page beginning at its declared line start also establishes the
             # preceding separator (or BOF). This distinguishes omitted blank lines.
             start = position.offset - int(page.offset == 0)
             byte_start = max(0, position.byte_offset - int(page.offset == 0))
-            prior.add(_Span(start, position.offset + (end_offset - page.offset), byte_start,
-                            position.byte_offset + len(result["content"].encode("utf-8"))))
-            self.covered[path] = prior
+            span = _Span(start, position.offset + (end_offset - page.offset), byte_start,
+                         position.byte_offset + len(result["content"].encode("utf-8")))
+            version = stable[page.target]
+            prior = self.covered.get(version)
+            if prior is None or prior.digest != page.digest:
+                prior = _Coverage(page.digest, position.length, position.byte_length, page.redacted)
+                self.covered[version] = prior
+            prior.add(span)
+        if self.listed:
+            return self.receipt(after)
 
-    def receipt(self):
-        missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)
+    def receipt(self, versions):
+        missing = sorted(p for p, v in versions.items() if v not in self.covered or not self.covered[v].complete)
         result = {"status": "partial" if missing else "complete", "listed_files": len(self.paths)}
         if missing:
             # Only repeat names still authorized for disclosure.
             result["unverified_count"] = len(missing)
-            result["unverified_paths"] = [p for p in missing[:8] if self.version(p) is not None]
+            result["unverified_paths"] = [p for p in missing[:8] if versions[p] is not None]
         return result
