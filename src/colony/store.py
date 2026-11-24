@@ -716,12 +716,12 @@ class Store:
             evidence = self.find_evidence(
                 question, namespaces, max_age, include_evidence_files=include_evidence_files,
                 git_context=git_context, **options,
-                **({"source_set_threshold": threshold, "pack_source_set": pack}
-                   if response_profile is not None else {}),
+                **({"source_set_threshold": threshold} if response_profile is not None else {}),
+                **({"pack_evidence": pack} if pack is not None else {}),
             )
             if evidence is not None:
                 if "context_budget" in evidence:
-                    return evidence  # Compound selection already fitted the compact response.
+                    return evidence  # Evidence selection already fitted the response.
                 result = evidence
         if pack is not None:
             packed = pack(result)
@@ -761,11 +761,54 @@ class Store:
             return packed
         return result
 
+    @staticmethod
+    def _rank_evidence_passages(question, candidates):
+        # The vector includes the path, but the cross-encoder sees only the text.
+        # Candidates arrive nearest-first. Nominate each text at its best distance,
+        # then score its actual origins with their own path-sensitive distances.
+        origins = {}
+        for linked, text in candidates:
+            origins.setdefault(text, []).extend(linked)
+        texts = list(origins)
+        coverage = dict(zip(texts, keyword_coverage(question, texts), strict=True))
+        dense = [text for text in texts if 1 - origins[text][0]["distance"] >= 0.45][:24]
+        sparse = [text for text in sorted(texts, key=coverage.__getitem__, reverse=True)
+                  if coverage[text] >= 0.15][:24]
+        chosen = set(dense) | set(sparse)
+        selected = {text: origins[text] for text in texts if text in chosen}
+        procedure = requires_procedure(question)
+        accepted = {}
+        for text, score in zip(selected, rank(question, list(selected)), strict=True):
+            if score < -5.0 or (procedure and not procedural_text(text)):
+                continue
+            if coverage[text] >= 0.5 or score >= 0 or (procedure and score >= -2):
+                accepted[text] = (score, coverage[text])
+        ranked = sorted(
+            ((linked, evidence_score(1 - linked[0]["distance"], *accepted[text]))
+             for linked, text in candidates if text in accepted),
+            key=lambda item: item[1], reverse=True,
+        )
+        # Near-tied passages from one finding are selected together. A separate,
+        # lower-ranked group can still fit if the first group's required cores do not.
+        current_groups, alternatives = {}, []
+        for linked, score in ranked:
+            for row in linked:
+                group = current_groups.get(row["id"])
+                if group is None or score < group[1] - 0.15:
+                    group = (row, score, [])
+                    current_groups[row["id"]] = group
+                    alternatives.append(group)
+                locations = group[2]
+                location = (row["ref"], row["content_hash"], row["line"])
+                if len(locations) < 8 and location not in locations:
+                    locations.append(location)
+        return selected, alternatives
+
     def _source_set_candidates(self, db, question, vector, candidates, threshold, fits):
         """Locate source sets for a compound lookup without admitting a saved answer."""
         query_terms = terms(question)
         origins = {}
-        for linked, text in candidates:
+        for text, linked in candidates.items():
             overlap = query_terms & terms(text)
             if overlap:
                 for row in linked:
@@ -784,7 +827,7 @@ class Store:
         eligible = self._source_set_shortlist(db, complementary, vector, max(0.55, threshold), fits)
         logits = rank(question, [row["question"] for row, _ in eligible]) if eligible else []
         return sorted(
-            [([row], fused_score(similarity, logit))
+            [(row, fused_score(similarity, logit), None)
              for (row, similarity), logit in zip(eligible, logits, strict=True) if logit >= -5.0],
             key=lambda item: item[1], reverse=True,
         )
@@ -881,6 +924,7 @@ class Store:
         expand_first_file: bool = False,
         source_set_threshold: float | None = None,
         pack_source_set=None,
+        pack_evidence=None,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
@@ -930,127 +974,93 @@ class Store:
                     }
                 if line in cache[key]:
                     candidates.append((linked, cache[key][line]))
-            lexical = keyword_coverage(question, [text for _, text in candidates])
-            dense = [
-                i for i, (linked, _) in enumerate(candidates) if 1 - linked[0]["distance"] >= 0.45
-            ][:24]
-            sparse = [
-                i
-                for i in sorted(range(len(lexical)), key=lexical.__getitem__, reverse=True)
-                if lexical[i] >= 0.15
-            ][:24]
-            # A lexical candidate can rescue evidence below the dense cutoff. Keep
-            # the expensive cross-encoder bounded to at most 48 distinct passages.
-            chosen = sorted(set(dense) | set(sparse))
-            candidates = [candidates[i] for i in chosen]
-            lexical = [lexical[i] for i in chosen]
-            scores = rank(question, [text for _, text in candidates])
-            ordered = sorted(
-                [
-                    (linked, evidence_score(1 - linked[0]["distance"], score, coverage))
-                    for (linked, text), score, coverage in zip(
-                        candidates, scores, lexical, strict=True
-                    )
-                    if score >= -5.0
-                    and (
-                        coverage >= 0.5
-                        or score >= 0
-                        or (requires_procedure(question) and procedural_text(text) and score >= -2)
-                    )
-                    and (not requires_procedure(question) or procedural_text(text))
-                ],
-                key=lambda item: item[1],
-                reverse=True,
-            )
+            selected_passages, ordered = self._rank_evidence_passages(question, candidates)
+
+            # Direct callers may request packed source sets and raw passage results.
+            pack_bundle = pack_source_set if pack_source_set is not None else pack_evidence
 
             def fits(row, sources, bundle):
                 result = self._evidence_response(
                     row, sources, bundle, self.memory_metadata(db, row["id"]),
                     self._git_receipt(db, row["id"], requested) if requested is not None else None,
                 )
-                return pack_source_set(result)["hit"]
+                return pack_bundle(result)["hit"]
 
             def rankings():
                 if ordered:
-                    yield ordered, False
+                    yield ordered
                 if source_set_threshold is not None and not requires_procedure(question):
                     yield self._source_set_candidates(
-                        db, question, vector, candidates, source_set_threshold,
-                        fits if pack_source_set is not None else None,
-                    ), True
+                        db, question, vector, selected_passages, source_set_threshold,
+                        fits if pack_bundle is not None else None,
+                    )
 
             budget_miss = None
-            for ranked, use_source_set in rankings():
+            for ranked in rankings():
                 if not ranked:
                     continue
                 # A candidate can be retired during reranking. Serialize the final state
                 # check with lifecycle writes before validating/returning current evidence.
                 db.execute("BEGIN IMMEDIATE")
                 checked = set()
-                for linked, relevance in ranked:
-                    for row in linked:
-                        if row["id"] in checked:
+                for row, relevance, locations in ranked:
+                    if row["id"] in checked:
+                        continue
+                    checked.add(row["id"])
+                    memory = self.memory_metadata(db, row["id"])
+                    if memory["state"] != "active":
+                        continue
+                    git_receipt = None
+                    if requested is not None:
+                        git_receipt = self._git_receipt(db, row["id"], requested)
+                        if git_receipt["compatibility"] == "repository_mismatch":
                             continue
-                        checked.add(row["id"])
-                        memory = self.memory_metadata(db, row["id"])
-                        if memory["state"] != "active":
-                            continue
-                        git_receipt = None
-                        if requested is not None:
-                            git_receipt = self._git_receipt(db, row["id"], requested)
-                            if git_receipt["compatibility"] == "repository_mismatch":
-                                continue
-                        sources = self.sources(db, row["id"])
-                        if required_source_identities is not None and frozenset(
-                            (source.ref, source.content_hash) for source in sources
-                        ) != required_source_identities:
-                            continue
-                        status, checks = validate(self.repo, sources)
-                        if status != "validated":
-                            continue
-                        if use_source_set:
-                            evidence = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
-                        else:
-                            permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
-                            # Near-tied passages can describe different parts of an answer.
-                            # Supply a second distinct section within the existing token cap,
-                            # using only this validated trail's already-cited files.
-                            preferred = [
-                                (alternatives[0]["ref"], alternatives[0]["line"])
-                                for alternatives, score in ranked
-                                if score >= relevance - 0.15
-                                and (alternatives[0]["ref"], alternatives[0]["content_hash"]) in permitted
-                            ][:8]
-                            evidence = excerpts(
-                                self.repo,
-                                sources,
-                                question,
-                                preferred=preferred,
-                                whole_files=include_evidence_files,
-                                **({"expand_first_file": True} if expand_first_file
-                                   and context_budget is not None and restricted_trail_id is not None
-                                   and required_source_identities is not None else {}),
-                                **({"adaptive": True} if context_budget is not None else {}),
-                            )
-                        if not evidence:
-                            continue
-                        result = self._evidence_response(row, sources, evidence, memory, git_receipt,
-                                                         checks=checks, relevance=relevance)
-                        if use_source_set and pack_source_set is not None:
-                            result = pack_source_set(result)
-                            if result.get("reason") == "budget_limited":
-                                budget_miss = result
-                                continue
-                        now = time.time()
-                        db.execute(
-                            "UPDATE trails SET status=?,last_validated_at=? WHERE id=?",
-                            (status, now, row["id"]),
+                    sources = self.sources(db, row["id"])
+                    if required_source_identities is not None and frozenset(
+                        (source.ref, source.content_hash) for source in sources
+                    ) != required_source_identities:
+                        continue
+                    status, checks = validate(self.repo, sources)
+                    if status != "validated":
+                        continue
+                    if locations is None:
+                        evidence = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
+                    else:
+                        permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
+                        preferred = [(ref, line) for ref, digest, line in locations
+                                     if (ref, digest) in permitted]
+                        evidence = excerpts(
+                            self.repo,
+                            sources,
+                            question,
+                            preferred=preferred,
+                            whole_files=include_evidence_files,
+                            **({"expand_first_file": True} if expand_first_file
+                               and context_budget is not None and restricted_trail_id is not None
+                               and required_source_identities is not None else {}),
+                            **({"adaptive": True} if context_budget is not None else {}),
                         )
-                        db.execute(
-                            "INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)",
-                            (row["id"], "repo-evidence-v1", json.dumps(checks), now),
-                        )
-                        return result
+                    if not evidence:
+                        continue
+                    result = self._evidence_response(row, sources, evidence, memory, git_receipt,
+                                                     checks=checks, relevance=relevance)
+                    pack = pack_bundle if locations is None else pack_evidence
+                    if pack is not None:
+                        result = pack(result)
+                        if result.get("reason") == "budget_limited":
+                            budget_miss = result
+                            checked.remove(row["id"])
+                            continue
+                    now = time.time()
+                    db.execute(
+                        "UPDATE trails SET status=?,last_validated_at=? WHERE id=?",
+                        (status, now, row["id"]),
+                    )
+                    db.execute(
+                        "INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)",
+                        (row["id"], "repo-evidence-v1", json.dumps(checks), now),
+                    )
+                    return result
                 # Release the final validation lock before ranking an alternative.
                 db.commit()
         return budget_miss
