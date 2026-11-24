@@ -52,8 +52,9 @@ containment and qualify any unverified scope.
 For a caller that takes a dependency as an argument, report the behavior the caller
 controls. Attribute internal behavior to a specific implementation when the task supplies
 it or when cited wiring selects it. For example, if a particular adapter is supplied,
-its two total attempts permit one retry. Ordinary tasks also receive this reminder on
-their first source response containing two distinct complete files. It costs no extra read.
+its two total attempts permit one retry. On ordinary tasks, the first `read` batch or
+`trace_read` result containing two distinct complete file paths also carries the reminder
+in `binding_guidance`. It costs no extra read.
 Preserve useful explanations by stating their verified conditions. Failed entries, partial
 pages and literal search misses do not prove repository-wide absence. The read tool also
 exposes the coverage warning; it adds no repeated warning to source responses. These are
