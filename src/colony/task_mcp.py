@@ -148,7 +148,8 @@ class TaskMCP(FastMCP):
                 results = response.get("results", [response])
                 if before is not None:
                     response["listed_scope"] = scope.record(before, pages, results)
-                return observe(results, response)
+            # Publication resolves evidence while holding its own lock.
+            return observe(results, response)
 
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,

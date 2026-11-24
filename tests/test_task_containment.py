@@ -170,6 +170,29 @@ def test_redaction_revocation_and_changes_invalidate_coverage(identity):
     assert plan(server)["status"] == "unverified_scope"
 
 
+@pytest.mark.parametrize("tail_text", ["x" * 26000, "水" * 8500], ids=["ascii", "utf8"])
+def test_relisting_keeps_a_redacted_gap_and_plans_only_undelivered_content(identity, tail_text):
+    _, repo, _ = identity
+    path = repo / "example.env"
+    path.write_text('password="example-only"\n' + tail_text, encoding="utf-8")
+    other = "settings.py"
+    server = create(identity, [path.name, other])
+    assert plan(server)["status"] == "partial"
+    first = read(server, path=path.name)
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": path.name, "offset": first["next_offset"]}, {"path": other}]
+    tail = read(server, path=path.name, offset=first["next_offset"])
+    assert tail["next_offset"] is None and tail["listed_scope"]["status"] == "partial"
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": other}]
+    assert read(server, **action["arguments"])["listed_scope"]["unverified_paths"] == [path.name]
+    assert plan(server)["status"] == "partial"
+    path.write_text("Public settings")
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": path.name}]
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+
+
 def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity):
     _, repo, _ = identity
     paths = ["README.md", "settings.py"]
@@ -184,12 +207,24 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
 
 @pytest.mark.parametrize("question,direct", [
     ("Explain how the limit is applied.", None), ("What is the timeout in this repo?", None),
+    ("Where does the project define the timeout?", None),
+    ("Where\ndoes the project define the timeout?", None),
+    ("Why does this repository include vendored dependencies?", None),
     (QUESTION, "settings.py"),
 ])
 def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, direct):
     server = create(identity, ["settings.py"], question, direct_path=direct)
     assert {t.name for t in asyncio.run(server.list_tools())} == {"read", "research"}
     assert "listed_scope" not in read(server, path="settings.py")
+
+
+@pytest.mark.parametrize("question", [
+    "Does the project define a timeout?", "Check if the project defines a timeout.",
+    "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
+])
+def test_containment_questions_keep_the_single_batch_route(identity, question):
+    server = create(identity, ["settings.py"], question)
+    assert plan(server) == {"next_tool": "read", "arguments": {"batch": [{"path": "settings.py"}]}}
 
 
 def test_cli_inventory_runs_over_stdio_and_restricts_unlisted_reads(identity):

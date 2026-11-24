@@ -39,7 +39,7 @@ class _PreparedRead:
     offset: int
     span_length: int
     whole_range: bool
-    redacted: bool
+    redacted_bytes_from_offset: int | None
     content: bytes
     expires: float
     target: str | None
@@ -139,9 +139,14 @@ class EvidenceSession:
                 raise
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
+            redacted_bytes = None
+            if text != original:
+                # Scrubbing can expand or shrink the source. Continuation offsets
+                # count characters, while a shared batch is limited in UTF-8 bytes.
+                redacted_bytes = len(span) - offset if span.isascii() else len(span[offset:].encode("utf-8"))
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
                                      offset, len(span), start == 1 and last == len(lines),
-                                     text != original, content,
+                                     redacted_bytes, content,
                                      time.monotonic() + self._ttl,
                                      str(target) if self.path_allowed is not None or self._deliveries is not None else None)
             if _defer_reference:

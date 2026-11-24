@@ -9,7 +9,7 @@ from colony.validation import repo_file
 _REPO = r"(?:repo(?:sitory)?|codebase|project)"
 _VERB = r"(?:contain|include|document|mention|record|implement|define|specify|provide)"
 _CONTAINMENT = re.compile(
-    rf"\b(?:whether|if|does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
+    rf"(?:\b(?:whether|if)|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
     rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b",
     re.IGNORECASE,
 )
@@ -29,7 +29,17 @@ class _Coverage:
     version: tuple
     digest: str
     stop: int
-    complete: bool
+    at_eof: bool
+    redacted_bytes_left: int | None
+
+    @property
+    def complete(self):
+        return self.at_eof and self.redacted_bytes_left is None
+
+    def remaining_bytes_bound(self, file_size):
+        if self.redacted_bytes_left is not None:
+            return self.redacted_bytes_left
+        return file_size - self.stop
 
 
 class SourceScope:
@@ -67,9 +77,12 @@ class SourceScope:
             self.covered.clear()
             return {"status": "unverified_scope", "guidance": "Qualify uninspected files."}
         versions = self.versions(())
-        missing = [p for p in listed if p not in self.covered or not self.covered[p].complete]
-        if not missing:
-            return {"status": "complete", "listed_files": len(listed)}
+        partial = {"status": "partial", "guidance": "Prioritize evidence; qualify unread or partial files."}
+        pending = [p for p in listed if p not in self.covered or not self.covered[p].at_eof]
+        if not pending:
+            if all(self.covered[p].complete for p in listed):
+                return {"status": "complete", "listed_files": len(listed)}
+            return partial
         if self.remaining is None:
             fits_quota = self.access.admit is None and self.evidence.read == self.access.read
         else:
@@ -77,19 +90,25 @@ class SourceScope:
                 units = self.remaining()
             except Exception:
                 units = None
-            fits_quota = type(units) is int and units >= len(missing)
-        partial = {"status": "partial", "guidance": "Prioritize evidence; qualify unread or partial files."}
-        if fits_quota and len(missing) <= 8:
-            versions.update((p, self.version(p)) for p in missing if p not in versions)
-            if any(versions[p] is None for p in missing):
+            fits_quota = type(units) is int and units >= len(pending)
+        if not fits_quota or len(pending) > 8:
+            return partial
+        batch = []
+        remaining_bytes = 0
+        for path in pending:
+            version = versions[path] if path in versions else self.version(path)
+            if version is None:
                 return partial
-            # Offsets count characters. Each observed character consumed at least
-            # one source byte, so this conservatively bounds the remaining bytes.
-            offsets = {p: self.covered[p].stop if p in self.covered else 0 for p in missing}
-            if sum(versions[p][-1] - offsets[p] for p in missing) <= 16000:
-                batch = [{"path": p, **({"offset": offsets[p]} if offsets[p] else {})} for p in missing]
-                return {"next_tool": "read", "arguments": {"batch": batch}}
-        return partial
+            coverage = self.covered.get(path)
+            file_size = version[-1]
+            remaining_bytes += coverage.remaining_bytes_bound(file_size) if coverage else file_size
+            if remaining_bytes > 16000:
+                return partial
+            entry = {"path": path}
+            if coverage and coverage.stop:
+                entry["offset"] = coverage.stop
+            batch.append(entry)
+        return {"next_tool": "read", "arguments": {"batch": batch}}
 
     def versions(self, requested):
         self.evidence._authorize()
@@ -112,12 +131,15 @@ class SourceScope:
             if prior and prior.digest != page.digest:
                 del self.covered[path]
                 prior = None
-            if not page.whole_range or page.redacted:
+            if not page.whole_range:
                 continue
             stop = prior.stop if prior else 0
-            if page.offset <= stop:
-                stop = max(stop, end_offset)
-                self.covered[path] = _Coverage(after[path], page.digest, stop, stop == page.span_length)
+            if page.offset <= stop <= end_offset:
+                redacted_bytes_left = page.redacted_bytes_from_offset
+                if redacted_bytes_left is not None:
+                    redacted_bytes_left -= len(content.encode("utf-8"))
+                self.covered[path] = _Coverage(after[path], page.digest, end_offset,
+                                               end_offset == page.span_length, redacted_bytes_left)
         missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)
         result = {"status": "partial" if missing else "complete", "listed_files": len(self.paths)}
         if missing:

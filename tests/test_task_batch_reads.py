@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -385,6 +386,35 @@ def test_symlink_escape_in_batch_does_not_mint_a_reference(identity, tmp_path):
     page = call(server, batch=[{"path": "escape"}])["results"][0]
     assert page.get("error") and not page["evidence_ref"] and "private" not in str(page)
     assert not server.evidence._observations
+
+
+def test_publication_can_resolve_evidence_while_another_read_is_finishing(identity, monkeypatch):
+    client, _, _ = identity
+    server = make(identity)
+    ref = call(server, path="settings.py")["evidence_ref"]
+    monkeypatch.setattr(client, "push", lambda *args, **kwargs: {"stored": True})
+    publication_lock = server._publication_lock
+    read_reached_observation = threading.Event()
+
+    class PublicationLock:
+        def __enter__(self):
+            read_reached_observation.set()
+            publication_lock.acquire()
+
+        def __exit__(self, *exc):
+            publication_lock.release()
+
+    monkeypatch.setattr(server, "_publication_lock", PublicationLock())
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        with publication_lock:
+            pending = pool.submit(call, server, path="README.md")
+            assert read_reached_observation.wait(timeout=5)
+            # Check before publishing so a lock-order regression fails without hanging the test.
+            assert server.evidence._lock.acquire(blocking=False)
+            server.evidence._lock.release()
+            result = call(server, "publish", content="Behavior", applicability="Scope", evidence_refs=[ref])
+            assert result["stored"]
+        assert pending.result(timeout=5)["evidence_ref"]
 
 
 def test_concurrent_batches_keep_unique_references_and_one_publication(identity, monkeypatch):

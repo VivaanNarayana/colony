@@ -36,7 +36,9 @@ After a matching listing, `listed_scope` reports coverage of the fixed inventory
 delivered, including inventories that require multiple batches. Full files and contiguous
 pages from the beginning of the same version count, including delivered trace pages.
 Coverage is tracked even when the publication reference cache is full.
-Denied, redacted and incomplete files leave gaps. A detected target or file metadata
+Denied, redacted and incomplete files leave gaps. A refreshed listing can continue a
+partially delivered redacted file. After its last page, the gap stays visible and the
+planner skips further reads of that version. A detected target or file metadata
 change invalidates earlier coverage. This receipt describes observations over the task,
 not an atomic snapshot of a live repository. For a point-in-time determination, bind
 the host inventory to an immutable checkout. Interpret the source text to answer
