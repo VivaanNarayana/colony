@@ -10,7 +10,7 @@ _REPO = r"(?:repo(?:sitory)?|codebase|project)"
 _VERB = r"(?:contain|include|document|mention|record|implement|define|specify|provide)"
 _CONTAINMENT = re.compile(
     rf"(?:\b(?:whether|if)|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
-    rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b",
+    rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b(?=\s*(?:[?!.]|$))",
     re.IGNORECASE,
 )
 SCOPE_ROUTE = (
@@ -69,6 +69,11 @@ class SourceScope:
         self.evidence._authorize()
         return sorted(p for p in self.paths if _public_path(p) and self.version(p) is not None)
 
+    def unverified_plan(self):
+        self.listed = False
+        self.covered.clear()
+        return {"status": "unverified_scope", "guidance": "Qualify uninspected files."}
+
     def plan(self, listed):
         self.evidence._authorize()
         # An embedded inventory may repeat a path. Plan one read per distinct file.
@@ -76,8 +81,7 @@ class SourceScope:
         self.listed = (bool(self.paths) and set(listed) == self.paths
                        and all(_public_path(p) for p in self.paths))
         if not self.listed:
-            self.covered.clear()
-            return {"status": "unverified_scope", "guidance": "Qualify uninspected files."}
+            return self.unverified_plan()
         versions = self.versions(())
         partial = {"status": "partial", "guidance": "Prioritize evidence; qualify unread or partial files."}
         pending = [p for p in listed if p not in self.covered or not self.covered[p].at_eof]

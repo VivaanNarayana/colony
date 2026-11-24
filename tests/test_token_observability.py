@@ -37,6 +37,26 @@ def test_unicode_line_separators_inside_jsonl_strings(tmp_path):
     assert native_usage(path, request_metadata=True)["request_usage"]["reconciles_with_turn_totals"]
 
 
+def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
+    from token_evaluation.usage import native_usage
+
+    deep = []
+    for _ in range(70):
+        deep = [deep]
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn([{**response(), "unused": deep}])))
+    assert native_usage(path)["known_usage"]["gross_tokens"] == 110
+    observed = native_usage(path, request_metadata=True)
+    assert observed["usage_complete"] and observed["request_usage"]["status"] == "unavailable"
+    with pytest.raises(ValueError, match="nesting limit"):
+        analyze_bytes(path.read_bytes())
+    for line in (json.dumps({"type": "item.completed", "unused": deep}),
+                 '{"type":"item.completed","type":"response.completed","unused":' + json.dumps(deep) + '}'):
+        path.write_bytes(raw(turn()).replace(b'\n', b'\n' + line.encode() + b'\n', 1))
+        with pytest.raises(ValueError, match="nesting limit"):
+            native_usage(path, request_metadata=True)
+
+
 def test_prospective_reader_preserves_turn_totals_and_explicit_request_metadata(tmp_path):
     from token_evaluation.usage import native_usage
 

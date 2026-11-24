@@ -51,6 +51,11 @@ def test_cached_host_listing_gets_a_fresh_plan(identity):
     second = blocks(server, "inventory")
     assert json.loads(second[1].text)["scope_read_plan"] == {"status": "complete", "listed_files": 1}
     assert len(cached.content) == 1 and "next_tool" in json.loads(first[1].text)["scope_read_plan"]
+    server.evidence.close()
+    unauthorized = blocks(server, "inventory")
+    assert unauthorized[0].text == "settings.py"
+    assert json.loads(unauthorized[1].text)["scope_read_plan"]["status"] == "unverified_scope"
+    assert not server._scope.listed and not server._scope.covered
 
 
 @pytest.mark.parametrize("last", ["The gauge registered ninety kilopascals.", "No sensor attached."])
@@ -245,6 +250,7 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
 
 @pytest.mark.parametrize("question,direct", [
     ("Explain how the limit is applied.", None), ("What is the timeout in this repo?", None),
+    ("Is the timeout in this repository applied before retry backoff?", None),
     ("Where does the project define the timeout?", None),
     ("Where\ndoes the project define the timeout?", None),
     ("Why does this repository include vendored dependencies?", None),

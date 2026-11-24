@@ -26,7 +26,7 @@ def native_usage(path, *, request_metadata=False):
             try:
                 parsed = _native_usage_bytes(source)
             except ValueError as exc:
-                if str(exc) != "Unsupported native event format":
+                if str(exc) not in {"Unsupported native event format", "Report JSON nesting limit"}:
                     raise
                 parsed = analyze_bytes(source, optional_diagnostics=True)["turn_accounting"]
     except (TypeError, KeyError, AttributeError, IndexError, OverflowError, RecursionError) as exc:

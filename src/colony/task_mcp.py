@@ -476,7 +476,11 @@ class TaskMCP(FastMCP):
                 if (not getattr(result, "isError", False) and len(blocks) == 1
                         and isinstance(blocks[0], TextContent)):
                     with self.evidence._lock:
-                        plan = self._scope.plan(blocks[0].text.splitlines())
+                        try:
+                            plan = self._scope.plan(blocks[0].text.splitlines())
+                        except EvidenceError:
+                            # The host may independently authorize its listing.
+                            plan = self._scope.unverified_plan()
                     planned = [*blocks, TextContent(type="text", text=json.dumps({"scope_read_plan": plan}))]
                     if isinstance(result, CallToolResult):
                         result = result.model_copy(update={"content": planned})
