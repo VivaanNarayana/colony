@@ -113,6 +113,69 @@ def test_matched_reader_quarantines_only_disputed_response_counts(other_counts):
         analyze_bytes(raw(turn(events)))
 
 
+@pytest.mark.parametrize("extra", [b'"unused":0,"unused":1', b'"unused":1e400'])
+@pytest.mark.parametrize("bad_first", [False, True])
+def test_unreadable_optional_envelope_preserves_other_receipts(tmp_path, extra, bad_first):
+    from token_evaluation.usage import native_usage
+
+    good = json.dumps(response("good")).encode()
+    bad = b'{"type":"response.completed","response":{"id":"other"},' + extra + b'}'
+    first, last = raw(turn()).split(b"\n")
+    receipts = [bad, good] if bad_first else [good, bad]
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b"\n".join([first, *receipts, last]))
+    report = native_usage(path, request_metadata=True)
+    assert report["usage_complete"] and report["known_usage"]["gross_tokens"] == 110
+    assert native_usage(path)["known_usage"] == report["known_usage"]
+    meta = report["request_usage"]
+    assert meta["records"] == analyze_bytes(raw(turn([response("good")])))["response_usage"]["records"]
+    assert not meta["complete_records"] and meta["reconciles_with_turn_totals"] is None
+    with pytest.raises(ValueError):
+        analyze_bytes(path.read_bytes())
+
+
+@pytest.mark.parametrize("bad", [
+    b'{"type":"turn.completed","usage":{},"usage":{}}',
+    b'{"type":"turn.failed","type":"response.completed"}',
+    b'{"type":"response.completed","unused":0,}',
+])
+def test_optional_receipt_recovery_rejects_invalid_or_ambiguous_native_events(tmp_path, bad):
+    from token_evaluation.usage import native_usage
+
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn()).replace(b"\n", b"\n" + bad + b"\n", 1))
+    for metadata in (True, False):
+        with pytest.raises(ValueError):
+            native_usage(path, request_metadata=metadata)
+
+
+@pytest.mark.parametrize("bad_first", [True, False])
+@pytest.mark.parametrize("binding", ["conflicting_fields", "invalid_unicode", "disputed_replay"])
+def test_disputed_tool_binding_preserves_independent_groups(tmp_path, binding, bad_first):
+    from token_evaluation.usage import native_usage
+
+    good = tool("read", {}, "stable", response_id="r1")
+    other = tool("read", {}, "disputed", response_id="r2")
+    if binding == "disputed_replay":
+        disputed = [other, tool("read", {}, "disputed", response_id="r3"), other]
+    elif binding == "invalid_unicode":
+        disputed = [tool("read", {}, "disputed", response_id="\ud800")]
+    else:
+        disputed = [{**other, "response_id": "r3"}]
+    # Duplicates count once. The same item ID is independent in a new turn.
+    stable = [good, good]
+    calls = disputed + stable if bad_first else stable + disputed
+    later = tool("read", {}, "disputed", response_id="r1")
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn([response("r1"), *calls]) + turn([later])))
+    report = native_usage(path, request_metadata=True)
+    meta = report["request_usage"]
+    assert meta["tool_groups"] == {meta["records"][0]["response_id_sha256"]: 2}
+    assert meta["ungrouped_calls"] is None and report["known_usage"]["gross_tokens"] == 220
+    with pytest.raises(ValueError):
+        analyze_bytes(path.read_bytes())
+
+
 def test_optional_envelope_beyond_python_recursion_limit(tmp_path):
     from token_evaluation.report import activity, extract_answer
     from token_evaluation.usage import native_usage

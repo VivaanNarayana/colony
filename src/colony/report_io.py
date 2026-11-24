@@ -84,11 +84,11 @@ def _outer_event_type(text):
 
 
 def decode_native_event(text, *, optional_responses=True, decoder=json.loads, deep_response_decoder=None):
-    """Apply a fallback only to a verified response envelope that exceeded the decoder depth."""
+    """Isolate a rejected optional envelope only after validating its syntax and unique root type."""
     try:
         return decoder(text)
     except (RecursionError, ValueError) as exc:
-        if not optional_responses or (not isinstance(exc, RecursionError) and str(exc) != "Report JSON nesting limit"):
+        if not optional_responses:
             raise
         try:
             kind = _outer_event_type(text)

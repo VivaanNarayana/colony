@@ -27,6 +27,8 @@ response IDs and counts and leaves reconciliation unknown. Gross usage comes fro
 receipts. Historical protocols use their originally pinned collectors.
 
 Completed-tool-to-response grouping uses only explicit `response_id` fields, never event order.
+When a tool call has conflicting bindings, the matched report retains counts for independently
+verified bindings and leaves the total number of ungrouped calls unknown.
 It reports validated lookup/cue presence, publication attempts/errors/stored or
 unknown outcomes, declared source counts and repeated observed excerpts. Attempts
 include started-but-unfinished calls, reported separately from completed outcomes.

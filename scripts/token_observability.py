@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
@@ -11,6 +12,7 @@ from colony.report_io import bounded_bytes, decode, decode_native_event, jsonl_l
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
+TOOL_METADATA_ERRORS = (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError)
 
 
 def digest(value):
@@ -288,6 +290,35 @@ def _tool_metadata(events):
     return counts, tool_groups or None, len(tools_seen) - sum(tool_groups.values())
 
 
+def _independent_tool_groups(events):
+    """Recover verified bindings when a different call made whole-turn diagnostics incomplete."""
+    calls = defaultdict(list)
+    turn = 0
+    for event in events:
+        kind = event.get("type")
+        if kind == "turn.started":
+            turn += 1
+        if kind not in ("item.started", "item.updated", "item.completed"):
+            continue
+        item = event.get("item")
+        if isinstance(item, dict) and item.get("type") == "mcp_tool_call":
+            item_id = item.get("id")
+            if isinstance(item_id, str) and item_id:
+                calls[turn, item_id].append(event)
+
+    groups = Counter()
+    for history in calls.values():
+        # Validate the full history before counting a call. A later conflict
+        # invalidates an earlier binding, even if a valid completion is replayed.
+        try:
+            _, bindings, _ = _tool_metadata(history)
+        except TOOL_METADATA_ERRORS:
+            continue
+        if bindings:
+            groups.update(bindings)
+    return dict(groups) or None
+
+
 def analyze_bytes(source, *, optional_diagnostics=False):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
@@ -308,10 +339,11 @@ def analyze_bytes(source, *, optional_diagnostics=False):
     response = _response_metadata(events, authority, optional=optional_diagnostics)
     try:
         counts, groups, ungrouped = _tool_metadata(events)
-    except (ValueError, TypeError, KeyError, IndexError, AttributeError, RecursionError):
+    except TOOL_METADATA_ERRORS:
         if not optional_diagnostics:
             raise
-        counts, groups, ungrouped = None, None, None
+        counts, ungrouped = None, None
+        groups = _independent_tool_groups(events)
     return {
         "contract": "colony.token-observability/1",
         "events_sha256": hashlib.sha256(source).hexdigest(),

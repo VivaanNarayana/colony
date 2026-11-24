@@ -22,7 +22,7 @@ from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
 from colony.models import ContextBudget
 from colony.task_reads import ReadAccess
-from colony.task_scope import SCOPE_ROUTE, SourceScope, containment_question
+from colony.task_scope import SourceScope, containment_question
 from colony.workflow import Workflow
 
 ANSWER_POLICY = (
@@ -175,7 +175,7 @@ class TaskMCP(FastMCP):
             if direct_path is not None else FOLLOWUP_ROUTE
         )
         if self._scope is not None:
-            routing = SCOPE_ROUTE.format(scope_list_tool) + " "
+            routing = self._scope.routing(scope_list_tool) + " "
         elif value_only and direct_path is None:
             routing = SCALAR_ROUTE
         instructions = routing + READ_ROUTING + ANSWER_POLICY

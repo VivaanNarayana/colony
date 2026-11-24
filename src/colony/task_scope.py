@@ -28,11 +28,19 @@ _EXISTENCE_REQUEST = (
     r"|i\s+(?:want|need)\s+to\s+know|do\s+you\s+know)\s+(?:whether|if)"
 )
 _CONTAINMENT = re.compile(
-    rf"(?:{_EXISTENCE_REQUEST}|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"
+    rf"(?:{_EXISTENCE_REQUEST}|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+"
+    rf"(?P<verb>{_VERB})(?:s|es)?\b"
     rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b"
     rf"(?={_ANSWER_SUFFIX}\s*+(?:[?!.]|$))",
     re.IGNORECASE,
 )
+# A temporal qualifier on the repository's action asks about order. A dot inside
+# a filename is not a sentence boundary.
+_ORDERED_ACTION = re.compile(
+    r"(?:[^?.!;]|\.(?=\w))*?\b(?:before|after)\s+\w",
+    re.IGNORECASE,
+)
+_REPORTED_CLAUSE = re.compile(r"\s+(?:how|when|why|whether|what|that)\b", re.IGNORECASE)
 SCOPE_ROUTE = (
     "For the repository containment question, list the authorized files once with {}. "
     "Follow its read plan unless positive evidence already answers the question. "
@@ -41,7 +49,16 @@ SCOPE_ROUTE = (
 
 
 def containment_question(question):
-    return _CONTAINMENT.search(question) is not None
+    for match in _CONTAINMENT.finditer(question):
+        if match["verb"] is None:  # "Is X in this repository?" already requires a terminal suffix.
+            return True
+        # A request for documentation can describe the order it should document.
+        if (match["verb"].lower() in {"document", "mention", "record", "specify"}
+                and _REPORTED_CLAUSE.match(question, match.end())):
+            return True
+        if not _ORDERED_ACTION.match(question, match.end()):
+            return True
+    return False
 
 
 @dataclass
@@ -68,6 +85,22 @@ class SourceScope:
         self.remaining = remaining
         self.listed = False
         self.covered = {}
+
+    def remaining_units(self):
+        try:
+            units = self.remaining() if self.remaining is not None else None
+        except Exception:
+            return None
+        return units if type(units) is int else None
+
+    def routing(self, list_tool):
+        units = self.remaining_units()
+        if units is not None and units <= 0:
+            return "No source units remain. Use available evidence and qualify uninspected files."
+        if units is None or units == 1:
+            return (f"Read a file named in the question directly. For unknown paths, list with {list_tool}. "
+                    "Follow the read plan when available. Qualify any uninspected scope.")
+        return SCOPE_ROUTE.format(list_tool)
 
     def version(self, path):
         if self.evidence.path_allowed is None and self.evidence.read != self.access.read:
@@ -108,11 +141,8 @@ class SourceScope:
         if self.remaining is None:
             fits_quota = self.access.admit is None and self.evidence.read == self.access.read
         else:
-            try:
-                units = self.remaining()
-            except Exception:
-                units = None
-            fits_quota = type(units) is int and units >= len(pending)
+            units = self.remaining_units()
+            fits_quota = units is not None and units >= len(pending)
         if not fits_quota or len(pending) > 8:
             return partial
         batch = []

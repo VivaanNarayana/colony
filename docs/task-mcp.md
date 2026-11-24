@@ -28,7 +28,8 @@ and contradictions, then explain remaining limitations. No source quota is impos
 For a task asking whether the repository contains something, a host with a fixed file
 inventory can pass one `--scope-file PATH` per authorized file. These flags restrict
 CLI source access to the listed paths. On a matching question, `source_files` lists the
-available files for one read unit. If the complete inventory fits within eight entries,
+available files for one read unit. With one unit left, read a file named in the question
+directly and qualify any uninspected scope. If the complete inventory fits within eight entries,
 16,000 source bytes and the known remaining units, the response includes the exact
 arguments for a single ordinary `read` batch. The caller can still use a positive memory
 hit or read an individual path. Embedded hosts can supply `scope_files`, `remaining_units`

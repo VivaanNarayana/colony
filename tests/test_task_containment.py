@@ -286,6 +286,11 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
 @pytest.mark.parametrize("question,direct", [
     ("Explain how the limit is applied.", None), ("What is the timeout in this repo?", None),
     ("Is the timeout in this repository applied before retry backoff?", None),
+    ("Does the project define its default before it reads the environment in settings.py?", None),
+    ("Does the project define its default in settings.py after loading overrides?", None),
+    ("Does the project define its default before the loader reads the environment?", None),
+    ("Does the project define its default after configuration is loaded?", None),
+    ("Does the project record the count before it submits the job?", None),
     ("Is the timeout in this repository (applied before retry backoff)?", None),
     ("Is the timeout in this repo, answer with details\nincluding the retry order", None),
     ("Where does the project define the timeout?", None),
@@ -319,13 +324,32 @@ def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, 
     "State whether the project defines a timeout.", "Could you tell me whether this repo defines a timeout?",
     "I want to know whether the project defines a timeout.",
     "Read settings.py and check whether this project defines a timeout.",
+    "Does the repository document how to validate the input before sending it?",
     "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
     "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
     "Is the timeout in this repository (answer with yes or no)?",
+    "Is the timeout in this repository (answer before discussing the details)?",
 ])
 def test_containment_questions_keep_the_single_batch_route(identity, question):
     server = create(identity, ["settings.py"], question)
     assert plan(server) == {"next_tool": "read", "arguments": {"batch": [{"path": "settings.py"}]}}
+
+
+@pytest.mark.parametrize("report_allowance", [True, False])
+def test_named_file_uses_last_source_unit_for_evidence(identity, report_allowance):
+    units = [True]
+    server = create(identity, ["settings.py"], "Does this repository define TIMEOUT in settings.py?",
+                    read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=(lambda: len(units)) if report_allowance else None)
+    assert server.instructions.startswith("Read a file named in the question directly.")
+    result = read(server, path="settings.py")
+    assert result["content"] == "TIMEOUT = 30" and "listed_scope" not in result
+    assert not units
+
+
+def test_exhausted_allowance_does_not_direct_worker_to_list(identity):
+    server = create(identity, ["settings.py"], remaining_units=lambda: 0, read_admission=lambda: False)
+    assert server.instructions.startswith("No source units remain.")
 
 
 def test_cli_inventory_runs_over_stdio_and_restricts_unlisted_reads(identity):
