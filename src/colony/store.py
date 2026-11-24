@@ -10,7 +10,7 @@ from pathlib import Path
 import sqlite_vec
 from cryptography.fernet import Fernet
 
-from colony.context import complete_source_bundle, excerpts, source_chunks
+from colony.context import complete_source_bundle, excerpts, passage_options, source_chunks
 from colony.git_context import capture as capture_git_context
 from colony.git_context import compare as compare_git_context
 from colony.memory import (
@@ -747,18 +747,17 @@ class Store:
                 context_budget=context_budget, restricted_trail_id=answer["id"],
                 required_source_identities=identities,
                 expand_first_file=True,
+                pack_evidence=lambda value: pack({**value, "context_budget": packed["context_budget"]}),
             )
             if (
                 fallback is None
+                or not fallback.get("hit")
                 or fallback.get("id") != answer["id"]
                 or fallback.get("status") != "validated"
                 or fallback.get("match_kind") != "evidence"
             ):
                 return packed
-            fallback = pack({**fallback, "context_budget": packed["context_budget"]})
-            if fallback.get("hit") and fallback.get("match_kind") == "evidence":
-                return fallback
-            return packed
+            return fallback
         return result
 
     @staticmethod
@@ -942,6 +941,33 @@ class Store:
             result["git"] = git_receipt
         return result
 
+    def _record_evidence(self, db, sources, requested, value, packet, pack):
+        """Confirm the winning packet against concurrent lifecycle and source changes."""
+        trail_id = value["id"]
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            memory = self.memory_metadata(db, trail_id)
+            git = self._git_receipt(db, trail_id, requested) if requested is not None else None
+            if memory["state"] != "active" or (git and git["compatibility"] == "repository_mismatch"):
+                return None
+            if self.sources(db, trail_id) != sources:
+                return None
+            status, checks = validate(self.repo, sources)
+            if status != "validated":
+                return None
+            if memory != value["memory"] or git != value.get("git") or checks != value["checks"]:
+                value = {**value, "memory": memory, "checks": checks}
+                if git is not None:
+                    value["git"] = git
+                packet = pack(value) if pack is not None else value
+                if not packet.get("hit"):
+                    return packet
+            now = time.time()
+            db.execute("UPDATE trails SET status=?,last_validated_at=? WHERE id=?", (status, now, trail_id))
+            db.execute("INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)",
+                       (trail_id, "repo-evidence-v1", json.dumps(checks), now))
+            return packet
+
     def find_evidence(
         self,
         question,
@@ -1019,22 +1045,30 @@ class Store:
                 )
                 return pack_bundle(result)["hit"]
 
+            compound_lookup = source_set_threshold is not None and not requires_procedure(question)
+            salvage = (expand_first_file and context_budget is not None
+                       and restricted_trail_id is not None and required_source_identities is not None)
+
             def rankings():
                 if ordered:
                     yield ordered
-                if source_set_threshold is not None and not requires_procedure(question):
+                if compound_lookup:
                     yield self._source_set_candidates(
                         db, question, vector, selected_passages, source_set_threshold,
                         fits if pack_bundle is not None else None,
                     )
 
+            previous_sources, bundle = None, None
+
+            def source_bundle(sources):
+                nonlocal previous_sources, bundle
+                if sources != previous_sources:
+                    bundle = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
+                    previous_sources = sources
+                return bundle
+
             budget_miss = None
             for ranked in rankings():
-                if not ranked:
-                    continue
-                # A candidate can be retired during reranking. Serialize the final state
-                # check with lifecycle writes before validating/returning current evidence.
-                db.execute("BEGIN IMMEDIATE")
                 checked = set()
                 for row, relevance, locations in ranked:
                     if row["id"] in checked:
@@ -1057,45 +1091,42 @@ class Store:
                     if status != "validated":
                         continue
                     if locations is None:
-                        evidence = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
+                        options = (source_bundle(sources),)
                     else:
                         permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
                         preferred = [(ref, line) for ref, digest, line in locations
                                      if (ref, digest) in permitted]
-                        evidence = excerpts(
+                        options = passage_options(
                             self.repo,
                             sources,
                             question,
                             preferred=preferred,
+                            source_bundle=source_bundle if compound_lookup else None,
                             whole_files=include_evidence_files,
-                            **({"expand_first_file": True} if expand_first_file
-                               and context_budget is not None and restricted_trail_id is not None
-                               and required_source_identities is not None else {}),
+                            **({"expand_first_file": True} if salvage else {}),
                             **({"adaptive": True} if context_budget is not None else {}),
                         )
-                    if not evidence:
-                        continue
-                    result = self._evidence_response(row, sources, evidence, memory, git_receipt,
-                                                     checks=checks, relevance=relevance)
                     pack = pack_bundle if locations is None else pack_evidence
-                    if pack is not None:
-                        result = pack(result)
-                        if result.get("reason") == "budget_limited":
-                            budget_miss = result
-                            checked.remove(row["id"])
+                    for evidence in options:
+                        if not evidence:
                             continue
-                    now = time.time()
-                    db.execute(
-                        "UPDATE trails SET status=?,last_validated_at=? WHERE id=?",
-                        (status, now, row["id"]),
-                    )
-                    db.execute(
-                        "INSERT INTO validations(trail_id,validator,result,checked_at) VALUES (?,?,?,?)",
-                        (row["id"], "repo-evidence-v1", json.dumps(checks), now),
-                    )
-                    return result
-                # Release the final validation lock before ranking an alternative.
-                db.commit()
+                        value = self._evidence_response(row, sources, evidence, memory, git_receipt,
+                                                        checks=checks, relevance=relevance)
+                        packet = pack(value) if pack is not None else value
+                        if packet.get("hit"):
+                            packet = self._record_evidence(db, sources, requested, value, packet, pack)
+                            if packet is None:
+                                break
+                        if packet.get("reason") == "budget_limited":
+                            budget_miss = packet
+                            continue
+                        return packet
+                    else:
+                        # Saved-answer salvage keeps the original selected facts
+                        # mandatory. Only their byte-equivalent citations may vary.
+                        if salvage and budget_miss is not None:
+                            return budget_miss
+                        checked.remove(row["id"])
         return budget_miss
 
     def find_answer(

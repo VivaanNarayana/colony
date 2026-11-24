@@ -3,10 +3,11 @@
 import ast
 import hashlib
 import re
+from itertools import product
 from pathlib import Path
 
 from colony.models import Source
-from colony.retrieval import fused_score, keyword_coverage, rank
+from colony.retrieval import fused_score, keyword_coverage, rank, terms
 from colony.security import PATTERNS
 from colony.validation import repo_file
 
@@ -451,6 +452,74 @@ def complete_source_bundle(root, sources, *, adaptive, max_files):
             else {"ref": source.ref, "line": 1, "text": text, "complete_file": True}
         )
     return files
+
+
+def _index_references(question, evidence, sources):
+    """Return targets of a pointer, an empty set for a topic list, or None for factual reads."""
+    delivered = {item["ref"] for item in evidence}
+    remaining = {s.ref for s in sources if s.kind == "file"} - delivered
+    if not remaining:
+        return None
+    names = {}
+    for ref in remaining:
+        for name in (ref, Path(ref).name):
+            names.setdefault(name.casefold(), set()).add(ref)
+
+    def words(value):
+        return {w.removesuffix("s") if len(w) > 3 else w for w in re.findall(r"\w+", value.casefold())}
+
+    vocabulary = words(question) | words(
+        "index tags keywords topics contents see also refer to consult for details and in the"
+    )
+    for item in evidence:
+        text = item["text"].casefold()
+        targets = set()
+        for name in sorted(names, key=len, reverse=True):
+            if name in text:
+                link = (r"(?<![\w./-])(?:\./)?" + re.escape(name)
+                        + r"(?![\w/-]|\.\w)(?:#[\w.-]+|:\d+(?:-\d+)?)?")
+                text, count = re.subn(link, " ", text)
+                if count:
+                    targets.update(names[name])
+        # A literal value or assignment can answer a question even when the
+        # caller already named it as a possibility.
+        if not re.search(r"\d|=|\b(?:true|false)\b", text) and words(text) <= vocabulary:
+            return targets
+    return None
+
+
+def passage_options(root, sources, question, preferred, *, source_bundle=None, **options):
+    """Try a useful source packet first and render alternatives only after a packing miss."""
+    evidence = excerpts(root, sources, question, preferred=preferred, **options)
+    if not evidence:
+        return
+    targets = _index_references(question, evidence, sources) if source_bundle is not None else None
+    if targets is not None:
+        bundle = source_bundle(sources)
+        delivered = {read["ref"] for read in evidence}
+        selected_text = {read["text"] for read in evidence}
+        query_terms = terms(question)
+        if any(item["ref"] not in delivered and item["text"] not in selected_text
+               and (item["ref"] in targets or query_terms & terms(item["text"])) for item in bundle):
+            yield bundle
+    yield evidence
+
+    # Only reached when the selected packet failed to fit. Pack real alternate
+    # reads from this finding and require exactly the same source spans and text.
+    refs = list(dict.fromkeys(item["ref"] for item in evidence))
+    hashes = {s.ref: s.content_hash for s in sources[:8] if s.kind == "file"}
+    choices = []
+    for ref in refs:
+        copies = (p for p, digest in hashes.items() if p != ref and digest == hashes.get(ref))
+        choices.append([ref, *sorted(copies, key=lambda path: len(path.encode("utf-8")))])
+    for names in product(*choices):
+        if list(names) == refs or len(set(names)) != len(refs):
+            continue
+        aliases = dict(zip(refs, names, strict=True))
+        locations = list(dict.fromkeys((aliases.get(p, p), line) for p, line in preferred))
+        alternative = excerpts(root, sources, question, preferred=locations, **options)
+        if alternative == [{**item, "ref": aliases[item["ref"]]} for item in evidence]:
+            yield alternative
 
 
 def excerpts(

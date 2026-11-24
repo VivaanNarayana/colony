@@ -20,6 +20,40 @@ def test_keyword_index_requires_independent_evidence_in_its_other_files(by_file,
     assert Store._complementary_terms(by_file) is complementary
 
 
+@pytest.mark.parametrize("change", ["file", "retirement", "revision"])
+def test_evidence_winner_is_rechecked_after_packing(team, change):
+    app, api, repo, _, key = team
+    question = "What is the request timeout?"
+    (repo / "timeout.txt").write_text("The request timeout is 1200 milliseconds.")
+    trail = Trail(id=uuid.uuid4().hex, namespace="team", question="Who owns release scheduling?",
+                  content="The release manager.", sources=[snapshot(repo, "timeout.txt")])
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    database = app.state.store
+    revisions = []
+
+    def pack(value):
+        revisions.append(value["memory"]["revision"])
+        if len(revisions) == 1:
+            if change == "file":
+                (repo / "timeout.txt").write_text("The timeout was removed.")
+            else:
+                with database.connect() as db:
+                    db.execute("UPDATE memory_state_v1 SET state=?,revision=revision+1 WHERE trail_id=?",
+                               ("retracted" if change == "retirement" else "active", trail.id))
+        return value
+
+    result = database.find_evidence(question, ["team"], 604800, pack_evidence=pack)
+    assert revisions
+    if change == "revision":
+        assert revisions == [revisions[0], revisions[0] + 1]
+        assert result["memory"]["revision"] == revisions[-1]
+    else:
+        assert result is None
+    with database.connect() as db:
+        hits = db.execute("SELECT trail_id FROM validations WHERE validator='repo-evidence-v1'").fetchall()
+    assert [row[0] for row in hits] == ([trail.id] if change == "revision" else [])
+
+
 def test_stale_ranked_passage_allows_current_source_set_fallback(team, monkeypatch):
     from colony import store
 

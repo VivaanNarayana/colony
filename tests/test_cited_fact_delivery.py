@@ -2,14 +2,17 @@
 import asyncio
 import hashlib
 import json
+import os
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 from test_compact_budget_fallback_onnx import onnx_transport as onnx_transport
 
+from colony import store
 from colony.compact import PROFILE
-from colony.context_budget import count_response
+from colony.context_budget import count_response, fit_response
 from colony.models import ContextBudget, Trail
 from colony.task_mcp import TaskMCP
 from colony.validation import snapshot
@@ -23,14 +26,15 @@ def publish(client, repo, question, content, paths):
     return trail.id
 
 
-def research(client, repo, question, limit):
-    budget = ContextBudget(max_tokens=limit)
+def research(client, repo, question, limit, encoding="utf8_bytes"):
+    budget = ContextBudget(max_tokens=limit, encoding=encoding)
     task = TaskMCP(Workflow(client, "team", repo, read_only=True), question, context_budget=budget)
     try:
         block, = asyncio.run(task.call_tool("research", {}))
     finally:
         task.evidence.close()
-    assert len(block.text.encode("utf-8")) <= limit
+    if encoding == "utf8_bytes":
+        assert len(block.text.encode("utf-8")) <= limit
     value = json.loads(block.text)
     assert value["context_budget"]["used"] == count_response(value, budget) <= limit
     return value
@@ -50,6 +54,17 @@ def cited_lines(value, repo):
             assert n >= 1 and line == source[n - 1]
             lines[path, n] = line
     return lines
+
+
+def learning_case(repo, workload):
+    fixtures = Path(__file__).parent / "token_evaluations" / "fixtures"
+    catalog = json.loads((fixtures / "task-adapter-catalog.json").read_bytes())
+    tasks = {t["id"]: t for t in next(w["tasks"] for w in catalog["workloads"] if w["id"] == workload)}
+    learn = tasks["cold_learning"]
+    snapshot_dir = fixtures / workload / "v1"
+    for path in learn["publication_sources"]:
+        (repo / path).write_bytes((snapshot_dir / path).read_bytes())
+    return snapshot_dir, learn, tasks["useful_hit"]
 
 
 @pytest.mark.parametrize("paragraphs", [1, 8], ids=["copied_file", "copied_file_and_paragraphs"])
@@ -73,24 +88,37 @@ def test_two_near_tied_facts_reach_the_caller_with_a_duplicate_file(onnx_transpo
     assert len(value["current_repository_reads"]) == 2
 
 
+def test_cited_numeric_answer_stays_compact_even_when_it_mentions_another_file(onnx_transport):
+    client, repo, _ = onnx_transport
+    text = "The request timeout is 1200 milliseconds. See details.txt."
+    (repo / "primary.txt").write_text(text)
+    (repo / "details.txt").write_text("The release calendar lists the owners.")
+    target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
+                     ["primary.txt", "details.txt"])
+    value = research(client, repo, "Is the request timeout 1200 milliseconds?", 3072)
+    assert value["id"] == target
+    assert cited_lines(value, repo) == {("primary.txt", 1): text}
+
+
 @pytest.mark.parametrize(("workload", "repeated", "tags"), [
     ("gateway", "Which team collects inventory setup metrics?", "Production inventory request timeout."),
     ("worker", "What is the evidence for the worker setup report in production?", "Priority job backend."),
 ], ids=["gateway", "worker"])
-@pytest.mark.parametrize("conditions", ["repeated_questions", "keyword_index", "combined"])
+@pytest.mark.parametrize("conditions", [
+    "repeated_questions", "keyword_index", "pointer", "markdown_link", "topic_list", "combined",
+])
 def test_compound_facts_and_citations_reach_the_caller(onnx_transport, workload, repeated, tags, conditions):
     client, repo, _ = onnx_transport
-    fixtures = Path(__file__).parent / "token_evaluations" / "fixtures"
-    catalog = json.loads((fixtures / "task-adapter-catalog.json").read_bytes())
-    tasks = next(w["tasks"] for w in catalog["workloads"] if w["id"] == workload)
-    learn, reuse = (next(t for t in tasks if t["id"] == name)
-                    for name in ("cold_learning", "useful_hit"))
+    snapshot_dir, learn, reuse = learning_case(repo, workload)
     paths = list(learn["publication_sources"])
-    for path in paths:
-        (repo / path).write_bytes((fixtures / workload / "v1" / path).read_bytes())
-    if conditions in {"keyword_index", "combined"}:
-        (repo / "index.txt").write_text("Index tags: " + tags)
-        paths.append("index.txt")
+    if conditions != "repeated_questions":
+        topic = ("Production inventory request count and timeout" if workload == "gateway" else
+                 "Priority job backend submissions and wait schedule")
+        index = {"pointer": f"{topic}: see {paths[0]} and {paths[1]}.",
+                 "markdown_link": f"[{topic}](./{paths[0]}#L1)",
+                 "topic_list": topic + "."}.get(conditions, "Index tags: " + tags)
+        (repo / "overview.txt").write_text(index)
+        paths.append("overview.txt")
     if conditions == "combined":
         (repo / "v2").mkdir()
         copy = "v2/" + paths[0]
@@ -110,7 +138,7 @@ def test_compound_facts_and_citations_reach_the_caller(onnx_transport, workload,
     lines = cited_lines(value, repo)
     for citation in reuse["oracle"]["citations"]:
         path = citation["path"]
-        expected = (fixtures / workload / "v1" / path).read_text().splitlines()
+        expected = (snapshot_dir / path).read_text().splitlines()
         for n in range(citation["start"], citation["end"] + 1):
             assert lines[path, n] == expected[n - 1]
     if workload == "gateway":
@@ -120,5 +148,77 @@ def test_compound_facts_and_citations_reach_the_caller(onnx_transport, workload,
         assert "return result" in lines["executor.py", 5] and "sleep(delay_ms)" in lines["executor.py", 6]
     assert research(client, repo, reuse["question"], 256)["reason"] == "budget_limited"
     if conditions == "combined":
-        (repo / "index.txt").write_text("Index replaced.")
+        (repo / "overview.txt").write_text("Index replaced.")
         assert not research(client, repo, reuse["question"], 3072).get("current_repository_reads")
+
+
+@pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
+def test_shorter_equivalent_citation_keeps_both_facts_at_the_wire_limit(onnx_transport, monkeypatch, encoding):
+    client, repo, _ = onnx_transport
+    if encoding == "o200k_base":
+        pytest.importorskip("tiktoken")
+        tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
+        if not tokenizer:
+            pytest.skip("Verified local tokenizer fixture unavailable")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
+    long = "settings/production/gateway/request_timeout.txt"
+    timeout = "The request timeout is 1200 milliseconds."
+    retry = "The retry limit is four attempts."
+    question = "What are the request timeout and retry limit?"
+    (repo / long).parent.mkdir(parents=True)
+    for path, text in (("a.txt", timeout), (long, timeout), ("secondary.txt", retry)):
+        (repo / path).write_text(text)
+    target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
+                     ["a.txt", long, "secondary.txt"])
+    budget = ContextBudget(encoding=encoding)
+    upstream = client.ask(question, "team", context_budget=budget, response_profile=PROFILE)
+    assert {r["path"] for r in upstream["current_repository_reads"]} == {long, "secondary.txt"}
+    # Measure the equivalent packet using the actual encoding and the same hashes.
+    # Account for changes to the receipt's own max_tokens and limited fields.
+    for read in upstream["current_repository_reads"]:
+        if read["path"] == long:
+            read["path"] = "a.txt"
+    limit = fit_response(upstream, budget)["context_budget"]["used"]
+    while limit > 256 and fit_response(upstream, ContextBudget(max_tokens=limit - 1, encoding=encoding))["hit"]:
+        limit -= 1
+    tight = research(client, repo, question, limit, encoding)
+    assert tight.get("id") == target
+    assert cited_lines(tight, repo) == {("a.txt", 1): timeout, ("secondary.txt", 1): retry}
+    assert research(client, repo, question, limit - 1, encoding)["reason"] == "budget_limited"
+
+
+def test_repeated_over_budget_bundles_bound_work_under_writer_lock(onnx_transport, monkeypatch):
+    client, repo, database = onnx_transport
+    _, learn, reuse = learning_case(repo, "gateway")
+    paths = learn["publication_sources"]
+    ids = [publish(client, repo, learn["question"], "See the gateway configuration and request loop.", paths)
+           for _ in range(24)]
+
+    connect, bundle = database.connect, store.complete_source_bundle
+    connections, builds = [], []
+
+    @contextmanager
+    def traced_connect():
+        with connect() as db:
+            connections.append(db)
+            try:
+                yield db
+            finally:
+                connections.pop()
+
+    def traced_bundle(*args, **kwargs):
+        builds.append(connections[-1].in_transaction)
+        return bundle(*args, **kwargs)
+
+    monkeypatch.setattr(database, "connect", traced_connect)
+    monkeypatch.setattr(store, "complete_source_bundle", traced_bundle)
+    assert research(client, repo, reuse["question"], 256)["reason"] == "budget_limited"
+    # The shortlist and final selection each need at most one materialization.
+    assert 0 < len(builds) <= 2 and not any(builds)
+    upstream = client.ask(reuse["question"], "team", context_budget=ContextBudget(), response_profile=PROFILE)
+    assert upstream["id"] == ids[-1]
+    client.memory_feedback(ids[-1], "team", verdict="incorrect")
+    # The newest packet's feedback warning now costs extra bytes. The previous
+    # publication has identical sources, different metadata and still fits.
+    assert research(client, repo, reuse["question"], upstream["context_budget"]["used"])["id"] == ids[-2]
+    assert not any(builds)
