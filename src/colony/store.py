@@ -1058,14 +1058,18 @@ class Store:
                         fits if pack_bundle is not None else None,
                     )
 
-            previous_sources, bundle = None, None
+            previous_sources = None
+            bundles = {}
 
-            def source_bundle(sources):
-                nonlocal previous_sources, bundle
+            def source_bundle(sources, refs=None):
+                nonlocal previous_sources
                 if sources != previous_sources:
-                    bundle = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
+                    bundles.clear()
                     previous_sources = sources
-                return bundle
+                if refs not in bundles:
+                    selected = sources if refs is None else [s for s in sources if s.kind == "file" and s.ref in refs]
+                    bundles[refs] = complete_source_bundle(self.repo, selected, adaptive=True, max_files=8)
+                return bundles[refs]
 
             budget_miss = None
             for ranked in rankings():

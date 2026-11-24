@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from test_compact_budget_fallback_onnx import onnx_transport as onnx_transport
 
-from colony import store
+from colony import context, store
 from colony.compact import PROFILE
 from colony.context_budget import count_response, fit_response
 from colony.models import ContextBudget, Trail
@@ -88,9 +88,10 @@ def test_two_near_tied_facts_reach_the_caller_with_a_duplicate_file(onnx_transpo
     assert len(value["current_repository_reads"]) == 2
 
 
-def test_cited_numeric_answer_stays_compact_even_when_it_mentions_another_file(onnx_transport):
+@pytest.mark.parametrize("prefix", ["", "1. "])
+def test_cited_numeric_answer_stays_compact_even_when_it_mentions_another_file(onnx_transport, prefix):
     client, repo, _ = onnx_transport
-    text = "The request timeout is 1200 milliseconds. See details.txt."
+    text = prefix + "The request timeout is 1200 milliseconds. See details.txt."
     (repo / "primary.txt").write_text(text)
     (repo / "details.txt").write_text("The release calendar lists the owners.")
     target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
@@ -98,6 +99,93 @@ def test_cited_numeric_answer_stays_compact_even_when_it_mentions_another_file(o
     value = research(client, repo, "Is the request timeout 1200 milliseconds?", 3072)
     assert value["id"] == target
     assert cited_lines(value, repo) == {("primary.txt", 1): text}
+
+
+@pytest.mark.parametrize("answer", ["Archive retention is permanent.",
+                                     "Archive retention is permanent. See notes.txt.",
+                                     "Archive retention: permanent. See notes.txt."])
+def test_complete_policy_answer_stays_compact(onnx_transport, answer):
+    client, repo, _ = onnx_transport
+    (repo / "answer.txt").write_text(answer)
+    (repo / "notes.txt").write_text(
+        "Archive maintenance follows the schedule in the release calendar. "
+        "Operations staff rotate the weekly schedule.\n" * 10
+    )
+    target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
+                     ["answer.txt", "notes.txt"])
+    value = research(client, repo, "Is archive retention permanent or temporary?", 3072)
+    assert value["id"] == target
+    assert cited_lines(value, repo) == {("answer.txt", 1): answer}
+
+
+def test_numbered_question_with_a_link_delivers_the_policy(onnx_transport):
+    client, repo, _ = onnx_transport
+    question = "Is archive retention permanent or temporary?"
+    (repo / "overview.md").write_text(f"1. {question} See notes.txt.")
+    answer = "Archive retention is permanent."
+    (repo / "notes.txt").write_text(answer)
+    target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
+                     ["overview.md", "notes.txt"])
+    value = research(client, repo, question, 3072)
+    assert value["id"] == target
+    assert cited_lines(value, repo)["notes.txt", 1] == answer
+
+
+@pytest.mark.parametrize("duplicate_pointer", [False, True], ids=["new_fact", "copy_of_pointer"])
+def test_targeted_pointer_packet_preserves_an_independently_selected_fact(tmp_path, duplicate_pointer):
+    files = {"overview.md": "2) Retry limit: see settings.txt.",
+             "notes.txt": "The request timeout is 1200 milliseconds.",
+             "settings.txt": "The retry limit is four attempts.",
+             "unrelated.txt": "Unused background.\n" * 200}
+    if duplicate_pointer:
+        files["settings.txt"] = files["overview.md"]
+    for path, content in files.items():
+        (tmp_path / path).write_text(content)
+    sources = [snapshot(tmp_path, p) for p in files]
+
+    def bundle(sources, refs=None):
+        selected = sources if refs is None else [s for s in sources if s.ref in refs]
+        return context.complete_source_bundle(tmp_path, selected, adaptive=True, max_files=8)
+
+    options = context.passage_options(tmp_path, sources, "What are the request timeout and retry limit?",
+                                      preferred=[("overview.md", 1), ("notes.txt", 1)],
+                                      source_bundle=bundle, adaptive=True)
+    paths = ["overview.md", "notes.txt"] if duplicate_pointer else ["notes.txt", "settings.txt"]
+    assert [(r["ref"], r["line"], r["text"]) for r in next(options)] == [(p, 1, files[p]) for p in paths]
+
+
+@pytest.mark.parametrize("workload", ["gateway", "worker"])
+@pytest.mark.parametrize(("prefix", "budget", "case"), [
+    ("1. ", 3072, "all_names"), ("", 2200, "all_names"), ("1) ", 2200, "all_names"),
+    ("", 2200, "unnamed_dependency"), ("2) ", 2400, "oversized_attachment"),
+])
+def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix, budget, case):
+    client, repo, _ = onnx_transport
+    snapshot_dir, learn, reuse = learning_case(repo, workload)
+    paths = learn["publication_sources"]
+    topic = ("Production inventory request count and timeout" if workload == "gateway" else
+             "Priority job backend submissions and wait schedule")
+    named = paths[:2] if case == "unnamed_dependency" else paths
+    (repo / "overview.md").write_text(prefix + topic + ": see " + ", ".join(named) + ".")
+    sources = [*paths, "overview.md"]
+    if case == "oversized_attachment":
+        (repo / "notes.txt").write_text("Release calendar covers the next maintenance window.\n" * 80)
+        sources.append("notes.txt")
+    target = publish(client, repo, learn["question"], "See the configuration and execution loop.", sources)
+    value = research(client, repo, reuse["question"], budget)
+    assert value["id"] == target
+    assert {s["ref"] for s in value["sources"]} == set(sources)
+    lines = cited_lines(value, repo)
+    for citation in reuse["oracle"]["citations"]:
+        path = citation["path"]
+        expected = (snapshot_dir / path).read_text().splitlines()
+        for n in range(citation["start"], citation["end"] + 1):
+            assert lines[path, n] == expected[n - 1]
+    if budget < 3072:
+        assert {r["path"] for r in value["current_repository_reads"]} == set(paths)
+    if case == "oversized_attachment":
+        (repo / "notes.txt").write_text("Updated calendar.")
+        assert not research(client, repo, reuse["question"], budget).get("current_repository_reads")
 
 
 @pytest.mark.parametrize(("workload", "repeated", "tags"), [
@@ -153,7 +241,10 @@ def test_compound_facts_and_citations_reach_the_caller(onnx_transport, workload,
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
-def test_shorter_equivalent_citation_keeps_both_facts_at_the_wire_limit(onnx_transport, monkeypatch, encoding):
+@pytest.mark.parametrize("shared_copy", [False, True], ids=["single_passage", "distinct_lines_in_one_copy"])
+def test_shorter_equivalent_citation_keeps_both_facts_at_the_wire_limit(
+    onnx_transport, monkeypatch, encoding, shared_copy,
+):
     client, repo, _ = onnx_transport
     if encoding == "o200k_base":
         pytest.importorskip("tiktoken")
@@ -166,25 +257,31 @@ def test_shorter_equivalent_citation_keeps_both_facts_at_the_wire_limit(onnx_tra
     retry = "The retry limit is four attempts."
     question = "What are the request timeout and retry limit?"
     (repo / long).parent.mkdir(parents=True)
-    for path, text in (("a.txt", timeout), (long, timeout), ("secondary.txt", retry)):
-        (repo / path).write_text(text)
+    second = "settings/production/gateway/retry_limit.txt" if shared_copy else "secondary.txt"
+    files = {"a.txt": timeout, long: timeout, second: retry}
+    for path, text in files.items():
+        (repo / path).write_text(timeout + "\n\n" + retry if shared_copy else text)
     target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
-                     ["a.txt", long, "secondary.txt"])
+                     list(files))
     budget = ContextBudget(encoding=encoding)
     upstream = client.ask(question, "team", context_budget=budget, response_profile=PROFILE)
-    assert {r["path"] for r in upstream["current_repository_reads"]} == {long, "secondary.txt"}
+    assert {r["path"] for r in upstream["current_repository_reads"]} == {long, second}
     # Measure the equivalent packet using the actual encoding and the same hashes.
     # Account for changes to the receipt's own max_tokens and limited fields.
     for read in upstream["current_repository_reads"]:
-        if read["path"] == long:
+        if shared_copy or read["path"] == long:
             read["path"] = "a.txt"
     limit = fit_response(upstream, budget)["context_budget"]["used"]
     while limit > 256 and fit_response(upstream, ContextBudget(max_tokens=limit - 1, encoding=encoding))["hit"]:
         limit -= 1
     tight = research(client, repo, question, limit, encoding)
     assert tight.get("id") == target
-    assert cited_lines(tight, repo) == {("a.txt", 1): timeout, ("secondary.txt", 1): retry}
+    second_line = ("a.txt", 3) if shared_copy else (second, 1)
+    assert cited_lines(tight, repo) == {("a.txt", 1): timeout, second_line: retry}
     assert research(client, repo, question, limit - 1, encoding)["reason"] == "budget_limited"
+    if shared_copy:
+        (repo / "a.txt").write_text("Superseded policy.")
+        assert not research(client, repo, question, limit, encoding).get("current_repository_reads")
 
 
 def test_repeated_over_budget_bundles_bound_work_under_writer_lock(onnx_transport, monkeypatch):

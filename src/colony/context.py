@@ -455,13 +455,12 @@ def complete_source_bundle(root, sources, *, adaptive, max_files):
 
 
 def _index_references(question, evidence, sources):
-    """Return targets of a pointer, an empty set for a topic list, or None for factual reads."""
-    delivered = {item["ref"] for item in evidence}
-    remaining = {s.ref for s in sources if s.kind == "file"} - delivered
-    if not remaining:
-        return None
+    """Identify navigation passages separately from facts selected alongside them."""
+    refs = {s.ref for s in sources if s.kind == "file"}
+    if not refs.difference(item["ref"] for item in evidence):
+        return {}
     names = {}
-    for ref in remaining:
+    for ref in refs:
         for name in (ref, Path(ref).name):
             names.setdefault(name.casefold(), set()).add(ref)
 
@@ -471,21 +470,42 @@ def _index_references(question, evidence, sources):
     vocabulary = words(question) | words(
         "index tags keywords topics contents see also refer to consult for details and in the"
     )
-    for item in evidence:
-        text = item["text"].casefold()
+    choice_question = re.search(
+        r"^\s*(?:am|is|are|was|were|do|does|did|has|have|can|could|will|would|should|must)\b|\bor\b",
+        question, re.I,
+    )
+    pointers = {}
+    for index, item in enumerate(evidence):
+        # List numbers are presentation. Preserve numbers inside the entry, including numeric answers.
+        lines = item["text"].casefold().splitlines()
+        text = "\n".join(line[_CONTAINER_PREFIX.match(line).end():] for line in lines)
         targets = set()
         for name in sorted(names, key=len, reverse=True):
-            if name in text:
+            if name in text and (links := names[name] - {item["ref"]}):
                 link = (r"(?<![\w./-])(?:\./)?" + re.escape(name)
                         + r"(?![\w/-]|\.\w)(?:#[\w.-]+|:\d+(?:-\d+)?)?")
                 text, count = re.subn(link, " ", text)
                 if count:
-                    targets.update(names[name])
-        # A literal value or assignment can answer a question even when the
-        # caller already named it as a possibility.
-        if not re.search(r"\d|=|\b(?:true|false)\b", text) and words(text) <= vocabulary:
-            return targets
-    return None
+                    targets.update(links)
+        # A literal or declarative clause can be a complete answer even if every
+        # word occurs in the question and a supplemental file is mentioned.
+        label = words(text)
+        if not label <= vocabulary or re.search(r"\d|=|\b(?:true|false|yes|no)\b", text):
+            continue
+        # Interrogative headings may name a file; only a declarative clause
+        # supplies a value. Keep checking any prose that follows the question.
+        prose = re.sub(r"(?:^|(?<=[.!?]))\s*[^.!?\n]+\?", " ", text)
+        if re.search(r"\b(?:is|are|was|were|has|have|does|can|will|must|should)\b", prose):
+            continue
+        if choice_question and label:
+            # Even a fragment ("permanent") can select an answer. Require a
+            # navigation label or a link directive, not a trailing "See also".
+            marked = re.match(r"^[\s#*\[_(]*(?:index(?:\s+tags)?|tags?|keywords?|topics?|contents)\s*:", text)
+            explicit_link = targets and re.search(r"(?:^|[?:])\s*(?:see|refer to|consult)\b|\]\(\s*\)", text)
+            if not (marked or explicit_link):
+                continue
+        pointers[index] = targets
+    return pointers
 
 
 def passage_options(root, sources, question, preferred, *, source_bundle=None, **options):
@@ -493,15 +513,33 @@ def passage_options(root, sources, question, preferred, *, source_bundle=None, *
     evidence = excerpts(root, sources, question, preferred=preferred, **options)
     if not evidence:
         return
-    targets = _index_references(question, evidence, sources) if source_bundle is not None else None
-    if targets is not None:
+    pointers = _index_references(question, evidence, sources) if source_bundle is not None else {}
+    if pointers:
         bundle = source_bundle(sources)
         delivered = {read["ref"] for read in evidence}
         selected_text = {read["text"] for read in evidence}
         query_terms = terms(question)
+        targets = frozenset().union(*pointers.values())
+        without_index = []
         if any(item["ref"] not in delivered and item["text"] not in selected_text
                and (item["ref"] in targets or query_terms & terms(item["text"])) for item in bundle):
             yield bundle
+            # Drop a whole file only when its entire text was classified as navigation.
+            # An unnamed dependency can still supply a fact needed by the caller.
+            index_text = {(evidence[i]["ref"], evidence[i]["text"]) for i in pointers}
+            without_index = [item for item in bundle if (item["ref"], item["text"]) not in index_text]
+            if without_index and without_index != bundle:
+                yield without_index
+        if targets:
+            # Keep the full finding's provenance. Only its attached reads change.
+            # An unrelated oversized attachment can make the full bundle unavailable.
+            referenced = ([item for item in bundle if item["ref"] in targets] if bundle else
+                          source_bundle(sources, targets))
+            if any(item["text"] not in selected_text for item in referenced):
+                facts = [item for i, item in enumerate(evidence) if i not in pointers and item["ref"] not in targets]
+                packet = [*facts, *referenced]
+                if packet not in (bundle, without_index, evidence):
+                    yield packet
     yield evidence
 
     # Only reached when the selected packet failed to fit. Pack real alternate
@@ -513,7 +551,7 @@ def passage_options(root, sources, question, preferred, *, source_bundle=None, *
         copies = (p for p, digest in hashes.items() if p != ref and digest == hashes.get(ref))
         choices.append([ref, *sorted(copies, key=lambda path: len(path.encode("utf-8")))])
     for names in product(*choices):
-        if list(names) == refs or len(set(names)) != len(refs):
+        if list(names) == refs:
             continue
         aliases = dict(zip(refs, names, strict=True))
         locations = list(dict.fromkeys((aliases.get(p, p), line) for p, line in preferred))
