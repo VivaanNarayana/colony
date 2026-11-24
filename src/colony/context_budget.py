@@ -229,20 +229,39 @@ def _rebuild(response):
 
 def fit_response(response: dict, budget, *, question="") -> dict:
     """Bound the complete JSON payload; never trim an answer or selected block."""
-    return response_packer(budget)(response)
+    return ResponsePacker(budget)(response)
+
+
+class ResponsePacker:
+    """One verified counter and wire representation for all candidates in a lookup."""
+
+    def __init__(self, budget, response_profile=None):
+        self.budget = _budget(budget)
+        self.profile = response_profile
+        self.count = _counter(self.budget)
+
+    def __call__(self, response):
+        if self.profile is not None:
+            response = {**response, "response_profile": self.profile}
+        return _fit_response(response, self.budget, self.count)
+
+    def evidence_miss_key(self, envelope):
+        """Group compact evidence envelopes that cost the same for every identical set of reads."""
+        from colony.compact import compact_response
+
+        public = compact_response(envelope)
+        if self.budget.encoding == "utf8_bytes":
+            # Substituting the same evidence and receipt adds the same byte count.
+            return self.count(serialize_response(public))
+        # Keep every other field identical for BPE. Include the ID's real JSON
+        # neighbors so tokens at its boundaries count exactly as on the wire.
+        identity = {key: public[key] for key in ("hit", "id", "match_kind")}
+        del public["id"]
+        return serialize_response(public), self.count(serialize_response(identity))
 
 
 def response_packer(budget, response_profile=None):
-    """Use one verified counter for all candidate responses in a lookup."""
-    budget = _budget(budget)
-    counter = _counter(budget)
-
-    def pack(response):
-        if response_profile is not None:
-            response = {**response, "response_profile": response_profile}
-        return _fit_response(response, budget, counter)
-
-    return pack
+    return ResponsePacker(budget, response_profile)
 
 
 def _fit_response(response, budget, counter):

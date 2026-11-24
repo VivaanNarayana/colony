@@ -10,6 +10,7 @@ from pathlib import Path
 import sqlite_vec
 from cryptography.fernet import Fernet
 
+from colony.compact import PROFILE
 from colony.context import (
     PassageView,
     complete_source_bundle,
@@ -17,6 +18,7 @@ from colony.context import (
     passage_options,
     source_chunks,
 )
+from colony.context_budget import ResponsePacker
 from colony.git_context import capture as capture_git_context
 from colony.git_context import compare as compare_git_context
 from colony.memory import (
@@ -690,8 +692,6 @@ class Store:
     ):
         options = {}
         if response_profile is not None:
-            from colony.compact import PROFILE
-
             if response_profile != PROFILE or context_budget is None:
                 raise ValueError("Invalid response profile")
             options["compact_bundle"] = True
@@ -713,9 +713,7 @@ class Store:
         )
         pack = None
         if context_budget is not None:
-            from colony.context_budget import response_packer
-
-            pack = response_packer(context_budget, response_profile)
+            pack = ResponsePacker(context_budget, response_profile)
         result = answer
         if answer.get("status") != "validated" and namespaces:
             emit(diagnostics, "evidence_fallback", answer_status=answer.get("status"))
@@ -1066,6 +1064,9 @@ class Store:
 
             view = None
             bundles = {}
+            missed = set()
+            verified = {}
+            last_locations, last_options = None, None
 
             def source_bundle(sources, refs=None):
                 if refs not in bundles:
@@ -1094,14 +1095,33 @@ class Store:
                         (source.ref, source.content_hash) for source in sources
                     ) != required_source_identities:
                         continue
-                    status, checks = validate(self.repo, sources)
-                    if status != "validated":
-                        continue
+                    pack = pack_bundle if locations is None else pack_evidence
+                    miss_key = None
+                    compact_pack = isinstance(pack, ResponsePacker) and pack.profile == PROFILE
+                    source_key = tuple((s.kind, s.ref, s.content_hash, s.symbol, s.contains) for s in sources)
+                    if compact_pack and source_key in verified:
+                        checks = verified[source_key]
+                    else:
+                        status, checks = validate(self.repo, sources)
+                        if status != "validated":
+                            continue
+                        if compact_pack:
+                            verified[source_key] = checks
+                    if compact_pack:
+                        envelope = self._evidence_response(row, sources, [], memory, git_receipt)
+                        miss_key = (source_key, None if locations is None else tuple(locations),
+                                    pack.evidence_miss_key(envelope))
+                        if miss_key in missed:
+                            checked.remove(row["id"])
+                            continue
                     if view is None or sources != view.sources:
                         view = PassageView(self.repo, sources)
                         bundles.clear()
+                        last_options = None
                     if locations is None:
                         options = (source_bundle(sources),)
+                    elif compact_pack and last_options is not None and locations == last_locations:
+                        options = last_options
                     else:
                         permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
                         preferred = [(ref, line) for ref, digest, line in locations
@@ -1117,7 +1137,7 @@ class Store:
                             **({"expand_first_file": True} if salvage else {}),
                             **({"adaptive": True} if context_budget is not None else {}),
                         )
-                    pack = pack_bundle if locations is None else pack_evidence
+                    failed_options = []
                     for evidence in options:
                         if not evidence:
                             continue
@@ -1127,12 +1147,25 @@ class Store:
                         if packet.get("hit"):
                             packet = self._record_evidence(db, sources, requested, value, packet, pack)
                             if packet is None:
+                                verified.pop(source_key, None)
+                                view = None
                                 break
+                            # A concurrent metadata change can turn a preliminary
+                            # hit into a miss under the writer lock. Its original
+                            # envelope remains eligible for another publication.
+                            miss_key = None
                         if packet.get("reason") == "budget_limited":
                             budget_miss = packet
+                            if compact_pack:
+                                failed_options.append(evidence)
                             continue
                         return packet
                     else:
+                        if failed_options:
+                            if miss_key is not None:
+                                missed.add(miss_key)
+                            if locations is not None:
+                                last_locations, last_options = locations, failed_options
                         # Saved-answer salvage keeps the original selected facts
                         # mandatory. Only their byte-equivalent citations may vary.
                         if salvage and budget_miss is not None:

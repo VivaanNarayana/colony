@@ -148,6 +148,32 @@ def test_heading_with_source_pointer_delivers_configuration(onnx_transport, head
     assert cited_lines(result, repo)["settings.py", 1] == "PRODUCTION_TIMEOUT_MS = 1500"
 
 
+@pytest.mark.parametrize(("heading", "ref"), [
+    ("[Production request timeout](./settings.py)", "./settings.py"),
+    ("[Production request timeout](./settings.py), [details](#details).", "settings.py"),
+    ("[Production request timeout](./settings.py), [jump to the appendix](#appendix).", "settings.py"),
+    ("## How the production request timeout is configured\nSee settings.py.", "settings.py"),
+    ("## How the production request timeout is configured\n[settings.py](./settings.py), "
+     "[details](#details).", "./settings.py"),
+])
+def test_source_pointer_survives_spelling_anchor_and_paraphrase(onnx_transport, heading, ref):
+    client, repo, _ = onnx_transport
+    (repo / "overview.md").write_text(heading)
+    (repo / ref).write_text("PRODUCTION_TIMEOUT_MS = 1500")
+    target = publish(client, repo, "Who owns release scheduling?", "The release manager.", ["overview.md", ref])
+    value = research(client, repo, "What is the production request timeout and where is it configured?", 3072)
+    assert value["id"] == target
+    assert cited_lines(value, repo)[ref, 1] == "PRODUCTION_TIMEOUT_MS = 1500"
+
+
+def test_link_spelling_keeps_sibling_namesakes_separate():
+    refs = {"./docs/index.md", "./config/settings.py", "./docs/settings.py", "./settings.py"}
+    for link, expected in (("./settings.py", "./docs/settings.py"), ("../settings.py", "./settings.py"),
+                           ("../config/settings.py", "./config/settings.py")):
+        _, targets, _ = context._pointer_links(f"[settings.py]({link}), [help](#top).", "./docs/index.md", refs)
+        assert targets == {expected}
+
+
 @pytest.mark.parametrize(("text", "expected"), [
     ("[settings.py](./settings.py)", {"docs/settings.py"}),
     ("[settings.py](../settings.py#timeout)", {"settings.py"}),
@@ -228,6 +254,8 @@ def test_targeted_pointer_packet_preserves_an_independently_selected_fact(tmp_pa
     ("", 2200, "unnamed_dependency"), ("2) ", 2400, "oversized_attachment"),
     ("2) ", 2400, "oversized_unnamed_dependency"),
     ("", 2400, "oversized_keyword_index"), ("", 2400, "oversized_single_link"),
+    ("", 2400, "aggregate_keyword_index"), ("", 2400, "wire_keyword_index"),
+    ("", 2400, "background_keyword_index"),
 ])
 def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix, budget, case):
     client, repo, _ = onnx_transport
@@ -237,14 +265,18 @@ def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix,
              "Priority job backend submissions and wait schedule")
     named = paths[:2] if case.endswith("unnamed_dependency") else paths
     pointer = topic + ": see " + ", ".join(named) + "."
-    if case == "oversized_keyword_index":
+    if case.endswith("keyword_index"):
         pointer = "Index tags: " + topic + "."
     elif case == "oversized_single_link":
         pointer = f"[{topic}](./{paths[0]})"
     (repo / "overview.md").write_text(prefix + pointer)
     sources = [*paths, "overview.md"]
-    if case.startswith("oversized_"):
-        (repo / "notes.txt").write_text("Release calendar covers the next maintenance window.\n" * 80)
+    if case.startswith("oversized_") or case.endswith("keyword_index"):
+        repeats = {"aggregate_keyword_index": 49, "wire_keyword_index": 25, "background_keyword_index": 45}.get(case, 80)
+        note = "Release calendar covers the next maintenance window."
+        if case == "background_keyword_index":
+            note = ("Production" if workload == "gateway" else "Priority") + " release calendar."
+        (repo / "notes.txt").write_text((note + "\n") * repeats)
         sources.append("notes.txt")
     target = publish(client, repo, learn["question"], "See the configuration and execution loop.", sources)
     value = research(client, repo, reuse["question"], budget)
@@ -258,7 +290,7 @@ def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix,
             assert lines[path, n] == expected[n - 1]
     if budget < 3072:
         assert {r["path"] for r in value["current_repository_reads"]} == set(paths)
-    if case.startswith("oversized_"):
+    if "notes.txt" in sources:
         (repo / "notes.txt").write_text("Updated calendar.")
         assert not research(client, repo, reuse["question"], budget).get("current_repository_reads")
 
@@ -359,14 +391,20 @@ def test_shorter_equivalent_citation_keeps_both_facts_at_the_wire_limit(
         assert not research(client, repo, question, limit, encoding).get("current_repository_reads")
 
 
-def test_repeated_publications_do_not_reread_files_for_citation_permutations(onnx_transport, monkeypatch):
+@pytest.mark.parametrize(("encoding", "limit"), [("utf8_bytes", 1536), ("o200k_base", 256)])
+def test_repeated_publications_do_not_reread_files_for_citation_permutations(onnx_transport, monkeypatch,
+                                                                           encoding, limit):
     client, repo, _ = onnx_transport
+    if encoding == "o200k_base":
+        if not (tokenizer := os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")):
+            pytest.skip("Verified local tokenizer fixture unavailable")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
     paths = ["settings/production/gateway/request_timeout.txt", "settings/production/gateway/retry_limit.txt",
              *(f"copy-{n}.txt" for n in range(6))]
     for path in paths:
         (repo / path).parent.mkdir(parents=True, exist_ok=True)
         (repo / path).write_text("The request timeout is 1200 milliseconds.\n\nThe retry limit is four attempts.")
-    for _ in range(4):
+    for _ in range(12):
         publish(client, repo, "Who owns release scheduling?", "The release manager.", paths)
 
     reads = []
@@ -376,10 +414,25 @@ def test_repeated_publications_do_not_reread_files_for_citation_permutations(onn
         reads.append(source.ref)
         return original(root, source)
 
+    validations, renders = [], []
+    original_validate, original_excerpts = store.validate, context.excerpts
+
+    def validate(root, sources):
+        validations.extend(s.ref for s in sources)
+        return original_validate(root, sources)
+
+    def excerpts(*args, **kwargs):
+        renders.append(1)
+        return original_excerpts(*args, **kwargs)
+
+    monkeypatch.setattr(store, "validate", validate)
+    monkeypatch.setattr(context, "excerpts", excerpts)
     monkeypatch.setattr(context, "source_lines", counted)
     question = "What are the request timeout and retry limit?"
-    assert research(client, repo, question, 1536)["reason"] == "budget_limited"
+    assert research(client, repo, question, limit, encoding)["reason"] == "budget_limited"
     assert set(reads) == set(paths) and len(reads) <= 3 * len(paths)
+    assert len(renders) <= len(paths) ** 2
+    assert len(validations) <= 2 * len(paths)
     value = research(client, repo, question, 3072)
     assert set(cited_lines(value, repo).values()) == {
         "The request timeout is 1200 milliseconds.", "The retry limit is four attempts.",
@@ -421,3 +474,48 @@ def test_repeated_over_budget_bundles_bound_work_under_writer_lock(onnx_transpor
     # publication has identical sources, different metadata and still fits.
     assert research(client, repo, reuse["question"], upstream["context_budget"]["used"])["id"] == ids[-2]
     assert not any(builds)
+
+
+@pytest.mark.parametrize(("encoding", "change"), [
+    ("utf8_bytes", "feedback"), ("utf8_bytes", "concurrent_feedback"), ("o200k_base", "id"),
+])
+def test_repeated_passage_miss_allows_a_smaller_publication(onnx_transport, monkeypatch, encoding, change):
+    client, repo, database = onnx_transport
+    if encoding == "o200k_base":
+        if not (tokenizer := os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")):
+            pytest.skip("Verified local tokenizer fixture unavailable")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
+    question = "What are the request timeout and retry limit?"
+    sources = []
+    for ref, text in (("timeout.txt", "The request timeout is 1200 milliseconds."),
+                      ("retry.txt", "The retry limit is four attempts.")):
+        (repo / ref).write_text(text)
+        sources.append(snapshot(repo, ref))
+    older = Trail(id="a" * 32, namespace="team", question="Who owns release scheduling?",
+                  content="The release manager.", sources=sources)
+    assert client.push(older)["stored"]
+    budget = ContextBudget(encoding=encoding)
+    first = client.ask(question, "team", context_budget=budget, response_profile=PROFILE)
+    assert first["id"] == older.id and len(cited_lines(first, repo)) == 2
+    limit = first["context_budget"]["used"]
+    while limit > 256 and fit_response(first, ContextBudget(max_tokens=limit - 1, encoding=encoding))["hit"]:
+        limit -= 1
+    newer = older.model_copy(update={"id": "a9b8c7d6" * 4})
+    assert client.push(newer)["stored"]
+    if change == "feedback":
+        client.memory_feedback(newer.id, "team", verdict="incorrect")
+    assert client.ask(question, "team", context_budget=budget, response_profile=PROFILE)["id"] == newer.id
+    if change == "concurrent_feedback":
+        record = database._record_evidence
+
+        def add_feedback(db, sources, requested, value, packet, pack):
+            monkeypatch.setattr(database, "_record_evidence", record)
+            assert value["id"] == newer.id
+            with database.connect() as other:
+                other.execute("INSERT INTO memory_feedback_v1 VALUES (?,?,?,?,?)",
+                              (newer.id, "reviewer", "incorrect", b"", 1))
+            return record(db, sources, requested, value, packet, pack)
+
+        monkeypatch.setattr(database, "_record_evidence", add_feedback)
+    tight = research(client, repo, question, limit, encoding)
+    assert tight["id"] == older.id and cited_lines(tight, repo) == cited_lines(first, repo)

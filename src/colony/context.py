@@ -6,7 +6,7 @@ import posixpath
 import re
 from functools import cached_property
 from itertools import product
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote
 
 from colony.models import Source
@@ -482,10 +482,15 @@ def _pointer_links(text, origin, refs):
     directory = posixpath.dirname(origin)
     basenames = {}
     spellings = set(refs)
-    for ref in refs:
-        name = posixpath.basename(ref)
-        basenames.setdefault(name.casefold(), []).append(ref)
-        spellings.update((name, posixpath.relpath(ref, directory or ".")))
+    originals = {}
+    for ref in sorted(refs, key=lambda value: (len(value), value)):
+        # PurePosixPath removes redundant dots/separators, but preserves '..'
+        # whose actual target can depend on a symlink. Return the stored identity.
+        spelling = PurePosixPath(ref).as_posix()
+        originals.setdefault(spelling, ref)
+        name = posixpath.basename(spelling)
+        basenames.setdefault(name.casefold(), set()).add(spelling)
+        spellings.update((spelling, name, posixpath.relpath(spelling, directory or ".")))
     paths = "|".join(re.escape(s) for s in sorted(spellings, key=len, reverse=True))
     # Consume Markdown destinations as a whole, so a wrong directory or an external
     # URL cannot subsequently match a plain basename. Preserve the label for ranking.
@@ -499,23 +504,30 @@ def _pointer_links(text, origin, refs):
         nonlocal unresolved
         plain = match["plain"]
         path = plain if plain is not None else unquote((match["angle"] or match["dest"]).split("#", 1)[0])
+        label = match["label"]
+        if not path and label is not None:
+            # A same-page anchor does not name another file. Its navigation
+            # label must not veto a neighboring valid file destination.
+            unresolved = True
+            if re.search(r"\d|=|\b(?:is|are|was|were|true|false|yes|no)\b", label, re.I):
+                return f"[{label}]()"
+            return "[]()"
         if not path or path.startswith("/") or re.match(r"^[A-Za-z][\w+.-]*:", path):
             unresolved = True
-            return match[0]
+            return f"[{label}]()" if label is not None else match[0]
         relative = posixpath.normpath(posixpath.join(directory, path))
         target = relative
-        if relative not in refs and plain is not None and not path.startswith(("./", "../")):
+        if relative not in originals and plain is not None and not path.startswith(("./", "../")):
             # Repository-qualified prose and unique informal basenames are also used
             # in saved findings. An explicit relative link has no basename fallback.
-            matches = basenames.get(path.casefold(), [])
-            target = path if path in refs or len(matches) != 1 else matches[0]
-        if target not in refs or target == origin:
+            matches = basenames.get(path.casefold(), set())
+            target = path if path in originals or len(matches) != 1 else next(iter(matches))
+        if target not in originals or target == PurePosixPath(origin).as_posix():
             unresolved = True
-            return match[0]
-        targets.add(target)
+            return f"[{label}]()" if label is not None else match[0]
+        targets.add(originals[target])
         if plain is not None:
             return " "
-        label = match["label"]
         return "[]()" if label in spellings or label == path else f"[{label}]()"
 
     stripped = re.sub(pattern, replace, text, flags=re.IGNORECASE)
@@ -544,7 +556,7 @@ def _index_references(question, evidence, sources):
         lines = item["text"].splitlines()
         text = "\n".join(line[_CONTAINER_PREFIX.match(line).end():] for line in lines)
         text, targets, unresolved = _pointer_links(text, item["ref"], refs)
-        if unresolved:
+        if unresolved and not targets:
             continue
         text = text.casefold()
         if re.search(r"\d|=|\b(?:true|false|yes|no)\b", text):
@@ -555,10 +567,10 @@ def _index_references(question, evidence, sources):
         if targets:
             heading = re.match(
                 r"^\s*(?:#{1,6}\s+)?(?:how|where|when|what|which|why|who|is|are|does|can|should)\b"
-                r"[^\n:.!?]*(?:[?:]\s*|\n+)(?=(?:see|refer to|consult)\b|\[[^\n\]]*\]\(\)|\s*[.!]?\s*$)",
+                r"[^\n:;.!?]*(?:[?:]\s*|\n+)(?=(?:see|refer to|consult)\b|\[[^\n\]]*\]\(\)|\s*[.!]?\s*$)",
                 text,
             )
-            if heading and words(heading[0]) <= vocabulary:
+            if heading:
                 text = text[heading.end():]
         # A literal or declarative clause can be a complete answer even if every
         # word occurs in the question and a supplemental file is mentioned.
@@ -581,6 +593,45 @@ def _index_references(question, evidence, sources):
     return pointers
 
 
+def _support_sets(files, required, query_terms):
+    """Keep connected modules together and drop peripheral files only if their query terms remain covered."""
+    # Imports in either direction matter: a linked settings module may be used
+    # by a handler, which in turn imports the function that executes the request.
+    neighbors = {ref: set() for ref in files}
+    by_path = {PurePosixPath(ref).as_posix(): ref for ref in files}
+    for ref, item in files.items():
+        for path in python_import_paths(ref, item["text"]):
+            if path in by_path:
+                other = by_path[path]
+                neighbors[ref].add(other)
+                neighbors[other].add(ref)
+
+    components = []
+    seen = set()
+    for ref in files:
+        if ref in seen:
+            continue
+        component, pending = set(), [ref]
+        while pending:
+            member = pending.pop()
+            if member not in component:
+                component.add(member)
+                pending.extend(neighbors[member] - component)
+        seen.update(component)
+        matches = {term for p in component for term in terms(files[p]["text"]) if term in query_terms}
+        if matches or required & component:
+            components.append((component, matches))
+    if components:
+        yield frozenset().union(*(group for group, _ in components))
+    # Prefer the evidence with broader coverage. Remove a group only when all
+    # of its terms are also present elsewhere and no explicit target is lost.
+    for group, matches in sorted(components, key=lambda c: (len(c[1]), -sum(len(files[p]["text"]) for p in c[0]))):
+        others = [(g, m) for g, m in components if g != group]
+        if others and not required & group and matches < set().union(*(m for _, m in others)):
+            components = others
+            yield frozenset().union(*(g for g, _ in others))
+
+
 def _pointer_options(sources, question, evidence, pointers, source_bundle):
     bundle = source_bundle(sources)
     attached = {s.ref for s in sources if s.kind == "file"}
@@ -589,12 +640,13 @@ def _pointer_options(sources, question, evidence, pointers, source_bundle):
     facts = [read for i, read in enumerate(evidence) if i not in pointers]
     targets = frozenset().union(*pointers.values())
     index_text = {(evidence[i]["ref"], evidence[i]["text"]) for i in pointers}
+    small = {item["ref"]: item for item in bundle}
 
     # An individually oversized attachment can make the whole group unavailable,
     # even for a keyword index with no filenames. Try the remaining complete files
     # under the same aggregate limit. Preserve every named target and selected fact.
     if not bundle and len(attached) <= 8:
-        small = {ref: item for ref in attached for item in source_bundle(sources, frozenset({ref}))}
+        small = {ref: item for ref in sorted(attached) for item in source_bundle(sources, frozenset({ref}))}
         required = targets.union(read["ref"] for read in facts)
         if required <= small.keys() < attached:
             keep = frozenset(ref for ref, item in small.items()
@@ -631,7 +683,24 @@ def _pointer_options(sources, question, evidence, pointers, source_bundle):
         without_index = [item for item in bundle if (item["ref"], item["text"]) not in index_text]
         if without_index and without_index != bundle:
             yield without_index
-    for group in reversed(groups):
+    # A complete packet may fail either the source-size cap or the caller's wire
+    # budget even when every file fits individually. A keyword index has no named
+    # targets. Seed its supporting group from query-bearing text, then retain the
+    # attached Python modules that supply or consume those values.
+    if len(attached) <= 8:
+        candidates = {ref: item for ref, item in small.items()
+                      if (ref, item["text"]) not in index_text
+                      and (ref in wanted or posixpath.basename(ref) not in names)}
+    else:
+        candidates = {}
+
+    def alternatives():
+        if candidates and targets <= candidates.keys():
+            for support in _support_sets(candidates, wanted, query_terms):
+                yield source_bundle(sources, support)
+        yield from reversed(groups)
+
+    for group in alternatives():
         if any(item["text"] not in selected_text for item in group):
             paths = {item["ref"] for item in group}
             packet = [read for read in facts if read["ref"] not in paths] + group
