@@ -8,7 +8,7 @@ from test_workflow import identity as identity
 
 from colony.models import Scope
 from colony.security import issue
-from colony.task_mcp import EMPTY_ROUTE, FOLLOWUP_START, PRESENT_ROUTE, PRESENT_STATUS, TaskMCP
+from colony.task_mcp import COLD_DISCOVERY, EMPTY_ROUTE, FOLLOWUP_START, PRESENT_ROUTE, PRESENT_STATUS, TaskMCP
 from colony.workflow import Workflow
 
 
@@ -23,11 +23,12 @@ def test_current_catalog_routes_prior_work_without_looking_it_up(identity, monke
     async def check():
         await server._initialize_routing()
         assert server.instructions.startswith(EMPTY_ROUTE if initial == "empty" else FOLLOWUP_START)
+        assert (COLD_DISCOVERY in server.instructions) == (initial == "empty")
         for current in ("empty", "present", "unknown", "present"):
             state[0] = current
             server._availability_until = 0
             tools = {t.name: t for t in await server.list_tools()}
-            assert "read" in tools
+            assert (COLD_DISCOVERY in tools["read"].description) == (current == "empty")
             description = tools["research"].description
             assert (PRESENT_ROUTE in description) == (current == "present")
             assert ("empty at last check" in description) == (current == "empty")
@@ -36,6 +37,31 @@ def test_current_catalog_routes_prior_work_without_looking_it_up(identity, monke
         assert PRESENT_ROUTE not in tools["research"].description
         assert PRESENT_STATUS in tools["research"].description
         assert "resolve a gap" in tools["research"].description
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("readonly", [False, True])
+def test_cold_discovery_expires_after_referenced_read(identity, monkeypatch, readonly):
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "memory_availability", lambda *args: "empty")
+    server = TaskMCP(Workflow(client, "team", repo, read_only=readonly), "Trace the configured behavior")
+
+    async def check():
+        await server._initialize_routing()
+        assert (COLD_DISCOVERY in server.instructions) == (not readonly)
+        pages = await server.call_tool("read", {"batch": [{"path": "settings.py"}, {"path": "README.md"}]})
+        wire = pages[0].text
+        value = json.loads(wire)
+        assert wire == json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        assert [p["path"] for p in value["results"]] == ["settings.py", "README.md"]
+        assert all(p["evidence_ref"] for p in value["results"])
+        if not readonly:
+            assert "publish(content, applicability, evidence_refs)" in value["publication_guidance"]
+        tools = {t.name: t for t in await server.list_tools()}
+        assert COLD_DISCOVERY not in tools["read"].description
+        assert ("publish" in tools) == (not readonly)
+        assert "research" in tools
 
     asyncio.run(check())
 

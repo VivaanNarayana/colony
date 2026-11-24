@@ -71,6 +71,11 @@ FOLLOWUP_START = (
     "when its current tool description recommends starting there. "
 )
 EMPTY_ROUTE = "Memory was empty at task startup. Start with sources unless the current research tool recommends a first lookup for a follow-up. "
+COLD_DISCOVERY = (
+    "For unknown paths on a host with tool composition and file listing, pass relevant "
+    "listed paths to read(batch=[{\"path\": ...}, ...]) in the same host call as the listing. "
+    "Count the listing and each path against the source allowance. "
+)
 READ_ROUTING = (
     "Read known paths directly and batch independent reads within the allowance. "
     "Once sources answer the question, finish without a memory check. Investigate actual gaps. "
@@ -177,8 +182,9 @@ class TaskMCP(FastMCP):
                         # Trusted adapter guidance, outside source text and batch entries.
                         # One cue per task; no extra call, read, or publication attempt.
                         response["publication_guidance"] = (
-                            "Scoped memory was empty at last check. Once the sources support a new rule, "
-                            "publish its conditions and result directly with the supporting evidence_refs, then answer."
+                            "Scoped memory was empty at last check. If the reads support a new rule, "
+                            "call publish(content, applicability, evidence_refs) next with its result, "
+                            "conditions and supporting refs. No confirmation lookup is needed."
                             if self._availability_state == "empty" and not self._remember else PUBLICATION_CUE
                         )
                         # Supply the existing API's reference argument once for a complete
@@ -208,12 +214,14 @@ class TaskMCP(FastMCP):
                 if before is not None:
                     response["listed_scope"] = scope.record(before, delivered)
             # Publication resolves evidence while holding its own lock.
-            return observe(results, response)
+            # These tools return a single MCP text block. Serialize once to avoid
+            # replaying pretty-printed framing on each subsequent model request.
+            return json.dumps(observe(results, response), ensure_ascii=False, separators=(",", ":"))
 
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
-                 ) -> dict:
+                 ) -> str:
             """Read source; omit end for ordinary reads (end beyond EOF is clipped).
             Omit path for direct path. Use batch for independent reads instead of
             single-read arguments; results/errors are ordered. Continue each at next_offset
@@ -282,7 +290,7 @@ class TaskMCP(FastMCP):
             from colony.task_reads import trace_read as read_bundle
 
             def trace_read(paths: Annotated[list[str], Field(min_length=1, max_length=8)],
-                           max_files: Annotated[int, Field(strict=True, ge=1, le=8)] = 8) -> dict:
+                           max_files: Annotated[int, Field(strict=True, ge=1, le=8)] = 8) -> str:
                 """Opt-in trace: read requested files plus bounded static Python module hints.
                 Every attempted file costs a read unit. No code executes. Scope documents
                 and injected implementations must be requested explicitly when relevant.
@@ -412,6 +420,9 @@ class TaskMCP(FastMCP):
                 route = "Scoped memory was empty at last check. Use source tools unless checking a later publication."
             tools = [t.model_copy(update={"description": (t.description or "").replace(RESEARCH_GUIDANCE, route, 1)})
                      if t.name == "research" else t for t in tools]
+        if self._availability_state == "empty" and self._may_publish and not self._publication_ready:
+            tools = [t.model_copy(update={"description": COLD_DISCOVERY + (t.description or "")})
+                     if t.name == "read" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted
         )]
@@ -420,7 +431,9 @@ class TaskMCP(FastMCP):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
         if self._availability_state == "empty":
-            self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
+            discovery = COLD_DISCOVERY if self._may_publish else ""
+            self._mcp_server.instructions = (
+                EMPTY_ROUTE + discovery + self._base_instructions.removeprefix(FOLLOWUP_ROUTE))
         elif self._availability_state == "present":
             self._mcp_server.instructions = FOLLOWUP_START + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
 

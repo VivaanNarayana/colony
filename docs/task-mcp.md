@@ -229,6 +229,11 @@ On stdio startup, a non-direct task makes a short authenticated
 `POST /memory/availability` request. The response contains only a contract,
 namespace, configured repository identity and `empty`/`present` state. Only a
 zero active-row result in the authorized namespace enables the source-first hint.
+On writable tasks starting with empty memory, a host that supports tool composition can
+list unknown paths and pass relevant returned names to a batch read in one host call.
+The listing and each file still use their ordinary source allowance. The read catalog
+offers this route until referenced evidence is available. When that evidence supports a
+new rule, the first publication cue identifies the arguments for saving it directly.
 Stale, unverified and unrelated active memories conservatively count as present;
 a search miss never becomes an empty-store proof. Repository-ID mismatch, old
 servers, denied/expired credentials and transport failures yield `unknown` and
