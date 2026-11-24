@@ -16,7 +16,7 @@ _CONTAINMENT = re.compile(
 SCOPE_ROUTE = (
     "For the repository containment question, list the authorized files once with {}. "
     "Follow its read plan before a literal search or memory lookup unless positive evidence "
-    "already answers the question. Judge meaning from delivered content. Qualify any gaps."
+    "already answers the question. Answer from sufficient delivered content; qualify any gaps."
 )
 
 

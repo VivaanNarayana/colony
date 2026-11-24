@@ -2,8 +2,39 @@ import uuid
 
 from conftest import auth
 
-from colony.models import Trail
+from colony.models import ContextBudget, Trail
 from colony.validation import snapshot
+
+
+def test_compound_lookup_reuses_joint_sources_only_while_current(team, monkeypatch):
+    from colony import store
+
+    app, api, repo, _, key = team
+    question = "Describe cache expiration and the eviction limit."
+    learned = "What controls cache expiration and the eviction limit?"
+    (repo / "clock.py").write_text("CACHE_EXPIRATION = 900\n")
+    (repo / "capacity.py").write_text("EVICTION_LIMIT = 7\n")
+    trail = Trail(id=uuid.uuid4().hex, namespace="team", question=learned,
+                  content="A historical summary without the resolved values.",
+                  sources=[snapshot(repo, p) for p in ("clock.py", "capacity.py")])
+    api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+    # Neither code passage ranks on its own. The learned question locates the
+    # source set, but its answer text must never be returned as current evidence.
+    monkeypatch.setattr(store, "rank", lambda q, passages: [-1.0 if p == learned else -9.0 for p in passages])
+    database = app.state.store
+    def find(namespaces, threshold):
+        return database.find_evidence(question, namespaces, 604800, context_budget=ContextBudget(),
+                                      source_set_threshold=threshold)
+
+    result = find(["team"], 0.6)
+    assert result["id"] == trail.id and result["match_kind"] == "evidence"
+    assert result["status"] == "validated" and set(result["complete_files"]) == {"clock.py", "capacity.py"}
+    assert "900" in result["content"] and "7" in result["content"] and trail.content not in result["content"]
+    assert find(["private"], 0.6) is None
+    assert find(["team"], 1.0) is None
+    assert find(["team"], None) is None
+    (repo / "clock.py").write_text("CACHE_EXPIRATION = 300\n")
+    assert find(["team"], 0.6) is None
 
 
 def test_service_overview_is_not_a_procedure_but_remains_descriptive_evidence(team):

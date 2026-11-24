@@ -10,7 +10,7 @@ from pathlib import Path
 import sqlite_vec
 from cryptography.fernet import Fernet
 
-from colony.context import excerpts, source_chunks
+from colony.context import complete_source_bundle, excerpts, source_chunks
 from colony.git_context import capture as capture_git_context
 from colony.git_context import compare as compare_git_context
 from colony.memory import (
@@ -49,6 +49,7 @@ from colony.retrieval import (
     procedural_text,
     rank,
     requires_procedure,
+    terms,
 )
 from colony.retrieval_diagnostics import emit
 from colony.security import fingerprint, private_write, scrub
@@ -713,6 +714,7 @@ class Store:
                     max_age,
                     include_evidence_files=include_evidence_files,
                     git_context=git_context,
+                    **({"source_set_threshold": threshold} if response_profile is not None else {}),
                     **options,
                 )
                 or answer
@@ -763,6 +765,43 @@ class Store:
             return packed
         return result
 
+    @staticmethod
+    def _source_set_candidates(db, question, vector, candidates, threshold):
+        """Locate source sets for a compound lookup without admitting a saved answer."""
+        query_terms = terms(question)
+        origins = {}
+        for linked, text in candidates:
+            overlap = query_terms & terms(text)
+            if overlap:
+                for row in linked:
+                    _, by_file = origins.setdefault(row["id"], (row, {}))
+                    by_file.setdefault(row["ref"], set()).update(overlap)
+        complementary = {}
+        # Candidates are already scoped and ordered by source similarity. Require
+        # complementary terms across files belonging to the *same* saved finding.
+        for row, by_file in origins.values():
+            matches = set.union(*by_file.values())
+            if len(matches) < 3 or any(matches == found for found in by_file.values()):
+                continue
+            complementary[row["trail_rowid"]] = row
+            if len(complementary) == CANDIDATES:
+                break
+        if not complementary:
+            return []
+        slots = ",".join("?" for _ in complementary)
+        similarities = db.execute(
+            f"SELECT rowid, 1-vec_distance_cosine(embedding, ?) FROM trail_questions WHERE rowid IN ({slots})",
+            (vector, *complementary),
+        )
+        eligible = [(complementary[rowid], score) for rowid, score in similarities
+                    if score is not None and score >= max(0.55, threshold)]
+        logits = rank(question, [row["question"] for row, _ in eligible]) if eligible else []
+        return sorted(
+            [([row], fused_score(similarity, logit))
+             for (row, similarity), logit in zip(eligible, logits, strict=True) if logit >= -5.0],
+            key=lambda item: item[1], reverse=True,
+        )
+
     def find_evidence(
         self,
         question,
@@ -776,6 +815,7 @@ class Store:
         restricted_trail_id: str | None = None,
         required_source_identities: frozenset[tuple[str, str]] | None = None,
         expand_first_file: bool = False,
+        source_set_threshold: float | None = None,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
@@ -783,12 +823,13 @@ class Store:
             return None
         placeholders = ",".join("?" for _ in namespaces)
         restriction = " AND t.id=?" if restricted_trail_id is not None else ""
-        parameters = [embed(question, query=True), *namespaces, time.time() - max_age]
+        vector = embed(question, query=True)
+        parameters = [vector, *namespaces, time.time() - max_age]
         if restricted_trail_id is not None:
             parameters.append(restricted_trail_id)
         with self.connect() as db:
             rows = db.execute(
-                f"""SELECT t.*, c.ref, c.content_hash, c.line,
+                f"""SELECT t.*, t.rowid AS trail_rowid, c.ref, c.content_hash, c.line,
                 vec_distance_cosine(v.embedding, ?) AS distance
                 FROM source_chunks c JOIN source_vectors v ON c.id=v.rowid
                 JOIN trails t ON c.trail_id=t.id
@@ -856,6 +897,9 @@ class Store:
                 key=lambda item: item[1],
                 reverse=True,
             )
+            use_source_set = not ordered and source_set_threshold is not None and not requires_procedure(question)
+            if use_source_set:
+                ordered = self._source_set_candidates(db, question, vector, candidates, source_set_threshold)
             # A candidate can be retired during reranking. Serialize the final state
             # check with lifecycle writes before validating/returning current evidence.
             db.execute("BEGIN IMMEDIATE")
@@ -878,6 +922,11 @@ class Store:
                         continue
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
+                        continue
+                    if use_source_set:
+                        evidence = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
+                        if evidence:
+                            break
                         continue
                     permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
                     # Near-tied passages can describe different parts of an answer.

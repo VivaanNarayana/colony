@@ -166,7 +166,11 @@ Opt into adaptive lookup with `--context-budget 3072
 --context-encoding utf8_bytes`. The Python API accepts `context_budget=ContextBudget(...)`.
 Adaptive `research` uses the same negotiation, source verification, packing and
 wire-response cap as ordinary adaptive `ask`, with the task question bound by the
-host. Its optional `max_context_tokens` override has the same 256..8192 range and
+host. When neither a saved answer nor a single passage matches, compact lookup
+can use a related saved question to locate a small set of cited files whose
+contents cover complementary query terms. It returns current source text after
+validating all attached sources. The usual wire budget still applies.
+Its optional `max_context_tokens` override has the same 256..8192 range and
 configured units. No automatic retry or budget escalation occurs. This is a
 lookup-response limit, never an answer-length or source-research limit. Missing,
 limited or unavailable memories leave source reads and fuller answers available.
