@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 
 from colony.evidence_refs import batch_allowances
 from colony.task_reads import _public_path
-from colony.validation import file_version, repo_file
+from colony.validation import file_version, open_source_file, repo_file
 
 _REPO = r"(?:repo(?:sitory)?|codebase|project)"
 _VERB = r"(?:contain|include|document|mention|record|implement|define|specify|provide)"
@@ -137,19 +137,28 @@ class SourceScope:
                     "Follow the read plan when available. Qualify any uninspected scope.")
         return SCOPE_ROUTE.format(list_tool)
 
-    def version(self, path):
+    def _authorized_file(self, path):
         if self.evidence.path_allowed is None and self.evidence.read != self.access.read:
-            return None  # An opaque host read wrapper cannot authorize metadata probes.
+            raise ValueError("Host read wrapper has no metadata policy")
+        return repo_file(self.evidence.workflow.repo, path, path_allowed=self.evidence.path_allowed)
+
+    def version(self, path):
         try:
-            target = repo_file(self.evidence.workflow.repo, path,
-                               path_allowed=self.evidence.path_allowed)
-            return file_version(target)
+            return file_version(self._authorized_file(path))
         except (OSError, ValueError, RuntimeError):
             return None
 
     def visible_paths(self):
         self.evidence._authorize()
-        return sorted(p for p in self.paths if _public_path(p) and self.version(p) is not None)
+        visible = []
+        for path in self.paths:
+            if _public_path(path):
+                try:
+                    with open_source_file(self._authorized_file(path)):
+                        visible.append(path)
+                except (OSError, ValueError, RuntimeError):
+                    continue
+        return sorted(visible)
 
     def unverified_plan(self):
         self.listed = False

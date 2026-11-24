@@ -2,7 +2,7 @@ import ast
 import hashlib
 import os
 import stat
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePosixPath
 
 from colony.models import Source
@@ -127,11 +127,9 @@ def file_version(path: Path):
     return (str(path), info.st_dev, info.st_ino, changed, info.st_mtime_ns, info.st_size)
 
 
-def repo_contents(root: Path, ref: str, *, path_allowed=None, expected_target=None) -> tuple[Path, bytes]:
-    """Authorize the requested and resolved names, then read the authorized object once."""
-    path = repo_file(root, ref, path_allowed=path_allowed, expected_target=expected_target)
-    if path_allowed is None:
-        return path, path.read_bytes()
+@contextmanager
+def open_source_file(path: Path):
+    """Open an authorized, resolved repo_file path and verify the readable object."""
     with ExitStack() as stack:
         if os.name == "nt":
             stream = stack.enter_context(path.open("rb"))
@@ -154,6 +152,15 @@ def repo_contents(root: Path, ref: str, *, path_allowed=None, expected_target=No
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_SOURCE_BYTES:
             raise ValueError("Source is missing or exceeds 2 MB")
+        yield stream
+
+
+def repo_contents(root: Path, ref: str, *, path_allowed=None, expected_target=None) -> tuple[Path, bytes]:
+    """Authorize the requested and resolved names, then read the authorized object once."""
+    path = repo_file(root, ref, path_allowed=path_allowed, expected_target=expected_target)
+    if path_allowed is None:
+        return path, path.read_bytes()
+    with open_source_file(path) as stream:
         data = stream.read(MAX_SOURCE_BYTES + 1)
         if len(data) > MAX_SOURCE_BYTES:
             raise ValueError("Source exceeds 2 MB")

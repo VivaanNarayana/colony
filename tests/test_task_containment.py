@@ -154,6 +154,23 @@ def test_missing_change_time_leaves_coverage_unverified(identity, monkeypatch):
     assert page["listed_scope"]["status"] == "partial" and page["listed_scope"]["unverified_count"] == 1
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows change-time query")
+@pytest.mark.parametrize("query_succeeds", [False, True], ids=["unavailable", "zero-change-time"])
+def test_discovery_keeps_readable_files_when_change_time_is_unknown(identity, monkeypatch, query_succeeds):
+    files = ["README.md", "settings.py"]
+    allowed = set(files)
+    server = create(identity, files, read_path_allowed=allowed.__contains__)
+    # A successful call with the zero-initialized FILE_BASIC_INFO is also inconclusive.
+    monkeypatch.setattr("colony.validation._get_file_info", lambda *args: query_succeeds)
+    listing, action = blocks(server, "source_files")
+    assert listing.text.splitlines() == files
+    assert json.loads(action.text)["scope_read_plan"]["status"] == "partial"
+    page = read(server, path="settings.py")
+    assert page["content"] == "TIMEOUT = 30" and page["listed_scope"]["status"] == "partial"
+    allowed.remove("settings.py")
+    assert blocks(server, "source_files")[0].text.splitlines() == ["README.md"]
+
+
 @pytest.mark.parametrize("spelling", ["settings.py", "./settings.py"])
 def test_prelisting_read_and_continuation_probe_only_the_requested_file(identity, monkeypatch, spelling):
     _, repo, _ = identity

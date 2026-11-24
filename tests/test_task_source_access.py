@@ -146,6 +146,51 @@ def test_git_push_rechecks_sources_after_reference_resolution(identity, monkeypa
     assert not list((client.home / "queue").glob("*.enc"))
 
 
+@pytest.mark.parametrize("offline", [False, True], ids=["send", "queue"])
+def test_canonical_citation_rechecks_original_spelling_at_publication_boundaries(identity, monkeypatch, offline):
+    from colony import client as client_module
+
+    client, repo, _ = identity
+    checked = []
+    def allowed(ref):
+        checked.append(ref)
+        return ref in {"./settings.py", "settings.py"}
+
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the timeout", read_path_allowed=allowed)
+    page = call(server, "read", path="./settings.py")
+    push, write = client.push, client_module.private_write
+    boundaries = []
+
+    def start_push(*args, **kwargs):
+        checked.clear()
+        return push(*args, **kwargs)
+
+    def request(route, payload):
+        assert route == "/trails" and [s["ref"] for s in payload["sources"]] == ["settings.py"]
+        boundaries.append(set(checked))
+        checked.clear()
+        if offline:
+            raise httpx.ConnectError("offline")
+        return {"stored": True}
+
+    def stage(path, data):
+        boundaries.append(set(checked))
+        checked.clear()
+        return write(path, data)
+
+    monkeypatch.setattr(client, "push", start_push)
+    monkeypatch.setattr(client, "request", request)
+    monkeypatch.setattr(client_module, "private_write", stage)
+    receipt = call(server, "publish", content="The timeout is 30.", applicability="settings.py",
+                   evidence_refs=[page["evidence_ref"]])
+    if offline:
+        assert receipt["queued"] and len(list((client.home / "queue").glob("*.enc"))) == 1
+        boundaries.append(set(checked))  # Final check between staging and queue commit.
+    else:
+        assert receipt["stored"]
+    assert boundaries == [{"./settings.py", "settings.py"}] * (3 if offline else 1)
+
+
 def test_lost_connection_cannot_queue_a_now_revoked_source(identity, monkeypatch):
     client, repo, _ = identity
     allowed = {"settings.py"}

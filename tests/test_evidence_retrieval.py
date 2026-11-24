@@ -93,6 +93,39 @@ def test_compound_lookup_ranks_saved_questions_before_limiting_shared_source_set
     assert set(result["complete_files"]) == {"clock.py", "capacity.py"}
 
 
+def test_stale_dependencies_cannot_exhaust_compound_question_reranking(team, monkeypatch):
+    from colony import store
+
+    app, api, repo, _, key = team
+    question = "Describe cache expiration and the eviction limit."
+    learned = "What controls cache expiration and the eviction limit?"
+    (repo / "clock.py").write_text("CACHE_EXPIRATION = 900\n")
+    (repo / "capacity.py").write_text("EVICTION_LIMIT = 7\n")
+    shared = [snapshot(repo, p) for p in ("clock.py", "capacity.py")]
+    original = Trail(id=uuid.uuid4().hex, namespace="team", question=learned,
+                     content="Cache behavior.", sources=shared)
+    api.post("/trails", json=original.model_dump(), headers=auth(key)).raise_for_status()
+    for i in range(store.CANDIDATES):
+        (repo / "release.txt").write_text(f"Release {i}.")
+        newer = original.model_copy(update={"id": uuid.uuid4().hex,
+                                            "sources": [*shared, snapshot(repo, "release.txt")]})
+        api.post("/trails", json=newer.model_dump(), headers=auth(key)).raise_for_status()
+    (repo / "release.txt").write_text("Next release.")
+
+    ranked_questions = []
+
+    def rank(query, passages):
+        ranked_questions.extend(text for text in passages if text == learned)
+        return [-1.0 if text == learned else -9.0 for text in passages]
+
+    monkeypatch.setattr(store, "rank", rank)
+    result = app.state.store.find_evidence(question, ["team"], 604800, context_budget=ContextBudget(),
+                                           source_set_threshold=0.6)
+    assert result and result["id"] == original.id and result["status"] == "validated"
+    assert set(result["complete_files"]) == {"clock.py", "capacity.py"}
+    assert ranked_questions == [learned]
+
+
 def test_service_overview_is_not_a_procedure_but_remains_descriptive_evidence(team):
     _, api, repo, _, key = team
     (repo / "guide.md").write_text(

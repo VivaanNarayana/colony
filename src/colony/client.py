@@ -608,8 +608,12 @@ class Client:
             if path_allowed is not None:
                 if repo is None:
                     raise ValueError("Restricted publication requires an explicit repository")
-                for source in trail.sources:
-                    repo_file(repo, source.ref, path_allowed=path_allowed)
+                # A canonical citation may represent multiple observed spellings.
+                # Keep all their permission and target checks through send/queue.
+                refs = dict.fromkeys(source.ref for source in trail.sources)
+                refs.update(path_allowed.targets)
+                for ref in refs:
+                    repo_file(repo, ref, path_allowed=path_allowed)
 
         if repository_id is not None:
             from colony.git_client import checked_sources

@@ -4,7 +4,7 @@ import json
 import re
 import sqlite3
 import time
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from pathlib import Path
 
 import sqlite_vec
@@ -70,6 +70,7 @@ CREATE INDEX IF NOT EXISTS trails_namespace ON trails(namespace);
 CREATE TABLE IF NOT EXISTS trail_sources (
  trail_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT NOT NULL, content_hash TEXT NOT NULL,
  symbol TEXT, contains TEXT);
+CREATE INDEX IF NOT EXISTS trail_sources_by_trail ON trail_sources(trail_id);
 CREATE TABLE IF NOT EXISTS validations (
  id INTEGER PRIMARY KEY, trail_id TEXT NOT NULL, validator TEXT NOT NULL,
  result TEXT NOT NULL, checked_at REAL NOT NULL);
@@ -765,8 +766,7 @@ class Store:
             return packed
         return result
 
-    @staticmethod
-    def _source_set_candidates(db, question, vector, candidates, threshold):
+    def _source_set_candidates(self, db, question, vector, candidates, threshold):
         """Locate source sets for a compound lookup without admitting a saved answer."""
         query_terms = terms(question)
         origins = {}
@@ -786,22 +786,46 @@ class Store:
             complementary[row["trail_rowid"]] = row
         if not complementary:
             return []
-        # Many saved questions can cite identical files. Apply the rerank budget
-        # to the closest scoped questions, independent of their publication order.
-        similarities = db.execute(
-            """SELECT rowid, 1-vec_distance_cosine(embedding, ?) AS similarity
-               FROM trail_questions WHERE rowid IN (SELECT value FROM json_each(?))
-               ORDER BY similarity DESC, rowid DESC LIMIT ?""",
-            (vector, json.dumps(list(complementary)), CANDIDATES),
-        )
-        eligible = [(complementary[rowid], score) for rowid, score in similarities
-                    if score is not None and score >= max(0.55, threshold)]
+        eligible = self._source_set_shortlist(db, complementary, vector, max(0.55, threshold))
         logits = rank(question, [row["question"] for row, _ in eligible]) if eligible else []
         return sorted(
             [([row], fused_score(similarity, logit))
              for (row, similarity), logit in zip(eligible, logits, strict=True) if logit >= -5.0],
             key=lambda item: item[1], reverse=True,
         )
+
+    def _source_set_shortlist(self, db, complementary, vector, minimum):
+        verified = {}
+
+        def current(source):
+            key = (source.kind, source.ref, source.content_hash, source.symbol, source.contains)
+            if key not in verified:
+                verified[key] = validate(self.repo, [source])[0] == "validated"
+            return verified[key]
+
+        # Many saved questions can cite identical files. Apply the rerank budget
+        # to the closest scoped questions, independent of their publication order.
+        eligible = []
+        with closing(db.execute(
+            """SELECT rowid, 1-vec_distance_cosine(embedding, ?) AS similarity
+               FROM trail_questions WHERE rowid IN (SELECT value FROM json_each(?))
+               ORDER BY similarity DESC, rowid DESC""",
+            (vector, json.dumps(list(complementary))),
+        )) as similarities:
+            for rowid, score in similarities:
+                if score is None or score < minimum:
+                    break
+                row = complementary[rowid]
+                if len(complementary) > CANDIDATES:
+                    # A stale dependency can invalidate a set even when every
+                    # matched passage is current. Recheck the winner after rank.
+                    sources = self.sources(db, row["id"])
+                    if not sources or not all(current(source) for source in sources):
+                        continue
+                eligible.append((row, score))
+                if len(eligible) == CANDIDATES:
+                    break
+        return eligible
 
     def find_evidence(
         self,
