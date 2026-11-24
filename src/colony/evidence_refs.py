@@ -6,7 +6,7 @@ import secrets
 import threading
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from colony.models import Source
 from colony.security import PATTERNS, fingerprint, scrub, verify
@@ -27,6 +27,7 @@ class _Observation:
     end_offset: int
     expires: float
     target: str | None
+    delivered_for_task: bool = False
 
 
 @dataclass(frozen=True)
@@ -236,6 +237,44 @@ class EvidenceSession:
     def resolve(self, references: list[str]) -> list[Source]:
         """Resolve all references atomically or fail; never substitute new hashes."""
         return self._resolve(references, self.path_allowed)
+
+    def note_task_delivery(self, pages, results):
+        """Mark finalized pages actually returned by the task tool, including host wrappers."""
+        with self._lock:
+            returned = {id(result) for result in results}
+            for result, content, page, _ in pages:
+                handle = result.get("evidence_ref")
+                observation = self._observations.get(handle) if isinstance(handle, str) else None
+                if (observation and id(result) in returned and result.get("path") == page.ref
+                        and result.get("content") == content and observation.ref == page.ref
+                        and observation.digest == page.digest):
+                    self._observations[handle] = replace(observation, delivered_for_task=True)
+
+    def scoped_references(self, references, applicability):
+        """Pin files explicitly named in the declared scope if the task actually read them."""
+        if not references:
+            return references
+        # Use whole repository-relative path tokens. Backticks allow spaces and
+        # extensionless files. Never resolve free-form text against the filesystem.
+        named = set(re.findall(r"`([^`\r\n]+)`", applicability))
+        for token in re.findall(r"[\w./\\+@%-]+", applicability):
+            path = token.rstrip(".")
+            if "/" in path or "." in path:
+                named.add(path)
+        with self._lock:
+            selected = {self._observations[h].ref for h in references if h in self._observations}
+            named.difference_update(selected)
+            extra = {}
+            for handle, observation in self._observations.items():
+                if not observation.delivered_for_task or observation.ref not in named:
+                    continue
+                prior = extra.get(observation.ref)
+                if prior:
+                    previous = self._observations[prior]
+                    if (previous.digest, previous.target) != (observation.digest, observation.target):
+                        raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
+                extra[observation.ref] = handle
+            return [*references, *extra.values()]
 
     def _resolve(self, references, path_allowed):
         with self._lock:

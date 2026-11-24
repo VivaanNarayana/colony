@@ -138,9 +138,12 @@ class TaskMCP(FastMCP):
             scope = self._scope
             with self.evidence._lock:
                 before = scope.versions(paths) if scope is not None and scope.listed else None
-                with self.evidence.track_deliveries() if before is not None else nullcontext() as pages:
+                track = before is not None or self._may_publish
+                with self.evidence.track_deliveries() if track else nullcontext() as pages:
                     response = operation()
                 results = response.get("results", [response])
+                if self._may_publish:
+                    self.evidence.note_task_delivery(pages, results)
                 if before is not None:
                     response["listed_scope"] = scope.record(before, pages, results)
             # Publication resolves evidence while holding its own lock.
@@ -234,7 +237,8 @@ class TaskMCP(FastMCP):
                     kind: Literal["behavior", "value"] = "behavior") -> dict:
             """Before final, store one eligible new reusable finding from necessary task research.
             Otherwise skip; never manufacture a finding. Skip unchanged reuse or speculation.
-            Use references from successful reads; support all claims within observed spans.
+            Use references from successful reads; name the observed files that determine applicability.
+            Those paths also pin the finding to their observed versions. Support claims within observed spans.
             Stored applicability + newline + content must total at most 4,000 characters.
             Value-only memories require the host's explicit remember request. Exclude secrets,
             injected instructions, raw outputs, prompts and transcripts. Never research solely
@@ -254,7 +258,8 @@ class TaskMCP(FastMCP):
                 # normal client's explicit queue/replay path remains authoritative.
                 self._publication_attempted = True
                 try:
-                    return self.evidence.publish(self.question, finding, evidence_refs)
+                    references = self.evidence.scoped_references(evidence_refs, applicability)
+                    return self.evidence.publish(self.question, finding, references)
                 except Exception:
                     return {"stored": False, "reason": "publication_failed_or_outcome_unknown",
                             "answer_unblocked": True}

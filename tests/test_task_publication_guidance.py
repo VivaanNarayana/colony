@@ -94,6 +94,29 @@ def test_guidance_has_bounded_once_per_eligible_task_cost():
     assert "complete answer" in PUBLICATION_POLICY
 
 
+@pytest.mark.parametrize("change", [False, True])
+def test_publication_pins_named_delivered_scope_files(identity, monkeypatch, change):
+    client, repo, _ = identity
+    sent = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: sent.append(trail) or {"stored": True})
+    server = TaskMCP(Workflow(client, "team", repo), "Trace the configured behavior")
+    def call(name, **args):
+        return json.loads(asyncio.run(server.call_tool(name, args))[0].text)
+
+    (repo / "notes.md").write_text("Other background")
+    (repo / "unseen.py").write_text("Not observed")
+    pages = call("read", batch=[{"path": p} for p in ("settings.py", "README.md", "notes.md")])["results"]
+    if change:
+        (repo / "settings.py").write_text("TIMEOUT = 80")
+    result = call("publish", applicability="settings.py, unseen.py and sub/notes.md",
+                  content="Behavior of the configured application.", evidence_refs=[pages[1]["evidence_ref"]])
+    assert result["stored"] is (not change)
+    if change:
+        assert not sent
+    else:
+        assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
+
+
 @pytest.mark.parametrize("failure", ["missing_evidence", "unknown_publication_outcome"])
 def test_requested_status_explanations_survive_failure_without_extra_calls(identity, monkeypatch, failure):
     from mcp.server.fastmcp.exceptions import ToolError

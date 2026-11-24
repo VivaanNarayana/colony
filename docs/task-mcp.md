@@ -124,6 +124,12 @@ unavailable unless the host passes `--remember` for an explicit user request.
 Lookup-only reuse never unlocks publication. The host must not classify a broad
 research task as direct merely because it mentions a filename.
 
+The publisher can name observed files in `applicability` to declare the finding's
+scope. Colony pins those files alongside the submitted evidence references. Use
+exact repository-relative paths and backticks for paths with spaces. Each added
+source must have a delivered task read and pass the same authorization and version
+checks as a submitted handle. A change to any pinned file invalidates the finding.
+
 The first successful eligible read also returns a short `publication_guidance` field
 alongside the read result, or alongside `results` for a batch. This constant adapter
 cue is separate from source content and is not evidence. It reminds the model to
