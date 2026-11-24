@@ -26,8 +26,8 @@ def test_actual_lookup_delivers_cue_without_changing_current_evidence(transport)
     value = ask_mcp(client, repo, budget)
     assert value["match_kind"] == "evidence" and "content" not in value
     assert value["context_budget"]["limited"]
-    assert "Use current excerpts for covered claims" in value["next_action"]
-    assert "not whole-repository coverage" in value["next_action"]
+    assert "current full reads of the cited files" in value["next_action"]
+    assert "missing or conflicting evidence" in value["next_action"]
     assert "UNTRUSTED" in value["provenance"]
     upstream = responses[-1]
     for actual, original in zip(value["current_repository_reads"], upstream["current_repository_reads"], strict=True):
@@ -86,9 +86,20 @@ def test_partial_sources_never_become_complete_or_authoritative(transport):
     (repo / "uncited.py").write_text("MISSING_DEPENDENCY = 2", encoding="utf-8")
     value = ask_mcp(client, repo, ContextBudget(max_tokens=4096))
     assert {r["path"] for r in value["current_repository_reads"]} == {s.ref for s in trail.sources}
-    assert "read only gaps or conflicting evidence" in value["next_action"]
+    assert "if sufficient" in value["next_action"]
+    assert "missing or conflicting evidence" in value["next_action"]
     assert value["evidence_scope"] == "cited_files"
     assert "uncited.py" not in str(value)
+
+
+def test_partial_page_keeps_excerpt_guidance():
+    budget = ContextBudget(max_tokens=4096)
+    response = {"hit": True, "status": "validated", "evidence_scope": "partial",
+                "current_repository_reads": [{"path": "policy.py", "start_line": 8,
+                                              "content": "return RETRIES", "complete_file": False}]}
+    result = with_reuse_guidance(fit_response(response, budget), budget)
+    assert "Use current excerpts" in result["next_action"]
+    assert result["current_repository_reads"] == response["current_repository_reads"]
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
@@ -129,7 +140,7 @@ def test_installed_stdio_delivers_reuse_cue_and_all_sources(request, monkeypatch
             assert not result.isError and len(result.content) == 1
             text = result.content[0].text
             value = json.loads(text)
-            assert value["hit"] and "Use current excerpts" in value["next_action"]
+            assert value["hit"] and "Cite their lines directly" in value["next_action"]
             assert "UNTRUSTED" in value["provenance"]
             assert value["context_budget"]["used"] == count_response(value, budget) <= 4096
             assert {r["path"] for r in value["current_repository_reads"]} == set(files)

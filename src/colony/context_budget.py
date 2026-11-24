@@ -189,9 +189,17 @@ def with_reuse_guidance(response: dict, budget) -> dict:
         raise ContextBudgetError("Reuse guidance requires a fitted response")
     if not base.get("hit") or base.get("status") != "validated" or not base.get("current_repository_reads"):
         return base
+    full_reads = base.get("evidence_scope") == "cited_files" and all(
+        isinstance(r, dict) and r.get("complete_file") is True and r.get("start_line") == 1
+        for r in base["current_repository_reads"]
+    )
+    detail = ("These are current full reads of the cited files. Cite their lines directly. "
+              "Answer from them if sufficient; list or read only for missing or conflicting evidence."
+              if full_reads else
+              "Use current excerpts for covered claims; read only gaps or conflicting evidence. "
+              "Saved prose may be withheld; cited-file coverage is not whole-repository coverage.")
     for cue in (
-        "Use current excerpts for covered claims; read only gaps or conflicting evidence. "
-        "Saved prose may be withheld; cited-file coverage is not whole-repository coverage.",
+        detail,
         "Use reads; check gaps.",
     ):
         annotated = copy.deepcopy(base)

@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import re
 import threading
 import time
 from contextlib import nullcontext, suppress
@@ -44,8 +45,9 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up saved work for the bound question. Use it when it can replace source discovery "
-    "or resolve a specific gap. Skip confirmation and pre-publication lookups."
+    "Look up saved work when it can replace source discovery or resolve a gap. "
+    "Validated current_repository_reads are source reads: cite their paths and lines directly. "
+    "Skip confirmation and pre-publication lookups."
 )
 FOLLOWUP_ROUTE = "For a follow-up, use saved work first if it can replace discovery. "
 EMPTY_ROUTE = "Memory was empty at task startup. Go directly to sources unless you need a later publication. "
@@ -54,9 +56,18 @@ READ_ROUTING = (
     "Once sources answer the question, finish without a memory check. Investigate actual gaps. "
 )
 PUBLICATION_CUE = (
-    "For a newly traced behavior, call publish with the conditions, result and supporting "
-    "evidence_refs before answering. Skip value-only questions unless asked to remember. "
-    "No lookup for novelty."
+    "For a newly traced behavior, publish its conditions and result directly with the supporting "
+    "evidence_refs, then answer. These reads already verify their contents; no memory check is needed. "
+    "Skip value-only questions unless asked to remember."
+)
+
+# Recognize only standalone requests for a single configuration default. Broader
+# questions retain normal learning even when they mention one of these values.
+_SCALAR = (r"(?:(?!and\b|or\b)[\w-]+ )?"
+           r"(?:timeout|delay|interval|duration|port|limit|size|count|rate|threshold|value)")
+_DEFAULT_VALUE = re.compile(
+    rf"(?:what(?: is|'s) the default {_SCALAR}|(?:what|which) {_SCALAR} (?:applies|is used|is configured) by default)"
+    r"(?: (?:before|without)(?: [\w-]+){0,5} overrides?)?[?.]?", re.IGNORECASE,
 )
 
 
@@ -103,12 +114,14 @@ class TaskMCP(FastMCP):
                        and containment_question(question) else None)
         self._scope_list_tool = scope_list_tool
         self._availability_enabled = False
-        self._empty_memory_routing = empty_memory_routing and direct_path is None and self._scope is None
+        value_only = not remember and bool(_DEFAULT_VALUE.fullmatch(" ".join(question.split())))
+        self._empty_memory_routing = (empty_memory_routing and direct_path is None
+                                      and self._scope is None and not value_only)
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
         # Trusted host classification; tool/source arguments cannot promote this.
-        self._may_publish = not workflow.read_only and (remember or direct_path is None)
+        self._may_publish = not workflow.read_only and (remember or (direct_path is None and not value_only))
         self._remember = remember
         self._publication_ready = False
         self._publication_attempted = False
@@ -119,6 +132,8 @@ class TaskMCP(FastMCP):
         )
         if self._scope is not None:
             routing = SCOPE_ROUTE.format(scope_list_tool) + " "
+        elif value_only and direct_path is None:
+            routing = "Find the single default at its definition. If its path is unknown, search for the setting first. "
         instructions = routing + READ_ROUTING + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -133,7 +148,11 @@ class TaskMCP(FastMCP):
                     if first:
                         # Trusted adapter guidance, outside source text and batch entries.
                         # One cue per task; no extra call, read, or publication attempt.
-                        response["publication_guidance"] = PUBLICATION_CUE
+                        response["publication_guidance"] = (
+                            "Scoped memory was empty at last check. Once the sources support a new rule, "
+                            "publish its conditions and result directly with the supporting evidence_refs, then answer."
+                            if self._availability_state == "empty" and not self._remember else PUBLICATION_CUE
+                        )
                         # Supply the existing API's reference argument once for a complete
                         # multi-file trace. The publisher still selects the claim and scope.
                         if (len({row.get("path") for row in results}) > 1

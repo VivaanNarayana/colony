@@ -151,6 +151,12 @@ If that read delivers complete pages from multiple files and each has a referenc
 supplies the finding and its conditions and may narrow the reference list to the
 supporting files. A traced rule can be reusable even when its result is numeric.
 An isolated value question still requires explicit remember intent to publish.
+For a standalone question about one common configuration default, such as a
+port, timeout or delay, the task adapter routes to the definition and omits
+publication. A host-supplied remember request enables publication as usual.
+Compound questions and explanations retain the behavior-learning workflow.
+On a validated lookup, full cited files are current source reads that can be
+cited directly. Investigate missing dependencies and conflicting evidence as needed.
 
 The server advertises MCP tools-list changes and sends notifications. Hosts must
 support refreshing tool discovery; otherwise research still works but they may

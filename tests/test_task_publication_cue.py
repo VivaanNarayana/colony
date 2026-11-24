@@ -20,6 +20,39 @@ def make(identity, **options):
     return TaskMCP(Workflow(client, "team", repo), "Explain the behavior", **options)
 
 
+@pytest.mark.parametrize("question,remember,can_publish", [
+    ("What is the default port?", False, False),
+    ("Which cache size is configured by default?", False, False),
+    ("What is the default timeout before environment or request overrides?", False, False),
+    ("What delay applies by default before queue and per-job policy overrides?", False, False),
+    ("What is the default port?", True, True),
+    ("What is the default port and how does failover choose a replacement?", False, True),
+    ("Trace how the default timeout changes after an override.", False, True),
+])
+def test_host_question_controls_value_publication(identity, question, remember, can_publish):
+    client, repo, _ = identity
+    server = TaskMCP(Workflow(client, "team", repo), question, remember=remember)
+    page = call(server, path="settings.py")
+    tools = {tool.name for tool in asyncio.run(server.list_tools())}
+    assert ("publish" in tools) is can_publish
+    assert ("publication_guidance" in page) is can_publish
+    assert {"read", "research"} <= tools
+    if not can_publish:
+        result = call(server, "publish", content="Turn the value into a rule", applicability="settings.py",
+                      evidence_refs=[page["evidence_ref"]], kind="behavior")
+        assert result == {"stored": False, "reason": "publication_not_eligible"}
+
+
+def test_cold_read_cues_publication_without_a_lookup(identity, monkeypatch):
+    server = make(identity)
+    monkeypatch.setattr(server.workflow.client, "memory_availability", lambda *args: "empty")
+    monkeypatch.setattr(server.workflow.client, "ask", lambda *a, **k: pytest.fail("unexpected lookup"))
+    server._availability_enabled = True
+    reply = call(server, batch=[{"path": "settings.py"}, {"path": "README.md"}])
+    assert "empty at last check" in reply["publication_guidance"]
+    assert "publish" in {t.name for t in asyncio.run(server.list_tools())}
+
+
 def test_routing_is_shared_and_direct_task_can_promote_without_forced_lookup(identity, monkeypatch):
     client, _, _ = identity
     seen = []
