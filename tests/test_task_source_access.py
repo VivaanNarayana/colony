@@ -248,6 +248,38 @@ def test_publication_through_link_pins_the_named_target(identity, monkeypatch):
     assert validate(repo, stored[0].sources)[0] == "stale"
 
 
+@pytest.mark.parametrize("alias_first", [True, False])
+@pytest.mark.parametrize("retarget_before_publish", [True, False])
+def test_publication_prefers_the_direct_read_of_a_named_file(
+    identity, monkeypatch, alias_first, retarget_before_publish,
+):
+    client, repo, _ = identity
+    switch = matching_targets(repo)
+    (repo / "second/value.py").write_text("LIMIT = 8")
+    direct, alias = "first/value.py", "alias/value.py"
+    allowed = {"README.md", direct, alias, "second/value.py"}
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the limit",
+                     read_path_allowed=allowed.__contains__)
+    stored = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: stored.append(trail) or {"stored": True})
+    readme = call(server, "read", path="README.md")["evidence_ref"]
+    for path in ((alias, direct) if alias_first else (direct, alias)):
+        assert call(server, "read", path=path)["evidence_ref"]
+    if retarget_before_publish:
+        switch()
+
+    result = call(server, "publish", content="The limit is 7.", applicability=direct,
+                  evidence_refs=[readme])
+    assert result["stored"]
+    if not retarget_before_publish:
+        switch()
+    sources = stored[0].sources
+    assert {s.ref for s in sources} == {"README.md", direct}
+    assert validate(repo, sources)[0] == "validated"
+    (repo / direct).write_text("LIMIT = 9")
+    assert validate(repo, sources)[0] == "stale"
+
+
 def test_merging_named_aliases_rejects_conflicting_resolved_hashes(identity, monkeypatch):
     from colony import evidence_refs
 

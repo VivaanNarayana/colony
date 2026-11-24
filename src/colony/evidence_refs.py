@@ -380,12 +380,17 @@ class EvidenceSession:
                 for name in pending.intersection(self._observed_names(observation)):
                     if self._task_versions.get(name) != (observation.digest, observation.target):
                         raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
-                    extra[name] = handle
+                    # Prefer the declared spelling, then a redundant ./, then a link.
+                    # An incidental link must not become a dependency of a direct read.
+                    preference = (observation.ref == name, _scope_name(observation.ref) == name)
+                    if name not in extra or preference >= extra[name][0]:
+                        extra[name] = preference, handle
             missing = pending.difference(extra)
             if missing.intersection(self._task_versions) or any(hash(path) % 4096 in self._overflow_buckets
                                                                for path in missing):
                 raise EvidenceError("Named dependency needs a current evidence reference")
-            return [*references, *dict.fromkeys(extra.values())], named - missing
+            additional = dict.fromkeys(handle for _, handle in extra.values())
+            return [*references, *additional], named - missing
 
     def _resolve(self, references, path_allowed):
         with self._lock:

@@ -124,6 +124,53 @@ def test_first_listing_revalidates_previously_read_pages(identity):
     assert read(server, path=paths[1])["listed_scope"]["status"] == "complete"
 
 
+@pytest.mark.parametrize("spelling", ["settings.py", "./settings.py"])
+def test_prelisting_read_and_continuation_probe_only_the_requested_file(identity, monkeypatch, spelling):
+    _, repo, _ = identity
+    paths = ["settings.py", "README.md", *(f"part-{i}.txt" for i in range(254))]
+    (repo / paths[0]).write_text("x" * 17000)
+    for path in paths[2:]:
+        (repo / path).touch()
+    server = create(identity, paths)
+    probes = []
+    version = server._scope.version
+
+    def tracked(path):
+        probes.append(path)
+        return version(path)
+
+    monkeypatch.setattr(server._scope, "version", tracked)
+    first = read(server, path=spelling)
+    assert "listed_scope" not in first and first["next_offset"] == 16000
+    tail = read(server, path=spelling, offset=first["next_offset"])
+    assert "listed_scope" not in tail and tail["next_offset"] is None
+    assert probes == [paths[0]] * 4
+    assert plan(server)["status"] == "partial"
+    assert set(probes) == set(paths)
+    receipt = read(server, path="README.md")["listed_scope"]
+    assert receipt["listed_files"] == 256 and receipt["unverified_count"] == 254
+
+
+def test_repeated_prelisting_edits_keep_coverage_bounded_and_current(identity):
+    _, repo, _ = identity
+    paths = ["settings.py", "README.md"]
+    checked = []
+
+    def allowed(path):
+        checked.append(path)
+        return path in paths
+
+    server = create(identity, paths, read_path_allowed=allowed)
+    read(server, path="README.md")
+    checked.clear()
+    for size in range(1, 12):
+        (repo / "settings.py").write_text("x" * size)
+        read(server, path="settings.py")
+        assert len(server._scope.covered) <= 2 * len(paths)
+    assert set(checked) == {"settings.py"}
+    assert plan(server) == {"status": "complete", "listed_files": 2}
+
+
 def test_multi_batch_listing_counts_pages_after_publication_cache_fills(identity):
     _, repo, _ = identity
     paths = [f"part-{i}.txt" for i in range(10)]
@@ -437,6 +484,9 @@ def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity
     ("Does the project record the count before it submits the job?", None),
     ("Does the project define the setting that callers use, but only after startup?", None),
     ("Is the timeout in this repository (applied before retry backoff)?", None),
+    ("Is client.retry enabled. Explain the behavior in this repository.", None),
+    ("Is client.retry in this repository applied before backoff?", None),
+    ("Is client.retry in this project.config object enabled?", None),
     ("Is the timeout in this repo, answer with details\nincluding the retry order", None),
     ("Where does the project define the timeout?", None),
     ("Where\ndoes the project define the timeout?", None),
@@ -473,6 +523,8 @@ def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, 
     "Does the repository contain scripts that run after deployment?",
     "Does the repository include a check which runs before deployment?",
     "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
+    "Is client.retry in this repository?", "Is `settings.py` in this repository?",
+    "Are client.retry and settings.py in our codebase?",
     "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
     "Is the timeout in this repository (answer with yes or no)?",
     "Is the timeout in this repository (answer before discussing the details)?",

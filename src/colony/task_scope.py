@@ -3,6 +3,7 @@
 import re
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
+from pathlib import PurePosixPath
 
 from colony.evidence_refs import batch_allowances
 from colony.task_reads import _public_path
@@ -28,11 +29,12 @@ _EXISTENCE_REQUEST = (
     rf"(?:(?:(?:can|could|would|will)\s+you\s+)?(?:please\s+)?{_SEQUENCE}{_CHECK}"
     r"|i\s+(?:want|need)\s+to\s+know|do\s+you\s+know)\s+(?:whether|if)"
 )
+_SENTENCE_END = r"(?:[?!]|\.(?!\w))"
 _CONTAINMENT = re.compile(
     rf"(?:{_EXISTENCE_REQUEST}|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+"
     rf"(?P<verb>{_VERB})(?:s|es)?\b"
-    rf"|(?:^|[?!.\n])\s*(?:is|are)\s+[^?!.\n]{{1,140}}\s+in\s+(?:this|the|our)\s+{_REPO}\b"
-    rf"(?={_ANSWER_SUFFIX}\s*+(?:[?!.]|$))",
+    rf"|(?:^|\n|{_SENTENCE_END})\s*(?:is|are)\s+(?:[^?!.\n]|\.(?=\w)){{1,140}}\s+"
+    rf"in\s+(?:this|the|our)\s+{_REPO}\b(?={_ANSWER_SUFFIX}\s*+(?:{_SENTENCE_END}|$))",
     re.IGNORECASE,
 )
 # A temporal qualifier on the repository's action asks about order. A dot inside
@@ -209,9 +211,12 @@ class SourceScope:
         self.evidence._authorize()
         paths = set(requested)
         if not paths.issubset(self.paths):
-            # An accepted alternative spelling can refer to any listed target.
-            # Probe only host-declared names and match the actual delivered target.
-            paths = set(self.paths)
+            # Redundant dots and separators nominate the same candidate without a scan.
+            # Parent segments and links can lead elsewhere; match the delivered target
+            # against host-declared names when the spelling has no direct candidate.
+            paths = {p if p in self.paths else PurePosixPath(p).as_posix() for p in paths}
+            if not paths.issubset(self.paths):
+                paths = self.paths
         versions = {p: self.version(p) for p in paths}
         if paths == self.paths:
             current = set(versions.values())
@@ -219,7 +224,8 @@ class SourceScope:
         return versions
 
     def record(self, before, pages):
-        after = self.versions(self.paths)
+        # Recheck the read candidates. A receipt also covers the rest of the inventory.
+        after = self.versions(self.paths if self.listed else before)
         stable = {v[0]: v for path, v in before.items() if v and v == after[path]}
         for result, page, end_offset, unambiguous in pages:
             position = page.position
@@ -239,6 +245,14 @@ class SourceScope:
             prior.add(span)
         if self.listed:
             return self.receipt(after)
+        # Drop obsolete revisions of sampled files without probing other paths.
+        # Only unresolved cache pressure (e.g. many link retargets) needs the
+        # inventory to identify which earlier targets can still supply coverage.
+        if len(self.covered) > 2 * len(self.paths):
+            current = {v[0]: v for v in after.values() if v}
+            self.covered = {v: entry for v, entry in self.covered.items() if current.get(v[0], v) == v}
+            if len(self.covered) > 2 * len(self.paths):
+                self.versions(self.paths)
 
     def receipt(self, versions):
         missing = sorted(p for p, v in versions.items() if v not in self.covered or not self.covered[v].complete)
