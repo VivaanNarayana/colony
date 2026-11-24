@@ -135,7 +135,7 @@ class TaskMCP(FastMCP):
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
-        self._availability_lock = asyncio.Lock()
+        self._availability_pending = None
         self._lookup_started = False
         # Trusted host classification; tool/source arguments cannot promote this.
         self._may_publish = not workflow.read_only and (remember or (direct_path is None and not value_only))
@@ -321,6 +321,7 @@ class TaskMCP(FastMCP):
             self.evidence._authorize()
         except EvidenceError:
             self._availability_generation += 1
+            self._wake_availability_waiters()
             return self._set_availability("unknown")
         if time.monotonic() < self._availability_until:
             return False
@@ -329,15 +330,19 @@ class TaskMCP(FastMCP):
     async def _refresh_availability(self):
         if not self._availability_enabled:
             return False
-        cached = self._cached_availability()
-        if cached is not None:
-            return cached
-        async with self._availability_lock:
+        while True:
             cached = self._cached_availability()
             if cached is not None:
                 return cached
-            self._availability_generation += 1
-            generation = self._availability_generation
+            pending = self._availability_pending
+            if pending is None:
+                break
+            await pending.wait()
+
+        pending = self._availability_pending = asyncio.Event()
+        self._availability_generation += 1
+        generation = self._availability_generation
+        try:
             try:
                 state = await asyncio.to_thread(self.workflow.client.memory_availability,
                                                 self.workflow.namespace, self.workflow.repository_id)
@@ -349,6 +354,14 @@ class TaskMCP(FastMCP):
             if state not in ("empty", "present"):
                 state = "unknown"
             return self._set_availability(state)
+        finally:
+            if self._availability_pending is pending:
+                self._wake_availability_waiters()
+
+    def _wake_availability_waiters(self):
+        pending, self._availability_pending = self._availability_pending, None
+        if pending is not None:
+            pending.set()
 
     def _set_availability(self, state):
         changed = state != self._availability_state
@@ -409,6 +422,7 @@ class TaskMCP(FastMCP):
                 availability_changed = self._availability_state in ("empty", "present")
                 self._availability_state = "unknown"
                 self._availability_until = time.monotonic() + 30
+                self._wake_availability_waiters()
             if self._scope is not None and name == self._scope_list_tool:
                 if isinstance(result, CallToolResult):
                     blocks = result.content
@@ -429,6 +443,7 @@ class TaskMCP(FastMCP):
                 self._availability_until = 0
                 availability_changed |= self._availability_state != "unknown"
                 self._availability_state = "unknown"
+                self._wake_availability_waiters()
             if (availability_changed or warm_start != self._warm_start()
                     or before != (self._publication_ready, self._publication_attempted)):
                 try:

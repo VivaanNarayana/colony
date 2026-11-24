@@ -127,7 +127,8 @@ def test_concurrent_catalogs_share_one_current_presence_probe(identity, monkeypa
     asyncio.run(check())
 
 
-def test_source_read_uses_new_snapshot_while_old_probe_is_pending(identity, monkeypatch):
+@pytest.mark.parametrize("queue_read_first", [True, False])
+def test_source_read_uses_new_snapshot_while_old_probe_is_pending(identity, monkeypatch, queue_read_first):
     import threading
 
     client, repo, _ = identity
@@ -147,8 +148,14 @@ def test_source_read_uses_new_snapshot_while_old_probe_is_pending(identity, monk
         catalog = asyncio.create_task(server.list_tools())
         assert await asyncio.to_thread(started.wait, 3)
         try:
+            if queue_read_first:
+                read = asyncio.create_task(server.call_tool("read", {"path": "settings.py"}))
+                await asyncio.sleep(0)
+                assert not read.done()
             await server.call_tool("research", {})
-            result = await asyncio.wait_for(server.call_tool("read", {"path": "settings.py"}), 1)
+            if not queue_read_first:
+                read = asyncio.create_task(server.call_tool("read", {"path": "settings.py"}))
+            result = await asyncio.wait_for(read, 1)
             assert json.loads(result[0].text)["content"]
         finally:
             release.set()
