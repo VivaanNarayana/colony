@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import stat
 from pathlib import Path, PurePosixPath
 
@@ -16,6 +17,86 @@ def require(condition, message):
 def jsonl_lines(data: bytes, *, errors="strict"):
     """Split on record delimiters before decoding Unicode inside JSON strings."""
     return [line.decode("utf-8", errors=errors) for line in data.splitlines()]
+
+
+_SPACE = re.compile(r"[ \t\r\n]*")
+_ATOM = re.compile(r"true|false|null|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
+
+
+def _outer_event_type(text):
+    """Validate JSON iteratively, retaining only the root object's type field."""
+    # One byte per open container. Oversized optional payloads never become
+    # Python dictionaries/lists, even when deeper than the interpreter stack.
+    obj_first, key, colon, obj_value, obj_tail, arr_first, arr_value, arr_tail = range(8)
+    pos = _SPACE.match(text).end()
+    if pos == len(text) or text[pos] != "{":
+        return None
+    pos += 1
+    stack = bytearray([obj_first])
+    root_keys = set()
+    root_key = event_type = None
+    while stack:
+        pos = _SPACE.match(text, pos).end()
+        if pos == len(text):
+            return None
+        char, state = text[pos], stack[-1]
+        pos += 1
+        if state in (obj_first, key):
+            if char == "}" and state == obj_first:
+                stack.pop()
+                continue
+            if char != '"':
+                return None
+            name, pos = json.decoder.scanstring(text, pos)
+            if len(stack) == 1:
+                if name in root_keys:
+                    return None
+                root_keys.add(name)
+                root_key = name
+            stack[-1] = colon
+        elif state == colon:
+            if char != ":":
+                return None
+            stack[-1] = obj_value
+        elif state in (obj_tail, arr_tail):
+            if char == ("}" if state == obj_tail else "]"):
+                stack.pop()
+            elif char == ",":
+                stack[-1] = key if state == obj_tail else arr_value
+            else:
+                return None
+        elif state == arr_first and char == "]":
+            stack.pop()
+        else:
+            stack[-1] = obj_tail if state == obj_value else arr_tail
+            if char == '"':
+                value, pos = json.decoder.scanstring(text, pos)
+                if len(stack) == 1 and root_key == "type":
+                    event_type = value
+            elif char in "{[":
+                stack.append(obj_first if char == "{" else arr_first)
+            else:
+                atom = _ATOM.match(text, pos - 1)
+                if atom is None:
+                    return None
+                pos = atom.end()
+    return event_type if _SPACE.match(text, pos).end() == len(text) else None
+
+
+def decode_native_event(text, *, optional_responses=True):
+    """Keep the strict depth limit for native events and optional diagnostic data."""
+    try:
+        return decode(text)
+    except ValueError as exc:
+        if not optional_responses or str(exc) != "Report JSON nesting limit":
+            raise
+        try:
+            kind = _outer_event_type(text)
+        except ValueError:
+            raise exc from None
+        if kind in ("response.created", "response.completed"):
+            return {"type": kind}
+        raise
 
 
 def decode(text):

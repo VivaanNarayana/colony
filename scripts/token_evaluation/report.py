@@ -11,7 +11,7 @@ import re
 import secrets
 from pathlib import Path
 
-from colony.report_io import jsonl_lines
+from colony.report_io import decode_native_event, jsonl_lines
 
 from .adapters import allowed_tool, research_call, research_units
 from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
@@ -60,7 +60,7 @@ def extract_answer(events_path, policy):
     _require(policy in ("last_agent_message", "all_agent_messages"), "Unknown answer policy")
     messages, phases = [], []
     for line in jsonl_lines(Path(events_path).read_bytes()):
-        event = json.loads(line)
+        event = decode_native_event(line)
         if event.get("type") == "item.completed":
             item = event.get("item", {})
             if item.get("type") == "agent_message":
@@ -82,7 +82,7 @@ def activity(events_path, adapter='ordinary'):
                             "research_receipt_calls", "research_unresolved_units"), 0)
     seen, completed, charged = {}, set(), {}
     for number, line in enumerate(jsonl_lines(Path(events_path).read_bytes())):
-        event = json.loads(line)
+        event = decode_native_event(line)
         if event.get("type") == "turn.started":
             # Item IDs are scoped to a turn; a later turn still incurs new calls.
             seen, completed, charged = {}, set(), {}
@@ -233,7 +233,7 @@ def _load(run_dir):
         workload = next(w for w in manifest["workloads"] if w["id"] == key[1])
         current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
         _require(isinstance(task.get("question"), str), "Missing frozen review question")
-        event_values = [json.loads(line) for line in jsonl_lines(path.read_bytes())]
+        event_values = [decode_native_event(line) for line in jsonl_lines(path.read_bytes())]
         receipt_projection = collect_tool_receipts(event_values, current["files"] if current else {})
         rows.append({"tool_receipts_sha256": receipt_digest(receipt_projection), "id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
                      "state": state, "seconds": seconds, "phase": task["phase"],
@@ -284,7 +284,7 @@ def review_subject(run_dir, run, manifest, row, case):
         journal = Path(run_dir) / "control" / "attempts.jsonl"
         record = next(json.loads(line) for line in jsonl_lines(journal.read_bytes())
                       if json.loads(line)["id"] == row["id"])
-        events = [json.loads(line) for line in jsonl_lines(
+        events = [decode_native_event(line) for line in jsonl_lines(
             (Path(run_dir) / "logs" / record.get("result", record)["events"]).read_bytes())]
         receipt_projection = collect_tool_receipts(events, current["files"])
         # Only evidence delivered before the selected final answer is available.
@@ -319,7 +319,7 @@ def review_subject(run_dir, run, manifest, row, case):
         record = next(json.loads(line) for line in jsonl_lines(journal.read_bytes())
                       if json.loads(line)["id"] == row["id"])
         path = Path(run_dir) / "logs" / record.get("result", record)["events"]
-        events = [json.loads(line) for line in jsonl_lines(path.read_bytes())]
+        events = [decode_native_event(line) for line in jsonl_lines(path.read_bytes())]
         receipt_projection = collect_tool_receipts(events, {})
     _require(receipt_digest(receipt_projection) == row["tool_receipts_sha256"], "Tool receipt binding changed")
     return {**receipt_projection, "case": case, "answer": row["text"], "current_sources": sources,

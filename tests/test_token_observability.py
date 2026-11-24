@@ -57,6 +57,25 @@ def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
             native_usage(path, request_metadata=True)
 
 
+def test_optional_envelope_beyond_python_recursion_limit(tmp_path):
+    from token_evaluation.report import activity, extract_answer
+    from token_evaluation.usage import native_usage
+
+    path = tmp_path / "events.jsonl"
+    deep = '{"nested":[' * 2000 + json.dumps('},"type":"turn.failed"') + ']}' * 2000
+    record = '{"response":' + deep + ',"type":"response.completed"}'
+    path.write_bytes(raw(turn()).replace(b'\n', b'\n' + record.encode() + b'\n', 1))
+    assert native_usage(path)["known_usage"]["gross_tokens"] == 110
+    assert native_usage(path, request_metadata=True)["request_usage"]["status"] == "unavailable"
+    assert extract_answer(path, "last_agent_message")["text"] == ""
+    assert activity(path)["research_calls"] == 0
+    for invalid in (record.replace(']}', ',]}', 1), record + ' true',
+                    record[:-1] + ',"t\\u0079pe":"turn.failed"}'):
+        path.write_bytes(raw(turn()).replace(b'\n', b'\n' + invalid.encode() + b'\n', 1))
+        with pytest.raises(ValueError, match="nesting limit"):
+            native_usage(path)
+
+
 def test_prospective_reader_preserves_turn_totals_and_explicit_request_metadata(tmp_path):
     from token_evaluation.usage import native_usage
 

@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from colony.report_io import jsonl_lines
+from colony.report_io import decode_native_event, jsonl_lines
 
 from .adapters import research_call, research_units
 from .protocol import validate_evidence_policy
@@ -256,7 +256,7 @@ def evaluate_mechanisms(root, manifest, rows):
         research_attempts, unresolved_calls = {}, set()
         turn = 0
         for line_number, line in enumerate(jsonl_lines(path.read_bytes())):
-            event = json.loads(line)
+            event = decode_native_event(line)
             item = event.get('item', {})
             event_type = event.get('type')
             if event_type == 'turn.started':

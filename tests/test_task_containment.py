@@ -265,6 +265,7 @@ def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, 
 @pytest.mark.parametrize("question", [
     "Does the project define a timeout?", "Check if the project defines a timeout.",
     "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
+    "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
 ])
 def test_containment_questions_keep_the_single_batch_route(identity, question):
     server = create(identity, ["settings.py"], question)

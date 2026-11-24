@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
-from colony.report_io import bounded_bytes, decode, jsonl_lines
+from colony.report_io import bounded_bytes, decode_native_event, jsonl_lines
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
@@ -274,33 +274,11 @@ def _tool_metadata(events):
     return counts, tool_groups or None, len(tools_seen) - sum(tool_groups.values())
 
 
-def _event(line, optional_diagnostics):
-    try:
-        return decode(line)
-    except ValueError as exc:
-        if not optional_diagnostics or str(exc) != "Report JSON nesting limit":
-            raise
-        # Identify only the outer envelope. An unsupported diagnostic payload
-        # cannot supply usage, and ambiguous types cannot hide native events.
-        def reject_constant(_):
-            raise ValueError("Invalid JSON constant")
-
-        try:
-            pairs = json.loads(line, object_pairs_hook=tuple, parse_constant=reject_constant)
-        except (ValueError, RecursionError, OverflowError):
-            raise exc from None
-        if isinstance(pairs, tuple):
-            types = [value for key, value in pairs if key == "type"]
-            if len(types) == 1 and isinstance(types[0], str) and types[0] in RESPONSE_EVENTS:
-                return {"type": types[0]}
-        raise
-
-
 def analyze_bytes(source, *, optional_diagnostics=False):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
     lines = jsonl_lines(source)
-    events = [_event(line, optional_diagnostics) for line in lines]
+    events = [decode_native_event(line, optional_responses=optional_diagnostics) for line in lines]
     if any(not isinstance(e, dict) for e in events):
         raise ValueError("Native event must be an object")
     # Additional response receipts are observations, never extra billable turn totals.
