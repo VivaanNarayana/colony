@@ -96,6 +96,34 @@ def test_opaque_quota_does_not_promise_a_full_batch(identity):
     assert plan(server)["status"] == "partial"
 
 
+@pytest.mark.parametrize("known_budget", [True, False])
+def test_named_read_before_listing_completes_scope_in_three_units(identity, known_budget):
+    paths = ["settings.py", "README.md"]
+    units = [True] * 3
+    server = create(identity, paths, "Does the repository define RETRY_LIMIT? Start with settings.py.",
+                    read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=(lambda: len(units)) if known_budget else None)
+    first = read(server, path=paths[0])
+    assert first["complete_file"] and "listed_scope" not in first
+    action = plan(server)
+    if known_budget:
+        assert action == {"next_tool": "read", "arguments": {"batch": [{"path": paths[1]}]}}
+    else:
+        assert action["status"] == "partial"
+    assert read(server, path=paths[1])["listed_scope"] == {"status": "complete", "listed_files": 2}
+    assert not units
+
+
+def test_first_listing_revalidates_previously_read_pages(identity):
+    _, repo, _ = identity
+    paths = ["settings.py", "README.md"]
+    server = create(identity, paths)
+    assert "listed_scope" not in read(server, batch=[{"path": p} for p in paths])
+    (repo / paths[1]).write_text("A different version.")
+    assert plan(server)["arguments"] == {"batch": [{"path": paths[1]}]}
+    assert read(server, path=paths[1])["listed_scope"]["status"] == "complete"
+
+
 def test_multi_batch_listing_counts_pages_after_publication_cache_fills(identity):
     _, repo, _ = identity
     paths = [f"part-{i}.txt" for i in range(10)]
@@ -181,15 +209,18 @@ def test_relisting_plans_only_the_undelivered_suffixes(identity):
 
 @pytest.mark.parametrize("text", ["水" * 8000, "🌱" * 6000, "水\r\n" * 8000],
                          ids=["three-byte", "four-byte", "normalized-lines"])
-def test_relisting_plans_a_multibyte_continuation_with_one_unit_left(identity, text):
+@pytest.mark.parametrize("listed_first", [True, False], ids=["relisting", "first-listing"])
+def test_listing_plans_a_multibyte_continuation_with_one_unit_left(identity, text, listed_first):
     _, repo, _ = identity
     path = repo / "inventory.txt"
     path.write_bytes(text.encode("utf-8"))
-    units = [True] * 4
+    units = [True] * (4 if listed_first else 3)
     server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
                     remaining_units=lambda: len(units))
-    assert plan(server)["status"] == "partial"
+    if listed_first:
+        assert plan(server)["status"] == "partial"
     first = read(server, path=path.name)
+    assert ("listed_scope" in first) == listed_first
     action = plan(server)
     assert len(units) == 1
     assert action["arguments"] == {"batch": [{"path": path.name, "offset": first["next_offset"]}]}

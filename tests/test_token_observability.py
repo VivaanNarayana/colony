@@ -150,6 +150,60 @@ def test_optional_receipt_recovery_rejects_invalid_or_ambiguous_native_events(tm
 
 
 @pytest.mark.parametrize("bad_first", [True, False])
+@pytest.mark.parametrize("damage", [b'"unused":0,"unused":1', b'"unused":1e400',
+                                    b'"unused":' + b'[' * 1200 + b'0' + b']' * 1200],
+                         ids=["duplicate-key", "out-of-range-number", "deep-payload"])
+def test_rejected_duplicate_withholds_only_its_own_response_counts(tmp_path, bad_first, damage):
+    from token_evaluation.usage import native_usage
+
+    # The nested unrelated ID must never shadow the immediate response.id.
+    other = json.dumps(response("peer")).encode()
+    disputed = json.dumps(response("r1", usage(90))).encode()
+    bad = (b'{"response":{"metadata":{"id":"peer"},"\\u0069d":"r1","usage":{"input_tokens":60}},'
+           + damage + b',"type":"response.completed"}')
+    records = [bad, disputed, other] if bad_first else [disputed, other, bad, disputed]
+    first, last = raw(turn()).splitlines()
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b"\n".join([first, *records, last]))
+    data = native_usage(path, request_metadata=True)
+    meta = data["request_usage"]
+    assert data["usage_complete"] and data["known_usage"]["gross_tokens"] == 110
+    assert meta["records"] == analyze_bytes(raw(turn([response("peer")])))["response_usage"]["records"]
+    assert not meta["complete_records"] and meta["reconciles_with_turn_totals"] is None
+
+
+def test_rejected_created_receipt_preserves_completed_counts(tmp_path):
+    from token_evaluation.usage import native_usage
+
+    first, good, last = raw(turn([response("r1")])).splitlines()
+    bad = b'{"type":"response.created","response":{"id":"r1"},"unused":0,"unused":1}'
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b"\n".join([first, good, bad, last]))
+    meta = native_usage(path, request_metadata=True)["request_usage"]
+    expected = analyze_bytes(raw(turn([response("r1")])))["response_usage"]
+    assert meta["records"] == expected["records"]
+    assert meta["reconciles_with_turn_totals"] is True
+    assert meta["all_started_responses_completed"] is None
+
+
+@pytest.mark.parametrize("fields", [
+    b'"response":{"id":"peer","\\u0069d":"r1"}',
+    b'"response":{"id":"r1"},"\\u0072esponse":{"id":"peer"}',
+    b'"response":{"metadata":{"id":"peer"}}', b'"response":[{"id":"peer"}]',
+    b'"response":{"id":{"id":"peer"}}', b'"other":{"response":{"id":"peer"}}',
+])
+def test_unreadable_receipt_cannot_withhold_counts_using_an_ambiguous_id(tmp_path, fields):
+    from token_evaluation.usage import native_usage
+
+    first, good, last = raw(turn([response("peer")])).splitlines()
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b"\n".join([first, good, b'{"type":"response.completed","unused":1e400,' + fields + b'}', last]))
+    meta = native_usage(path, request_metadata=True)["request_usage"]
+    assert meta["records"] == analyze_bytes(raw(turn([response("peer")])))["response_usage"]["records"]
+    assert meta["reconciles_with_turn_totals"] is None
+
+
+@pytest.mark.parametrize("bad_first", [True, False])
 @pytest.mark.parametrize("binding", ["conflicting_fields", "invalid_unicode", "disputed_replay"])
 def test_disputed_tool_binding_preserves_independent_groups(tmp_path, binding, bad_first):
     from token_evaluation.usage import native_usage

@@ -209,7 +209,7 @@ class TaskMCP(FastMCP):
         def deliver(paths, operation):
             scope = self._scope
             with self.evidence._lock:
-                before = scope.versions(paths) if scope is not None and scope.listed else None
+                before = scope.versions(paths) if scope is not None else None
                 track = before is not None or self._may_publish
                 with self.evidence.track_deliveries() if track else nullcontext() as pages:
                     response = operation()
@@ -223,7 +223,9 @@ class TaskMCP(FastMCP):
                 if self._may_publish:
                     self.evidence.note_task_delivery(delivered)
                 if before is not None:
-                    response["listed_scope"] = scope.record(before, delivered)
+                    scope.record(before, delivered)
+                    if scope.listed:
+                        response["listed_scope"] = scope.receipt()
             # Publication resolves evidence while holding its own lock.
             # These tools return a single MCP text block. Serialize once to avoid
             # replaying pretty-printed framing on each subsequent model request.

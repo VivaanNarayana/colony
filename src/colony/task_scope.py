@@ -164,10 +164,12 @@ class SourceScope:
 
     def versions(self, requested):
         self.evidence._authorize()
-        paths = self.paths.intersection(requested) | self.covered.keys()
+        paths = self.paths.intersection(requested)
+        if self.listed:
+            paths |= self.covered.keys()
         versions = {p: self.version(p) for p in paths}
-        for p in list(self.covered):
-            if self.covered[p].version != versions[p]:
+        for p, version in versions.items():
+            if p in self.covered and self.covered[p].version != version:
                 del self.covered[p]
         return versions
 
@@ -189,6 +191,8 @@ class SourceScope:
                                  page.planning_bytes_from_offset - len(result["content"].encode("utf-8")))
                 self.covered[path] = _Coverage(after[path], page.digest, end_offset,
                                                end_offset == page.span_length, page.redacted, bytes_left)
+
+    def receipt(self):
         missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)
         result = {"status": "partial" if missing else "complete", "listed_files": len(self.paths)}
         if missing:

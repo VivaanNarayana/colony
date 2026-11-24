@@ -23,8 +23,12 @@ _SPACE = re.compile(r"[ \t\r\n]*")
 _ATOM = re.compile(r"true|false|null|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
 
 
-def _outer_event_type(text):
-    """Validate JSON iteratively, retaining only the root object's type field."""
+class UnreadableResponse(dict):
+    """Verified envelope fields from an optional response whose payload was rejected."""
+
+
+def _unreadable_response(text):
+    """Validate JSON iteratively, keeping only a unique root type and immediate response.id."""
     # One byte per open container. Oversized optional payloads never become
     # Python dictionaries/lists, even when deeper than the interpreter stack.
     obj_first, key, colon, obj_value, obj_tail, arr_first, arr_value, arr_tail = range(8)
@@ -33,8 +37,9 @@ def _outer_event_type(text):
         return None
     pos += 1
     stack = bytearray([obj_first])
-    seen_type = reading_type = False
-    event_type = None
+    seen = set()
+    in_response = ambiguous_id = False
+    name = event_type = response_id = None
     while stack:
         pos = _SPACE.match(text, pos).end()
         if pos == len(text):
@@ -48,11 +53,13 @@ def _outer_event_type(text):
             if char != '"':
                 return None
             name, pos = json.decoder.scanstring(text, pos)
-            if len(stack) == 1:
-                reading_type = name == "type"
-                if reading_type and seen_type:
-                    return None
-                seen_type |= reading_type
+            if ((len(stack) == 1 and name in ("type", "response"))
+                    or (len(stack) == 2 and in_response and name == "id")):
+                if name in seen:
+                    if name == "type":
+                        return None
+                    ambiguous_id = True
+                seen.add(name)
             stack[-1] = colon
         elif state == colon:
             if char != ":":
@@ -69,10 +76,14 @@ def _outer_event_type(text):
             stack.pop()
         else:
             stack[-1] = obj_tail if state == obj_value else arr_tail
+            if len(stack) == 1:
+                in_response = name == "response" and char == "{"
             if char == '"':
                 value, pos = json.decoder.scanstring(text, pos)
-                if len(stack) == 1 and reading_type:
+                if len(stack) == 1 and name == "type":
                     event_type = value
+                elif len(stack) == 2 and in_response and name == "id":
+                    response_id = value
             elif char in "{[":
                 stack.append(obj_first if char == "{" else arr_first)
             else:
@@ -80,7 +91,12 @@ def _outer_event_type(text):
                 if atom is None:
                     return None
                 pos = atom.end()
-    return event_type if _SPACE.match(text, pos).end() == len(text) else None
+    if _SPACE.match(text, pos).end() != len(text) or event_type not in ("response.created", "response.completed"):
+        return None
+    event = UnreadableResponse(type=event_type)
+    if response_id and not ambiguous_id:
+        event["response"] = {"id": response_id}
+    return event
 
 
 def decode_native_event(text, *, optional_responses=True, decoder=json.loads, deep_response_decoder=None):
@@ -91,13 +107,13 @@ def decode_native_event(text, *, optional_responses=True, decoder=json.loads, de
         if not optional_responses:
             raise
         try:
-            kind = _outer_event_type(text)
+            envelope = _unreadable_response(text)
         except ValueError:
             raise exc from None
-        if kind in ("response.created", "response.completed"):
+        if envelope is not None:
             if deep_response_decoder is not None:
                 return deep_response_decoder(text)
-            return {"type": kind}
+            return envelope
         raise
 
 

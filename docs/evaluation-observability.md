@@ -23,8 +23,10 @@ each attempt in the matched report, using the same reader for every arm. It acce
 the two explicit response envelopes alongside ordinary native events. Missing counters
 and missing tool-to-response bindings stay unknown. If a completion receipt is
 unreadable or conflicting, the matched report retains independently observed
-response IDs and counts and leaves reconciliation unknown. Gross usage comes from the turn
-receipts. Historical protocols use their originally pinned collectors.
+response IDs and counts and leaves reconciliation unknown. When a rejected completion has
+an unambiguous response ID, the report withholds counts for that ID from earlier and later
+receipts. Gross usage comes from the turn receipts. Historical protocols use their originally
+pinned collectors.
 
 Completed-tool-to-response grouping uses only explicit `response_id` fields, never event order.
 When a tool call has conflicting bindings, the matched report retains counts for independently

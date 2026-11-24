@@ -8,7 +8,14 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
-from colony.report_io import bounded_bytes, decode, decode_native_event, jsonl_lines, parse_json
+from colony.report_io import (
+    UnreadableResponse,
+    bounded_bytes,
+    decode,
+    decode_native_event,
+    jsonl_lines,
+    parse_json,
+)
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
@@ -116,7 +123,7 @@ def consistent_coverage(previous, observed):
 
 def _response_metadata(events, authority, *, optional=False):
     responses, started, duplicates = {}, set(), 0
-    unidentified = set()
+    uncertain_envelopes = set()
     invalid_completions = set()
     for event in events:
         kind = event.get("type")
@@ -128,6 +135,12 @@ def _response_metadata(events, authority, *, optional=False):
             if not isinstance(response, dict) or not isinstance(response.get("id"), str) or not response["id"]:
                 raise ValueError("Response receipt requires an ID")
             identity = digest(response["id"])
+            if isinstance(event, UnreadableResponse):
+                # A verified ID can discredit counts, but a rejected receipt cannot certify lifecycle.
+                uncertain_envelopes.add(kind)
+                if kind == "response.completed":
+                    raise ValueError("Unreadable response completion")
+                continue
             if kind == "response.created":
                 started.add(identity)
                 continue
@@ -143,13 +156,13 @@ def _response_metadata(events, authority, *, optional=False):
             if not optional:
                 raise
             if identity is None:
-                unidentified.add(kind)
+                uncertain_envelopes.add(kind)
             else:
                 # A disputed completion cannot supply counts, including on replay.
                 responses.pop(identity, None)
                 invalid_completions.add(identity)
     complete_records = (
-        bool(responses) and not invalid_completions and "response.completed" not in unidentified
+        bool(responses) and not invalid_completions and "response.completed" not in uncertain_envelopes
         and all(u is not None and all(u[k] is not None for k in FIELDS) for u in responses.values())
     )
     summed = (
@@ -165,7 +178,7 @@ def _response_metadata(events, authority, *, optional=False):
         "available": bool(responses),
         "complete_records": complete_records,
         "all_started_responses_completed": (
-            started <= (responses.keys() | invalid_completions) if started and not unidentified else None
+            started <= (responses.keys() | invalid_completions) if started and not uncertain_envelopes else None
         ),
         "sum": summed,
         "reconciles_with_turn_totals": reconciles,
