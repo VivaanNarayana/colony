@@ -571,6 +571,13 @@ def _index_references(question, evidence, sources):
                 text,
             )
             if heading:
+                # An indirect causal title asserts its premise ("Why retention
+                # is permanent"). For a question about the policy itself, that
+                # assertion is evidence. A question about its reason needs the link.
+                premise = re.match(r"^[\s#]*why\s+(?!is\b|are\b|was\b|were\b|does\b|did\b)"
+                                   r"[^\n?]*\b(?:is|are|was|were|has|have|must|will)\b", heading[0])
+                if premise and not re.search(r"\b(?:why|reason\w*|rationale|explain\s+why)\b", question, re.I):
+                    continue
                 text = text[heading.end():]
         # A literal or declarative clause can be a complete answer even if every
         # word occurs in the question and a supplemental file is mentioned.

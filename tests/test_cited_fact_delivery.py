@@ -103,6 +103,7 @@ def test_cited_numeric_answer_stays_compact_even_when_it_mentions_another_file(o
 
 @pytest.mark.parametrize("answer", ["Archive retention is permanent.",
                                      "Archive retention is permanent. See notes.txt.",
+                                     "## Why archive retention is permanent\nSee notes.txt.",
                                      "Archive retention: permanent. See notes.txt."])
 def test_complete_policy_answer_stays_compact(onnx_transport, answer):
     client, repo, _ = onnx_transport
@@ -115,7 +116,7 @@ def test_complete_policy_answer_stays_compact(onnx_transport, answer):
                      ["answer.txt", "notes.txt"])
     value = research(client, repo, "Is archive retention permanent or temporary?", 3072)
     assert value["id"] == target
-    assert cited_lines(value, repo) == {("answer.txt", 1): answer}
+    assert cited_lines(value, repo) == {("answer.txt", n): line for n, line in enumerate(answer.splitlines(), 1)}
 
 
 def test_numbered_question_with_a_link_delivers_the_policy(onnx_transport):
