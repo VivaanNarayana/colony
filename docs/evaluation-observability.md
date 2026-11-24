@@ -9,7 +9,8 @@ at 64 MiB and the output binds its original bytes by SHA-256.
 Turn usage uses the unchanged strict shared reader and remains authoritative.
 The optional `response.created` / `response.completed` diagnostic envelope carries
 `response.id` and, on completion, `response.usage` with input/output/cache counters.
-Cache may also be `input_tokens_details.cached_tokens`. The report retains partial
+Cache may also be `input_tokens_details.cached_tokens`. If both cache counters supply a
+value, both must be nonnegative integers and agree. The report retains partial
 records as unknown, deduplicates identical response receipts, rejects conflicting
 receipts and checks complete sums against authoritative turn totals. Response sums
 are never added to turn totals. Started-but-unfinished response coverage is separate
@@ -28,7 +29,8 @@ an unambiguous response ID, the report withholds counts for that ID from earlier
 receipts. Gross usage comes from the turn receipts. Historical protocols use their originally
 pinned collectors.
 
-Completed-tool-to-response grouping uses only explicit `response_id` fields, never event order.
+The report groups a completed tool call using explicit `response_id` fields on its
+start, updates, or completion in the same turn. All supplied IDs must agree.
 When a tool call has conflicting bindings, the matched report retains counts for independently
 verified bindings and leaves the total number of ungrouped calls unknown.
 It reports validated lookup/cue presence, publication attempts/errors/stored or

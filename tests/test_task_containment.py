@@ -189,8 +189,42 @@ def test_coverage_only_joins_contiguous_pages_of_the_same_file_version(identity)
     tail = read(server, path=path.name, offset=page["next_offset"])
     assert tail["listed_scope"]["status"] == "partial"
     page = read(server, path=path.name)
-    tail = read(server, path=path.name, offset=page["next_offset"])
-    assert tail["listed_scope"]["status"] == "complete"
+    assert page["listed_scope"]["status"] == "complete"
+    path.write_text("c" * 17002)
+    assert read(server, path=path.name)["listed_scope"]["status"] == "partial"
+    assert plan(server)["arguments"] == {"batch": [{"path": path.name, "offset": 16000}]}
+
+
+@pytest.mark.parametrize("offsets", [(0, 8000), (8000, 0)])
+def test_first_listing_credits_both_batch_pages_in_either_order(identity, offsets):
+    _, repo, _ = identity
+    path = repo / "notes.txt"
+    text = "a" * 8000 + "b" * 8000
+    path.write_text(text)
+    units = [True] * 3
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    result = read(server, batch=[{"path": path.name, "offset": offset} for offset in offsets])
+    pages = sorted(result["results"], key=lambda page: page["start_offset"])
+    assert "".join(page["content"] for page in pages) == text
+    assert "listed_scope" not in result
+    assert plan(server) == {"status": "complete", "listed_files": 1}
+    assert not units
+
+
+def test_later_reads_bridge_disjoint_multibyte_pages(identity):
+    _, repo, _ = identity
+    path = repo / "notes.txt"
+    path.write_bytes(("🌱" * 18000).encode("utf-8"))
+    server = create(identity, [path.name])
+    assert plan(server)["status"] == "partial"
+    # Fill the gaps between 4,000-character pages and plan the final suffix.
+    for offset in (12000, 4000, 0):
+        assert read(server, path=path.name, offset=offset)["listed_scope"]["status"] == "partial"
+    assert plan(server)["status"] == "partial"
+    assert read(server, path=path.name, offset=8000)["listed_scope"]["status"] == "partial"
+    assert plan(server)["arguments"] == {"batch": [{"path": path.name, "offset": 16000}]}
+    assert read(server, path=path.name, offset=16000)["listed_scope"]["status"] == "complete"
 
 
 def test_relisting_plans_only_the_undelivered_suffixes(identity):

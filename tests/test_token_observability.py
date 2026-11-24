@@ -230,6 +230,65 @@ def test_disputed_tool_binding_preserves_independent_groups(tmp_path, binding, b
         analyze_bytes(path.read_bytes())
 
 
+@pytest.mark.parametrize("nested", [5, True, 10.0, -1])
+def test_disputed_cache_alias_withholds_only_its_response(tmp_path, nested):
+    from token_evaluation.usage import native_usage
+
+    counts = {"input_tokens": 40, "cached_input_tokens": 10, "output_tokens": 3}
+    peer = response("peer", {"input_tokens": 60, "cached_input_tokens": 40, "output_tokens": 7})
+    good = response("r1", counts)
+    bad = response("r1", {**counts, "input_tokens_details": {"cached_tokens": nested}})
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn([good, peer, bad, good])))
+    report = native_usage(path, request_metadata=True)
+    meta = report["request_usage"]
+    assert meta["records"] == analyze_bytes(raw(turn([peer])))["response_usage"]["records"]
+    assert meta["complete_records"] is False and meta["reconciles_with_turn_totals"] is None
+    assert report["usage_complete"] and report["known_usage"]["gross_tokens"] == 110
+    with pytest.raises(ValueError):
+        analyze_bytes(path.read_bytes())
+
+
+@pytest.mark.parametrize("flat,nested", [(50, 50), (None, 50), (50, None), (0, 0)])
+def test_agreeing_or_missing_cache_aliases_use_the_known_count(flat, nested):
+    expected = {**usage(), "cached_input_tokens": flat if flat is not None else nested}
+    record = response("r1", {**expected, "cached_input_tokens": flat, "input_tokens_details": {"cached_tokens": nested}})
+    meta = analyze_bytes(raw(turn([record], expected)), optional_diagnostics=True)["response_usage"]
+    assert meta["sum"] == expected and meta["reconciles_with_turn_totals"] is True
+
+
+@pytest.mark.parametrize("stage", ["item.started", "item.updated"])
+@pytest.mark.parametrize("completed_binding", ["r2", "r1", None])
+def test_tool_binding_uses_the_full_item_history(tmp_path, stage, completed_binding):
+    from token_evaluation.usage import native_usage
+
+    early = {"type": stage, "response_id": "r2",
+             "item": {"type": "mcp_tool_call", "id": "t1", "server": "colony", "tool": "read"}}
+    done = tool("read", {}, "t1", response_id=completed_binding)
+    peer = tool("read", {}, "independent", response_id="r1")
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(raw(turn([response("r1"), response("r2"), early, peer, done, done])))
+    data = native_usage(path, request_metadata=True)
+    meta = data["request_usage"]
+    r1, r2 = (row["response_id_sha256"] for row in meta["records"])
+    if completed_binding == "r1":
+        assert meta["tool_groups"] == {r1: 1} and meta["ungrouped_calls"] is None
+    else:
+        assert meta["tool_groups"] == {r1: 1, r2: 1} and meta["ungrouped_calls"] == 0
+    assert data["usage_complete"] and data["known_usage"]["gross_tokens"] == 110
+
+
+def test_late_explicit_binding_counts_one_completion_and_stays_in_its_turn():
+    done = tool("read", {}, "t1")
+    bound = {**done, "response_id": "r1"}
+    unfinished = {**tool("read", {}, "t2", response_id="r1"), "type": "item.started"}
+    events = turn([response("r1"), done, bound, done, unfinished]) + turn([done])
+    meta = analyze_bytes(raw(events), optional_diagnostics=True)
+    group = meta["response_usage"]["records"][0]["response_id_sha256"]
+    assert meta["explicit_tool_response_groups"] == {group: 1}
+    assert meta["tool_calls_without_response_binding"] == 1
+
+
 def test_optional_envelope_beyond_python_recursion_limit(tmp_path):
     from token_evaluation.report import activity, extract_answer
     from token_evaluation.usage import native_usage

@@ -37,13 +37,17 @@ def response_usage(response):
         details = {}
     if not isinstance(details, dict):
         raise ValueError("Malformed response cache details")
+    flat_cache = usage.get("cached_input_tokens")
+    nested_cache = details.get("cached_tokens")
     values = {
         "input_tokens": usage.get("input_tokens"),
-        "cached_input_tokens": usage.get("cached_input_tokens", details.get("cached_tokens")),
+        "cached_input_tokens": flat_cache if flat_cache is not None else nested_cache,
         "output_tokens": usage.get("output_tokens"),
     }
-    if any(v is not None and (type(v) is not int or v < 0) for v in values.values()):
+    if any(v is not None and (type(v) is not int or v < 0) for v in (*values.values(), nested_cache)):
         raise ValueError("Invalid response token count")
+    if flat_cache is not None and nested_cache is not None and flat_cache != nested_cache:
+        raise ValueError("Conflicting response cache counts")
     if (
         values["input_tokens"] is not None
         and values["cached_input_tokens"] is not None
@@ -188,7 +192,7 @@ def _response_metadata(events, authority, *, optional=False):
 
 
 def _tool_metadata(events):
-    tool_groups = {}
+    bindings = {}
     counts = dict.fromkeys(
         (
             "validated_lookup_hits",
@@ -232,25 +236,28 @@ def _tool_metadata(events):
             counts["publication_attempts"] += signature == ("colony", "push")
             counts["research_reads"] += signature == ("repository", "fixture_read")
         observed_calls[identity] = signature
+        for response_id in (event.get("response_id"), item.get("response_id")):
+            if response_id is None:
+                continue
+            if not isinstance(response_id, str) or not response_id:
+                raise ValueError("Invalid tool response binding")
+            group = digest(response_id)
+            if bindings.setdefault(identity, group) != group:
+                if kind == "item.completed" and identity in tools_seen:
+                    raise ValueError("Conflicting duplicate tool observation")
+                raise ValueError("Conflicting tool response bindings")
         if kind != "item.completed":
             if identity in tools_seen:
                 raise ValueError("Tool event after completion")
             continue
-        event_binding, item_binding = event.get("response_id"), item.get("response_id")
-        if event_binding is not None and item_binding is not None and event_binding != item_binding:
-            raise ValueError("Conflicting tool response bindings")
-        response_id = event_binding if event_binding is not None else item_binding
-        if response_id is not None and (not isinstance(response_id, str) or not response_id):
-            raise ValueError("Invalid tool response binding")
-        fingerprint = digest(json.dumps([item, response_id], sort_keys=True, ensure_ascii=False))
+        # Bindings are checked across all stages. Deduplicate the remaining completion payload separately.
+        payload = {k: v for k, v in item.items() if k != "response_id"}
+        fingerprint = digest(json.dumps(payload, sort_keys=True, ensure_ascii=False))
         if identity in tools_seen:
             if tools_seen[identity] != fingerprint:
                 raise ValueError("Conflicting duplicate tool observation")
             continue
         tools_seen[identity] = fingerprint
-        if isinstance(response_id, str) and response_id:
-            group = digest(response_id)
-            tool_groups[group] = tool_groups.get(group, 0) + 1
         value, error = outcome(item)
         if server == "colony" and tool == "ask":
             # Keep only the latest lookup's explicit current excerpts; no cross-turn inference.
@@ -300,7 +307,8 @@ def _tool_metadata(events):
     counts["publication_incomplete"] = (
         counts["publication_attempts"] - counts["publication_completed"]
     )
-    return counts, tool_groups or None, len(tools_seen) - sum(tool_groups.values())
+    tool_groups = Counter(bindings[identity] for identity in tools_seen if identity in bindings)
+    return counts, dict(tool_groups) or None, len(tools_seen) - tool_groups.total()
 
 
 def _independent_tool_groups(events):

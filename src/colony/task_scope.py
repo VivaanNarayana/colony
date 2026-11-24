@@ -1,7 +1,8 @@
 """Plan explicit source reads for a small, host-enumerated containment question."""
 
 import re
-from dataclasses import dataclass
+from bisect import bisect_left, bisect_right
+from dataclasses import dataclass, field
 
 from colony.evidence_refs import BATCH_CONTENT_BYTES
 from colony.task_reads import _public_path
@@ -61,14 +62,42 @@ def containment_question(question):
     return False
 
 
+@dataclass(frozen=True)
+class _Span:
+    """Half-open character offsets and the bounded UTF-8 byte count after stop."""
+
+    start: int
+    stop: int
+    bytes_left: int
+
+
 @dataclass
 class _Coverage:
     version: tuple
     digest: str
-    stop: int
-    at_eof: bool
+    length: int
     redacted: bool
-    bytes_left: int
+    spans: list[_Span] = field(default_factory=list)
+
+    def add(self, start: int, stop: int, bytes_left: int):
+        # Intervals are sorted and disjoint. Merge touching or overlapping deliveries.
+        first = bisect_left(self.spans, start, key=lambda span: span.stop)
+        end = bisect_right(self.spans, stop, lo=first, key=lambda span: span.start)
+        if first < end:
+            start = min(start, self.spans[first].start)
+            last = self.spans[end - 1]
+            if last.stop >= stop:
+                stop, bytes_left = last.stop, last.bytes_left
+        self.spans[first:end] = [_Span(start, stop, bytes_left)]
+
+    @property
+    def prefix(self) -> _Span | None:
+        return self.spans[0] if self.spans and self.spans[0].start == 0 else None
+
+    @property
+    def at_eof(self):
+        prefix = self.prefix
+        return prefix is not None and prefix.stop == self.length
 
     @property
     def complete(self):
@@ -152,13 +181,13 @@ class SourceScope:
             if version is None:
                 return partial
             coverage = self.covered.get(path)
-            file_size = version[-1]
-            remaining_bytes += coverage.bytes_left if coverage else file_size
+            prefix = coverage.prefix if coverage else None
+            remaining_bytes += prefix.bytes_left if prefix else version[-1]
             if remaining_bytes > BATCH_CONTENT_BYTES:
                 return partial
             entry = {"path": path}
-            if coverage and coverage.stop:
-                entry["offset"] = coverage.stop
+            if prefix and prefix.stop:
+                entry["offset"] = prefix.stop
             batch.append(entry)
         return {"next_tool": "read", "arguments": {"batch": batch}}
 
@@ -185,12 +214,12 @@ class SourceScope:
                 prior = None
             if not page.whole_range or page.planning_bytes_from_offset is None:
                 continue
-            stop = prior.stop if prior else 0
-            if page.offset <= stop <= end_offset:
-                bytes_left = min(BATCH_CONTENT_BYTES + 1,
-                                 page.planning_bytes_from_offset - len(result["content"].encode("utf-8")))
-                self.covered[path] = _Coverage(after[path], page.digest, end_offset,
-                                               end_offset == page.span_length, page.redacted, bytes_left)
+            if prior is None:
+                prior = _Coverage(after[path], page.digest, page.span_length, page.redacted)
+            bytes_left = min(BATCH_CONTENT_BYTES + 1,
+                             page.planning_bytes_from_offset - len(result["content"].encode("utf-8")))
+            prior.add(page.offset, end_offset, bytes_left)
+            self.covered[path] = prior
 
     def receipt(self):
         missing = sorted(p for p in self.paths if p not in self.covered or not self.covered[p].complete)
