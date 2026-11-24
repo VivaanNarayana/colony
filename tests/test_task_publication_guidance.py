@@ -45,6 +45,9 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
         async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
             init = await session.initialize()
             assert init.instructions.count(ANSWER_POLICY) == 1
+            assert "Include session evidence_refs in answers only on request" in init.instructions
+            assert "When the required answer is one JSON object or array" in init.instructions
+            assert "stop at the matching closing delimiter" in init.instructions
             assert init.instructions.count(READ_ROUTING) == 1
             assert init.instructions.count(PUBLICATION_POLICY) == int(eligible)
             assert "publish" not in {t.name for t in (await session.list_tools()).tools}

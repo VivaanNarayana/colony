@@ -55,6 +55,10 @@ it or when cited wiring selects it. For example, if a particular adapter is supp
 its two total attempts permit one retry. On ordinary tasks, the first `read` batch or
 `trace_read` result containing two distinct complete file paths also carries the reminder
 in `binding_guidance`. It costs no extra read.
+The default final citation is a path and line range. A worker includes session
+evidence handles in the final answer when requested. When the requested output
+is one JSON object or array, the answer guidance favors shallow optional nesting
+and directs the worker to finish at the closing delimiter of the root value.
 Preserve useful explanations by stating their verified conditions. Failed entries, partial
 pages and literal search misses do not prove repository-wide absence. The read tool also
 exposes the coverage warning; it adds no repeated warning to source responses. These are
