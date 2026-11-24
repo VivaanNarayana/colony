@@ -164,6 +164,55 @@ def test_source_read_uses_new_snapshot_while_old_probe_is_pending(identity, monk
     asyncio.run(check())
 
 
+@pytest.mark.parametrize("probe_commits_first", [True, False])
+def test_lookup_retires_only_uncommitted_overlapping_probe(identity, monkeypatch, probe_commits_first):
+    import threading
+    from types import SimpleNamespace
+
+    from colony.models import ContextBudget
+
+    client, repo, _ = identity
+    probing, release_probe = threading.Event(), threading.Event()
+    looking, release_lookup = asyncio.Event(), asyncio.Event()
+
+    def probe(*args):
+        probing.set()
+        assert release_probe.wait(3)
+        return "present"
+
+    async def lookup(*args):
+        looking.set()
+        await release_lookup.wait()
+        return {"hit": False}
+
+    monkeypatch.setattr(client, "memory_availability", probe)
+    monkeypatch.setattr("colony.mcp.create_mcp", lambda *a, **kw: SimpleNamespace(call_tool=lookup))
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the previous setup.", context_budget=ContextBudget())
+    server._availability_enabled = True
+
+    async def check():
+        research = asyncio.create_task(server.call_tool("research", {}))
+        await asyncio.wait_for(looking.wait(), 1)
+        catalog = asyncio.create_task(server.list_tools())
+        assert await asyncio.to_thread(probing.wait, 3)
+        read = asyncio.create_task(server.call_tool("read", {"path": "settings.py"}))
+        await asyncio.sleep(0)
+        try:
+            if probe_commits_first:
+                release_probe.set()
+                await catalog
+            release_lookup.set()
+            await research
+            assert json.loads((await asyncio.wait_for(read, 1))[0].text)["content"]
+            await asyncio.wait_for(catalog, 1)
+            assert server._availability_state == ("present" if probe_commits_first else "unknown")
+        finally:
+            release_lookup.set()
+            release_probe.set()
+
+    asyncio.run(check())
+
+
 def test_availability_auth_scope_repository_and_no_retrieval(team, monkeypatch):
     app, api, _, admin, key = team
     monkeypatch.setattr(app.state.store, "ask", lambda *a, **k: pytest.fail("ranking"))

@@ -7,6 +7,7 @@ import re
 import threading
 import time
 from contextlib import nullcontext, suppress
+from contextvars import copy_context
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -321,8 +322,9 @@ class TaskMCP(FastMCP):
             self.evidence._authorize()
         except EvidenceError:
             self._availability_generation += 1
-            self._wake_availability_waiters()
-            return self._set_availability("unknown")
+            changed = self._set_availability("unknown")
+            self._wake_availability_waiters(changed)
+            return changed
         if time.monotonic() < self._availability_until:
             return False
         return None
@@ -330,38 +332,48 @@ class TaskMCP(FastMCP):
     async def _refresh_availability(self):
         if not self._availability_enabled:
             return False
-        while True:
-            cached = self._cached_availability()
-            if cached is not None:
-                return cached
-            pending = self._availability_pending
-            if pending is None:
-                break
-            await pending.wait()
-
-        pending = self._availability_pending = asyncio.Event()
-        self._availability_generation += 1
-        generation = self._availability_generation
-        try:
+        cached = self._cached_availability()
+        if cached is not None:
+            return cached
+        pending = self._availability_pending
+        if pending is None:
+            loop = asyncio.get_running_loop()
+            pending = self._availability_pending = loop.create_future()
+            generation = self._availability_generation
             try:
-                state = await asyncio.to_thread(self.workflow.client.memory_availability,
-                                                self.workflow.namespace, self.workflow.repository_id)
+                probe = loop.run_in_executor(None, copy_context().run, self.workflow.client.memory_availability,
+                                             self.workflow.namespace, self.workflow.repository_id)
+            except RuntimeError:
+                self._availability_generation += 1
+                self._wake_availability_waiters(self._set_availability("unknown"))
+            else:
+                probe.add_done_callback(lambda result: self._complete_probe(pending, generation, result))
+        changed = await asyncio.shield(pending)
+        # Each waiter revalidates its identity, including after an invalidation.
+        cached = self._cached_availability()
+        return changed or bool(cached)
+
+    def _complete_probe(self, pending, generation, result):
+        try:
+            state = result.result()
+        except (Exception, asyncio.CancelledError):
+            state = "unknown"
+        if self._availability_pending is not pending:
+            return
+        changed = False
+        if generation == self._availability_generation:
+            try:
                 self.evidence._authorize()
             except Exception:
                 state = "unknown"
-            if generation != self._availability_generation:
-                return False  # A publication invalidated this in-flight snapshot.
-            if state not in ("empty", "present"):
-                state = "unknown"
-            return self._set_availability(state)
-        finally:
-            if self._availability_pending is pending:
-                self._wake_availability_waiters()
+            self._availability_generation += 1
+            changed = self._set_availability(state if state in ("empty", "present") else "unknown")
+        self._wake_availability_waiters(changed)
 
-    def _wake_availability_waiters(self):
+    def _wake_availability_waiters(self, changed=False):
         pending, self._availability_pending = self._availability_pending, None
         if pending is not None:
-            pending.set()
+            pending.set_result(changed)
 
     def _set_availability(self, state):
         changed = state != self._availability_state
