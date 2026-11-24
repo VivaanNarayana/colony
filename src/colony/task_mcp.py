@@ -84,7 +84,8 @@ _DEFAULT_VALUE = re.compile(
 _PRIOR_WORK = re.compile(
     r"^(?:(?:for|in|under|using|with|given) (?:the|that) (?:same|previous|earlier) "
     r"(?:[\w-]+ ){0,3}(?:setup|scenario|case|configuration|deployment|environment|workflow|example)[,:]|"
-    r"following up(?: on |[,:])|as (?:before|above)[,:]|"
+    r"following up on (?:the|our|your|my) (?:previous|earlier|prior) "
+    r"(?:trace|work|analysis|investigation|findings?|answer|discussion)[,:]|as (?:before|above)[,:]|"
     r"based on (?:our|the) (?:previous|earlier) (?:work|findings?)[,:])",
     re.IGNORECASE,
 )
@@ -380,19 +381,23 @@ class TaskMCP(FastMCP):
             ))
 
     async def call_tool(self, name, arguments):
-        used_followup_route = self._followup_pending and self._availability_state == "present"
-        self._followup_pending = False
         if name == "research":
             # An explicit current lookup needs no preliminary availability request.
             self._availability_generation += 1
-            availability_changed = self._availability_state == "empty"
-            self._availability_state = "unknown"
-            self._availability_until = time.monotonic() + 30
+            lookup_generation = self._availability_generation
+            availability_changed = False
         else:
             availability_changed = await self._refresh_availability()
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
+            if not getattr(result, "isError", False):
+                availability_changed |= self._followup_pending and self._availability_state == "present"
+                self._followup_pending = False
+                if name == "research" and self._availability_generation == lookup_generation:
+                    availability_changed |= self._availability_state == "empty"
+                    self._availability_state = "unknown"
+                    self._availability_until = time.monotonic() + 30
             if self._scope is not None and name == self._scope_list_tool:
                 if isinstance(result, CallToolResult):
                     blocks = result.content
@@ -413,7 +418,7 @@ class TaskMCP(FastMCP):
                 self._availability_until = 0
                 availability_changed |= self._availability_state != "unknown"
                 self._availability_state = "unknown"
-            if used_followup_route or availability_changed or before != (self._publication_ready, self._publication_attempted):
+            if availability_changed or before != (self._publication_ready, self._publication_attempted):
                 try:
                     context = self.get_context().request_context
                 except ValueError:  # In-process Python calls have no transport session.

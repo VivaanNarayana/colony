@@ -4,6 +4,7 @@ import json
 import httpx
 import pytest
 from conftest import auth
+from mcp.server.fastmcp.exceptions import ToolError
 from test_workflow import identity as identity
 
 from colony.models import Scope
@@ -20,6 +21,7 @@ from colony.workflow import Workflow
     ("For the same deployment, explain its rollout.", "present", "settings.py", False),
     ("For the same input, compare both implementations.", "present", None, False),
     ("Following up-to-date runbooks, explain how the deployment rolls back.", "present", None, False),
+    ("Following up on failed deliveries requires retries. How is the delay chosen?", "present", None, False),
     ("As before-tax deductions change, how does payroll calculate withholding?", "present", None, False),
     ("Explain the retry limit.", "present", None, False),
 ])
@@ -57,6 +59,21 @@ def test_followup_startup_defers_to_refreshed_catalog(identity, monkeypatch):
             assert (PRESENT_FOLLOWUP_ROUTE.strip() in description) == (state == "present")
             assert ("empty at last check" in description) == (state == "empty")
             server._availability_until = 0
+
+    asyncio.run(check())
+
+
+def test_rejected_read_preserves_followup_route(identity, monkeypatch):
+    client, repo, _ = identity
+    monkeypatch.setattr(client, "memory_availability", lambda *a: "present")
+    server = TaskMCP(Workflow(client, "team", repo), "For the same setup, trace the deployment.")
+
+    async def check():
+        await server._initialize_routing()
+        with pytest.raises(ToolError):
+            await server.call_tool("read", {})
+        description = next(t.description for t in await server.list_tools() if t.name == "research")
+        assert PRESENT_FOLLOWUP_ROUTE.strip() in description
 
     asyncio.run(check())
 
