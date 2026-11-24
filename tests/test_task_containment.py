@@ -114,6 +114,25 @@ def test_named_read_before_listing_completes_scope_in_three_units(identity, know
     assert not units
 
 
+@pytest.mark.parametrize("listed_first", [False, True])
+def test_listing_detects_an_equal_size_edit_with_restored_mtime(identity, listed_first):
+    _, repo, _ = identity
+    name = "settings.py"
+    file = repo / name
+    file.write_bytes(b"TIMEOUT = 30")
+    server = create(identity, [name])
+    if listed_first:
+        plan(server)
+    assert read(server, path=name)["content"] == "TIMEOUT = 30"
+    before = file.stat()
+    file.write_bytes(b"TIMEOUT = 60")
+    os.utime(file, ns=(before.st_atime_ns, before.st_mtime_ns))
+    assert file.stat().st_mtime_ns == before.st_mtime_ns
+    assert plan(server) == {"next_tool": "read", "arguments": {"batch": [{"path": name}]}}
+    current = read(server, path=name)
+    assert current["content"] == "TIMEOUT = 60" and current["listed_scope"]["status"] == "complete"
+
+
 def test_first_listing_revalidates_previously_read_pages(identity):
     _, repo, _ = identity
     paths = ["settings.py", "README.md"]
@@ -122,6 +141,17 @@ def test_first_listing_revalidates_previously_read_pages(identity):
     (repo / paths[1]).write_text("A different version.")
     assert plan(server)["arguments"] == {"batch": [{"path": paths[1]}]}
     assert read(server, path=paths[1])["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows change-time query")
+def test_missing_change_time_leaves_coverage_unverified(identity, monkeypatch):
+    server = create(identity, ["settings.py"])
+    plan(server)
+    assert read(server, path="settings.py")["listed_scope"]["status"] == "complete"
+    monkeypatch.setattr("colony.validation._get_file_info", lambda *args: False)
+    page = read(server, path="settings.py")
+    assert page["content"] == "TIMEOUT = 30"
+    assert page["listed_scope"]["status"] == "partial" and page["listed_scope"]["unverified_count"] == 1
 
 
 @pytest.mark.parametrize("spelling", ["settings.py", "./settings.py"])
@@ -528,6 +558,8 @@ def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, 
     "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
     "Is the timeout in this repository (answer with yes or no)?",
     "Is the timeout in this repository (answer before discussing the details)?",
+    "Is the timeout in this repository, cite settings.py and the line number?",
+    "Is the timeout in the project (please cite pkg/settings.py:2)?",
 ])
 def test_containment_questions_keep_the_single_batch_route(identity, question):
     server = create(identity, ["settings.py"], question)

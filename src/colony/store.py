@@ -784,14 +784,15 @@ class Store:
             if len(matches) < 3 or any(matches == found for found in by_file.values()):
                 continue
             complementary[row["trail_rowid"]] = row
-            if len(complementary) == CANDIDATES:
-                break
         if not complementary:
             return []
-        slots = ",".join("?" for _ in complementary)
+        # Many saved questions can cite identical files. Apply the rerank budget
+        # to the closest scoped questions, independent of their publication order.
         similarities = db.execute(
-            f"SELECT rowid, 1-vec_distance_cosine(embedding, ?) FROM trail_questions WHERE rowid IN ({slots})",
-            (vector, *complementary),
+            """SELECT rowid, 1-vec_distance_cosine(embedding, ?) AS similarity
+               FROM trail_questions WHERE rowid IN (SELECT value FROM json_each(?))
+               ORDER BY similarity DESC, rowid DESC LIMIT ?""",
+            (vector, json.dumps(list(complementary)), CANDIDATES),
         )
         eligible = [(complementary[rowid], score) for rowid, score in similarities
                     if score is not None and score >= max(0.55, threshold)]

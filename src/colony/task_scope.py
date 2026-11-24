@@ -7,12 +7,12 @@ from pathlib import PurePosixPath
 
 from colony.evidence_refs import batch_allowances
 from colony.task_reads import _public_path
-from colony.validation import repo_file
+from colony.validation import file_version, repo_file
 
 _REPO = r"(?:repo(?:sitory)?|codebase|project)"
 _VERB = r"(?:contain|include|document|mention|record|implement|define|specify|provide)"
 _ANSWER_FORMAT = (
-    r"(?:(?:please\s++)?(?:answer|reply|respond|cite)\b[^()?!.\r\n]*+"
+    r"(?:(?:please\s++)?(?:answer|reply|respond|cite)\b(?:[^()?!.\r\n]|\.(?=\w))*+"
     r"|yes\s*+(?:or|/)\s*+no|true\s*+(?:or|/)\s*+false|briefly)"
 )
 _ANSWER_SUFFIX = rf"(?:\s*+(?:\(\s*+{_ANSWER_FORMAT}\s*+\)|[,;]\s*+{_ANSWER_FORMAT}))?"
@@ -143,9 +143,7 @@ class SourceScope:
         try:
             target = repo_file(self.evidence.workflow.repo, path,
                                path_allowed=self.evidence.path_allowed)
-            info = target.stat()
-            return (str(target), info.st_dev, info.st_ino, info.st_ctime_ns,
-                    info.st_mtime_ns, info.st_size)
+            return file_version(target)
         except (OSError, ValueError, RuntimeError):
             return None
 

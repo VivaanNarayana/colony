@@ -374,23 +374,41 @@ class EvidenceSession:
             pending = named - selected
             extra = {}
             now = time.monotonic()
-            for handle, observation in self._observations.items():
+            for order, (handle, observation) in enumerate(self._observations.items()):
                 if not observation.delivered_for_task or observation.expires <= now:
                     continue
                 for name in pending.intersection(self._observed_names(observation)):
                     if self._task_versions.get(name) != (observation.digest, observation.target):
                         raise EvidenceError("Named source version is ambiguous; supply its evidence reference")
-                    # Prefer the declared spelling, then a redundant ./, then a link.
-                    # An incidental link must not become a dependency of a direct read.
-                    preference = (observation.ref == name, _scope_name(observation.ref) == name)
-                    if name not in extra or preference >= extra[name][0]:
-                        extra[name] = preference, handle
+                    # Multiple pages of the same spelling share its authorization
+                    # and target. Only its newest delivered handle is needed.
+                    extra.setdefault(name, {})[observation.ref] = (order, handle)
             missing = pending.difference(extra)
             if missing.intersection(self._task_versions) or any(hash(path) % 4096 in self._overflow_buckets
                                                                for path in missing):
                 raise EvidenceError("Named dependency needs a current evidence reference")
-            additional = dict.fromkeys(handle for _, handle in extra.values())
+            additional = dict.fromkeys(self._supporting_handle(name, choices) for name, choices in extra.items())
             return [*references, *additional], named - missing
+
+    def _supporting_handle(self, name, choices):
+        if len(choices) == 1:
+            return next(iter(choices.values()))[1]
+        self._authorize(publishing=True)
+        # Prefer the declared name, then a lexical equivalent, then a link. All
+        # choices above have the same observed target and digest. Only the route
+        # to that target can differ. Publication verifies the selected hash and
+        # pins the chosen route along with every explicitly supplied reference.
+        ordered = sorted(choices, key=lambda ref: (ref == name, _scope_name(ref) == name, choices[ref][0]),
+                         reverse=True)
+        for ref in ordered:
+            handle = choices[ref][1]
+            try:
+                repo_file(self.workflow.repo, ref, path_allowed=self.path_allowed,
+                          expected_target=self._observations[handle].target)
+            except (OSError, ValueError):
+                continue
+            return handle
+        raise EvidenceError("Named dependency needs a current evidence reference")
 
     def _resolve(self, references, path_allowed):
         with self._lock:

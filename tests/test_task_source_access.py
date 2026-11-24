@@ -280,6 +280,37 @@ def test_publication_prefers_the_direct_read_of_a_named_file(
     assert validate(repo, sources)[0] == "stale"
 
 
+@pytest.mark.parametrize("failure", ["revoked-spelling", "retargeted-link"])
+def test_named_dependency_falls_back_to_a_live_delivered_spelling(identity, monkeypatch, failure):
+    client, repo, _ = identity
+    switch = matching_targets(repo)
+    direct = "first/value.py"
+    if failure == "revoked-spelling":
+        live, preferred = "alias/value.py", "./first/value.py"
+    else:
+        directory_link(repo / "live", repo / "first")
+        live, preferred = "live/value.py", "alias/value.py"
+    allowed = {"README.md", direct, live, preferred, "second/value.py"}
+    server = TaskMCP(Workflow(client, "team", repo), "Explain the limit",
+                     read_path_allowed=allowed.__contains__)
+    stored = []
+    monkeypatch.setattr(client, "push", lambda trail, **kw: stored.append(trail) or {"stored": True})
+    pages = call(server, "read", batch=[{"path": p} for p in ("README.md", live, preferred)])["results"]
+    readme, fallback, invalid = [page["evidence_ref"] for page in pages]
+    assert readme and fallback and invalid
+    if failure == "revoked-spelling":
+        allowed.remove(preferred)
+    else:
+        switch()
+    payload = dict(content="The limit is 7.", applicability=direct)
+    assert call(server, "publish", **payload, evidence_refs=[readme, invalid])["reason"] == "scope_evidence_required"
+    assert not stored
+    assert call(server, "publish", **payload, evidence_refs=[readme])["stored"]
+    assert len(stored) == 1 and {s.ref for s in stored[0].sources} == {"README.md", direct, live}
+    (repo / direct).write_text("LIMIT = 9")
+    assert validate(repo, stored[0].sources)[0] == "stale"
+
+
 def test_merging_named_aliases_rejects_conflicting_resolved_hashes(identity, monkeypatch):
     from colony import evidence_refs
 
