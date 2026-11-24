@@ -35,7 +35,8 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
         assert "required caller/dependency evidence" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
-        assert "selected by cited wiring or supplied in the question" in server.instructions
+        assert "cited wiring or supplied in the question" in server.instructions
+        assert "Count only repeat attempts as retries" in server.instructions
         assert "detail, examples and citations" in server.instructions
         assert "Research and answer length are unrestricted by publication policy" in server.instructions
 
@@ -86,6 +87,7 @@ def test_multifile_read_distinguishes_available_class_from_supplied_dependency(i
         assert "binding_guidance" not in await read("caller.py", "caller.py")
         first = await read("caller.py", "service.py")
         assert first["binding_guidance"] == BINDING_CUE
+        assert "retries = attempts - 1" in first["binding_guidance"]
         assert [r["path"] for r in first["results"]] == ["caller.py", "service.py"]
         assert all(r["complete_file"] and r["evidence_ref"] for r in first["results"])
         assert "binding_guidance" not in await read("caller.py", "service.py")
