@@ -49,9 +49,11 @@ not an atomic snapshot of a live repository. For a point-in-time determination, 
 the host inventory to an immutable checkout. Interpret the source text to answer
 containment and qualify any unverified scope.
 
-Answer guidance distinguishes concrete implementations from injected interfaces and total
-attempts from retries. For example, a concrete adapter allowing two attempts does not prove
-that an arbitrary injected transport has that limit; two total attempts permit one retry.
+For a caller that takes a dependency as an argument, report the behavior the caller
+controls. Attribute internal behavior to a specific implementation when the task supplies
+it or when cited wiring selects it. For example, if a particular adapter is supplied,
+its two total attempts permit one retry. Ordinary tasks also receive this reminder on
+their first source response containing two distinct complete files. It costs no extra read.
 Preserve useful explanations by stating their verified conditions. Failed entries, partial
 pages and literal search misses do not prove repository-wide absence. The read tool also
 exposes the coverage warning; it adds no repeated warning to source responses. These are
