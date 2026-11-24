@@ -7,7 +7,17 @@ from conftest import auth
 from colony.compact import PROFILE
 from colony.context_budget import count_response
 from colony.models import ContextBudget, Trail
+from colony.store import Store
 from colony.validation import snapshot
+
+
+@pytest.mark.parametrize(("by_file", "complementary"), [
+    ({"index": {"a", "b", "c"}, "copy": {"a", "b", "c"}, "ab": {"a", "b"}, "a": {"a"}}, False),
+    ({"index": {"a", "b", "c"}, "a": {"a"}, "b": {"b"}}, False),
+    ({"index": {"a", "b", "c"}, "a": {"a"}, "b": {"b"}, "c": {"c"}}, True),
+])
+def test_keyword_index_requires_independent_evidence_in_its_other_files(by_file, complementary):
+    assert Store._complementary_terms(by_file) is complementary
 
 
 def test_stale_ranked_passage_allows_current_source_set_fallback(team, monkeypatch):
@@ -174,7 +184,7 @@ def test_compound_ask_selects_highest_ranked_complete_bundle_that_fits(
 
     def rank(query, passages):
         if learned in passages:
-            assert len(passages) <= store.CANDIDATES
+            assert passages == [learned]  # All current publications share one question logit.
         return [-1.0 if text == learned else -9.0 for text in passages]
 
     monkeypatch.setattr(store, "rank", rank)

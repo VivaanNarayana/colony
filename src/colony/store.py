@@ -784,25 +784,46 @@ class Store:
             if coverage[text] >= 0.5 or score >= 0 or (procedure and score >= -2):
                 accepted[text] = (score, coverage[text])
         ranked = sorted(
-            ((linked, evidence_score(1 - linked[0]["distance"], *accepted[text]))
+            ((linked, evidence_score(1 - linked[0]["distance"], *accepted[text]), text)
              for linked, text in candidates if text in accepted),
             key=lambda item: item[1], reverse=True,
         )
         # Near-tied passages from one finding are selected together. A separate,
         # lower-ranked group can still fit if the first group's required cores do not.
         current_groups, alternatives = {}, []
-        for linked, score in ranked:
+        for linked, score, text in ranked:
             for row in linked:
                 group = current_groups.get(row["id"])
                 if group is None or score < group[1] - 0.15:
-                    group = (row, score, [])
+                    group = (row, score, {})
                     current_groups[row["id"]] = group
                     alternatives.append(group)
-                locations = group[2]
                 location = (row["ref"], row["content_hash"], row["line"])
-                if len(locations) < 8 and location not in locations:
-                    locations.append(location)
-        return selected, alternatives
+                copies = group[2].setdefault(text, [])
+                if len(copies) < 8 and location not in copies:
+                    copies.append(location)
+        ordered = []
+        for row, score, by_text in alternatives:
+            # Spend excerpt slots on different ranked passages first. Keep the
+            # remaining origins as alternatives with their own path and line.
+            locations = [copies[0] for copies in by_text.values()]
+            locations.extend(location for copies in by_text.values() for location in copies[1:])
+            ordered.append((row, score, locations[:8]))
+        return selected, ordered
+
+    @staticmethod
+    def _complementary_terms(by_file):
+        coverage = {frozenset(found) for found in by_file.values()}
+        while len(coverage) > 1:
+            combined = frozenset.union(*coverage)
+            if len(combined) < 3:
+                break
+            if combined not in coverage:
+                return True
+            # A single file matching everything supplies no proof of distributed
+            # evidence. The remaining files can still qualify on their own.
+            coverage.remove(combined)
+        return False
 
     def _source_set_candidates(self, db, question, vector, candidates, threshold, fits):
         """Locate source sets for a compound lookup without admitting a saved answer."""
@@ -818,17 +839,19 @@ class Store:
         # Candidates are already scoped and ordered by source similarity. Require
         # complementary terms across files belonging to the *same* saved finding.
         for row, by_file in origins.values():
-            matches = set.union(*by_file.values())
-            if len(matches) < 3 or any(matches == found for found in by_file.values()):
+            if not self._complementary_terms(by_file):
                 continue
             complementary[row["trail_rowid"]] = row
         if not complementary:
             return []
         eligible = self._source_set_shortlist(db, complementary, vector, max(0.55, threshold), fits)
-        logits = rank(question, [row["question"] for row, _ in eligible]) if eligible else []
+        if not eligible:
+            return []
+        questions = list(dict.fromkeys(row["question"] for row, _ in eligible))
+        logits = dict(zip(questions, rank(question, questions), strict=True))
         return sorted(
-            [(row, fused_score(similarity, logit), None)
-             for (row, similarity), logit in zip(eligible, logits, strict=True) if logit >= -5.0],
+            [(row, fused_score(similarity, logits[row["question"]]), None)
+             for row, similarity in eligible if logits[row["question"]] >= -5.0],
             key=lambda item: item[1], reverse=True,
         )
 
@@ -843,7 +866,7 @@ class Store:
 
         # Many saved questions can cite identical files. Apply the rerank budget
         # to the closest scoped questions, independent of their publication order.
-        eligible, over_budget = [], []
+        eligible, questions, over_budget = [], set(), {}
         last_sources, last_bundle = None, None
         with closing(db.execute(
             """SELECT rowid, 1-vec_distance_cosine(embedding, ?) AS similarity
@@ -855,6 +878,14 @@ class Store:
                 if score is None or score < minimum:
                     break
                 row = complementary[rowid]
+                question = row["question"]
+                if question in questions:
+                    # Share only the logit. Each publication still undergoes
+                    # the final lifecycle, source and packing checks.
+                    eligible.append((row, score))
+                    continue
+                if len(questions) == CANDIDATES:
+                    continue
                 if len(complementary) > CANDIDATES:
                     # Spend scarce reranker slots on deliverable complete sets.
                     # This precheck is advisory. Reload both state and files after rank.
@@ -867,15 +898,17 @@ class Store:
                     if not last_bundle:
                         continue
                     if fits is not None and not fits(row, sources, last_bundle):
-                        if len(over_budget) < CANDIDATES:
-                            over_budget.append((row, score))
+                        over_budget.setdefault(question, []).append((row, score))
                         continue
+                questions.add(question)
                 eligible.append((row, score))
-                if len(eligible) == CANDIDATES:
-                    break
         # A relevant but over-budget set can still explain a miss. It cannot
         # displace a deliverable set or increase the question rerank limit.
-        return eligible + over_budget[:CANDIDATES - len(eligible)]
+        for question, rows in over_budget.items():
+            if question in questions or len(questions) < CANDIDATES:
+                questions.add(question)
+                eligible.extend(rows)
+        return eligible
 
     @staticmethod
     def _evidence_response(row, sources, evidence, memory, git_receipt, *, checks=(), relevance=0.0):
