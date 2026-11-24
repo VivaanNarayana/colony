@@ -42,7 +42,18 @@ ANSWER_POLICY = (
 BINDING_CUE = (
     "Stop at the requested layer. In a nonempty retry sequence, retries = attempts - 1. "
     "For requested internals, cite the wiring or say 'if X is supplied' and cite X. "
-    "A class definition alone cannot establish the binding."
+    "Omit unrequested implementation details when the caller only accepts a dependency."
+)
+
+SAVED_TRACE_CUE = (
+    "Answer from the cited source lines in the requested format. Keep the finding's conditions. "
+    "Include implementation internals only if requested and the wiring or an explicit hypothetical supports them."
+)
+
+SCALAR_ROUTE = (
+    "Find the single default at its definition. For an unknown path, search for the setting. "
+    "If a current search match gives the path, line and unambiguous defining assignment, cite it and answer directly. "
+    "Read the surrounding source if the definition, units or scope remain unclear. "
 )
 
 PUBLICATION_POLICY = (
@@ -166,7 +177,7 @@ class TaskMCP(FastMCP):
         if self._scope is not None:
             routing = SCOPE_ROUTE.format(scope_list_tool) + " "
         elif value_only and direct_path is None:
-            routing = "Find the single default at its definition. If its path is unknown, search for the setting first. "
+            routing = SCALAR_ROUTE
         instructions = routing + READ_ROUTING + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -240,6 +251,9 @@ class TaskMCP(FastMCP):
                 return deliver([selected], lambda: self.evidence.read(selected, start, end, offset=offset))
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
+
+        if value_only and direct_path is None:
+            read.__doc__ = SCALAR_ROUTE + (read.__doc__ or "")
 
         def research() -> dict:
             """Look up the original task when useful, including gaps in a direct-read task."""
@@ -333,7 +347,11 @@ class TaskMCP(FastMCP):
                 try:
                     with self.evidence._lock:
                         references = self.evidence.scoped_references(evidence_refs, applicability)
-                        return self.evidence.publish(self.question, finding, references, before_push=begin_push)
+                        cold_trace = self._availability_state == "empty" and len(set(references)) > 1
+                        receipt = self.evidence.publish(self.question, finding, references, before_push=begin_push)
+                        if cold_trace and receipt.get("stored") is True:
+                            return {**receipt, "answer_guidance": SAVED_TRACE_CUE}
+                        return receipt
                 except Exception as exc:
                     reason = "publication_failed_or_outcome_unknown"
                     if not self._publication_attempted:

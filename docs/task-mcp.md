@@ -160,10 +160,15 @@ If that read delivers complete pages from multiple files and each has a referenc
 `publish_args_if_supported.evidence_refs` collects the returned handles. The caller
 supplies the finding and its conditions and may narrow the reference list to the
 supporting files. A traced rule can be reusable even when its result is numeric.
+After a successful cold publication with multiple distinct evidence handles, the receipt
+includes a short `answer_guidance` reminder to preserve the conditions and cite the
+source when answering. The reminder contains no finding text.
 An isolated value question still requires explicit remember intent to publish.
 For a standalone question about one common configuration default, such as a
 port, timeout or delay, the task adapter routes to the definition and omits
-publication. A host-supplied remember request enables publication as usual.
+publication. A current search result that includes the path, line and unambiguous
+defining assignment can answer that question directly. Ambiguous units or scope
+still require more context. A host-supplied remember request enables publication as usual.
 Compound questions and explanations retain the behavior-learning workflow.
 On a validated lookup, full cited files are current source reads that can be
 cited directly. Investigate missing dependencies and conflicting evidence as needed.

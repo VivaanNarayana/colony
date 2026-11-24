@@ -7,7 +7,9 @@ from mcp.server.fastmcp.exceptions import ToolError
 from test_workflow import identity as identity
 
 from colony.models import ContextBudget
-from colony.task_mcp import ANSWER_POLICY, PUBLICATION_CUE, READ_ROUTING, RESEARCH_GUIDANCE, TaskMCP
+from colony.task_mcp import (
+    ANSWER_POLICY, PUBLICATION_CUE, READ_ROUTING, RESEARCH_GUIDANCE, SAVED_TRACE_CUE, SCALAR_ROUTE, TaskMCP,
+)
 from colony.workflow import Workflow
 
 
@@ -52,6 +54,40 @@ def test_cold_read_cues_publication_without_a_lookup(identity, monkeypatch):
     reply = call(server, batch=[{"path": "settings.py"}, {"path": "README.md"}])
     assert "empty at last check" in reply["publication_guidance"]
     assert "publish" in {t.name for t in asyncio.run(server.list_tools())}
+
+
+@pytest.mark.parametrize("question,options,scalar", [
+    ("What is the default port?", {}, True),
+    ("What is the default port?", {"direct_path": "settings.py"}, False),
+    ("What is the default port?", {"remember": True}, False),
+    ("What is the default port and how does failover work?", {}, False),
+])
+def test_definition_search_shortcut_is_limited_to_single_values(identity, question, options, scalar):
+    client, repo, _ = identity
+    server = TaskMCP(Workflow(client, "team", repo), question, **options)
+    tools = {tool.name: tool for tool in asyncio.run(server.list_tools())}
+    assert (SCALAR_ROUTE in tools["read"].description) == scalar
+    assert (SCALAR_ROUTE in server.instructions) == scalar
+
+
+@pytest.mark.parametrize("state,paths,receipt,expect_cue", [
+    ("empty", ["settings.py", "README.md"], {"stored": True, "id": "saved"}, True),
+    ("empty", ["settings.py", "settings.py"], {"stored": True}, False),
+    ("empty", ["settings.py"], {"stored": True}, False),
+    ("empty", ["settings.py", "README.md"], {"queued": True}, False),
+    ("present", ["settings.py", "README.md"], {"stored": True}, False),
+])
+def test_cold_publish_guidance_preserves_the_receipt(identity, monkeypatch, state, paths, receipt, expect_cue):
+    server = make(identity)
+    client = server.workflow.client
+    monkeypatch.setattr(client, "memory_availability", lambda *a: state)
+    monkeypatch.setattr(client, "push", lambda *a, **kw: receipt.copy())
+    asyncio.run(server._initialize_routing())
+    read = call(server, batch=[{"path": path} for path in dict.fromkeys(paths)])
+    refs = {row["path"]: row["evidence_ref"] for row in read["results"]}
+    result = call(server, "publish", content="Untrusted finding text", applicability="Example scope",
+                  evidence_refs=[refs[path] for path in paths])
+    assert result == ({**receipt, "answer_guidance": SAVED_TRACE_CUE} if expect_cue else receipt)
 
 
 def test_routing_is_shared_and_direct_task_can_promote_without_forced_lookup(identity, monkeypatch):
