@@ -165,7 +165,7 @@ def test_named_delivered_dependency_requires_a_live_handle(identity, monkeypatch
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("filename", ["Makefile", "retry~legacy.py"])
+@pytest.mark.parametrize("filename", ["Makefile", "retry~legacy.py", "release`notes`.md", "`notes`.md"])
 def test_copied_page_pins_exact_bare_name(identity, monkeypatch, filename):
     client, repo, _ = identity
     (repo / filename).write_text("configured")

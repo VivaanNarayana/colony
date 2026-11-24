@@ -281,16 +281,23 @@ class EvidenceSession:
         # Use whole repository-relative path tokens. Backticks allow spaces and
         # extensionless files. Never resolve free-form text against the filesystem.
         with self._lock:
-            quoted_path = r"`([^`\r\n]+)`"
-            named = set(re.findall(quoted_path, applicability))
-            for word in re.sub(quoted_path, " ", applicability).split():
-                # Prefer the exact filename over prose punctuation or list separators.
-                if word in self._task_versions or hash(word) % 4096 in self._overflow_buckets:
+            # Consume a whole bare token or a whole quoted path, never examine
+            # fragments inside a filename. Look for an exact delivered name first.
+            tokens = r"""[([{"']*`([^`\r\n]+)`[.,;:!?)\]}"']*(?=\s|$)|\S+"""
+            named = set()
+            for token in re.finditer(tokens, applicability):
+                word = token[0]
+                if word in self._task_versions:
                     named.add(word)
-                if word not in self._task_versions:
-                    stripped = word.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
-                    named.add(stripped)
-                    if stripped not in self._task_versions:
+                    continue
+                if hash(word) % 4096 in self._overflow_buckets:
+                    named.add(word)
+                stripped = word.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
+                named.add(stripped)
+                if stripped not in self._task_versions:
+                    if token[1] is not None:
+                        named.add(token[1])
+                    else:
                         named.update(re.split("[,;]", stripped))
             selected = {self._observations[h].ref for h in references if h in self._observations}
             named.difference_update(selected)
