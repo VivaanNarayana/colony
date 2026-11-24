@@ -65,9 +65,14 @@ PUBLICATION_CUE = (
 # questions retain normal learning even when they mention one of these values.
 _SCALAR = (r"(?:(?!and\b|or\b)[\w-]+ )?"
            r"(?:timeout|delay|interval|duration|port|limit|size|count|rate|threshold|value)")
+_OVERRIDE_SCOPE = (
+    r"(?:environment|env|config(?:uration)?|local|global|system|deployment|runtime|"
+    r"queue|request|job|user|project|per-[\w-]+)(?: (?:policy|level))?"
+)
 _DEFAULT_VALUE = re.compile(
     rf"(?:what(?: is|'s) the default {_SCALAR}|(?:what|which) {_SCALAR} (?:applies|is used|is configured) by default)"
-    r"(?: (?:before|without)(?: [\w-]+){0,5} overrides?)?[?.]?", re.IGNORECASE,
+    rf"(?: (?:before|without) (?:{_OVERRIDE_SCOPE}(?: (?:and|or) {_OVERRIDE_SCOPE})? )?overrides?)?[?.]?",
+    re.IGNORECASE,
 )
 
 

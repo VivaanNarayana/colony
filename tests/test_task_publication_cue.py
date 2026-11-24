@@ -27,6 +27,7 @@ def make(identity, **options):
     ("What delay applies by default before queue and per-job policy overrides?", False, False),
     ("What is the default port?", True, True),
     ("What is the default port and how does failover choose a replacement?", False, True),
+    ("What is the default timeout without overrides and which layer applies overrides?", False, True),
     ("Trace how the default timeout changes after an override.", False, True),
 ])
 def test_host_question_controls_value_publication(identity, question, remember, can_publish):
