@@ -14,8 +14,10 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive lookup share the same routing guidance: look up saved findings
-when useful, read known paths directly, and batch independent reads. Prioritize evidence
+Ordinary and adaptive lookup share the same routing guidance. Use saved findings on
+follow-ups when they can replace source discovery or fill an identified gap. Once
+current sources answer the question, finish without a confirmation lookup. A lookup
+is unnecessary before publication. Read known paths directly and batch independent reads. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
@@ -138,6 +140,11 @@ It appears at most once per task, never once per batch entry or continuation pag
 Failed reads and reads without evidence references do not consume the cue. Read-only
 and direct tasks without explicit remember intent receive no cue. The cue does not
 attempt publication, add a tool call, reserve source capacity, or gate the final answer.
+If that read delivers complete pages from multiple files and each has a reference,
+`publish_args_if_supported.evidence_refs` collects the returned handles. The caller
+supplies the finding and its conditions and may narrow the reference list to the
+supporting files. A traced rule can be reusable even when its result is numeric.
+An isolated value question still requires explicit remember intent to publish.
 
 The server advertises MCP tools-list changes and sends notifications. Hosts must
 support refreshing tool discovery; otherwise research still works but they may
@@ -184,14 +191,13 @@ Direct reads, continuation offsets and publication eligibility are unchanged.
 Without a budget, the legacy lookup interface and representation are unchanged.
 This does not change retrieval. End-to-end gross savings remain unproven.
 
-Writable eligible tasks receive a conditional before-final publication instruction and
-an evidence-reference payload example once in MCP initialization. Direct tasks without
+Writable eligible tasks receive a conditional before-final publication instruction
+in MCP initialization. Direct tasks without
 remember intent and read-only tasks receive no publication workflow. This guidance does
 not auto-publish, require a successful write, add a decision call, or limit answers.
 Requested publication status and failure explanations remain part of the answer;
 only unsolicited abstention reports are omitted. Unknown outcomes stay uncertain.
-Use all supporting read references for multi-source findings; never send the example's
-variable names as references. The ordinary AGENTS.md ask/push payload is not this API.
+Use the actual supporting read references for multi-source findings.
 Local transport tests establish delivery and capability, not model compliance or savings.
 
 

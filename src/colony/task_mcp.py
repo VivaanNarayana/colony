@@ -35,26 +35,28 @@ ANSWER_POLICY = (
 )
 
 PUBLICATION_POLICY = (
-    "Before final, publish one eligible new reusable behavior with its scope, concrete outcome "
-    "and all supporting read references. Skip unchanged reuse and isolated values unless "
-    "explicitly asked to remember a value (kind=\"value\"). Never research solely to publish. "
+    "Before final, publish a newly traced rule with its conditions, result and supporting refs. "
+    "A traced rule yielding a number is still behavior. Skip unchanged reuse and value-only questions "
+    "unless asked to remember a value (kind=\"value\"). Never research solely to publish. "
     "Explain requested publication status and failures truthfully; omit unsolicited abstention reports. "
     "No decision call, automatic retry or publication-success gate. "
     "Deliver the complete answer in the user's required structure after publishing or skipping."
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up the original task when saved findings could help, including gaps in a direct-read task. "
-    "Use sufficient current evidence; research gaps or contradictions."
+    "Look up saved work for the bound question. Use it when it can replace source discovery "
+    "or resolve a specific gap. Skip confirmation and pre-publication lookups."
 )
+FOLLOWUP_ROUTE = "For a follow-up, use saved work first if it can replace discovery. "
+EMPTY_ROUTE = "Memory was empty at task startup. Go directly to sources unless you need a later publication. "
 READ_ROUTING = (
-    "Read known paths directly; batch independent reads, prioritizing evidence for requested "
-    "claims before auxiliary searches. Size batches to any host research allowance. "
-    "Use available research to close gaps and contradictions; explain remaining limitations. "
+    "Read known paths directly and batch independent reads within the allowance. "
+    "Once sources answer the question, finish without a memory check. Investigate actual gaps. "
 )
 PUBLICATION_CUE = (
-    "For an eligible new behavior, publish its scoped result and supporting evidence_refs "
-    "before final. Then answer in the requested format."
+    "For a newly traced behavior, call publish with the conditions, result and supporting "
+    "evidence_refs before answering. Skip value-only questions unless asked to remember. "
+    "No lookup for novelty."
 )
 
 
@@ -113,7 +115,7 @@ class TaskMCP(FastMCP):
         self._publication_lock = threading.RLock()
         routing = (
             "Start with read for the host's explicit path. Research further whenever needed. "
-            if direct_path is not None else "For a follow-up to earlier work, start with research when memory is available. "
+            if direct_path is not None else FOLLOWUP_ROUTE
         )
         if self._scope is not None:
             routing = SCOPE_ROUTE.format(scope_list_tool) + " "
@@ -132,6 +134,12 @@ class TaskMCP(FastMCP):
                         # Trusted adapter guidance, outside source text and batch entries.
                         # One cue per task; no extra call, read, or publication attempt.
                         response["publication_guidance"] = PUBLICATION_CUE
+                        # Supply the existing API's reference argument once for a complete
+                        # multi-file trace. The publisher still selects the claim and scope.
+                        if (len({row.get("path") for row in results}) > 1
+                                and all(row.get("complete_file") and row.get("evidence_ref") for row in results)):
+                            response["publish_args_if_supported"] = {
+                                "evidence_refs": [row["evidence_ref"] for row in results]}
             return response
 
         def deliver(paths, operation):
@@ -298,12 +306,13 @@ class TaskMCP(FastMCP):
     async def list_tools(self):
         await self._refresh_availability()
         tools = await super().list_tools()
-        if self._availability_state == "empty":
-            # Alter only the returned catalog, never accumulate description text.
-            tools = [t.model_copy(update={"description":
-                "Scoped memory was empty at last check; start with source reads. "
-                "Explicit lookup remains available. " + (t.description or "")})
-                if t.name == "research" else t for t in tools]
+        if self._availability_state == "empty" or self._scope is not None:
+            # Replace only routing, preserving adaptive budget details and the live tool.
+            route = ("Scoped memory was empty at last check. Use source tools unless checking a later publication."
+                     if self._availability_state == "empty" else
+                     "Use current files for repository containment. A memory miss cannot establish absence.")
+            tools = [t.model_copy(update={"description": (t.description or "").replace(RESEARCH_GUIDANCE, route, 1)})
+                     if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted
         )]
@@ -312,10 +321,7 @@ class TaskMCP(FastMCP):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
         if self._availability_state == "empty":
-            self._mcp_server.instructions = (
-                "Memory was empty at task startup; start with source reads. "
-                "Explicit research remains available and always checks current memory. "
-                + self._base_instructions)
+            self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(

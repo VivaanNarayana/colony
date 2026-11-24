@@ -137,7 +137,8 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
 
     async def check():
         first = await server.list_tools()
-        assert "empty at last check" in next(t.description for t in first if t.name == "research")
+        description = next(t.description for t in first if t.name == "research")
+        assert "empty at last check" in description and "replace source discovery" not in description
         assert len(probes) == 1 and not asks
         state[0] = "present"  # Concurrent publication after snapshot, before TTL.
         result = json.loads((await server.call_tool("research", {}))[0].text)

@@ -67,6 +67,29 @@ def test_reference_capacity_does_not_prompt_publication_or_block_answer(identity
     assert call(server, path="settings.py")["publication_guidance"] == PUBLICATION_CUE
 
 
+@pytest.mark.parametrize("paths,prepared", [
+    (["settings.py", "README.md"], True), (["settings.py", "missing"], False),
+    (["settings.py", "settings.py"], False),
+])
+def test_first_complete_multifile_read_prepares_existing_publish_arguments(identity, monkeypatch, paths, prepared):
+    client, _, _ = identity
+    sent = []
+    monkeypatch.setattr(client, "ask", lambda *a, **k: pytest.fail("unnecessary memory lookup"))
+    monkeypatch.setattr(client, "push", lambda trail, **k: sent.append(trail) or {"stored": True})
+    server = make(identity)
+    batch = [{"path": path} for path in paths]
+    reply = call(server, batch=batch)
+    assert not sent
+    assert "publish_args_if_supported" not in call(server, batch=batch)
+    if prepared:
+        args = reply["publish_args_if_supported"]
+        assert args == {"evidence_refs": [row["evidence_ref"] for row in reply["results"]]}
+        assert call(server, "publish", **args, content="A supported rule", applicability="Observed scope")["stored"]
+        assert {s.ref for s in sent[0].sources} == set(paths)
+    else:
+        assert "publish_args_if_supported" not in reply
+
+
 @pytest.mark.parametrize("batch", [False, True])
 def test_cue_preserves_unicode_continuation_source_text_and_references(identity, monkeypatch, batch):
     client, repo, _ = identity

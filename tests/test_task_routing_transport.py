@@ -43,6 +43,7 @@ def test_live_empty_hint_bundle_quota_and_readonly(running_team):
         ):
             init = await session.initialize()
             assert "Memory was empty at task startup" in init.instructions
+            assert "use saved work first" not in init.instructions
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
