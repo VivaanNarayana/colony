@@ -131,6 +131,74 @@ def test_numbered_question_with_a_link_delivers_the_policy(onnx_transport):
     assert cited_lines(value, repo)["notes.txt", 1] == answer
 
 
+@pytest.mark.parametrize("heading", [
+    "## How the production request timeout is configured\nSee settings.py.",
+    "Where is the production request timeout configured: see settings.py.",
+    "## How the production request timeout is configured\n[settings.py](./settings.py)",
+])
+def test_heading_with_source_pointer_delivers_configuration(onnx_transport, heading):
+    client, repo, _ = onnx_transport
+    question = "Where and how is the production request timeout configured?"
+    (repo / "overview.md").write_text(heading)
+    (repo / "settings.py").write_text("PRODUCTION_TIMEOUT_MS = 1500")
+    target = publish(client, repo, "Who owns release scheduling?", "The release manager.",
+                     ["overview.md", "settings.py"])
+    result = research(client, repo, question, 3072)
+    assert result["id"] == target
+    assert cited_lines(result, repo)["settings.py", 1] == "PRODUCTION_TIMEOUT_MS = 1500"
+
+
+@pytest.mark.parametrize(("text", "expected"), [
+    ("[settings.py](./settings.py)", {"docs/settings.py"}),
+    ("[settings.py](../settings.py#timeout)", {"settings.py"}),
+    ('[settings.py](<../config%20files/settings.py> "defaults")', {"config files/settings.py"}),
+    ("See ./settings.py and ../settings.py.", {"docs/settings.py", "settings.py"}),
+    ("[settings.py](./missing/settings.py)", set()),
+    ("[settings.py](../../settings.py)", set()),
+    ("[settings.py](https://example.org/settings.py)", set()),
+    ("[settings.py](#local)", set()),
+])
+def test_relative_pointer_uses_the_destination_and_containing_directory(text, expected):
+    refs = {"docs/index.md", "settings.py", "docs/settings.py", "config files/settings.py"}
+    _, targets, unresolved = context._pointer_links(text, "docs/index.md", refs)
+    assert targets == expected
+    assert unresolved == (not expected)
+
+
+def test_numeric_fact_in_a_heading_stays_in_the_answer(onnx_transport):
+    client, repo, _ = onnx_transport
+    text = "## How the request timeout is set to 1200 milliseconds\nSee details.txt."
+    (repo / "answer.md").write_text(text)
+    (repo / "details.txt").write_text("The release manager owns scheduling.")
+    publish(client, repo, "Who owns release scheduling?", "The release manager.", ["answer.md", "details.txt"])
+    result = research(client, repo, "How is the request timeout set to 1200 milliseconds?", 3072)
+    assert cited_lines(result, repo) == {("answer.md", n): line for n, line in enumerate(text.splitlines(), 1)}
+
+
+@pytest.mark.parametrize("background", [False, True], ids=["small_bundle", "oversized_note"])
+def test_relative_links_select_only_the_linked_settings(onnx_transport, background):
+    client, repo, _ = onnx_transport
+    _, learn, reuse = learning_case(repo, "gateway")
+    (repo / "archive").mkdir()
+    (repo / "archive/settings.py").write_text('DEFAULTS = {"timeout_ms": 8000, "attempts": 1}')
+    (repo / "overview.md").write_text(
+        "[Production inventory request count and timeout](./settings.py), "
+        "[request](./handler.py), [count](./client.py)."
+    )
+    paths = [*learn["publication_sources"], "overview.md", "archive/settings.py"]
+    if background:
+        (repo / "notes.txt").write_text("Release calendar covers the next maintenance window.\n" * 80)
+        paths.append("notes.txt")
+    target = publish(client, repo, learn["question"], "See the configuration and execution loop.", paths)
+    for budget in (3072, 2450):
+        value = research(client, repo, reuse["question"], budget)
+        assert value["id"] == target and {s["ref"] for s in value["sources"]} == set(paths)
+        lines = cited_lines(value, repo)
+        for citation in reuse["oracle"]["citations"]:
+            assert all((citation["path"], n) in lines for n in range(citation["start"], citation["end"] + 1))
+        assert ("archive/settings.py", 1) not in lines
+
+
 @pytest.mark.parametrize("duplicate_pointer", [False, True], ids=["new_fact", "copy_of_pointer"])
 def test_targeted_pointer_packet_preserves_an_independently_selected_fact(tmp_path, duplicate_pointer):
     files = {"overview.md": "2) Retry limit: see settings.txt.",
@@ -158,6 +226,8 @@ def test_targeted_pointer_packet_preserves_an_independently_selected_fact(tmp_pa
 @pytest.mark.parametrize(("prefix", "budget", "case"), [
     ("1. ", 3072, "all_names"), ("", 2200, "all_names"), ("1) ", 2200, "all_names"),
     ("", 2200, "unnamed_dependency"), ("2) ", 2400, "oversized_attachment"),
+    ("2) ", 2400, "oversized_unnamed_dependency"),
+    ("", 2400, "oversized_keyword_index"), ("", 2400, "oversized_single_link"),
 ])
 def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix, budget, case):
     client, repo, _ = onnx_transport
@@ -165,10 +235,15 @@ def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix,
     paths = learn["publication_sources"]
     topic = ("Production inventory request count and timeout" if workload == "gateway" else
              "Priority job backend submissions and wait schedule")
-    named = paths[:2] if case == "unnamed_dependency" else paths
-    (repo / "overview.md").write_text(prefix + topic + ": see " + ", ".join(named) + ".")
+    named = paths[:2] if case.endswith("unnamed_dependency") else paths
+    pointer = topic + ": see " + ", ".join(named) + "."
+    if case == "oversized_keyword_index":
+        pointer = "Index tags: " + topic + "."
+    elif case == "oversized_single_link":
+        pointer = f"[{topic}](./{paths[0]})"
+    (repo / "overview.md").write_text(prefix + pointer)
     sources = [*paths, "overview.md"]
-    if case == "oversized_attachment":
+    if case.startswith("oversized_"):
         (repo / "notes.txt").write_text("Release calendar covers the next maintenance window.\n" * 80)
         sources.append("notes.txt")
     target = publish(client, repo, learn["question"], "See the configuration and execution loop.", sources)
@@ -183,7 +258,7 @@ def test_pointer_delivers_the_referenced_facts(onnx_transport, workload, prefix,
             assert lines[path, n] == expected[n - 1]
     if budget < 3072:
         assert {r["path"] for r in value["current_repository_reads"]} == set(paths)
-    if case == "oversized_attachment":
+    if case.startswith("oversized_"):
         (repo / "notes.txt").write_text("Updated calendar.")
         assert not research(client, repo, reuse["question"], budget).get("current_repository_reads")
 
@@ -282,6 +357,33 @@ def test_shorter_equivalent_citation_keeps_both_facts_at_the_wire_limit(
     if shared_copy:
         (repo / "a.txt").write_text("Superseded policy.")
         assert not research(client, repo, question, limit, encoding).get("current_repository_reads")
+
+
+def test_repeated_publications_do_not_reread_files_for_citation_permutations(onnx_transport, monkeypatch):
+    client, repo, _ = onnx_transport
+    paths = ["settings/production/gateway/request_timeout.txt", "settings/production/gateway/retry_limit.txt",
+             *(f"copy-{n}.txt" for n in range(6))]
+    for path in paths:
+        (repo / path).parent.mkdir(parents=True, exist_ok=True)
+        (repo / path).write_text("The request timeout is 1200 milliseconds.\n\nThe retry limit is four attempts.")
+    for _ in range(4):
+        publish(client, repo, "Who owns release scheduling?", "The release manager.", paths)
+
+    reads = []
+    original = context.source_lines
+
+    def counted(root, source):
+        reads.append(source.ref)
+        return original(root, source)
+
+    monkeypatch.setattr(context, "source_lines", counted)
+    question = "What are the request timeout and retry limit?"
+    assert research(client, repo, question, 1536)["reason"] == "budget_limited"
+    assert set(reads) == set(paths) and len(reads) <= 3 * len(paths)
+    value = research(client, repo, question, 3072)
+    assert set(cited_lines(value, repo).values()) == {
+        "The request timeout is 1200 milliseconds.", "The retry limit is four attempts.",
+    }
 
 
 def test_repeated_over_budget_bundles_bound_work_under_writer_lock(onnx_transport, monkeypatch):

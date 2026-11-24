@@ -10,7 +10,13 @@ from pathlib import Path
 import sqlite_vec
 from cryptography.fernet import Fernet
 
-from colony.context import complete_source_bundle, excerpts, passage_options, source_chunks
+from colony.context import (
+    PassageView,
+    complete_source_bundle,
+    excerpts,
+    passage_options,
+    source_chunks,
+)
 from colony.git_context import capture as capture_git_context
 from colony.git_context import compare as compare_git_context
 from colony.memory import (
@@ -1058,17 +1064,14 @@ class Store:
                         fits if pack_bundle is not None else None,
                     )
 
-            previous_sources = None
+            view = None
             bundles = {}
 
             def source_bundle(sources, refs=None):
-                nonlocal previous_sources
-                if sources != previous_sources:
-                    bundles.clear()
-                    previous_sources = sources
                 if refs not in bundles:
                     selected = sources if refs is None else [s for s in sources if s.kind == "file" and s.ref in refs]
-                    bundles[refs] = complete_source_bundle(self.repo, selected, adaptive=True, max_files=8)
+                    bundles[refs] = complete_source_bundle(self.repo, selected, adaptive=True, max_files=8,
+                                                          read_lines=view.lines)
                 return bundles[refs]
 
             budget_miss = None
@@ -1094,6 +1097,9 @@ class Store:
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
                         continue
+                    if view is None or sources != view.sources:
+                        view = PassageView(self.repo, sources)
+                        bundles.clear()
                     if locations is None:
                         options = (source_bundle(sources),)
                     else:
@@ -1105,6 +1111,7 @@ class Store:
                             sources,
                             question,
                             preferred=preferred,
+                            view=view,
                             source_bundle=source_bundle if compound_lookup else None,
                             whole_files=include_evidence_files,
                             **({"expand_first_file": True} if salvage else {}),

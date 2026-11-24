@@ -61,6 +61,13 @@ def local_imports(path, prepared):
     source = prepared.content.decode("utf-8")
     if len(source) != prepared.span_length:
         return []
+    return python_import_paths(path, source)
+
+
+def python_import_paths(path, source):
+    """Bounded module.py hints from supplied Python text, without loading modules."""
+    if not path.endswith(".py"):
+        return []
     try:
         tree = ast.parse(source)
     except (ValueError, SyntaxError, RecursionError):

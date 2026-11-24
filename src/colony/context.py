@@ -2,13 +2,17 @@
 
 import ast
 import hashlib
+import posixpath
 import re
+from functools import cached_property
 from itertools import product
 from pathlib import Path
+from urllib.parse import unquote
 
 from colony.models import Source
 from colony.retrieval import fused_score, keyword_coverage, rank, terms
 from colony.security import PATTERNS
+from colony.task_reads import python_import_paths
 from colony.validation import repo_file
 
 _FENCE = re.compile(r"^([ \t]*(?:(?:>|[-+*]|[0-9]{1,9}[.)])[ \t]*)*)(`{3,}|~{3,})")
@@ -83,11 +87,30 @@ def source_lines(root: Path, source: Source) -> list[str]:
     return text.splitlines()
 
 
-def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str]]:
+class PassageView:
+    """Scrubbed, hash-checked file versions shared while packing one cited source set."""
+
+    def __init__(self, root, sources):
+        self.root = root
+        self.sources = sources
+        self._lines = {}
+
+    def lines(self, source):
+        key = (source.kind, source.ref, source.content_hash)
+        if key not in self._lines:
+            self._lines[key] = source_lines(self.root, source)
+        return self._lines[key]
+
+    @cached_property
+    def chunks(self):
+        return source_chunks(self.root, self.sources, read_lines=self.lines)
+
+
+def source_chunks(root: Path, sources: list[Source], *, read_lines=None) -> list[tuple[str, int, str]]:
     candidates = []
     # Only explicitly attached, matching files supply context. Never crawl uncited files.
     for source in sources[:8]:
-        lines = source_lines(root, source)[:2000]
+        lines = (read_lines(source) if read_lines is not None else source_lines(root, source))[:2000]
         headings, stack, fenced = {}, [], False
         if Path(source.ref).suffix.lower() in {".md", ".markdown"}:
             for i, text in enumerate(lines):
@@ -434,14 +457,14 @@ def _adaptive_excerpt(ref, lines, unit, whole_files):
     }
 
 
-def complete_source_bundle(root, sources, *, adaptive, max_files):
+def complete_source_bundle(root, sources, *, adaptive, max_files, read_lines=None):
     """Return the entire bounded, hash-checked source set or no bundle."""
     unique = {s.ref: s for s in sources}
     if not 1 <= len(unique) <= max_files:
         return []
     files, size = [], 0
     for source in unique.values():
-        lines = source_lines(root, source)
+        lines = read_lines(source) if read_lines is not None else source_lines(root, source)
         text = "\n".join(lines)
         size += len(text)
         if not lines or len(text) > 16000 or size > (2800 if adaptive else 24000):
@@ -454,15 +477,56 @@ def complete_source_bundle(root, sources, *, adaptive, max_files):
     return files
 
 
+def _pointer_links(text, origin, refs):
+    """Bind link destinations lexically to attached files. Never open a path from prose."""
+    directory = posixpath.dirname(origin)
+    basenames = {}
+    spellings = set(refs)
+    for ref in refs:
+        name = posixpath.basename(ref)
+        basenames.setdefault(name.casefold(), []).append(ref)
+        spellings.update((name, posixpath.relpath(ref, directory or ".")))
+    paths = "|".join(re.escape(s) for s in sorted(spellings, key=len, reverse=True))
+    # Consume Markdown destinations as a whole, so a wrong directory or an external
+    # URL cannot subsequently match a plain basename. Preserve the label for ranking.
+    pattern = (r'\[(?P<label>[^\[\]\n]*)\]\(\s*(?:<(?P<angle>[^>\n]+)>|(?P<dest>[^()\s]+))'
+               r'(?:[ \t]+(?:"[^"\n]*"|\'[^\'\n]*\'))?\s*\)'
+               rf"|(?<![\w./\\:-])(?P<plain>(?:\./)?(?:{paths}))(?![\w/-]|\.\w)(?:#[\w.-]+|:\d+(?:-\d+)?)?")
+    targets = set()
+    unresolved = False
+
+    def replace(match):
+        nonlocal unresolved
+        plain = match["plain"]
+        path = plain if plain is not None else unquote((match["angle"] or match["dest"]).split("#", 1)[0])
+        if not path or path.startswith("/") or re.match(r"^[A-Za-z][\w+.-]*:", path):
+            unresolved = True
+            return match[0]
+        relative = posixpath.normpath(posixpath.join(directory, path))
+        target = relative
+        if relative not in refs and plain is not None and not path.startswith(("./", "../")):
+            # Repository-qualified prose and unique informal basenames are also used
+            # in saved findings. An explicit relative link has no basename fallback.
+            matches = basenames.get(path.casefold(), [])
+            target = path if path in refs or len(matches) != 1 else matches[0]
+        if target not in refs or target == origin:
+            unresolved = True
+            return match[0]
+        targets.add(target)
+        if plain is not None:
+            return " "
+        label = match["label"]
+        return "[]()" if label in spellings or label == path else f"[{label}]()"
+
+    stripped = re.sub(pattern, replace, text, flags=re.IGNORECASE)
+    return stripped, targets, unresolved
+
+
 def _index_references(question, evidence, sources):
     """Identify navigation passages separately from facts selected alongside them."""
     refs = {s.ref for s in sources if s.kind == "file"}
     if not refs.difference(item["ref"] for item in evidence):
         return {}
-    names = {}
-    for ref in refs:
-        for name in (ref, Path(ref).name):
-            names.setdefault(name.casefold(), set()).add(ref)
 
     def words(value):
         return {w.removesuffix("s") if len(w) > 3 else w for w in re.findall(r"\w+", value.casefold())}
@@ -477,20 +541,29 @@ def _index_references(question, evidence, sources):
     pointers = {}
     for index, item in enumerate(evidence):
         # List numbers are presentation. Preserve numbers inside the entry, including numeric answers.
-        lines = item["text"].casefold().splitlines()
+        lines = item["text"].splitlines()
         text = "\n".join(line[_CONTAINER_PREFIX.match(line).end():] for line in lines)
-        targets = set()
-        for name in sorted(names, key=len, reverse=True):
-            if name in text and (links := names[name] - {item["ref"]}):
-                link = (r"(?<![\w./-])(?:\./)?" + re.escape(name)
-                        + r"(?![\w/-]|\.\w)(?:#[\w.-]+|:\d+(?:-\d+)?)?")
-                text, count = re.subn(link, " ", text)
-                if count:
-                    targets.update(links)
+        text, targets, unresolved = _pointer_links(text, item["ref"], refs)
+        if unresolved:
+            continue
+        text = text.casefold()
+        if re.search(r"\d|=|\b(?:true|false|yes|no)\b", text):
+            continue
+        # A question/topic heading followed by an explicit pointer is navigation.
+        # Only omit that heading from classification; a separate factual clause
+        # below it must still prevent replacement of the selected evidence.
+        if targets:
+            heading = re.match(
+                r"^\s*(?:#{1,6}\s+)?(?:how|where|when|what|which|why|who|is|are|does|can|should)\b"
+                r"[^\n:.!?]*(?:[?:]\s*|\n+)(?=(?:see|refer to|consult)\b|\[[^\n\]]*\]\(\)|\s*[.!]?\s*$)",
+                text,
+            )
+            if heading and words(heading[0]) <= vocabulary:
+                text = text[heading.end():]
         # A literal or declarative clause can be a complete answer even if every
         # word occurs in the question and a supplemental file is mentioned.
         label = words(text)
-        if not label <= vocabulary or re.search(r"\d|=|\b(?:true|false|yes|no)\b", text):
+        if not label <= vocabulary:
             continue
         # Interrogative headings may name a file; only a declarative clause
         # supplies a value. Keep checking any prose that follows the question.
@@ -508,38 +581,73 @@ def _index_references(question, evidence, sources):
     return pointers
 
 
-def passage_options(root, sources, question, preferred, *, source_bundle=None, **options):
+def _pointer_options(sources, question, evidence, pointers, source_bundle):
+    bundle = source_bundle(sources)
+    attached = {s.ref for s in sources if s.kind == "file"}
+    selected_text = {read["text"] for read in evidence}
+    delivered = {read["ref"] for read in evidence}
+    facts = [read for i, read in enumerate(evidence) if i not in pointers]
+    targets = frozenset().union(*pointers.values())
+    index_text = {(evidence[i]["ref"], evidence[i]["text"]) for i in pointers}
+
+    # An individually oversized attachment can make the whole group unavailable,
+    # even for a keyword index with no filenames. Try the remaining complete files
+    # under the same aggregate limit. Preserve every named target and selected fact.
+    if not bundle and len(attached) <= 8:
+        small = {ref: item for ref in attached for item in source_bundle(sources, frozenset({ref}))}
+        required = targets.union(read["ref"] for read in facts)
+        if required <= small.keys() < attached:
+            keep = frozenset(ref for ref, item in small.items()
+                             if ref in required or (ref, item["text"]) not in index_text)
+            if keep:
+                bundle = source_bundle(sources, keep)
+
+    # Follow static imports only into the same finding's validated attachments.
+    # Keep each bounded group so a large extra attachment cannot hide a smaller
+    # dependency chain, and a tight wire budget can still try the named files.
+    groups = []
+    refs = targets
+    while refs:
+        group = ([item for item in bundle if item["ref"] in refs] if bundle else source_bundle(sources, refs))
+        if not group:
+            break
+        groups.append(group)
+        imports = {path for item in group for path in python_import_paths(item["ref"], item["text"])}
+        added = (imports & attached) - refs
+        if not added:
+            break
+        refs = refs.union(added)
+
+    # A link to one settings.py is not a request for an archived namesake.
+    # Retain independently selected facts and imports even if their basenames match.
+    names = {posixpath.basename(ref) for ref in targets}
+    wanted = refs.union(read["ref"] for read in facts)
+    bundle = [item for item in bundle if item["ref"] in wanted or posixpath.basename(item["ref"]) not in names]
+    query_terms = terms(question)
+    without_index = []
+    if any(item["ref"] not in delivered and item["text"] not in selected_text
+           and (item["ref"] in targets or query_terms & terms(item["text"])) for item in bundle):
+        yield bundle
+        without_index = [item for item in bundle if (item["ref"], item["text"]) not in index_text]
+        if without_index and without_index != bundle:
+            yield without_index
+    for group in reversed(groups):
+        if any(item["text"] not in selected_text for item in group):
+            paths = {item["ref"] for item in group}
+            packet = [read for read in facts if read["ref"] not in paths] + group
+            if packet not in (bundle, without_index, evidence):
+                yield packet
+
+
+def passage_options(root, sources, question, preferred, *, source_bundle=None, view=None, **options):
     """Try a useful source packet first and render alternatives only after a packing miss."""
-    evidence = excerpts(root, sources, question, preferred=preferred, **options)
+    view = view if view is not None else PassageView(root, sources)
+    evidence = excerpts(root, sources, question, preferred=preferred, view=view, **options)
     if not evidence:
         return
     pointers = _index_references(question, evidence, sources) if source_bundle is not None else {}
     if pointers:
-        bundle = source_bundle(sources)
-        delivered = {read["ref"] for read in evidence}
-        selected_text = {read["text"] for read in evidence}
-        query_terms = terms(question)
-        targets = frozenset().union(*pointers.values())
-        without_index = []
-        if any(item["ref"] not in delivered and item["text"] not in selected_text
-               and (item["ref"] in targets or query_terms & terms(item["text"])) for item in bundle):
-            yield bundle
-            # Drop a whole file only when its entire text was classified as navigation.
-            # An unnamed dependency can still supply a fact needed by the caller.
-            index_text = {(evidence[i]["ref"], evidence[i]["text"]) for i in pointers}
-            without_index = [item for item in bundle if (item["ref"], item["text"]) not in index_text]
-            if without_index and without_index != bundle:
-                yield without_index
-        if targets:
-            # Keep the full finding's provenance. Only its attached reads change.
-            # An unrelated oversized attachment can make the full bundle unavailable.
-            referenced = ([item for item in bundle if item["ref"] in targets] if bundle else
-                          source_bundle(sources, targets))
-            if any(item["text"] not in selected_text for item in referenced):
-                facts = [item for i, item in enumerate(evidence) if i not in pointers and item["ref"] not in targets]
-                packet = [*facts, *referenced]
-                if packet not in (bundle, without_index, evidence):
-                    yield packet
+        yield from _pointer_options(sources, question, evidence, pointers, source_bundle)
     yield evidence
 
     # Only reached when the selected packet failed to fit. Pack real alternate
@@ -555,7 +663,7 @@ def passage_options(root, sources, question, preferred, *, source_bundle=None, *
             continue
         aliases = dict(zip(refs, names, strict=True))
         locations = list(dict.fromkeys((aliases.get(p, p), line) for p, line in preferred))
-        alternative = excerpts(root, sources, question, preferred=locations, **options)
+        alternative = excerpts(root, sources, question, preferred=locations, view=view, **options)
         if alternative == [{**item, "ref": aliases[item["ref"]]} for item in evidence]:
             yield alternative
 
@@ -571,16 +679,18 @@ def excerpts(
     adaptive: bool = False,
     compact_bundle: bool = False,
     expand_first_file: bool = False,
+    view: PassageView | None = None,
 ) -> list[dict]:
+    view = view if view is not None else PassageView(root, sources)
     if (
         (whole_files or (adaptive and compact_bundle))
         and (not adaptive or (claims is not None and preferred is None))
     ):
         files = complete_source_bundle(root, sources, adaptive=adaptive,
-                                       max_files=8 if adaptive and compact_bundle else 4)
+                                       max_files=8 if adaptive and compact_bundle else 4, read_lines=view.lines)
         if files:
             return files
-    candidates = source_chunks(root, sources)
+    candidates = view.chunks
     if preferred is not None:
         # A second reranking must not replace the globally selected passage
         # with unrelated text from the same file.
@@ -613,7 +723,7 @@ def excerpts(
         if scores[index] < best - (0.15 if claims is not None else 2):
             continue
         if ref not in cache:
-            cache[ref] = source_lines(root, by_ref[ref])
+            cache[ref] = view.lines(by_ref[ref])
         if not cache[ref]:
             continue
         if len(selected) >= 2 or budget < 300:
