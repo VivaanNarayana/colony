@@ -8,7 +8,7 @@ from test_workflow import identity as identity
 
 from colony.models import Scope
 from colony.security import issue
-from colony.task_mcp import PRESENT_FOLLOWUP_ROUTE, TaskMCP
+from colony.task_mcp import FOLLOWUP_START, PRESENT_FOLLOWUP_ROUTE, TaskMCP
 from colony.workflow import Workflow
 
 
@@ -20,6 +20,7 @@ from colony.workflow import Workflow
     ("For the same deployment, explain its rollout.", "present", "settings.py", False),
     ("For the same input, compare both implementations.", "present", None, False),
     ("Following up-to-date runbooks, explain how the deployment rolls back.", "present", None, False),
+    ("As before-tax deductions change, how does payroll calculate withholding?", "present", None, False),
     ("Explain the retry limit.", "present", None, False),
 ])
 def test_saved_work_route_is_scoped_to_first_followup_action(identity, monkeypatch, question, state, path, expect_route):
@@ -38,6 +39,24 @@ def test_saved_work_route_is_scoped_to_first_followup_action(identity, monkeypat
         assert await server.call_tool("read", {"path": "settings.py"})
         server._availability_until = 0
         assert not await has_route()
+
+    asyncio.run(check())
+
+
+def test_followup_startup_defers_to_refreshed_catalog(identity, monkeypatch):
+    client, repo, _ = identity
+    states = iter(["empty", "present", "empty"])
+    monkeypatch.setattr(client, "memory_availability", lambda *a: next(states))
+    server = TaskMCP(Workflow(client, "team", repo), "As before, explain the deployment.")
+
+    async def check():
+        await server._initialize_routing()
+        assert server.instructions.startswith(FOLLOWUP_START)
+        for state in ("empty", "present", "empty"):
+            description = next(t.description for t in await server.list_tools() if t.name == "research")
+            assert (PRESENT_FOLLOWUP_ROUTE.strip() in description) == (state == "present")
+            assert ("empty at last check" in description) == (state == "empty")
+            server._availability_until = 0
 
     asyncio.run(check())
 

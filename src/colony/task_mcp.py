@@ -83,8 +83,9 @@ _DEFAULT_VALUE = re.compile(
 )
 _PRIOR_WORK = re.compile(
     r"^(?:(?:for|in|under|using|with|given) (?:the|that) (?:same|previous|earlier) "
-    r"(?:[\w-]+ ){0,3}(?:setup|scenario|case|configuration|deployment|environment|workflow|example)\b|"
-    r"following up(?: on\b|[,.:])|as (?:before|above)\b|based on (?:our|the) (?:previous|earlier) (?:work|findings?)\b)",
+    r"(?:[\w-]+ ){0,3}(?:setup|scenario|case|configuration|deployment|environment|workflow|example)[,:]|"
+    r"following up(?: on |[,:])|as (?:before|above)[,:]|"
+    r"based on (?:our|the) (?:previous|earlier) (?:work|findings?)[,:])",
     re.IGNORECASE,
 )
 
@@ -362,13 +363,16 @@ class TaskMCP(FastMCP):
             self._publication_ready and self._may_publish and not self._publication_attempted
         )]
 
-    async def run_stdio_async(self):
+    async def _initialize_routing(self):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
-        if self._availability_state == "empty":
-            self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
-        elif self._availability_state == "present" and self._followup_pending:
+        if self._availability_enabled and self._followup_pending:
             self._mcp_server.instructions = FOLLOWUP_START + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
+        elif self._availability_state == "empty":
+            self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
+
+    async def run_stdio_async(self):
+        await self._initialize_routing()
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
