@@ -109,17 +109,22 @@ def test_only_delivered_trace_pages_count(identity):
     assert result["listed_scope"]["status"] == "complete"
 
 
-def test_embedded_structured_listing_preserves_payload_and_adds_plan(identity):
-    server = create(identity, ["settings.py"], scope_list_tool="files")
+@pytest.mark.parametrize("listing", ["settings.py", "settings.py\nsettings.py"])
+def test_embedded_structured_listing_preserves_payload_and_adds_plan(identity, listing):
+    server = create(identity, ["settings.py"], scope_list_tool="files", remaining_units=lambda: 1)
 
     @server.tool(structured_output=True)
     def files() -> str:
-        return "settings.py"
+        return listing
 
     content, structured = asyncio.run(server.call_tool("files", {}))
-    assert structured == {"result": "settings.py"} and content[0].text == "settings.py"
+    assert structured == {"result": listing} and content[0].text == listing
     action = json.loads(content[1].text)["scope_read_plan"]
-    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+    assert action["arguments"]["batch"] == [{"path": "settings.py"}]
+    receipt = read(server, **action["arguments"])["listed_scope"]
+    assert receipt == {"status": "complete", "listed_files": 1}
+    content, _ = asyncio.run(server.call_tool("files", {}))
+    assert json.loads(content[1].text)["scope_read_plan"] == receipt
 
 
 def test_coverage_only_joins_contiguous_pages_of_the_same_file_version(identity):

@@ -71,6 +71,8 @@ class SourceScope:
 
     def plan(self, listed):
         self.evidence._authorize()
+        # An embedded inventory may repeat a path. Plan one read per distinct file.
+        listed = list(dict.fromkeys(listed))
         self.listed = (bool(self.paths) and set(listed) == self.paths
                        and all(_public_path(p) for p in self.paths))
         if not self.listed:
