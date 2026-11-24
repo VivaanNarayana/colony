@@ -211,7 +211,9 @@ class TaskMCP(FastMCP):
             with self.evidence._lock:
                 before = scope.versions(paths) if scope is not None else None
                 track = before is not None or self._may_publish
-                with self.evidence.track_deliveries() if track else nullcontext() as pages:
+                deliveries = (self.evidence.track_deliveries(file_positions=scope is not None)
+                              if track else nullcontext())
+                with deliveries as pages:
                     response = operation()
                 results = response.get("results", [response])
                 if self._binding_cue_pending and len({

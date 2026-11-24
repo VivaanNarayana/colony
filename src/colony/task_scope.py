@@ -4,7 +4,7 @@ import re
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
 
-from colony.evidence_refs import BATCH_CONTENT_BYTES
+from colony.evidence_refs import batch_allowances
 from colony.task_reads import _public_path
 from colony.validation import repo_file
 
@@ -64,11 +64,12 @@ def containment_question(question):
 
 @dataclass(frozen=True)
 class _Span:
-    """Half-open character offsets and the bounded UTF-8 byte count after stop."""
+    """Half-open normalized character and byte intervals; -1 marks the first line start."""
 
     start: int
     stop: int
-    bytes_left: int
+    byte_start: int
+    byte_stop: int
 
 
 @dataclass
@@ -76,23 +77,23 @@ class _Coverage:
     version: tuple
     digest: str
     length: int
+    byte_length: int
     redacted: bool
     spans: list[_Span] = field(default_factory=list)
 
-    def add(self, start: int, stop: int, bytes_left: int):
+    def add(self, span: _Span):
         # Intervals are sorted and disjoint. Merge touching or overlapping deliveries.
-        first = bisect_left(self.spans, start, key=lambda span: span.stop)
-        end = bisect_right(self.spans, stop, lo=first, key=lambda span: span.start)
+        first = bisect_left(self.spans, span.start, key=lambda item: item.stop)
+        end = bisect_right(self.spans, span.stop, lo=first, key=lambda item: item.start)
         if first < end:
-            start = min(start, self.spans[first].start)
-            last = self.spans[end - 1]
-            if last.stop >= stop:
-                stop, bytes_left = last.stop, last.bytes_left
-        self.spans[first:end] = [_Span(start, stop, bytes_left)]
+            left, right = self.spans[first], self.spans[end - 1]
+            span = _Span(min(left.start, span.start), max(right.stop, span.stop),
+                         min(left.byte_start, span.byte_start), max(right.byte_stop, span.byte_stop))
+        self.spans[first:end] = [span]
 
     @property
     def prefix(self) -> _Span | None:
-        return self.spans[0] if self.spans and self.spans[0].start == 0 else None
+        return self.spans[0] if self.spans and self.spans[0].start == -1 else None
 
     @property
     def at_eof(self):
@@ -175,20 +176,27 @@ class SourceScope:
         if not fits_quota or len(pending) > 8:
             return partial
         batch = []
-        remaining_bytes = 0
+        sizes, needed = [], []
         for path in pending:
             version = versions[path] if path in versions else self.version(path)
             if version is None:
                 return partial
             coverage = self.covered.get(path)
             prefix = coverage.prefix if coverage else None
-            remaining_bytes += prefix.bytes_left if prefix else version[-1]
-            if remaining_bytes > BATCH_CONTENT_BYTES:
-                return partial
+            offset_bytes = prefix.byte_stop if prefix else 0
+            length = coverage.byte_length if coverage else version[-1]
+            # The read stages the suffix to EOF, even if a shorter delivery can
+            # meet an observed tail. Interior islands still require bridging.
+            tail = coverage.spans[-1] if coverage else None
+            gap_end = tail.byte_start if tail and tail.stop == coverage.length else length
+            sizes.append(length - offset_bytes)
+            needed.append(gap_end - offset_bytes)
             entry = {"path": path}
             if prefix and prefix.stop:
                 entry["offset"] = prefix.stop
             batch.append(entry)
+        if any(required > share for required, share in zip(needed, batch_allowances(sizes), strict=True)):
+            return partial
         return {"next_tool": "read", "arguments": {"batch": batch}}
 
     def versions(self, requested):
@@ -212,13 +220,17 @@ class SourceScope:
             if prior and prior.digest != page.digest:
                 del self.covered[path]
                 prior = None
-            if not page.whole_range or page.planning_bytes_from_offset is None:
+            position = page.position
+            if position is None:
                 continue
             if prior is None:
-                prior = _Coverage(after[path], page.digest, page.span_length, page.redacted)
-            bytes_left = min(BATCH_CONTENT_BYTES + 1,
-                             page.planning_bytes_from_offset - len(result["content"].encode("utf-8")))
-            prior.add(page.offset, end_offset, bytes_left)
+                prior = _Coverage(after[path], page.digest, position.length, position.byte_length, page.redacted)
+            # A page beginning at its declared line start also establishes the
+            # preceding separator (or BOF). This distinguishes omitted blank lines.
+            start = position.offset - int(page.offset == 0)
+            byte_start = max(0, position.byte_offset - int(page.offset == 0))
+            prior.add(_Span(start, position.offset + (end_offset - page.offset), byte_start,
+                            position.byte_offset + len(result["content"].encode("utf-8"))))
             self.covered[path] = prior
 
     def receipt(self):

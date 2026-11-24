@@ -39,10 +39,12 @@ Hosts with restricted reads should supply their metadata authorization predicate
 and admission path.
 
 After a matching listing, `listed_scope` reports coverage of the fixed inventory as
-delivered, including inventories that require multiple batches. Pages from separate reads,
-batches and traces can arrive in any order. Once they cover the same version from start
-to finish without gaps, the file counts as fully read, subject to redaction.
+delivered, including inventories that require multiple batches. Line ranges and pages
+from separate reads, batches and traces can arrive in any order. Once they cover the
+same version from start to finish without gaps, the file counts as fully read, subject to redaction.
 The first matching listing also credits earlier reads whose authorized file versions still match.
+If the end of a file was read first, the planner can request the missing prefix when
+that file's share of the batch reaches the observed tail.
 Coverage is tracked even when the publication reference cache is full.
 Denied, redacted and incomplete files leave gaps. A refreshed listing can continue a
 partially delivered redacted file. After its last page, the gap stays visible and the

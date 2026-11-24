@@ -497,8 +497,9 @@ Collector and original/copied fixture hashes are rechecked before dispatch.
 Live preflight and execution require the exact complete active collector file/hash
 binding, including when called through their direct entrypoints. Missing, empty or
 mismatched bindings fail before local team provisioning, credential copying or
-model dispatch. This includes the shared output-contract implementation: changing
-it requires a fresh protocol rather than silently changing a frozen campaign.
+model dispatch. The pins cover the shared output contract and the collector's installed
+`colony.report_io` and `colony.product_value` modules, which parse native logs and count
+gross tokens. Native reporting checks the same pins. Changing these files requires a fresh protocol.
 
 Select one workload for 14 sessions (two learning and five reuse tasks times two
 arms); the default two lineages require 28 sessions per track. The manifest records exact limits; these

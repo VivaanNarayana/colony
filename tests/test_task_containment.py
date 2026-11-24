@@ -227,6 +227,85 @@ def test_later_reads_bridge_disjoint_multibyte_pages(identity):
     assert read(server, path=path.name, offset=16000)["listed_scope"]["status"] == "complete"
 
 
+@pytest.mark.parametrize("order", [(1, 3), (3, 1)])
+def test_adjacent_line_ranges_complete_scope_on_last_unit(identity, order):
+    _, repo, _ = identity
+    path = repo / "ranges.txt"
+    path.write_bytes("one\r\n\r\n水\r\nfour\r\n".encode())
+    units = [True] * 3
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    assert plan(server)["next_tool"] == "read"
+    first, second = [read(server, path=path.name, start=n, end=n + 1) for n in order]
+    assert {first["content"], second["content"]} == {"one\n", "水\nfour"}
+    assert first["listed_scope"]["status"] == "partial"
+    assert second["listed_scope"] == {"status": "complete", "listed_files": 1}
+    assert not units
+
+
+def test_missing_blank_line_and_clipped_range_stay_open_until_delivered(identity):
+    _, repo, _ = identity
+    path = repo / "ranges.txt"
+    path.write_bytes(("\r\n\r\n" + "水" * 6000 + "\r\nend").encode())
+    server = create(identity, [path.name])
+    plan(server)
+    for line in (1, 4):
+        assert read(server, path=path.name, start=line, end=line)["listed_scope"]["status"] == "partial"
+    first = read(server, path=path.name, start=3, end=3)
+    assert first["next_offset"] == 5333
+    assert read(server, path=path.name, start=3, end=3,
+                offset=first["next_offset"])["listed_scope"]["status"] == "partial"
+    assert read(server, path=path.name, start=2, end=2)["listed_scope"]["status"] == "complete"
+
+
+def test_range_continuation_uses_normalized_coordinates_and_one_version(identity):
+    _, repo, _ = identity
+    path = repo / "ranges.txt"
+    path.write_bytes(("水\r\n" + "z" * 14000 + "\r\nend").encode())
+    server = create(identity, [path.name])
+    plan(server)
+    read(server, path=path.name, start=1, end=1)
+    path.write_bytes(("🌱🌱\r\n" + "z" * 14000 + "\r\nend").encode())
+    assert read(server, path=path.name, start=3)["listed_scope"]["status"] == "partial"
+    assert plan(server)["arguments"] == {"batch": [{"path": path.name}]}
+    read(server, path=path.name, start=1, end=1)
+    action = plan(server)
+    assert action["arguments"] == {"batch": [{"path": path.name, "offset": 2}]}
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.parametrize("char,gap", [("a", 12000), ("🌱", 3000), ("a", 16000)])
+def test_plan_bridges_an_observed_tail_with_one_source_unit(identity, char, gap):
+    _, repo, _ = identity
+    path = repo / "tail.txt"
+    path.write_bytes((char * (24000 // len(char.encode()))).encode())
+    units = [True] * 3
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    read(server, path=path.name, offset=gap)
+    action = plan(server)
+    assert action == {"next_tool": "read", "arguments": {"batch": [{"path": path.name}]}}
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+    assert not units
+
+
+@pytest.mark.parametrize("gaps,fits", [((10000, 6000), False), ((8000, 8000), True)])
+def test_bridge_plan_respects_each_files_share_of_batch(identity, gaps, fits):
+    _, repo, _ = identity
+    paths = ["left.txt", "right.txt"]
+    server = create(identity, paths)
+    for path, gap in zip(paths, gaps, strict=True):
+        (repo / path).write_bytes(b"x" * 20000)
+        read(server, path=path, offset=gap)
+    action = plan(server)
+    if fits:
+        assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+    else:
+        assert action["status"] == "partial"
+        result = read(server, batch=[{"path": p} for p in paths])
+        assert result["listed_scope"]["unverified_paths"] == [paths[0]]
+
+
 def test_relisting_plans_only_the_undelivered_suffixes(identity):
     _, repo, _ = identity
     paths = ["README.md", "settings.py"]

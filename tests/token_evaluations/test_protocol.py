@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from colony import product_value, report_io
 from scripts.token_evaluation.output import OUTPUT_CONTRACT
 from scripts.token_evaluation.protocol import (
     ATTEMPT_ID_PATTERN,
@@ -36,6 +37,20 @@ def test_valid_and_source_start(tmp_path):
     value['workloads'][0]['tasks'][0]['snapshot'] = 'v2'
     with pytest.raises(ValueError, match='initial source'):
         validate_manifest(value)
+
+
+@pytest.mark.parametrize("module", [product_value, report_io])
+def test_frozen_collector_detects_imported_accounting_module_drift(tmp_path, monkeypatch, module):
+    installed = Path(module.__file__)
+    active = tmp_path / installed.name
+    active.write_bytes(installed.read_bytes())
+    monkeypatch.setattr(module, "__file__", str(active))
+    frozen = manifest(tmp_path)
+    validate_manifest(frozen)
+    with active.open("ab") as source:
+        source.write(b"\n# changed collector installation\n")
+    with pytest.raises(ValueError, match="complete active collector"):
+        validate_manifest(frozen)
 
 
 @pytest.mark.parametrize('mcp,setup', [(['--context-budget', '100'], []), (['--context-budget', '100'], ['--context-budget', '200']), (['--context-budget', '100', '--context-budget', '100'], ['--context-budget', '100'])])

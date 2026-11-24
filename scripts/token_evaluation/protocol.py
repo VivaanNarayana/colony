@@ -6,6 +6,8 @@ import json
 import re
 from pathlib import Path
 
+from colony import product_value, report_io
+
 from .output import validate_output
 from .rubrics import DIMENSIONS
 
@@ -61,7 +63,8 @@ def validate_contract(manifest):
 def collector_hashes():
     collector = Path(__file__).resolve().parent
     files = [*sorted(collector.glob("*.py")), collector.parent / "token_evaluation.py",
-             collector.parent / "native_host_trace.py", collector.parent / "token_observability.py"]
+             collector.parent / "native_host_trace.py", collector.parent / "token_observability.py",
+             Path(product_value.__file__).resolve(), Path(report_io.__file__).resolve()]
     return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
 
 

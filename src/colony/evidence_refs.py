@@ -7,12 +7,28 @@ import threading
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
+from itertools import islice
 
 from colony.models import Source
 from colony.security import PATTERNS, fingerprint, scrub, verify
 from colony.validation import MAX_SOURCE_BYTES, PinnedSourcePaths, repo_contents, repo_file
 
 BATCH_CONTENT_BYTES = 16_000
+
+
+def batch_allowances(sizes: list[int]) -> list[int]:
+    """Share the read budget in request order, redistributing unused bytes."""
+    allowances = [0] * len(sizes)
+    remaining = BATCH_CONTENT_BYTES
+    active = [i for i, size in enumerate(sizes) if size]
+    while active and remaining:
+        share, extra = divmod(remaining, len(active))
+        for position, i in enumerate(active):
+            amount = min(sizes[i] - allowances[i], share + (position < extra))
+            allowances[i] += amount
+            remaining -= amount
+        active = [i for i in active if allowances[i] < sizes[i]]
+    return allowances
 
 
 class EvidenceError(ValueError):
@@ -72,6 +88,25 @@ class _Observation:
 
 
 @dataclass(frozen=True)
+class _FilePosition:
+    """Absolute coordinates in the scrubbed, newline-normalized file."""
+
+    offset: int
+    byte_offset: int
+    length: int
+    byte_length: int
+
+    @classmethod
+    def for_range(cls, lines, start, offset, span, whole_range):
+        normalized = span if whole_range else "\n".join(lines)
+        absolute = offset + sum(len(line) + 1 for line in islice(lines, start - 1))
+        if normalized.isascii():
+            return cls(absolute, absolute, len(normalized), len(normalized))
+        return cls(absolute, len(normalized[:absolute].encode("utf-8")),
+                   len(normalized), len(normalized.encode("utf-8")))
+
+
+@dataclass(frozen=True)
 class _PreparedRead:
     owner: object
     ref: str
@@ -82,7 +117,7 @@ class _PreparedRead:
     span_length: int
     whole_range: bool
     redacted: bool
-    planning_bytes_from_offset: int | None
+    position: _FilePosition | None
     content: bytes
     expires: float
     target: str | None
@@ -109,19 +144,21 @@ class EvidenceSession:
         # reference but can never attach a file or omit a delivered dependency.
         self._overflow_buckets = set()
         self._deliveries = None
+        self._track_file_positions = False
         self._closed = False
         self._lock = threading.RLock()
 
     @contextmanager
-    def track_deliveries(self):
+    def track_deliveries(self, *, file_positions=False):
         """Observe only finalized pages in one local operation, even without a publish handle."""
         with self._lock:
-            previous = self._deliveries
+            previous = self._deliveries, self._track_file_positions
             self._deliveries = []
+            self._track_file_positions = file_positions
             try:
                 yield self._deliveries
             finally:
-                self._deliveries = previous
+                self._deliveries, self._track_file_positions = previous
 
     def _identity(self):
         w = self.workflow
@@ -187,15 +224,11 @@ class EvidenceSession:
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
             whole_range = start == 1 and last == len(lines)
-            planning_bytes = None
-            if self._deliveries is not None and whole_range:
-                # Each character uses at least one byte. Beyond this page plus one
-                # batch, the remaining suffix cannot fit even if this page is delivered in full.
-                window = span[offset:offset + _max_bytes + BATCH_CONTENT_BYTES + 1]
-                planning_bytes = len(window) if window.isascii() else len(window.encode("utf-8"))
+            position = (_FilePosition.for_range(lines, start, offset, span, whole_range)
+                        if self._track_file_positions else None)
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
                                      offset, len(span), whole_range, text != original,
-                                     planning_bytes, content,
+                                     position, content,
                                      time.monotonic() + self._ttl,
                                      str(target) if self.path_allowed is not None or self._deliveries is not None else None)
             if _defer_reference:
@@ -261,18 +294,8 @@ class EvidenceSession:
                 except EvidenceError:
                     prepared.append(None)
             sizes = [len(p.content) if p is not None else 0 for p in prepared]
-            allowances = [0] * len(sizes)
-            remaining = BATCH_CONTENT_BYTES
-            active = [i for i, size in enumerate(sizes) if size]
-            while active and remaining:
-                share, extra = divmod(remaining, len(active))
-                for position, i in enumerate(active):
-                    amount = min(sizes[i] - allowances[i], share + (position < extra))
-                    allowances[i] += amount
-                    remaining -= amount
-                active = [i for i in active if allowances[i] < sizes[i]]
             results = []
-            for value, allowance in zip(prepared, allowances, strict=True):
+            for value, allowance in zip(prepared, batch_allowances(sizes), strict=True):
                 try:
                     if value is None:
                         raise EvidenceError("Evidence unavailable")

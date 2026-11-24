@@ -2,6 +2,7 @@
 import hashlib
 import json
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -420,13 +421,13 @@ def native_receipt_control(root, quality, *, source_bytes=b"TIMEOUT = 1500\n", e
     return collection
 
 
-@pytest.mark.parametrize("entrypoint", ["mask", "report"])
-def test_native_scoring_rejects_changed_collector_before_new_artifact(run, entrypoint):
+@pytest.mark.parametrize("entrypoint,pin", [("mask", "report_io.py"), ("report", "product_value.py")])
+def test_native_scoring_rejects_changed_collector_before_new_artifact(run, entrypoint, pin):
     root, quality, _ = run
     native_receipt_control(root, quality)
     frozen = json.loads((root / "run.json").read_text())
     files = frozen["protocol"]["collector"]["files"]
-    files[next(iter(files))] = "0" * 64
+    files[next(path for path in files if Path(path).name == pin)] = "0" * 64
     frozen["protocol_sha256"] = digest(frozen["protocol"])
     put(root / "run.json", frozen)
     with pytest.raises(ValueError, match="complete active collector"):
