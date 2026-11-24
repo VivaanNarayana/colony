@@ -51,8 +51,11 @@ RESEARCH_GUIDANCE = (
 )
 FOLLOWUP_ROUTE = "For a follow-up, use saved work first if it can replace discovery. "
 PRESENT_FOLLOWUP_ROUTE = (
-    "Start this follow-up with research before listing or reading files. Scoped memory has saved work. "
+    "Scoped memory had saved work at the last check. If source discovery has not started, call research first. "
     "Cite validated current_repository_reads directly; use sources for a miss, gap, or conflict. "
+)
+FOLLOWUP_START = (
+    "Before source discovery on this follow-up, call research first if its current tool description reports saved work. "
 )
 EMPTY_ROUTE = "Memory was empty at task startup. Go directly to sources unless you need a later publication. "
 READ_ROUTING = (
@@ -81,7 +84,7 @@ _DEFAULT_VALUE = re.compile(
 _PRIOR_WORK = re.compile(
     r"^(?:(?:for|in|under|using|with|given) (?:the|that) (?:same|previous|earlier) "
     r"(?:[\w-]+ ){0,3}(?:setup|scenario|case|configuration|deployment|environment|workflow|example)\b|"
-    r"following up\b|as (?:before|above)\b|based on (?:our|the) (?:previous|earlier) (?:work|findings?)\b)",
+    r"following up(?: on\b|[,.:])|as (?:before|above)\b|based on (?:our|the) (?:previous|earlier) (?:work|findings?)\b)",
     re.IGNORECASE,
 )
 
@@ -365,7 +368,7 @@ class TaskMCP(FastMCP):
         if self._availability_state == "empty":
             self._mcp_server.instructions = EMPTY_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
         elif self._availability_state == "present" and self._followup_pending:
-            self._mcp_server.instructions = PRESENT_FOLLOWUP_ROUTE + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
+            self._mcp_server.instructions = FOLLOWUP_START + self._base_instructions.removeprefix(FOLLOWUP_ROUTE)
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(

@@ -19,6 +19,7 @@ from colony.workflow import Workflow
     ("For the same deployment, explain its rollout.", "unknown", None, False),
     ("For the same deployment, explain its rollout.", "present", "settings.py", False),
     ("For the same input, compare both implementations.", "present", None, False),
+    ("Following up-to-date runbooks, explain how the deployment rolls back.", "present", None, False),
     ("Explain the retry limit.", "present", None, False),
 ])
 def test_saved_work_route_is_scoped_to_first_followup_action(identity, monkeypatch, question, state, path, expect_route):
