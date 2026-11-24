@@ -117,7 +117,11 @@ def test_publication_pins_named_delivered_scope_files(identity, monkeypatch, cha
         assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
 
 
-def test_quoted_path_does_not_pin_an_unrelated_suffix(identity, monkeypatch):
+@pytest.mark.parametrize("scope", [
+    "`docs/release notes.md`", "`docs/release notes.md`,settings.py",
+    "settings.py;`docs/release notes.md`", "(`docs/release notes.md`),`settings.py`",
+])
+def test_quoted_path_does_not_pin_an_unrelated_suffix(identity, monkeypatch, scope):
     client, repo, _ = identity
     sent = []
     monkeypatch.setattr(client, "push", lambda trail, **kw: sent.append(trail) or {"stored": True})
@@ -130,7 +134,7 @@ def test_quoted_path_does_not_pin_an_unrelated_suffix(identity, monkeypatch):
         reply = await server.call_tool("read", {"batch": [{"path": p} for p in paths]})
         ref = json.loads(reply[0].text)["results"][0]["evidence_ref"]
         (repo / "notes.md").write_text("Unrelated change")
-        reply = await server.call_tool("publish", {"content": "finding", "applicability": "`docs/release notes.md`",
+        reply = await server.call_tool("publish", {"content": "finding", "applicability": scope,
                                                    "evidence_refs": [ref]})
         assert json.loads(reply[0].text)["stored"]
     asyncio.run(check())

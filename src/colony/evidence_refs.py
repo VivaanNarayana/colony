@@ -17,6 +17,40 @@ class EvidenceError(ValueError):
     """Fixed public error; never includes rejected paths or source content."""
 
 
+_SCOPE_START = re.compile(r"[^\s,;]")
+_SCOPE_WORD = re.compile(r"\S+")
+_SCOPE_ITEM = re.compile(r"[^\s,;]+")
+_QUOTED_PATH = re.compile(r"""[([{"']*`([^`\r\n]+)`[.:!?)\]}"']*(?=[\s,;]|$)""")
+
+
+def _scope_paths(text, known, overflow):
+    """Read a prose list of paths; preserve exact filenames before interpreting markup."""
+    named = set()
+    offset = 0
+    while start := _SCOPE_START.search(text, offset):
+        pos = start.start()
+        word = _SCOPE_WORD.match(text, pos)
+        raw = word[0]
+        stripped = raw.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
+        literal = raw if raw in known else stripped
+        if literal in known:
+            named.add(literal)
+            offset = word.end()
+            continue
+        # An overflow fingerprint is conservative; still parse the other list items.
+        named.update(x for x in (raw, stripped) if hash(x) % 4096 in overflow)
+        quoted = _QUOTED_PATH.match(text, pos)
+        if quoted:
+            named.add(quoted[1])
+            offset = quoted.end()
+            continue
+        item = _SCOPE_ITEM.match(text, pos)
+        name = item[0]
+        named.add(name if name in known else name.lstrip("([{\"'").rstrip(".:!?)]}\"'"))
+        offset = item.end()
+    return named
+
+
 @dataclass(frozen=True)
 class _Observation:
     ref: str
@@ -281,24 +315,7 @@ class EvidenceSession:
         # Use whole repository-relative path tokens. Backticks allow spaces and
         # extensionless files. Never resolve free-form text against the filesystem.
         with self._lock:
-            # Consume a whole bare token or a whole quoted path, never examine
-            # fragments inside a filename. Look for an exact delivered name first.
-            tokens = r"""[([{"']*`([^`\r\n]+)`[.,;:!?)\]}"']*(?=\s|$)|\S+"""
-            named = set()
-            for token in re.finditer(tokens, applicability):
-                word = token[0]
-                if word in self._task_versions:
-                    named.add(word)
-                    continue
-                if hash(word) % 4096 in self._overflow_buckets:
-                    named.add(word)
-                stripped = word.lstrip("([{\"'").rstrip(".,;:!?)]}\"'")
-                named.add(stripped)
-                if stripped not in self._task_versions:
-                    if token[1] is not None:
-                        named.add(token[1])
-                    else:
-                        named.update(re.split("[,;]", stripped))
+            named = _scope_paths(applicability, self._task_versions, self._overflow_buckets)
             selected = {self._observations[h].ref for h in references if h in self._observations}
             named.difference_update(selected)
             extra = {}
