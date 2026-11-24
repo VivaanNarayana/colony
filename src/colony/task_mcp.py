@@ -50,16 +50,17 @@ RESEARCH_GUIDANCE = (
     "Skip confirmation and pre-publication lookups."
 )
 FOLLOWUP_ROUTE = "For a follow-up, use saved work first if it can replace discovery. "
-PRESENT_ROUTE = (
-    "Scoped memory contained saved work at last check. For a follow-up about a previously traced setup, "
+PRESENT_STATUS = "Scoped memory contained saved work at last check. "
+PRESENT_ROUTE = PRESENT_STATUS + (
+    "For a follow-up about a previously traced setup, "
     "call research first, before any lookup or source discovery. Cite validated current_repository_reads directly. "
     "For other tasks or remaining gaps, use current sources."
 )
 FOLLOWUP_START = (
     "For a follow-up about previously traced work, call research before source discovery "
-    "if its current tool description reports saved work. "
+    "when its current tool description recommends starting there. "
 )
-EMPTY_ROUTE = "Memory was empty at task startup. Start with sources unless a newer research tool description reports saved work for a follow-up. "
+EMPTY_ROUTE = "Memory was empty at task startup. Start with sources unless the current research tool recommends a first lookup for a follow-up. "
 READ_ROUTING = (
     "Read known paths directly and batch independent reads within the allowance. "
     "Once sources answer the question, finish without a memory check. Investigate actual gaps. "
@@ -314,21 +315,27 @@ class TaskMCP(FastMCP):
         self.add_tool(publish, annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
                       structured_output=False)
 
-    async def _refresh_availability(self):
-        if not self._availability_enabled:
-            return False
-        async with self._availability_lock:
-            return await self._read_availability()
-
-    async def _read_availability(self):
-        # Revalidate identity even while the time-bounded hint is cached.
+    def _cached_availability(self):
+        # None means an authorized refresh is needed. A bool reports a catalog change.
         try:
             self.evidence._authorize()
         except EvidenceError:
-            state = "unknown"
-        else:
-            if time.monotonic() < self._availability_until:
-                return False
+            self._availability_generation += 1
+            return self._set_availability("unknown")
+        if time.monotonic() < self._availability_until:
+            return False
+        return None
+
+    async def _refresh_availability(self):
+        if not self._availability_enabled:
+            return False
+        cached = self._cached_availability()
+        if cached is not None:
+            return cached
+        async with self._availability_lock:
+            cached = self._cached_availability()
+            if cached is not None:
+                return cached
             self._availability_generation += 1
             generation = self._availability_generation
             try:
@@ -341,6 +348,9 @@ class TaskMCP(FastMCP):
                 return False  # A publication invalidated this in-flight snapshot.
             if state not in ("empty", "present"):
                 state = "unknown"
+            return self._set_availability(state)
+
+    def _set_availability(self, state):
         changed = state != self._availability_state
         self._availability_state = state
         self._availability_until = time.monotonic() + (3 if state == "empty" else 30)
@@ -352,12 +362,12 @@ class TaskMCP(FastMCP):
     async def list_tools(self):
         await self._refresh_availability()
         tools = await super().list_tools()
-        if self._availability_state == "empty" or self._warm_start() or self._scope is not None:
+        if self._availability_state in ("empty", "present") or self._scope is not None:
             # Replace only routing, preserving adaptive budget details and the live tool.
             if self._scope is not None:
                 route = "Use current files for repository containment. A memory miss cannot establish absence."
             elif self._availability_state == "present":
-                route = PRESENT_ROUTE
+                route = PRESENT_ROUTE if self._warm_start() else PRESENT_STATUS + RESEARCH_GUIDANCE
             else:
                 route = "Scoped memory was empty at last check. Use source tools unless checking a later publication."
             tools = [t.model_copy(update={"description": (t.description or "").replace(RESEARCH_GUIDANCE, route, 1)})

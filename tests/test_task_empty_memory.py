@@ -8,7 +8,7 @@ from test_workflow import identity as identity
 
 from colony.models import Scope
 from colony.security import issue
-from colony.task_mcp import EMPTY_ROUTE, FOLLOWUP_START, PRESENT_ROUTE, TaskMCP
+from colony.task_mcp import EMPTY_ROUTE, FOLLOWUP_START, PRESENT_ROUTE, PRESENT_STATUS, TaskMCP
 from colony.workflow import Workflow
 
 
@@ -34,6 +34,7 @@ def test_current_catalog_routes_prior_work_without_looking_it_up(identity, monke
         assert await server.call_tool("read", {"path": "settings.py"})
         tools = {t.name: t for t in await server.list_tools()}
         assert PRESENT_ROUTE not in tools["research"].description
+        assert PRESENT_STATUS in tools["research"].description
         assert "resolve a gap" in tools["research"].description
 
     asyncio.run(check())
@@ -122,6 +123,36 @@ def test_concurrent_catalogs_share_one_current_presence_probe(identity, monkeypa
             desc = next(t.description for t in tools if t.name == "research")
             assert "empty at last check" in desc
         assert probes == [1]
+
+    asyncio.run(check())
+
+
+def test_source_read_uses_new_snapshot_while_old_probe_is_pending(identity, monkeypatch):
+    import threading
+
+    client, repo, _ = identity
+    started, release = threading.Event(), threading.Event()
+
+    def probe(*args):
+        started.set()
+        assert release.wait(3)
+        return "present"
+
+    monkeypatch.setattr(client, "memory_availability", probe)
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: {"hit": False})
+    server = TaskMCP(Workflow(client, "team", repo), "Summarize the earlier trace.")
+    server._availability_enabled = True
+
+    async def check():
+        catalog = asyncio.create_task(server.list_tools())
+        assert await asyncio.to_thread(started.wait, 3)
+        try:
+            await server.call_tool("research", {})
+            result = await asyncio.wait_for(server.call_tool("read", {"path": "settings.py"}), 1)
+            assert json.loads(result[0].text)["content"]
+        finally:
+            release.set()
+        assert PRESENT_STATUS not in next(t.description for t in await catalog if t.name == "research")
 
     asyncio.run(check())
 
