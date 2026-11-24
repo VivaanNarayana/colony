@@ -115,7 +115,13 @@ def test_publication_pins_named_delivered_scope_files(identity, monkeypatch, cha
                   content="Behavior of the configured application.", evidence_refs=[pages[1]["evidence_ref"]])
     assert result["stored"] is (not change)
     if change:
-        assert not sent
+        assert not sent and result["reason"] == "scope_evidence_required"
+        assert "publish" in {t.name for t in asyncio.run(server.list_tools())}
+        updated = call("read", path="settings.py")
+        corrected = call("publish", applicability="settings.py", content="Updated configuration",
+                         evidence_refs=[pages[1]["evidence_ref"], updated["evidence_ref"]])
+        assert corrected["stored"] and len(sent) == 1
+        assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
     else:
         assert {s.ref for s in sent[0].sources} == {"settings.py", "README.md"}
 

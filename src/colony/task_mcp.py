@@ -327,18 +327,19 @@ class TaskMCP(FastMCP):
                             "max_characters": 4000, "answer_unblocked": True}
                 # One attempt per task, including unknown network outcomes. The
                 # normal client's explicit queue/replay path remains authoritative.
+                def begin_push():
+                    self._publication_attempted = True
+
                 try:
                     with self.evidence._lock:
-                        try:
-                            references = self.evidence.scoped_references(evidence_refs, applicability)
-                        except EvidenceError:
-                            return {"stored": False, "reason": "scope_evidence_required",
-                                    "answer_unblocked": True}
-                        self._publication_attempted = True
-                        return self.evidence.publish(self.question, finding, references)
-                except Exception:
-                    return {"stored": False, "reason": "publication_failed_or_outcome_unknown",
-                            "answer_unblocked": True}
+                        references = self.evidence.scoped_references(evidence_refs, applicability)
+                        return self.evidence.publish(self.question, finding, references, before_push=begin_push)
+                except Exception as exc:
+                    reason = "publication_failed_or_outcome_unknown"
+                    if not self._publication_attempted:
+                        reason = ("scope_evidence_required" if isinstance(exc, EvidenceError)
+                                  else "finding_and_scope_required")
+                    return {"stored": False, "reason": reason, "answer_unblocked": True}
 
         self.add_tool(publish, annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False),
                       structured_output=False)

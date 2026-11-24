@@ -357,7 +357,7 @@ class EvidenceSession:
                 sources[observation.ref] = Source(ref=observation.ref, content_hash=observation.digest)
             return list(sources.values())
 
-    def publish(self, question: str, content: str, references: list[str]) -> dict:
+    def publish(self, question: str, content: str, references: list[str], *, before_push=None) -> dict:
         """Use ordinary sanitized, tainted, idempotent workflow publication.
 
         A reference records a span observed, not whether a claim follows from it.
@@ -381,6 +381,8 @@ class EvidenceSession:
             options = {"repo": w.repo, "repository_id": w.repository_id} if w.repository_id else {}
             if self.path_allowed is not None:
                 options["repo"] = w.repo
+            if before_push is not None:
+                before_push()
             return w.client.push(trail, **options, **policy)
 
     def close(self):

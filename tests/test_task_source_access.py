@@ -64,7 +64,7 @@ def test_revoked_reference_cannot_publish_or_queue_and_the_answer_remains_availa
     monkeypatch.setattr(client, "push", lambda *a, **kw: pytest.fail("revoked publication"))
     result = call(server, "publish", content="A reusable finding", applicability="Worker defaults",
                   evidence_refs=[page["evidence_ref"]])
-    assert result == {"stored": False, "reason": "publication_failed_or_outcome_unknown",
+    assert result == {"stored": False, "reason": "scope_evidence_required",
                       "answer_unblocked": True}
     assert not list((client.home / "queue").glob("*.enc"))
     assert call(server, "read", path="README.md")["content"] == "TIMEOUT = 30"

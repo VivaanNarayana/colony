@@ -179,10 +179,10 @@ model. Value-only publication requires explicit remember intent. Stored
 `applicability + "\n" + content` must total at most 4,000 characters, including
 the newline. An oversized candidate returns `finding_too_large` before consuming
 the attempt or touching storage; the caller can shorten the memory and resubmit.
-If the adapter cannot attach a live reference for an additional dependency named in the scope,
-`scope_evidence_required` leaves publication available. The caller can supply a
-current reference for that dependency. Once the candidate passes these local
-checks, it consumes the task's publication attempt. Failure leaves reads and research
+If a reference expires or a cited file changes, `scope_evidence_required` leaves
+publication available. The caller can supply a current reference for that dependency.
+The attempt is consumed when the adapter calls the client to send or queue the
+validated finding. Failure leaves reads and research
 available. No automatic retry, extra model call,
 mandatory abstention message or final-answer gate is introduced. A failed network
 operation can have an unknown outcome; use the ordinary client's explicit retry
