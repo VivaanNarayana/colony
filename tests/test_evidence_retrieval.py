@@ -1,7 +1,11 @@
+import os
 import uuid
 
+import pytest
 from conftest import auth
 
+from colony.compact import PROFILE
+from colony.context_budget import count_response
 from colony.models import ContextBudget, Trail
 from colony.validation import snapshot
 
@@ -93,7 +97,15 @@ def test_compound_lookup_ranks_saved_questions_before_limiting_shared_source_set
     assert set(result["complete_files"]) == {"clock.py", "capacity.py"}
 
 
-def test_stale_dependencies_cannot_exhaust_compound_question_reranking(team, monkeypatch):
+@pytest.mark.parametrize(("release", "extra_files"), [
+    pytest.param(None, 1, id="stale"),
+    pytest.param("x" * 2801, 1, id="oversized"),
+    pytest.param("Notes.", 7, id="too_many_files"),
+    pytest.param("", 1, id="empty"),
+])
+def test_undeliverable_dependencies_cannot_exhaust_compound_question_reranking(
+    team, monkeypatch, release, extra_files
+):
     from colony import store
 
     app, api, repo, _, key = team
@@ -106,11 +118,16 @@ def test_stale_dependencies_cannot_exhaust_compound_question_reranking(team, mon
                      content="Cache behavior.", sources=shared)
     api.post("/trails", json=original.model_dump(), headers=auth(key)).raise_for_status()
     for i in range(store.CANDIDATES):
-        (repo / "release.txt").write_text(f"Release {i}.")
+        extra = []
+        for n in range(extra_files):
+            path = f"release{n}.txt"
+            (repo / path).write_text(f"Release {i}." if release is None else release)
+            extra.append(snapshot(repo, path))
         newer = original.model_copy(update={"id": uuid.uuid4().hex,
-                                            "sources": [*shared, snapshot(repo, "release.txt")]})
+                                            "sources": [*shared, *extra]})
         api.post("/trails", json=newer.model_dump(), headers=auth(key)).raise_for_status()
-    (repo / "release.txt").write_text("Next release.")
+    if release is None:
+        (repo / "release0.txt").write_text("Next release.")
 
     ranked_questions = []
 
@@ -124,6 +141,66 @@ def test_stale_dependencies_cannot_exhaust_compound_question_reranking(team, mon
     assert result and result["id"] == original.id and result["status"] == "validated"
     assert set(result["complete_files"]) == {"clock.py", "capacity.py"}
     assert ranked_questions == [learned]
+
+
+@pytest.mark.parametrize(("newer_count", "encoding", "limit"), [
+    (1, "utf8_bytes", 2048), (12, "utf8_bytes", 2048), (12, "o200k_base", 512),
+])
+def test_compound_ask_selects_highest_ranked_complete_bundle_that_fits(
+    team, monkeypatch, newer_count, encoding, limit
+):
+    from colony import store
+
+    app, api, repo, _, key = team
+    if encoding == "o200k_base":
+        pytest.importorskip("tiktoken")
+        tokenizer = os.environ.get("COLONY_TEST_CONTEXT_TOKENIZER")
+        if not tokenizer:
+            pytest.skip("Verified local tokenizer fixture unavailable")
+        monkeypatch.setenv("COLONY_CONTEXT_TOKENIZER", tokenizer)
+    question = "Describe cache expiration and the eviction limit."
+    learned = "What controls cache expiration and the eviction limit?"
+    (repo / "clock.py").write_text("CACHE_EXPIRATION = 900\n")
+    (repo / "capacity.py").write_text("EVICTION_LIMIT = 7\n")
+    (repo / "release.txt").write_text("Release notes.\n" * 115)
+    shared = [snapshot(repo, p) for p in ("clock.py", "capacity.py")]
+    original = Trail(id=uuid.uuid4().hex, namespace="team", question=learned,
+                     content="Historical interpretation", sources=shared)
+    api.post("/trails", json=original.model_dump(), headers=auth(key)).raise_for_status()
+    for _ in range(newer_count):
+        newest = original.model_copy(update={"id": uuid.uuid4().hex,
+                                             "sources": [*shared, snapshot(repo, "release.txt")]})
+        api.post("/trails", json=newest.model_dump(), headers=auth(key)).raise_for_status()
+
+    def rank(query, passages):
+        if learned in passages:
+            assert len(passages) <= store.CANDIDATES
+        return [-1.0 if text == learned else -9.0 for text in passages]
+
+    monkeypatch.setattr(store, "rank", rank)
+
+    def ask(limit, encoding):
+        budget = ContextBudget(max_tokens=limit, encoding=encoding)
+        # The saved prose must fail the answer gate; the learned question still
+        # locates its complementary files above the source-set similarity cutoff.
+        result = app.state.store.ask(question, ["team"], 604800, 0.81,
+                                     context_budget=budget, response_profile=PROFILE)
+        assert result["context_budget"]["used"] == count_response(result, budget) <= limit
+        return result
+
+    wide = ask(8192, encoding)
+    assert wide["id"] == newest.id and wide["match_kind"] == "evidence"
+    assert wide["evidence_scope"] == "cited_files"
+    tight = ask(limit, encoding)
+    assert tight.get("id") == original.id and tight["match_kind"] == "evidence"
+    assert tight["evidence_scope"] == "cited_files" and "content" not in tight
+    assert {r["path"]: r["content"] for r in tight["current_repository_reads"]} == {
+        "clock.py": "CACHE_EXPIRATION = 900", "capacity.py": "EVICTION_LIMIT = 7"}
+    miss = ask(256, "utf8_bytes")
+    assert not miss["hit"] and miss["reason"] == "budget_limited"
+    with app.state.store.connect() as db:
+        hits = db.execute("SELECT trail_id FROM validations WHERE validator='repo-evidence-v1'").fetchall()
+    assert sorted(r[0] for r in hits) == sorted([newest.id, original.id])
 
 
 def test_service_overview_is_not_a_procedure_but_remains_descriptive_evidence(team):

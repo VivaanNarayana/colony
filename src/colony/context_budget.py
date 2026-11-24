@@ -229,8 +229,23 @@ def _rebuild(response):
 
 def fit_response(response: dict, budget, *, question="") -> dict:
     """Bound the complete JSON payload; never trim an answer or selected block."""
+    return response_packer(budget)(response)
+
+
+def response_packer(budget, response_profile=None):
+    """Use one verified counter for all candidate responses in a lookup."""
     budget = _budget(budget)
     counter = _counter(budget)
+
+    def pack(response):
+        if response_profile is not None:
+            response = {**response, "response_profile": response_profile}
+        return _fit_response(response, budget, counter)
+
+    return pack
+
+
+def _fit_response(response, budget, counter):
     result = copy.deepcopy(response)
     limited = bool((result.pop("context_budget", None) or {}).get("limited"))
     from colony.compact import PROFILE, compact_response
