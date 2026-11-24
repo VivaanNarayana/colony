@@ -33,8 +33,8 @@ def _outer_event_type(text):
         return None
     pos += 1
     stack = bytearray([obj_first])
-    root_keys = set()
-    root_key = event_type = None
+    seen_type = reading_type = False
+    event_type = None
     while stack:
         pos = _SPACE.match(text, pos).end()
         if pos == len(text):
@@ -49,10 +49,10 @@ def _outer_event_type(text):
                 return None
             name, pos = json.decoder.scanstring(text, pos)
             if len(stack) == 1:
-                if name in root_keys:
+                reading_type = name == "type"
+                if reading_type and seen_type:
                     return None
-                root_keys.add(name)
-                root_key = name
+                seen_type |= reading_type
             stack[-1] = colon
         elif state == colon:
             if char != ":":
@@ -71,7 +71,7 @@ def _outer_event_type(text):
             stack[-1] = obj_tail if state == obj_value else arr_tail
             if char == '"':
                 value, pos = json.decoder.scanstring(text, pos)
-                if len(stack) == 1 and root_key == "type":
+                if len(stack) == 1 and reading_type:
                     event_type = value
             elif char in "{[":
                 stack.append(obj_first if char == "{" else arr_first)
@@ -83,12 +83,12 @@ def _outer_event_type(text):
     return event_type if _SPACE.match(text, pos).end() == len(text) else None
 
 
-def decode_native_event(text, *, optional_responses=True):
-    """Keep the strict depth limit for native events and optional diagnostic data."""
+def decode_native_event(text, *, optional_responses=True, decoder=json.loads):
+    """Use the caller's decoder; only omit unreadable optional response metadata."""
     try:
-        return decode(text)
-    except ValueError as exc:
-        if not optional_responses or str(exc) != "Report JSON nesting limit":
+        return decoder(text)
+    except (RecursionError, ValueError) as exc:
+        if not optional_responses or (not isinstance(exc, RecursionError) and str(exc) != "Report JSON nesting limit"):
             raise
         try:
             kind = _outer_event_type(text)

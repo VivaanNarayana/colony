@@ -9,8 +9,8 @@ from colony.validation import repo_file
 _REPO = r"(?:repo(?:sitory)?|codebase|project)"
 _VERB = r"(?:contain|include|document|mention|record|implement|define|specify|provide)"
 _ANSWER_SUFFIX = (
-    r"(?:\s*[,;(]\s*(?:(?:please\s+)?(?:answer|reply|respond)\s+)?"
-    r"(?:yes\s*(?:or|/)\s*no|true\s*(?:or|/)\s*false|briefly)\s*\)?)?"
+    r"(?:\s*(?:\([^()\r\n]*\)|[,;]\s*(?:(?:please\s+)?(?:answer|reply|respond|cite)\b[^?!.\n]*"
+    r"|yes\s*(?:or|/)\s*no|true\s*(?:or|/)\s*false|briefly)))?"
 )
 _CONTAINMENT = re.compile(
     rf"(?:\b(?:whether|if)|(?:^|[?!.:])\s*does)\s+(?:(?:this|the|our)\s+)?{_REPO}\s+{_VERB}(?:s|es)?\b"

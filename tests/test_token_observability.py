@@ -38,6 +38,7 @@ def test_unicode_line_separators_inside_jsonl_strings(tmp_path):
 
 
 def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
+    from token_evaluation.report import extract_answer
     from token_evaluation.usage import native_usage
 
     deep = []
@@ -50,6 +51,13 @@ def test_deep_optional_payload_is_not_turn_accounting(tmp_path):
     assert observed["usage_complete"] and observed["request_usage"]["status"] == "unavailable"
     with pytest.raises(ValueError, match="nesting limit"):
         analyze_bytes(path.read_bytes())
+    final = {"type": "item.completed", "item": {"type": "agent_message", "text": "done"}}
+    path.write_bytes(raw(turn([{"type": "item.completed", "item": {"type": "mcp_tool_call",
+                               "structuredContent": deep}}, final])))
+    assert extract_answer(path, "last_agent_message")["text"] == "done"
+    duplicate_metadata = '{"type":"response.completed","unused":null,"unused":' + json.dumps(deep) + '}'
+    path.write_bytes(raw(turn()).replace(b'\n', b'\n' + duplicate_metadata.encode() + b'\n', 1))
+    assert native_usage(path, request_metadata=True)["known_usage"]["gross_tokens"] == 110
     for line in (json.dumps({"type": "item.completed", "unused": deep}),
                  '{"type":"item.completed","type":"response.completed","unused":' + json.dumps(deep) + '}'):
         path.write_bytes(raw(turn()).replace(b'\n', b'\n' + line.encode() + b'\n', 1))
