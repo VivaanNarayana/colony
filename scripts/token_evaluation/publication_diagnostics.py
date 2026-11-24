@@ -3,6 +3,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from colony.report_io import jsonl_lines
+
 
 def observer_path():
     return Path(__file__).resolve().parents[1] / 'native_host_trace.py'
@@ -80,7 +82,7 @@ def observation(root, identity, expected):
     if not expected or raw is None or hashlib.sha256(raw).hexdigest() != expected:
         return unavailable
     try:
-        lines = raw.decode('utf-8').splitlines()
+        lines = jsonl_lines(raw)
         if not 1 <= len(lines) <= 257:
             return unavailable
         value = json.loads(lines[-1])

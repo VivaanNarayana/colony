@@ -179,9 +179,10 @@ model. Value-only publication requires explicit remember intent. Stored
 `applicability + "\n" + content` must total at most 4,000 characters, including
 the newline. An oversized candidate returns `finding_too_large` before consuming
 the attempt or touching storage; the caller can shorten the memory and resubmit.
-This limit never applies to the user's answer or necessary research. After an
-attempt passes the size preflight, the tool is hidden; guessed direct invocation
-is also guarded. Failure returns a fixed result and leaves reads/research
+If the adapter cannot attach a live reference for an additional dependency named in the scope,
+`scope_evidence_required` leaves publication available. The caller can supply a
+current reference for that dependency. Once the candidate passes these local
+checks, it consumes the task's publication attempt. Failure leaves reads and research
 available. No automatic retry, extra model call,
 mandatory abstention message or final-answer gate is introduced. A failed network
 operation can have an unknown outcome; use the ordinary client's explicit retry
@@ -201,7 +202,7 @@ Opt into adaptive lookup with `--context-budget 3072
 --context-encoding utf8_bytes`. The Python API accepts `context_budget=ContextBudget(...)`.
 Adaptive `research` uses the same negotiation, source verification, packing and
 wire-response cap as ordinary adaptive `ask`, with the task question bound by the
-host. When neither a saved answer nor a single passage matches, compact lookup
+host. When neither a saved answer nor a single passage provides current evidence, compact lookup
 can use a related saved question to locate a small set of cited files whose
 contents cover complementary query terms. It returns current source text after
 validating all attached sources. The usual wire budget still applies.

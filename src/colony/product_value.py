@@ -14,6 +14,7 @@ from .report_io import (
     checked_path,
     decode,
     files_under,
+    jsonl_lines,
     put,
     read,
     relative_file,
@@ -39,7 +40,7 @@ def _native_usage_bytes(source):
     known = dict.fromkeys([*FIELDS, "gross_tokens", "uncached_input_plus_output"], 0)
     active, finished, accounted, turns = False, True, True, 0
     answers, auxiliary = [], []
-    for line in source.decode("utf-8").splitlines():
+    for line in jsonl_lines(source):
         event = decode(line)
         require(isinstance(event, dict), "Native event must be an object")
         kind = event.get("type")

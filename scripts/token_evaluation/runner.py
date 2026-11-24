@@ -11,6 +11,8 @@ import time
 from collections import Counter
 from pathlib import Path, PurePosixPath
 
+from colony.report_io import jsonl_lines
+
 from .protocol import ATTEMPT_ID_PATTERN, evaluation_arms, validate_authorization
 
 
@@ -233,7 +235,7 @@ def inventory(run_dir):
     def read_rows(path):
         rows = []
         if path.exists():
-            for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            for number, line in enumerate(jsonl_lines(path.read_bytes(), errors="replace"), 1):
                 try:
                     row = json.loads(line)
                     if not isinstance(row, dict):
@@ -280,7 +282,7 @@ def inventory(run_dir):
             # Preserve independently observed nonnegative components even when the
             # canonical reader refuses a partial/malformed stream; never certify them.
             components = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
-            for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            for line in jsonl_lines(path.read_bytes(), errors="replace"):
                 try:
                     event = json.loads(line)
                 except ValueError:

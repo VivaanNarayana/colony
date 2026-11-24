@@ -443,6 +443,7 @@ def test_legacy_receipt_contract_is_rejected_without_modification(legacy_version
 @pytest.mark.parametrize("tool,reason", [
     ("publish", "finding_too_large"), ("publish", "finding_and_scope_required"),
     ("publish", "publication_not_eligible"), ("publish", "publication_failed_or_outcome_unknown"),
+    ("publish", "scope_evidence_required"),
     ("research", "lookup_unavailable"), ("research", "context_budget_invalid_receipt"),
     ("ask", "server_unavailable"),
 ])

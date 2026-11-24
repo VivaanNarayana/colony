@@ -6,6 +6,34 @@ from colony.models import ContextBudget, Trail
 from colony.validation import snapshot
 
 
+def test_stale_ranked_passage_allows_current_source_set_fallback(team, monkeypatch):
+    from colony import store
+
+    app, api, repo, _, key = team
+    question = "Describe cache expiration and the eviction limit."
+    learned = "What controls cache expiration and the eviction limit?"
+    stale = "Cache expiration and eviction limit were previously defined together."
+    for path, text in (("old.md", stale), ("clock.py", "CACHE_EXPIRATION = 900"),
+                       ("capacity.py", "EVICTION_LIMIT = 7")):
+        (repo / path).write_text(text)
+    for query, paths in ((stale, ["old.md"]), (learned, ["clock.py", "capacity.py"])):
+        trail = Trail(id=uuid.uuid4().hex, namespace="team", question=query, content="Old answer",
+                      sources=[snapshot(repo, p) for p in paths])
+        api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+
+    def rerank(query, passages):
+        if stale in passages:
+            (repo / "old.md").write_text("Changed after initial source validation")
+        return [1.0 if passage in (stale, learned) else -9.0 for passage in passages]
+
+    monkeypatch.setattr(store, "rank", rerank)
+    result = app.state.store.find_evidence(question, ["team"], 604800, context_budget=ContextBudget(),
+                                           source_set_threshold=0.6)
+    assert result["id"] == trail.id and result["status"] == "validated"
+    assert set(result["complete_files"]) == {"clock.py", "capacity.py"}
+    assert (repo / "old.md").read_text() == "Changed after initial source validation"
+
+
 def test_compound_lookup_reuses_joint_sources_only_while_current(team, monkeypatch):
     from colony import store
 

@@ -23,6 +23,20 @@ def usage(n=100):
     return {"input_tokens": n, "cached_input_tokens": n // 2, "output_tokens": 10}
 
 
+def test_unicode_line_separators_inside_jsonl_strings(tmp_path):
+    from token_evaluation.report import extract_answer
+    from token_evaluation.usage import native_usage
+
+    answer = "first\u2028second\u2029third\u0085last"
+    events = turn([response(answer), {"type": "item.completed",
+                  "item": {"type": "agent_message", "text": answer}}])
+    path = tmp_path / "events.jsonl"
+    path.write_bytes(b"\r\n".join(json.dumps(e, ensure_ascii=False).encode() for e in events) + b"\r\n")
+    assert extract_answer(path, "last_agent_message")["text"] == answer
+    assert native_usage(path)["known_usage"]["gross_tokens"] == 110
+    assert native_usage(path, request_metadata=True)["request_usage"]["reconciles_with_turn_totals"]
+
+
 def test_prospective_reader_preserves_turn_totals_and_explicit_request_metadata(tmp_path):
     from token_evaluation.usage import native_usage
 

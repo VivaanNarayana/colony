@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from colony.product_value import MAX_BYTES, _native_usage_bytes
-from colony.report_io import bounded_bytes, decode
+from colony.report_io import bounded_bytes, decode, jsonl_lines
 
 FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens")
 RESPONSE_EVENTS = {"response.created", "response.completed"}
@@ -277,7 +277,7 @@ def _tool_metadata(events):
 def analyze_bytes(source, *, optional_diagnostics=False):
     if len(source) > MAX_BYTES:
         raise ValueError("Native log exceeds size limit")
-    lines = source.decode("utf-8").splitlines()
+    lines = jsonl_lines(source)
     events = [decode(line) for line in lines]
     if any(not isinstance(e, dict) for e in events):
         raise ValueError("Native event must be an object")

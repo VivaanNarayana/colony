@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from colony.report_io import jsonl_lines
+
 from .adapters import research_call, research_units
 from .protocol import validate_evidence_policy
 from .redaction import redacted_source_lines
@@ -239,7 +241,7 @@ def evaluate_mechanisms(root, manifest, rows):
         if row.get('events_path'):
             path = Path(row['events_path'])
         else:
-            records = [json.loads(line) for line in (root / 'control' / 'attempts.jsonl').read_text(encoding='utf-8').splitlines()]
+            records = [json.loads(line) for line in jsonl_lines((root / 'control' / 'attempts.jsonl').read_bytes())]
             record = next(r for r in records if r['id'] == row['id'])
             path = root / 'logs' / record.get('result', record)['events']
         research, current_partial, stale_seen = [], [], False
@@ -253,7 +255,7 @@ def evaluate_mechanisms(root, manifest, rows):
             continue
         research_attempts, unresolved_calls = {}, set()
         turn = 0
-        for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines()):
+        for line_number, line in enumerate(jsonl_lines(path.read_bytes())):
             event = json.loads(line)
             item = event.get('item', {})
             event_type = event.get('type')

@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.types import CallToolResult, TextContent
 from test_workflow import identity as identity
 
 from colony.task_mcp import TaskMCP
@@ -34,6 +35,22 @@ def create(identity, paths, question=QUESTION, **options):
     client, repo, _ = identity
     return TaskMCP(Workflow(client, "team", repo, read_only=True), question,
                    scope_files=paths, **options)
+
+
+def test_cached_host_listing_gets_a_fresh_plan(identity):
+    server = create(identity, ["settings.py"], scope_list_tool="inventory", remaining_units=lambda: 1)
+    cached = CallToolResult(content=[TextContent(type="text", text="settings.py")])
+
+    @server.tool(structured_output=False)
+    def inventory() -> CallToolResult:
+        return cached
+
+    first = blocks(server, "inventory")
+    action = json.loads(first[1].text)["scope_read_plan"]
+    read(server, **action["arguments"])
+    second = blocks(server, "inventory")
+    assert json.loads(second[1].text)["scope_read_plan"] == {"status": "complete", "listed_files": 1}
+    assert len(cached.content) == 1 and "next_tool" in json.loads(first[1].text)["scope_read_plan"]
 
 
 @pytest.mark.parametrize("last", ["The gauge registered ninety kilopascals.", "No sensor attached."])

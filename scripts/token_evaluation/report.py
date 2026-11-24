@@ -11,6 +11,8 @@ import re
 import secrets
 from pathlib import Path
 
+from colony.report_io import jsonl_lines
+
 from .adapters import allowed_tool, research_call, research_units
 from .evidence import _objects, _research, evaluate_mechanisms, verify_current_reads
 from .output import instruction
@@ -57,7 +59,7 @@ def _require(condition, message):
 def extract_answer(events_path, policy):
     _require(policy in ("last_agent_message", "all_agent_messages"), "Unknown answer policy")
     messages, phases = [], []
-    for line in Path(events_path).read_text(encoding="utf-8").splitlines():
+    for line in jsonl_lines(Path(events_path).read_bytes()):
         event = json.loads(line)
         if event.get("type") == "item.completed":
             item = event.get("item", {})
@@ -79,7 +81,7 @@ def activity(events_path, adapter='ordinary'):
                             "research_admitted", "research_denied", "research_succeeded", "research_failed",
                             "research_receipt_calls", "research_unresolved_units"), 0)
     seen, completed, charged = {}, set(), {}
-    for number, line in enumerate(Path(events_path).read_text(encoding="utf-8").splitlines()):
+    for number, line in enumerate(jsonl_lines(Path(events_path).read_bytes())):
         event = json.loads(line)
         if event.get("type") == "turn.started":
             # Item IDs are scoped to a turn; a later turn still incurs new calls.
@@ -188,7 +190,7 @@ def _load(run_dir):
     _require(isinstance(manifest, dict), "Missing frozen protocol")
     tasks = {(w["id"], t["id"]): t for w in manifest["workloads"] for t in w["tasks"]}
     expected = {(arm, *key) for arm in evaluation_arms(manifest) for key in tasks}
-    records = [json.loads(line) for line in (root / "control" / "attempts.jsonl").read_text(encoding="utf-8").splitlines()]
+    records = [json.loads(line) for line in jsonl_lines((root / "control" / "attempts.jsonl").read_bytes())]
     invocations, results = {}, {}
     for record in records:
         identity = record["id"]
@@ -231,7 +233,7 @@ def _load(run_dir):
         workload = next(w for w in manifest["workloads"] if w["id"] == key[1])
         current = next((s for s in workload["snapshots"] if s["id"] == task.get("snapshot")), None)
         _require(isinstance(task.get("question"), str), "Missing frozen review question")
-        event_values = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        event_values = [json.loads(line) for line in jsonl_lines(path.read_bytes())]
         receipt_projection = collect_tool_receipts(event_values, current["files"] if current else {})
         rows.append({"tool_receipts_sha256": receipt_digest(receipt_projection), "id": str(identity), "arm": key[0], "workload": key[1], "task": key[2],
                      "state": state, "seconds": seconds, "phase": task["phase"],
@@ -280,10 +282,10 @@ def review_subject(run_dir, run, manifest, row, case):
             sources.append({"path": relative, "sha256": expected_hash,
                             "content": source.read_bytes().decode("utf-8")})
         journal = Path(run_dir) / "control" / "attempts.jsonl"
-        record = next(json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()
+        record = next(json.loads(line) for line in jsonl_lines(journal.read_bytes())
                       if json.loads(line)["id"] == row["id"])
-        events = [json.loads(line) for line in (Path(run_dir) / "logs" / record.get("result", record)["events"])
-                  .read_text(encoding="utf-8").splitlines()]
+        events = [json.loads(line) for line in jsonl_lines(
+            (Path(run_dir) / "logs" / record.get("result", record)["events"]).read_bytes())]
         receipt_projection = collect_tool_receipts(events, current["files"])
         # Only evidence delivered before the selected final answer is available.
         final = max((n for n, event in enumerate(events) if event.get("type") == "item.completed"
@@ -314,10 +316,10 @@ def review_subject(run_dir, run, manifest, row, case):
                              "content": "\n".join(source["content"].splitlines()[start - 1:end])})
     if not current:
         journal = Path(run_dir) / "control" / "attempts.jsonl"
-        record = next(json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()
+        record = next(json.loads(line) for line in jsonl_lines(journal.read_bytes())
                       if json.loads(line)["id"] == row["id"])
         path = Path(run_dir) / "logs" / record.get("result", record)["events"]
-        events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        events = [json.loads(line) for line in jsonl_lines(path.read_bytes())]
         receipt_projection = collect_tool_receipts(events, {})
     _require(receipt_digest(receipt_projection) == row["tool_receipts_sha256"], "Tool receipt binding changed")
     return {**receipt_projection, "case": case, "answer": row["text"], "current_sources": sources,

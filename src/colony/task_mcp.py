@@ -327,10 +327,14 @@ class TaskMCP(FastMCP):
                             "max_characters": 4000, "answer_unblocked": True}
                 # One attempt per task, including unknown network outcomes. The
                 # normal client's explicit queue/replay path remains authoritative.
-                self._publication_attempted = True
                 try:
                     with self.evidence._lock:
-                        references = self.evidence.scoped_references(evidence_refs, applicability)
+                        try:
+                            references = self.evidence.scoped_references(evidence_refs, applicability)
+                        except EvidenceError:
+                            return {"stored": False, "reason": "scope_evidence_required",
+                                    "answer_unblocked": True}
+                        self._publication_attempted = True
                         return self.evidence.publish(self.question, finding, references)
                 except Exception:
                     return {"stored": False, "reason": "publication_failed_or_outcome_unknown",
@@ -472,7 +476,13 @@ class TaskMCP(FastMCP):
                         and isinstance(blocks[0], TextContent)):
                     with self.evidence._lock:
                         plan = self._scope.plan(blocks[0].text.splitlines())
-                    blocks.append(TextContent(type="text", text=json.dumps({"scope_read_plan": plan})))
+                    planned = [*blocks, TextContent(type="text", text=json.dumps({"scope_read_plan": plan}))]
+                    if isinstance(result, CallToolResult):
+                        result = result.model_copy(update={"content": planned})
+                    elif isinstance(result, tuple):
+                        result = (planned, *result[1:])
+                    else:
+                        result = planned
         except ToolError:
             # FastMCP/Pydantic errors can echo arbitrary rejected input.
             raise ToolError("Task tool failed; adjust the request or use other research tools") from None

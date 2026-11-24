@@ -13,6 +13,11 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def jsonl_lines(data: bytes, *, errors="strict"):
+    """Split on record delimiters before decoding Unicode inside JSON strings."""
+    return [line.decode("utf-8", errors=errors) for line in data.splitlines()]
+
+
 def decode(text):
     # Enforce a depth independent of the host's Python recursion limit, while
     # ignoring bracket characters and escapes inside JSON strings.

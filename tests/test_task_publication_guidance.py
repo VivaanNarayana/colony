@@ -177,7 +177,16 @@ def test_named_delivered_dependency_requires_a_live_handle(identity, monkeypatch
         (repo / "README.md").write_text("Changed dependency")
         reply = await server.call_tool("publish", {"content": "finding", "applicability": "README.md",
                                                    "evidence_refs": [ref]})
-        assert not json.loads(reply[0].text)["stored"]
+        assert json.loads(reply[0].text)["reason"] == "scope_evidence_required"
+        assert "publish" in {tool.name for tool in await server.list_tools()}
+        if unavailable == "expired":
+            current = await read("README.md")
+            sent = []
+            monkeypatch.setattr(client, "push", lambda trail, **kw: sent.append(trail) or {"stored": True})
+            fixed = await server.call_tool("publish", {"content": "updated finding", "applicability": "README.md",
+                                                       "evidence_refs": [ref, current]})
+            assert json.loads(fixed[0].text)["stored"] and len(sent) == 1
+            assert {s.ref for s in sent[0].sources} == {"README.md", "settings.py"}
     asyncio.run(check())
 
 

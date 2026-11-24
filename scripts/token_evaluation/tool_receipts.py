@@ -29,7 +29,7 @@ REASONS_BY_TOOL = {
     "ask": LOOKUP_REASONS,
     "research": LOOKUP_REASONS | {"lookup_unavailable"},
     "publish": {"publication_not_eligible", "finding_and_scope_required", "finding_too_large",
-                "publication_failed_or_outcome_unknown"},
+                "scope_evidence_required", "publication_failed_or_outcome_unknown"},
     "push": set(),
 }
 TOOLS = {
