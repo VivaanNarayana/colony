@@ -134,6 +134,8 @@ class TaskMCP(FastMCP):
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
+        self._availability_lock = asyncio.Lock()
+        self._lookup_started = False
         # Trusted host classification; tool/source arguments cannot promote this.
         self._may_publish = not workflow.read_only and (remember or (direct_path is None and not value_only))
         self._remember = remember
@@ -216,6 +218,7 @@ class TaskMCP(FastMCP):
 
         def research() -> dict:
             """Look up the original task when useful, including gaps in a direct-read task."""
+            self._lookup_started = True
             # A direct route never forbids promotion or independent source tools.
             try:
                 options = ({"repo": workflow.repo, "repository_id": workflow.repository_id}
@@ -231,6 +234,7 @@ class TaskMCP(FastMCP):
             async def adaptive_research(
                 max_context_tokens: Annotated[int, Field(strict=True, ge=256, le=8192)] | None = None,
             ):
+                self._lookup_started = True
                 try:
                     return await lookup.call_tool("ask", {
                         "question": self.question, "max_context_tokens": max_context_tokens,
@@ -313,6 +317,10 @@ class TaskMCP(FastMCP):
     async def _refresh_availability(self):
         if not self._availability_enabled:
             return False
+        async with self._availability_lock:
+            return await self._read_availability()
+
+    async def _read_availability(self):
         # Revalidate identity even while the time-bounded hint is cached.
         try:
             self.evidence._authorize()
@@ -338,10 +346,13 @@ class TaskMCP(FastMCP):
         self._availability_until = time.monotonic() + (3 if state == "empty" else 30)
         return changed
 
+    def _warm_start(self):
+        return self._availability_state == "present" and not self._lookup_started and not self._read_access.admitted
+
     async def list_tools(self):
         await self._refresh_availability()
         tools = await super().list_tools()
-        if self._availability_state in ("empty", "present") or self._scope is not None:
+        if self._availability_state == "empty" or self._warm_start() or self._scope is not None:
             # Replace only routing, preserving adaptive budget details and the live tool.
             if self._scope is not None:
                 route = "Use current files for repository containment. A memory miss cannot establish absence."
@@ -378,6 +389,7 @@ class TaskMCP(FastMCP):
             availability_changed = False
         else:
             availability_changed = await self._refresh_availability()
+        warm_start = self._warm_start()
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
@@ -407,7 +419,8 @@ class TaskMCP(FastMCP):
                 self._availability_until = 0
                 availability_changed |= self._availability_state != "unknown"
                 self._availability_state = "unknown"
-            if availability_changed or before != (self._publication_ready, self._publication_attempted):
+            if (availability_changed or warm_start != self._warm_start()
+                    or before != (self._publication_ready, self._publication_attempted)):
                 try:
                     context = self.get_context().request_context
                 except ValueError:  # In-process Python calls have no transport session.

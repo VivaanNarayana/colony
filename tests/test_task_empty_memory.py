@@ -32,6 +32,9 @@ def test_current_catalog_routes_prior_work_without_looking_it_up(identity, monke
             assert (PRESENT_ROUTE in description) == (current == "present")
             assert ("empty at last check" in description) == (current == "empty")
         assert await server.call_tool("read", {"path": "settings.py"})
+        tools = {t.name: t for t in await server.list_tools()}
+        assert PRESENT_ROUTE not in tools["research"].description
+        assert "resolve a gap" in tools["research"].description
 
     asyncio.run(check())
 
@@ -66,6 +69,59 @@ def test_rejected_lookup_does_not_invalidate_inflight_presence_check(identity, m
         finally:
             release.set()
         assert PRESENT_ROUTE in next(t.description for t in await catalog if t.name == "research")
+
+    asyncio.run(check())
+
+
+def test_followup_routing_tracks_admission_before_file_decoding(identity, monkeypatch):
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    client, repo, _ = identity
+    allowed = [False]
+    (repo / "bytes.bin").write_bytes(b"\xff")
+    monkeypatch.setattr(client, "memory_availability", lambda *a: "present")
+    server = TaskMCP(Workflow(client, "team", repo), "Summarize the prior setup.", read_admission=lambda: allowed[0])
+
+    async def check():
+        await server._initialize_routing()
+        await server.call_tool("read", {"batch": [{"path": "settings.py"}]})
+        assert PRESENT_ROUTE in next(t.description for t in await server.list_tools() if t.name == "research")
+        allowed[0] = True
+        with pytest.raises(ToolError):
+            await server.call_tool("read", {"path": "bytes.bin"})
+        assert PRESENT_ROUTE not in next(t.description for t in await server.list_tools() if t.name == "research")
+
+    asyncio.run(check())
+
+
+def test_concurrent_catalogs_share_one_current_presence_probe(identity, monkeypatch):
+    import threading
+
+    client, repo, _ = identity
+    started, release = threading.Event(), threading.Event()
+    probes = []
+
+    def probe(*args):
+        probes.append(1)
+        started.set()
+        assert release.wait(3)
+        return "empty"
+
+    monkeypatch.setattr(client, "memory_availability", probe)
+    server = TaskMCP(Workflow(client, "team", repo), "Trace the same deployment.")
+    server._availability_enabled = True
+    server._availability_state = "present"
+
+    async def check():
+        first = asyncio.create_task(server.list_tools())
+        assert await asyncio.to_thread(started.wait, 3)
+        second = asyncio.create_task(server.list_tools())
+        await asyncio.sleep(0)
+        release.set()
+        for tools in await asyncio.gather(first, second):
+            desc = next(t.description for t in tools if t.name == "research")
+            assert "empty at last check" in desc
+        assert probes == [1]
 
     asyncio.run(check())
 
@@ -298,33 +354,19 @@ def test_probe_failure_and_identity_change_never_preserve_empty_hint(identity, m
     asyncio.run(check())
 
 
-def test_newer_probe_wins_and_catalog_hints_do_not_accumulate(identity, monkeypatch):
-    import threading
-
+def test_expired_probe_updates_catalog_without_accumulating_hints(identity, monkeypatch):
     client, repo, _ = identity
-    first_started, release = threading.Event(), threading.Event()
-    calls = []
-
-    def probe(*args):
-        calls.append(1)
-        if len(calls) == 1:
-            first_started.set()
-            assert release.wait(3)
-            return "empty"
-        return "present"
-
-    monkeypatch.setattr(client, "memory_availability", probe)
+    states = iter(["empty", "present", "empty"])
+    monkeypatch.setattr(client, "memory_availability", lambda *a: next(states))
     server = TaskMCP(Workflow(client, "team", repo), "Explain behavior")
     server._availability_enabled = True
 
     async def check():
-        first = asyncio.create_task(server._refresh_availability())
-        assert await asyncio.to_thread(first_started.wait, 3)
         await server._refresh_availability()
-        release.set()
-        await first
+        assert server._availability_state == "empty"
+        server._availability_until = 0
+        await server._refresh_availability()
         assert server._availability_state == "present"
-        monkeypatch.setattr(client, "memory_availability", lambda *a: "empty")
         server._availability_until = 0
         a = await server.list_tools()
         b = await server.list_tools()
@@ -388,10 +430,13 @@ def test_failed_tool_still_notifies_changed_availability(identity, monkeypatch, 
         with pytest.raises(ToolError, match="Task tool failed"):
             await server.call_tool(name, arguments)
         assert notifications == [1]
-        assert not any("empty at last check" in (t.description or "")
-                       for t in await server.list_tools())
+        tools = {t.name: t for t in await server.list_tools()}
+        assert "empty at last check" not in tools["research"].description
+        had_first_action_cue = PRESENT_ROUTE in tools["research"].description
         await server.call_tool("read", {"path": "settings.py"})
-        assert notifications == [1]  # No redundant catalog event for unchanged state.
+        assert len(notifications) == 1 + int(had_first_action_cue)
+        await server.call_tool("read", {"path": "settings.py"})
+        assert len(notifications) == 1 + int(had_first_action_cue)
 
     asyncio.run(check())
 
