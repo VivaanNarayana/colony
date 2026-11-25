@@ -9,6 +9,8 @@ from colony.models import ContextBudget, GitContext, Source
 from colony.security import PATTERNS, scrub
 from colony.validation import PinnedSourcePaths, repo_contents, repo_file, validate
 
+_MAX_LOOKUP_HINTS = 8
+
 
 def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
     # Keep the caller path independent of the server's native retrieval stack.
@@ -60,7 +62,7 @@ def _local_reads(
     # Legacy focused/whole-file requests retain their two/four-read limits.
     limit = 8 if adaptive and compact_bundle else (4 if whole_files else 2)
     options = {"path_allowed": path_allowed} if path_allowed is not None else {}
-    for item in hints[:8]:
+    for item in hints[:_MAX_LOOKUP_HINTS]:
         if not isinstance(item, dict):
             continue
         ref, line = item.get("ref"), item.get("line")
@@ -149,7 +151,7 @@ def verify_lookup(
         reason = compare(origin, context)
         if reason == "repository_mismatch" or result.get("status") != "validated":
             raise ValueError()
-        from colony.compact import PROFILE, legacy_evidence
+        from colony.compact import PROFILE, bound_lookup_spans, legacy_evidence
 
         profile = result.get("response_profile")
         if profile is not None and (profile != PROFILE or context_budget is None):
@@ -163,6 +165,17 @@ def verify_lookup(
         sources = [Source.model_validate(source) for source in raw_sources]
         checked_sources(repo, sources, path_allowed=path_allowed)
         hints = result.get("evidence")
+        if context_budget is None and result.get("current_repository_reads") is not None:
+            # Only the coordinates and requested length determine what is reread locally.
+            # Repeated wire entries must not consume the bounded verifier's hint slots.
+            unique = {}
+            for span in bound_lookup_spans(hints, result["current_repository_reads"], raw_sources):
+                # Validate every supplied binding, including those beyond the local read limit.
+                if len(unique) < _MAX_LOOKUP_HINTS:
+                    complete = whole_files and span.get("complete_file", False)
+                    key = (span["ref"], span["line"], len(span["text"]), complete)
+                    unique.setdefault(key, span)
+            hints = list(unique.values())
         evidence = _local_reads(
             repo,
             sources,
@@ -183,6 +196,9 @@ def verify_lookup(
     except (KeyError, TypeError, ValueError, OSError):
         return {"hit": False, "reason": "git_local_evidence_not_verified"}
     answer = dict(result)
+    if context_budget is None:
+        # Only locally rebuilt spans may accompany the caller-worktree verification receipt.
+        answer.pop("current_repository_reads", None)
     answer["git"] = compact_receipt(context, reason, origin)
     answer["evidence"] = evidence
     answer["complete_files"] = [item["ref"] for item in evidence if item["complete_file"]]

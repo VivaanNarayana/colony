@@ -263,6 +263,100 @@ def test_duplicate_preserves_complete_file_coverage(identity, monkeypatch, legac
     assert task_lookup(identity, monkeypatch, raw)["evidence"] == [{**span, "complete_file": True}]
 
 
+def serve_citations(store, monkeypatch, **fields):
+    """Vary only the server's citation fields. Keep Client.ask and its checks in the call path."""
+    ask = store.ask
+
+    def with_citations(*args, **kwargs):
+        result = ask(*args, **kwargs)
+        assert result["hit"] and result["status"] == "validated"
+        result.pop("evidence")
+        return {**result, "match_kind": "evidence", **fields}
+
+    monkeypatch.setattr(store, "ask", with_citations)
+
+
+@pytest.mark.parametrize("shape", ["mixed", "reads-only", "wrong-hash"])
+def test_git_client_rebuilds_alternate_citations(transport, monkeypatch, shape):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, count=2, git=True)
+    local = [
+        {
+            "ref": s.ref,
+            "line": 2,
+            "text": (repo / s.ref).read_text(encoding="utf-8").splitlines()[1],
+            "complete_file": False,
+        }
+        for s in trail.sources
+    ]
+    reads = [
+        {
+            "path": s.ref,
+            "sha256": s.content_hash,
+            "start_line": 2,
+            "content": "?" * len(span["text"]),
+        }
+        for s, span in zip(trail.sources, local, strict=True)
+    ]
+    # Duplicate hints must not crowd the second file out of the verifier's eight-hint window.
+    if shape == "reads-only":
+        repeats = [{**reads[0], "content": c * len(local[0]["text"])} for c in "abcdefgh"]
+        fields = {"current_repository_reads": [*repeats, reads[1]]}
+    else:
+        fields = {
+            "evidence": [{**local[0], "text": reads[0]["content"]}] * 8,
+            "current_repository_reads": reads,
+        }
+    if shape == "wrong-hash":
+        reads[1]["sha256"] = "0" * 64
+    serve_citations(store, monkeypatch, **fields)
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    result = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1
+    if shape == "wrong-hash":
+        assert not result["hit"] and result["reason"] == "git_local_evidence_not_verified"
+        assert "content" not in result and "evidence" not in result
+    else:
+        assert result["hit"] and result["git"]["compatibility"] == "matched"
+        assert result["evidence"] == local
+        assert "current_repository_reads" not in result and "content" not in result
+        assert reads[0]["content"] not in json.dumps(result)
+
+
+@pytest.mark.parametrize("policy", ["allow-both", "deny-second", "unbound-read"])
+def test_client_checks_paths_with_null_legacy_evidence(transport, monkeypatch, policy):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, count=2)
+    reads = [
+        {
+            "path": s.ref,
+            "sha256": s.content_hash,
+            "start_line": 2,
+            "content": (repo / s.ref).read_text(encoding="utf-8").splitlines()[1],
+        }
+        for s in trail.sources
+    ]
+    allowed = {s.ref for s in trail.sources}
+    if policy == "deny-second":
+        allowed.remove(reads[1]["path"])
+    elif policy == "unbound-read":
+        reads[1]["path"] = "uncited.py"
+    serve_citations(store, monkeypatch, evidence=None, current_repository_reads=reads)
+    task = TaskMCP(
+        Workflow(client, "team", repo), trail.question, read_path_allowed=allowed.__contains__
+    )
+    result = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1
+    if policy == "allow-both":
+        assert result["hit"]
+        assert result["evidence"] == [
+            {"ref": r["path"], "line": 2, "text": r["content"]} for r in reads
+        ]
+        assert "current_repository_reads" not in result and "content" not in result
+    else:
+        assert result == {"hit": False, "reason": "lookup_unavailable"}
+
+
 def test_git_mismatch_retains_verified_local_excerpts(transport, monkeypatch):
     client, repo, _, _ = transport
     trail = publish(client, repo, git=True, content="Interpretation from the original branch")

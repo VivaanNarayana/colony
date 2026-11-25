@@ -16,7 +16,7 @@ from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from colony.client import Client
-from colony.compact import source_hashes
+from colony.compact import bound_lookup_spans
 from colony.evidence_refs import EvidenceError, EvidenceSession
 from colony.models import ContextBudget
 from colony.task_reads import ReadAccess
@@ -71,53 +71,22 @@ class ReadRequest(BaseModel):
     offset: StrictInt = 0
 
 
-def _task_lookup_span(item, hashes, *, read):
-    """Bind one citation to its source and put its text and coordinates in legacy fields."""
-    if not isinstance(item, dict):
-        raise ValueError("Invalid lookup evidence span")
-    span = item.copy()
-    for alias, field in (("path", "ref"), ("start_line", "line"), ("content", "text")):
-        if read or alias in span:
-            value = span.pop(alias)
-            if field in span and span[field] != value:
-                raise ValueError("Conflicting lookup evidence fields")
-            span[field] = value
-    ref, line, text = span["ref"], span["line"], span["text"]
-    complete = span.get("complete_file", False)
-    if (
-        not isinstance(ref, str) or ref not in hashes
-        or type(line) is not int or line < 1 or not isinstance(text, str)
-        or type(complete) is not bool or (complete and line != 1)
-    ):
-        raise ValueError("Invalid lookup evidence span")
-    if (read or "sha256" in span) and span.pop("sha256") != hashes[ref]:
-        raise ValueError("Invalid lookup source binding")
-    if "end_line" in span:
-        span["end_line"] = line + text.count("\n")
-    return span
-
-
 def _task_lookup_spans(evidence, reads, sources):
     """Keep citation order and merge compatible annotations on the same source bytes."""
-    if not isinstance(evidence, list) or not isinstance(reads, list):
-        raise ValueError("Invalid lookup evidence list")
-    hashes = source_hashes(sources)
     unique = {}
-    for items, read in ((evidence, False), (reads, True)):
-        for item in items:
-            span = _task_lookup_span(item, hashes, read=read)
-            key = (span["ref"], span["line"], span["text"])
-            previous = unique.setdefault(key, {})
-            # The same bytes can be returned as both an excerpt and a verified full file.
-            if previous.get("complete_file") or span.get("complete_file"):
-                previous["complete_file"] = span["complete_file"] = True
-            if any(previous[k] != v for k, v in span.items() if k in previous):
-                raise ValueError("Conflicting lookup evidence metadata")
-            previous.update(span)
+    for span in bound_lookup_spans(evidence, reads, sources):
+        key = (span["ref"], span["line"], span["text"])
+        previous = unique.setdefault(key, {})
+        # The same bytes can be returned as both an excerpt and a verified full file.
+        if previous.get("complete_file") or span.get("complete_file"):
+            previous["complete_file"] = span["complete_file"] = True
+        if any(previous[k] != v for k, v in span.items() if k in previous):
+            raise ValueError("Conflicting lookup evidence metadata")
+        previous.update(span)
     return list(unique.values())
 
 
-def _render_unbudgeted_lookup(result: dict, *, git_bound: bool) -> dict:
+def _render_unbudgeted_lookup(result: dict) -> dict:
     if not result.get("hit"):
         return result
     rendered = result.copy()
@@ -125,9 +94,6 @@ def _render_unbudgeted_lookup(result: dict, *, git_bound: bool) -> dict:
     evidence = rendered.get("evidence", [])
     if evidence is None:
         evidence = []
-    if git_bound or reads is None:
-        # verify_lookup rebuilds only 'evidence' from the caller's checkout.
-        reads = []
     if evidence or reads:
         evidence = rendered["evidence"] = _task_lookup_spans(evidence, reads, result.get("sources"))
 
@@ -238,7 +204,7 @@ class TaskMCP(FastMCP):
                 if read_path_allowed is not None:
                     options.update(repo=workflow.repo, path_allowed=read_path_allowed)
                 result = workflow.client.ask(self.question, workflow.namespace, **options)
-                return _render_unbudgeted_lookup(result, git_bound="repository_id" in options)
+                return _render_unbudgeted_lookup(result)
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 

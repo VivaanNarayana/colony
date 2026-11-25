@@ -448,7 +448,10 @@ class Client:
                     for ref in refs.union(path_allowed.targets):
                         repo_file(repo, ref, path_allowed=path_allowed)
                     for field, key in (("evidence", "ref"), ("current_repository_reads", "path")):
-                        if any(item[key] not in refs for item in result.get(field, [])):
+                        items = result.get(field)
+                        if items is None:
+                            continue
+                        if not isinstance(items, list) or any(item[key] not in refs for item in items):
                             raise ValueError()
                 except (KeyError, TypeError, ValueError, OSError):
                     return finish({"hit": False, "reason": "lookup_unavailable"})

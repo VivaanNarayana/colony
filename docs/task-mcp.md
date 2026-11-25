@@ -21,8 +21,11 @@ the generated top-level `content` summary should read each entry's `text` and
 If a server returns citations in `current_repository_reads`, the task adapter
 joins them with `evidence` by source, start line and exact text. Duplicate spans
 share one entry, and identical text at different locations retains each citation.
-In Git-bound tasks only excerpts verified from the caller's checkout reach the
-task. A validated `answer` hit also carries the authored finding in `content`.
+Git-bound tasks use both formats as hints and rebuild the excerpts from the
+caller’s checkout. Repeated hints share one slot in the verifier’s selection
+limit. When a path allowlist is configured, it applies to every cited file,
+including reads supplied alongside `evidence: null`. A validated `answer` hit
+also carries the authored finding in `content`.
 Stale and unverified hits retain their status and source receipts.
 When a saved body is withheld, `content_withheld` gives the
 reason (`stale` or `unverified`). An evidence-only hit with unusable spans or
