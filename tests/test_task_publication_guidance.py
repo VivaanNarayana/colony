@@ -46,6 +46,7 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             init = await session.initialize()
             lead = "Read the requested path first." if direct else "Use research when saved findings could help."
             assert init.instructions.startswith(lead)
+            assert init.instructions.count("Use research when saved findings could help.") == 1
             assert init.instructions.count(ANSWER_POLICY) == 1
             assert init.instructions.count(READ_ROUTING) == 1
             assert init.instructions.count(PUBLICATION_POLICY) == int(eligible)

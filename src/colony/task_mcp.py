@@ -158,7 +158,7 @@ class TaskMCP(FastMCP):
         self._publication_lock = threading.RLock()
         self._base_instructions = (
             READ_ROUTING + RETRY_GUIDANCE
-            + "Prioritize requested evidence within the host allowance. "
+            + "Prioritize requested evidence within any host allowance. "
             "Investigate contradictions and explain remaining limitations. " + ANSWER_POLICY
         )
         if self._may_publish:
@@ -329,12 +329,13 @@ class TaskMCP(FastMCP):
 
     def _startup_instructions(self):
         # Keep the route, batch cue and both retry rules in the native namespace preview.
+        lookup = "Use research when saved findings could help."
         if self.direct_path is not None:
-            return "Read the requested path first. " + self._base_instructions
+            return "Read the requested path first. " + self._base_instructions + " " + lookup
         if self._availability_state == "empty":
             return ("Memory was empty at task startup. " + self._base_instructions
                     + " Explicit research remains available and always checks current memory.")
-        return "Use research when saved findings could help. " + self._base_instructions
+        return lookup + " " + self._base_instructions
 
     async def run_stdio_async(self):
         self._availability_enabled = self._empty_memory_routing
