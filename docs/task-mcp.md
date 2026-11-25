@@ -23,7 +23,9 @@ joins them with `evidence` by source, start line and exact text. Duplicate spans
 share one entry, and identical text at different locations retains each citation.
 Git-bound tasks use both formats as hints and rebuild the excerpts from the
 caller’s checkout. Repeated hints share one slot in the verifier’s selection
-limit, including in legacy-only responses. When present, `evidence_scope` is
+limit, including in legacy-only responses. For whole-file requests, a complete
+hint in either format expands the first selected excerpt for that file when the
+verified contents fit the file and response limits. When present, `evidence_scope` is
 `cited_files` only if the client delivered every cited file in full. Omitted
 files and partial excerpts produce `partial`. When a path allowlist is
 configured, it applies to every cited file,

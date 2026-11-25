@@ -53,7 +53,8 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
 
 
 def _local_reads(
-    repo, sources, remote_evidence, whole_files, *, adaptive=False, compact_bundle=False, path_allowed=None,
+    repo, sources, remote_evidence, whole_files, *, whole_file_refs=(), adaptive=False,
+    compact_bundle=False, path_allowed=None,
 ):
     by_ref = {source.ref: source for source in sources}
     hints = remote_evidence if isinstance(remote_evidence, list) else []
@@ -74,7 +75,9 @@ def _local_reads(
         if not lines or line > len(lines):
             continue
         text = "\n".join(lines)
-        complete = whole_files and item.get("complete_file") is True and len(text) <= 16000
+        expand = ref in whole_file_refs or item.get("complete_file") is True
+        file_limit = 16000 if adaptive else min(16000, budget)
+        complete = whole_files and expand and len(text) <= file_limit
         start = 1 if complete else line
         if not complete:
             hint = item.get("text")
@@ -165,15 +168,19 @@ def verify_lookup(
         sources = [Source.model_validate(source) for source in raw_sources]
         checked_sources(repo, sources, path_allowed=path_allowed)
         hints = result.get("evidence")
+        whole_file_refs = set()
         if context_budget is None:
             # Only the coordinates and requested length determine what is reread locally.
             # Repeated wire entries must not consume the bounded verifier's hint slots.
             unique = {}
             for span in bound_lookup_spans(hints, result.get("current_repository_reads"), raw_sources):
                 # Validate every supplied binding, including those beyond the local read limit.
+                # A whole-file hint upgrades that file's first eligible excerpt in place.
+                # Keep its original coordinates and length as a fallback if expansion won't fit.
+                if whole_files and span.get("complete_file"):
+                    whole_file_refs.add(span["ref"])
                 if len(unique) < _MAX_LOOKUP_HINTS:
-                    complete = whole_files and span.get("complete_file", False)
-                    key = (span["ref"], span["line"], len(span["text"]), complete)
+                    key = (span["ref"], span["line"], len(span["text"]))
                     unique.setdefault(key, span)
             hints = list(unique.values())
         evidence = _local_reads(
@@ -181,6 +188,7 @@ def verify_lookup(
             sources,
             hints,
             whole_files or compact,
+            whole_file_refs=whole_file_refs,
             **({"compact_bundle": True} if compact else {}),
             **({"adaptive": True} if context_budget is not None else {}),
             **({"path_allowed": path_allowed} if path_allowed is not None else {}),

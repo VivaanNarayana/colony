@@ -389,6 +389,70 @@ def test_git_scope_reflects_locally_delivered_files(
     assert result["evidence_scope"] == scope
 
 
+@pytest.mark.parametrize(
+    "legacy_complete", [True, False], ids=["complete-in-evidence", "complete-in-reads"]
+)
+@pytest.mark.parametrize(
+    ("peer_size", "tail_size", "same_bytes", "fits"),
+    [
+        (10, 20, False, True),
+        (10, 20, True, True),
+        (10, 16_000, False, False),
+        (15_000, 10_000, False, False),
+    ],
+    ids=["first-line", "same-bytes", "per-file-limit", "remaining-budget"],
+)
+def test_git_prefers_verified_whole_file(
+    transport, monkeypatch, legacy_complete, peer_size, tail_size, same_bytes, fits
+):
+    client, repo, store, responses = transport
+    first_line = "VALUE = 1"
+    peer_text = "#" * peer_size
+    full_text = first_line + "\n" + "#" * tail_size
+    excerpt = full_text if same_bytes else first_line
+    trail = publish(client, repo, git=True, file_texts=[peer_text, full_text])
+    peer, target = trail.sources
+    # Only the hint lengths come from the server. Every delivered byte must be local.
+    peer_span = {"ref": peer.ref, "line": 1, "text": peer_text, "complete_file": True}
+    legacy = {
+        "ref": target.ref,
+        "line": 1,
+        "complete_file": legacy_complete,
+        "text": "?" * len(full_text if legacy_complete else excerpt),
+    }
+    alternate = {
+        "path": target.ref,
+        "sha256": target.content_hash,
+        "start_line": 1,
+        "complete_file": not legacy_complete,
+        "content": "?" * len(excerpt if legacy_complete else full_text),
+    }
+    serve_citations(
+        store,
+        monkeypatch,
+        evidence=[peer_span, legacy],
+        current_repository_reads=[alternate],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+
+    assert len(responses) == 1 and result["hit"] and result["git"]["compatibility"] == "matched"
+    assert result["evidence"] == [
+        peer_span,
+        {
+            "ref": target.ref,
+            "line": 1,
+            "text": full_text if fits else excerpt,
+            "complete_file": fits,
+        },
+    ]
+    assert result["complete_files"] == ([peer.ref, target.ref] if fits else [peer.ref])
+    assert result["evidence_scope"] == ("cited_files" if fits else "partial")
+    assert "current_repository_reads" not in result
+
+
 @pytest.mark.parametrize("policy", ["allow-both", "deny-second", "unbound-read"])
 def test_client_checks_paths_with_null_legacy_evidence(transport, monkeypatch, policy):
     client, repo, store, responses = transport
