@@ -221,7 +221,9 @@ snapshot, including failed/unknown write outcomes. Catalog changes are notified
 even when a tool call fails. Notification transport errors cannot replace a tool
 result or its sanitized error. Explicit `research` always performs the normal current
 lookup; it is never hidden and never returns a cached miss. The startup hint is
-historical ("empty at task startup"); it does not claim continued emptiness.
+historical. When memory starts empty, the preview directs workers to batch likely
+source reads and search files for gaps. The `research` tool checks current saved
+findings for the original task, including findings published after startup.
 Sources, other research and all requested answer detail remain available.
 Use `--no-empty-memory-routing` to disable the probe. Explicit direct-file tasks
 already route to reads and do not make the startup probe. Embedded hosts can opt

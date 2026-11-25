@@ -157,7 +157,7 @@ class TaskMCP(FastMCP):
         self._publication_attempted = False
         self._publication_lock = threading.RLock()
         self._base_instructions = (
-            READ_ROUTING + RETRY_GUIDANCE
+            RETRY_GUIDANCE
             + "Prioritize requested evidence within any host allowance. "
             "Investigate contradictions and explain remaining limitations. " + ANSWER_POLICY
         )
@@ -213,7 +213,7 @@ class TaskMCP(FastMCP):
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 
-        research.__doc__ = RESEARCH_GUIDANCE
+        budget_guidance = ""
         if lookup is not None:
             async def adaptive_research(
                 max_context_tokens: Annotated[int, Field(strict=True, ge=256, le=8192)] | None = None,
@@ -226,14 +226,19 @@ class TaskMCP(FastMCP):
                     return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 
             units = "UTF-8 bytes (estimate)" if context_budget.encoding == "utf8_bytes" else "o200k_base tokens"
-            adaptive_research.__doc__ = (
-                RESEARCH_GUIDANCE + " max_context_tokens caps the "
+            budget_guidance = (
+                " max_context_tokens caps the "
                 f"full lookup response: default {context_budget.max_tokens} {units}; override 256..8192. "
                 "budget_limited is not proof of no match; no automatic retry. "
                 "This cap never limits the answer or necessary source research."
             )
             research = adaptive_research
 
+        research.__doc__ = RESEARCH_GUIDANCE + budget_guidance
+        self._empty_research_description = (
+            "Scoped memory was empty at last check. Checks current saved findings for the original task."
+            + budget_guidance
+        )
         for name, function in (("read", read), ("research", research)):
             self.add_tool(function, name=name, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
                           structured_output=False)
@@ -319,9 +324,7 @@ class TaskMCP(FastMCP):
         tools = await super().list_tools()
         if self._availability_state == "empty":
             # Alter only the returned catalog, never accumulate description text.
-            tools = [t.model_copy(update={"description":
-                "Scoped memory was empty at last check; start with source reads. "
-                "Explicit lookup remains available. " + (t.description or "")})
+            tools = [t.model_copy(update={"description": self._empty_research_description})
                 if t.name == "research" else t for t in tools]
         return [t for t in tools if t.name != "publish" or (
             self._publication_ready and self._may_publish and not self._publication_attempted
@@ -331,11 +334,11 @@ class TaskMCP(FastMCP):
         # Keep the route, batch cue and both retry rules in the native namespace preview.
         lookup = "Use research when saved findings could help."
         if self.direct_path is not None:
-            return "Read the requested path first. " + self._base_instructions + " " + lookup
+            return "Read the requested path first. " + READ_ROUTING + self._base_instructions + " " + lookup
         if self._availability_state == "empty":
-            return ("Memory was empty at task startup. " + self._base_instructions
-                    + " Explicit research remains available and always checks current memory.")
-        return lookup + " " + self._base_instructions
+            return ("Memory started empty. Batch likely source reads. Search files for gaps. "
+                    "Recheck memory on request or after a save. " + self._base_instructions)
+        return lookup + " " + READ_ROUTING + self._base_instructions
 
     async def run_stdio_async(self):
         self._availability_enabled = self._empty_memory_routing
