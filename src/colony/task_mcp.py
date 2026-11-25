@@ -109,7 +109,7 @@ def _render_unbudgeted_lookup(result: dict) -> dict:
         if "content" in rendered:
             rendered["content_withheld"] = status
     elif result.get("match_kind") == "evidence":
-        if status != "validated" or not any(s["text"] or s.get("complete_file") for s in evidence):
+        if status != "validated" or not any(s.get("complete_file") or s["text"].strip() for s in evidence):
             raise ValueError("Missing validated lookup evidence")
     else:
         return rendered  # Keep authored answers alongside their citations.

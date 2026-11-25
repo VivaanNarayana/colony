@@ -58,7 +58,7 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
 class _LookupHint(NamedTuple):
     kind: Literal["whole", "excerpt", "prefix"]
     position: int
-    slot: tuple[str, int, int | None]
+    slot: tuple[str, int]
     line: int
     length: int
 
@@ -83,34 +83,35 @@ class _UnbudgetedHints:
 
         self.slots = set()
         self.excerpts = {}
+        borrowed_lines = {}
         for position, span in enumerate(bound_lookup_spans(evidence, reads, sources)):
             ref, line, length = span["ref"], span["line"], len(span["text"])
             if not span.get("complete_file") and not 0 < length <= _MAX_EXCERPT_CHARS:
                 continue
-            key = self.slot_key(ref, line, length)
+            # Widths starting on the same line always overlap and can supply only one read.
+            key = (ref, line)
             if len(self.slots) < _MAX_LOOKUP_HINTS:
                 self.slots.add(key)
-            if not span.get("complete_file"):
-                bounds = self.excerpts.setdefault(ref, {})
-                if key in self.slots or (ref in self.prefixes and len(bounds) < _MAX_LOOKUP_HINTS):
-                    bounds.setdefault((line, length), position)
-
-    def slot_key(self, ref, line, length):
-        # A marker and its line-one alternatives can produce at most one read.
-        return (ref, line, None if line == 1 and ref in self.prefixes else length)
+            if span.get("complete_file"):
+                continue
+            if key not in self.slots:
+                if ref not in self.marker_positions or (ref, 1) not in self.slots:
+                    continue
+                # Only distinct lines outside the window count against this marker's alternatives.
+                lines = borrowed_lines.setdefault(ref, set())
+                if line not in lines and len(lines) >= _MAX_LOOKUP_HINTS:
+                    continue
+                lines.add(line)
+            self.excerpts.setdefault(ref, {}).setdefault((line, length), position)
 
     def candidates(self, whole_files):
         candidates = []
         for ref, bounds in self.excerpts.items():
             for (line, length), position in bounds.items():
-                key = self.slot_key(ref, line, length)
-                if key not in self.slots:
-                    # A late explicit excerpt may use this file's admitted marker slot.
-                    key = (ref, 1, None)
-                if key in self.slots:
-                    candidates.append(_LookupHint("excerpt", position, key, line, length))
+                slot = (ref, line) if (ref, line) in self.slots else (ref, 1)
+                candidates.append(_LookupHint("excerpt", position, slot, line, length))
         for ref, prefixes in self.prefixes.items():
-            key = (ref, 1, None)
+            key = (ref, 1)
             if key in self.slots:
                 if whole_files:
                     candidates.append(_LookupHint("whole", self.marker_positions[ref], key, 1, 0))

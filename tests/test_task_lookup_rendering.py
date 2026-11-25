@@ -284,6 +284,44 @@ def _wire_read(span, source):
     }
 
 
+@pytest.mark.parametrize("git", [False, True], ids=["remote", "git"])
+@pytest.mark.parametrize("with_fact", [False, True], ids=["only-whitespace", "with-fact"])
+def test_task_rejects_only_whitespace_partial_evidence(transport, monkeypatch, git, with_fact):
+    client, repo, store, responses = transport
+    fact, whitespace = "RETRIES = 5", " \t\u2003"
+    trail = publish(client, repo, git=git, file_texts=[fact + "\n" + whitespace + "\n"])
+    source = trail.sources[0]
+    blank = {"ref": source.ref, "line": 2, "text": whitespace, "complete_file": False}
+    explicit = {**blank, "line": 1, "text": fact}
+    spans = [blank, explicit] if with_fact else [blank]
+    serve_citations(store, monkeypatch, evidence=[blank],
+                    current_repository_reads=[_wire_read(s, source) for s in spans])
+    workflow = Workflow(client, "team", repo, repository_id="project" if git else None)
+    blocks = asyncio.run(TaskMCP(workflow, trail.question).call_tool("research", {}))
+    assert len(responses) == len(blocks) == 1
+    result = json.loads(blocks[0].text)
+    if with_fact:
+        assert result["hit"] and result["evidence"] == spans
+        assert blocks[0].text.count(fact) == 1
+        assert "current_repository_reads" not in result and "content" not in result
+    else:
+        assert result == {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
+
+
+@pytest.mark.parametrize("text", ["", " \t"], ids=["empty-file", "whitespace-file"])
+def test_task_accepts_complete_blank_file(transport, monkeypatch, text):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, file_texts=[text, "RETRIES = 5"])
+    source = trail.sources[0]
+    complete = {"ref": source.ref, "line": 1, "text": text, "complete_file": True}
+    serve_citations(store, monkeypatch, current_repository_reads=[_wire_read(complete, source)])
+    task = TaskMCP(Workflow(client, "team", repo), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    result = json.loads(blocks[0].text)
+    assert len(responses) == len(blocks) == 1 and result["hit"] and result["evidence"] == [complete]
+    assert "current_repository_reads" not in result and "content" not in result
+
+
 @pytest.mark.parametrize("legacy_complete", [False, True], ids=["complete-in-reads", "complete-in-evidence"])
 @pytest.mark.parametrize(
     ("metadata", "cite_peer", "kind"),
@@ -862,6 +900,93 @@ def test_focused_git_research_uses_one_reserved_marker_slot(transport, monkeypat
     else:
         assert not result["hit"] and result["reason"] == "git_local_evidence_not_verified"
         assert "evidence" not in result
+
+
+@pytest.mark.parametrize("whole", [False, True], ids=["focused", "whole-files"])
+@pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])
+@pytest.mark.parametrize("repeat_line", [1, 9], ids=["marker-line", "borrowed-line"])
+def test_duplicate_blanks_preserve_fact_in_reserved_slot(
+    transport, monkeypatch, whole, mixed, repeat_line
+):
+    client, repo, store, responses = transport
+    fact = "RETRIES = 5"
+    lines = [" " * 8] * 9 + [fact, "SECOND FACT", "#" * 16_100]
+    trail = publish(client, repo, git=True, file_texts=["\n".join(lines)])
+    source = trail.sources[0]
+    marker = {"ref": source.ref, "line": 1, "text": " ", "complete_file": True}
+    blank = {**marker, "complete_file": False}
+    # Fill the eight verification slots. Late citations for this file share its marker slot.
+    admitted = [marker] + [{**blank, "line": n} for n in range(2, 9)]
+    repeats = [{**blank, "line": repeat_line, "text": " " * width} for width in range(1, 9)]
+    late = [{**blank, "line": n, "text": lines[n - 1]} for n in (10, 11)]
+    serve_citations(
+        store, monkeypatch, evidence=admitted + repeats + ([] if mixed else late),
+        current_repository_reads=[_wire_read(s, source) for s in late] if mixed else [],
+    )
+    if whole:
+        result = client.ask(
+            trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+        )
+    else:
+        task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+        blocks = asyncio.run(task.call_tool("research", {}))
+        assert len(blocks) == 1 and blocks[0].text.count(fact) == 1
+        result = json.loads(blocks[0].text)
+        assert "content" not in result
+    assert len(responses) == 1 and result["hit"] and result["git"]["compatibility"] == "matched"
+    assert [s for s in result["evidence"] if s["text"].strip()] == late[:1]
+    assert len(result["evidence"]) <= (4 if whole else 2)
+    assert result["complete_files"] == [] and "current_repository_reads" not in result
+
+
+def test_duplicate_blank_widths_share_an_ordinary_verification_slot(transport, monkeypatch):
+    client, repo, store, responses = transport
+    fact = "RETRIES = 5"
+    trail = publish(client, repo, git=True, file_texts=[" " * 8 + "\n" + fact])
+    source = trail.sources[0]
+    explicit = {"ref": source.ref, "line": 2, "text": fact, "complete_file": False}
+    blanks = [{**explicit, "line": 1, "text": " " * width} for width in range(1, 9)]
+    serve_citations(
+        store, monkeypatch, evidence=blanks, current_repository_reads=[_wire_read(explicit, source)]
+    )
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    result = json.loads(blocks[0].text)
+    assert len(responses) == len(blocks) == 1 and result["evidence"] == [blanks[0], explicit]
+    assert blocks[0].text.count(fact) == 1
+    assert "content" not in result and "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("blank_lines", [7, 8], ids=["fact-at-eighth-line", "fact-at-ninth-line"])
+def test_marker_alternatives_count_distinct_late_lines(transport, monkeypatch, blank_lines):
+    client, repo, store, responses = transport
+    fact, peer_fact = "RETRIES = 5", "WORKERS = 2"
+    trail = publish(client, repo, git=True, file_texts=[
+        "\n".join(["  "] * 9 + [fact]), "\n".join([peer_fact] + [" "] * 6),
+    ])
+    target, peer = trail.sources
+    marker = {"ref": target.ref, "line": 1, "text": " ", "complete_file": True}
+    blank = {**marker, "complete_file": False}
+    peer_hints = [
+        {**blank, "ref": peer.ref, "line": n, "text": peer_fact if n == 1 else " "}
+        for n in range(1, 8)
+    ]
+    # Every late line has two widths but either width would consume the same read.
+    late = [
+        {**blank, "line": n, "text": " " * width}
+        for n in range(2, 2 + blank_lines) for width in (1, 2)
+    ]
+    late.append({**blank, "line": 10, "text": fact})
+    serve_citations(
+        store, monkeypatch, evidence=[marker, *peer_hints],
+        current_repository_reads=[_wire_read(s, target) for s in late],
+    )
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    result = json.loads(blocks[0].text)
+    assert len(responses) == len(blocks) == 1 and result["hit"]
+    usable = [s["text"] for s in result["evidence"] if s["text"].strip()]
+    assert usable == ([fact, peer_fact] if blank_lines == 7 else [peer_fact])
 
 
 @pytest.mark.parametrize("widths", [(1, 10), (10, 1)], ids=["short-first", "matching-first"])

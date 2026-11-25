@@ -25,8 +25,9 @@ When supplied, `complete_files` lists the files delivered in full after the
 merge. An `evidence_scope` of `cited_files` means the result contains every
 cited file in full. Omitted files and partial coverage produce `partial`.
 Git-bound tasks use both formats as hints and rebuild the excerpts from the
-caller’s checkout. Repeated hints share one slot in the verifier’s selection
-limit, including whole-file markers with different prefix lengths. A focused
+caller’s checkout. All excerpt widths at the same path and start line share
+one verification slot. A late excerpt can use its file’s admitted whole-file
+marker slot even when duplicate blanks appeared earlier. A focused
 lookup selects up to two explicit excerpts in citation order across all files.
 Usable marker prefixes can fill any remaining slots. The first selected excerpt
 for a file can appear at its earlier marker position in the response.
@@ -44,8 +45,9 @@ including reads supplied alongside `evidence: null`. A validated `answer` hit
 also carries the authored finding in `content`.
 Stale and unverified hits retain their status and source receipts.
 When a saved body is withheld, `content_withheld` gives the
-reason (`stale` or `unverified`). An evidence-only hit with unusable spans or
-missing source bindings yields `lookup_unavailable` so research can continue.
+reason (`stale` or `unverified`). An evidence-only hit needs a complete file
+(including an empty file) or a partial excerpt with non-whitespace text.
+Unusable evidence or missing source bindings yield `lookup_unavailable` so research can continue.
 Budgeted lookups use the adaptive `current_repository_reads` representation.
 
 Ordinary and adaptive lookup share the same routing guidance: look up saved findings
