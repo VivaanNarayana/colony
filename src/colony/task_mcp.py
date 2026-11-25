@@ -16,6 +16,7 @@ from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from colony.client import Client
+from colony.compact import source_hashes
 from colony.evidence_refs import EvidenceError, EvidenceSession
 from colony.models import ContextBudget
 from colony.task_reads import ReadAccess
@@ -68,6 +69,41 @@ class ReadRequest(BaseModel):
     start: StrictInt = 1
     end: StrictInt | None = None
     offset: StrictInt = 0
+
+
+def _render_unbudgeted_lookup(result: dict) -> dict:
+    """Present the verified client result using the task tool's legacy citation fields."""
+    if not result.get("hit"):
+        return result
+
+    status = result.get("status")
+    withhold = status in ("stale", "unverified")
+    if not withhold:
+        if result.get("match_kind") != "evidence":
+            return result  # A saved interpretation and its supporting spans are distinct.
+        spans = result.get("evidence")
+        if status != "validated" or not isinstance(spans, list) or not spans:
+            raise ValueError("Missing validated lookup evidence")
+        hashes = source_hashes(result.get("sources"))
+        for span in spans:
+            if not isinstance(span, dict):
+                raise ValueError("Invalid lookup evidence span")
+            ref, line, text = span.get("ref"), span.get("line"), span.get("text")
+            complete = span.get("complete_file", False)
+            if (
+                not isinstance(ref, str) or ref not in hashes
+                or type(line) is not int or line < 1
+                or type(complete) is not bool or (complete and line != 1)
+                or not isinstance(text, str) or (not text and not complete)
+            ):
+                raise ValueError("Invalid lookup evidence span")
+
+    rendered = result.copy()
+    if withhold and "content" in rendered:
+        rendered["content_withheld"] = status
+    rendered.pop("content", None)
+    rendered.pop("content_truncated", None)
+    return rendered
 
 
 class TaskMCP(FastMCP):
@@ -162,7 +198,8 @@ class TaskMCP(FastMCP):
                            if workflow.repository_id else {})
                 if read_path_allowed is not None:
                     options.update(repo=workflow.repo, path_allowed=read_path_allowed)
-                return workflow.client.ask(self.question, workflow.namespace, **options)
+                result = workflow.client.ask(self.question, workflow.namespace, **options)
+                return _render_unbudgeted_lookup(result)
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 

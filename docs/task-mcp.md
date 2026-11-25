@@ -14,6 +14,17 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
+For `research()` without a context budget, a validated `match_kind: "evidence"`
+hit delivers each selected span in `evidence`. Consumers that previously read
+the generated top-level `content` summary should read each entry's `text` and
+`line` and join its `ref` to `sources[].ref` for the file's `content_hash`.
+Retain separate spans from the same file. A validated `answer` hit also carries
+the authored finding in `content`. Stale and unverified hits retain their status
+and source receipts. When a saved body is withheld, `content_withheld` gives the
+reason (`stale` or `unverified`). An evidence-only hit with unusable spans or
+missing source bindings yields `lookup_unavailable` so research can continue.
+Budgeted lookups use the adaptive `current_repository_reads` representation.
+
 Ordinary and adaptive lookup share the same routing guidance: look up saved findings
 when useful, read known paths directly, and batch independent reads. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
@@ -147,8 +158,8 @@ configured units. No automatic retry or budget escalation occurs. This is a
 lookup-response limit, never an answer-length or source-research limit. Missing,
 limited or unavailable memories leave source reads and fuller answers available.
 Direct reads, continuation offsets and publication eligibility are unchanged.
-Without a budget, the legacy lookup interface and representation are unchanged.
-This does not change retrieval. End-to-end gross savings remain unproven.
+Without a budget, call `research()` with no arguments and read the unbudgeted
+result fields described above. End-to-end gross savings remain unmeasured here.
 
 Writable eligible tasks receive a conditional before-final publication instruction and
 an evidence-reference payload example once in MCP initialization. Direct tasks without

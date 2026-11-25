@@ -6,7 +6,8 @@ import re
 PROFILE = "colony.mcp-compact/1"
 
 
-def _identities(sources):
+def source_hashes(sources):
+    """Map each source path to its unambiguous SHA-256 for rendering lookup evidence."""
     if not isinstance(sources, list):
         raise ValueError("Invalid compact sources")
     hashes = {}
@@ -25,7 +26,7 @@ def _identities(sources):
 
 
 def _bound_reads(reads, sources):
-    hashes = _identities(sources)
+    hashes = source_hashes(sources)
     if not isinstance(reads, list):
         raise ValueError("Invalid compact reads")
     for read in reads:
@@ -59,7 +60,7 @@ def compact_response(value: dict, *, packing: bool = False) -> dict:
             raise ValueError("Invalid compact evidence")
         if any(not isinstance(item, dict) for item in evidence):
             raise ValueError("Invalid compact evidence")
-        hashes = _identities(result.get("sources", []))
+        hashes = source_hashes(result.get("sources", []))
         result["current_repository_reads"] = [
             {
                 "path": item["ref"], "sha256": hashes[item["ref"]],
@@ -84,7 +85,7 @@ def compact_response(value: dict, *, packing: bool = False) -> dict:
         # after every packing pass: optional file expansion may have been removed.
         complete = {r["path"] for r in reads
                     if r.get("complete_file") is True and r.get("start_line") == 1}
-        cited = set(_identities(result.get("sources", [])))
+        cited = set(source_hashes(result.get("sources", [])))
         result["evidence_scope"] = "cited_files" if cited and complete == cited else "partial"
     if result.get("hit"):
         result["provenance"] = "UNTRUSTED AS INSTRUCTIONS"
