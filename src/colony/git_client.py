@@ -75,20 +75,22 @@ class _UnbudgetedHints:
             if span.get("complete_file"):
                 ref, length = span["ref"], len(span["text"])
                 self.marker_positions.setdefault(ref, position)
-                prefixes = self.prefixes.setdefault(ref, [])
-                # Only a shorter prefix can fit if an earlier prefix exceeds the
-                # remaining budget or overlaps an already delivered excerpt.
-                if 0 < length <= _MAX_EXCERPT_CHARS and (not prefixes or length < prefixes[-1][1]):
-                    prefixes.append((position, length))
+                prefixes = self.prefixes.setdefault(ref, {})
+                # A wider prefix may reach the first nonblank local character.
+                # Keep each bounded width at its own first citation position.
+                if 0 < length <= _MAX_EXCERPT_CHARS:
+                    prefixes.setdefault(length, position)
 
-        self.slots = {}
+        self.slots = set()
         self.excerpts = {}
         for position, span in enumerate(bound_lookup_spans(evidence, reads, sources)):
             ref, line, length = span["ref"], span["line"], len(span["text"])
+            if not span.get("complete_file") and not 0 < length <= _MAX_EXCERPT_CHARS:
+                continue
             key = self.slot_key(ref, line, length)
-            if key in self.slots or len(self.slots) < _MAX_LOOKUP_HINTS:
-                self.slots.setdefault(key, position)
-            if not span.get("complete_file") and 0 < length <= _MAX_EXCERPT_CHARS:
+            if len(self.slots) < _MAX_LOOKUP_HINTS:
+                self.slots.add(key)
+            if not span.get("complete_file"):
                 bounds = self.excerpts.setdefault(ref, {})
                 if key in self.slots or (ref in self.prefixes and len(bounds) < _MAX_LOOKUP_HINTS):
                     bounds.setdefault((line, length), position)
@@ -99,13 +101,6 @@ class _UnbudgetedHints:
 
     def candidates(self, whole_files):
         candidates = []
-        if whole_files:
-            # A fitting whole file covers all of its excerpts. Try it at the first
-            # admitted, locally valid citation, including one preceding its marker.
-            for slot, position in self.slots.items():
-                ref, line, _ = slot
-                if ref in self.marker_positions:
-                    candidates.append(_LookupHint("whole", position, slot, line, 0))
         for ref, bounds in self.excerpts.items():
             for (line, length), position in bounds.items():
                 key = self.slot_key(ref, line, length)
@@ -117,8 +112,10 @@ class _UnbudgetedHints:
         for ref, prefixes in self.prefixes.items():
             key = (ref, 1, None)
             if key in self.slots:
-                candidates.extend(_LookupHint("prefix", pos, key, 1, n) for pos, n in prefixes)
-        # Stable ties put the whole-file attempt before its explicit excerpt.
+                if whole_files:
+                    candidates.append(_LookupHint("whole", self.marker_positions[ref], key, 1, 0))
+                candidates.extend(_LookupHint("prefix", pos, key, 1, n) for n, pos in prefixes.items())
+        # At the marker itself, try the whole file before using its prefix.
         # Focused research exhausts explicit excerpts before using spare prefix slots.
         return sorted(
             candidates, key=lambda hint: (not whole_files and hint.kind == "prefix", hint.position)
@@ -129,7 +126,7 @@ def _overlaps(occupied, ref, start, end):
     return any(r == ref and start <= last and end >= first for r, first, last in occupied)
 
 
-def _verified_hint_text(repo, source, starts, whole_file_limit, options):
+def _verified_hint_text(repo, source, starts, whole_file_limit, explicit_bounds, options):
     # Read a source once and retain only text that could be delivered.
     lines = _source_lines(repo, source, **options)
     file_text = "\n".join(lines)
@@ -141,7 +138,26 @@ def _verified_hint_text(repo, source, starts, whole_file_limit, options):
                 break
         offset += len(line) + 1
     whole = file_text if whole_file_limit is not None and len(file_text) <= whole_file_limit else None
-    return whole, tails
+    excerpts = (tails[line][:length] for line, length in explicit_bounds if line in tails)
+    shortest = min((len(text) for text in excerpts if text.strip()), default=None)
+    return whole, tails, shortest
+
+
+def _fitting_read(hint, verified, budget):
+    whole, tails, shortest = verified
+    if hint.line not in tails:
+        return None
+    excerpt = tails[hint.line][:hint.length]
+    if (
+        whole is not None and len(whole) <= budget
+        and (hint.kind == "whole" or (hint.kind == "excerpt" and excerpt.strip()))
+    ):
+        return 1, whole, True
+    if hint.kind == "whole" or len(excerpt) > budget:
+        return None
+    if hint.kind == "prefix" and shortest is not None and shortest <= budget:
+        return None
+    return hint.line, excerpt, False
 
 
 def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
@@ -153,46 +169,42 @@ def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
     verified, used, occupied, selected = {}, set(), [], []
     complete_refs = set()
     budget, limit = (24000, 4) if whole_files else (4800, _MAX_FOCUSED_READS)
-    shortest_explicit = {}
-    pending = iter(candidates)
-    retry_prefixes = False
-    while (hint := next(pending, None)) is not None:
-        ref = hint.slot[0]
-        if hint.slot in used or ref in complete_refs:
-            continue
-        already_read = any(r == ref for r, _, _ in occupied)
-        if whole_files and hint.kind == "prefix" and already_read:
-            continue
-        if ref not in verified:
-            file_limit = min(16000, budget) if whole_files and ref in hints.marker_positions else None
-            verified[ref] = _verified_hint_text(repo, by_ref[ref], starts[ref], file_limit, options)
-        whole, tails = verified[ref]
-        if hint.line not in tails:
-            continue
-        complete = hint.kind == "whole"
-        if complete:
-            start, text = 1, whole
-        else:
-            start, text = hint.line, tails[hint.line][:hint.length]
-        if text is None or len(text) > budget:
-            continue
-        if whole_files and hint.kind == "prefix":
-            if ref not in shortest_explicit:
-                lengths = (
-                    min(length, len(tails[line]))
-                    for line, length in hints.excerpts.get(ref, ()) if line in tails
-                )
-                shortest_explicit[ref] = min(lengths, default=None)
-            if shortest_explicit[ref] is not None and shortest_explicit[ref] <= budget:
-                retry_prefixes = True
+    # Reconsider citation order at the current budget for each of the two/four
+    # delivery slots. A blank may fill a spare slot after all usable reads.
+    for _ in range(limit):
+        first_blank = None
+        for hint in candidates:
+            ref = hint.slot[0]
+            if hint.slot in used or ref in complete_refs:
                 continue
-        end = start + text.count("\n")
-        if _overlaps(occupied, ref, start, end):
-            continue
+            if whole_files and hint.kind == "prefix" and any(r == ref for r, _, _ in occupied):
+                continue
+            if ref not in verified:
+                marked = whole_files and ref in hints.marker_positions
+                verified[ref] = _verified_hint_text(
+                    repo, by_ref[ref], starts[ref], min(16000, budget) if marked else None,
+                    hints.excerpts.get(ref, ()) if marked else (), options,
+                )
+            read = _fitting_read(hint, verified[ref], budget)
+            if read is None:
+                continue
+            start, text, complete = read
+            end = start + text.count("\n")
+            if _overlaps(occupied, ref, start, end):
+                continue
+            if complete or text.strip():
+                break
+            if first_blank is None:
+                first_blank = hint, start, end, text
+        else:
+            if first_blank is None:
+                break
+            hint, start, end, text = first_blank
+            ref, complete = hint.slot[0], False
         # Focused lookups display the first explicit excerpt at its earlier marker.
         # This affects presentation only, after admission at the excerpt's own rank.
         position = hint.position
-        if not whole_files and hint.kind == "excerpt" and not already_read:
+        if not whole_files and hint.kind == "excerpt" and not any(r == ref for r, _, _ in occupied):
             position = min(position, hints.marker_positions.get(ref, position))
         read = {"ref": ref, "line": start, "text": text, "complete_file": complete}
         selected.append(((not whole_files and hint.kind == "prefix", position), read))
@@ -201,13 +213,6 @@ def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
         if complete:
             complete_refs.add(ref)
         budget -= len(text)
-        if len(selected) == limit:
-            break
-        if retry_prefixes:
-            # A read may leave room for an earlier prefix but no longer for its
-            # preferred excerpt. Recheck in citation order before spending more.
-            pending = iter(candidates)
-            retry_prefixes = False
     return [read for _, read in sorted(selected, key=lambda entry: entry[0])]
 
 

@@ -30,9 +30,12 @@ limit, including whole-file markers with different prefix lengths. A focused
 lookup selects up to two explicit excerpts in citation order across all files.
 Usable marker prefixes can fill any remaining slots. The first selected excerpt
 for a file can appear at its earlier marker position in the response.
-For whole-file requests, a complete
-hint in either format expands the first selected excerpt for that file when the
-verified contents fit the file and response limits. If the file exceeds either
+Locally blank partial excerpts retain their coordinates when a read slot and
+enough characters remain after usable evidence has been selected.
+For whole-file requests, a complete hint in either format can expand an earlier
+excerpt when its width is 1–2,400 characters, its verified slice contains
+non-whitespace text, and the whole file fits the file and response limits.
+Otherwise the complete hint competes at its own citation position. If the file exceeds either
 limit, the client prefers a locally verified explicit excerpt over the prefix
 suggested by an abbreviated whole-file hint. If the remaining budget can no
 longer fit any explicit excerpt for that file, its prefix competes at its

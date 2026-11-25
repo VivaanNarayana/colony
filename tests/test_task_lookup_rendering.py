@@ -591,6 +591,103 @@ def test_git_preserves_both_excerpts_when_whole_hint_matches_one(
     assert result["complete_files"] == [peer.ref] and result["evidence_scope"] == "partial"
 
 
+@pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])
+@pytest.mark.parametrize(
+    ("line", "width", "advance"),
+    [(1, 0, False), (2, 2401, False), (3, 1, False), (1, 1, False), (2, 2400, True)],
+    ids=["empty-hint", "oversized", "locally-empty", "newline-only", "usable-at-limit"],
+)
+def test_only_a_usable_excerpt_can_advance_a_whole_file(
+    transport, monkeypatch, mixed, line, width, advance
+):
+    client, repo, store, responses = transport
+    target_text, peer_text = "\n" + "A" * 15_998 + "\n", "B" * 16_000
+    trail = publish(client, repo, git=True, file_texts=[target_text + "\n", peer_text])
+    target, peer = trail.sources
+    whole = {"ref": target.ref, "line": 1, "text": target_text, "complete_file": True}
+    peer_span = {**whole, "ref": peer.ref, "text": peer_text}
+    # The wire supplies the width. Only the local slice can qualify the excerpt.
+    early = {**whole, "line": line, "text": "?" * width, "complete_file": False}
+    serve_citations(
+        store, monkeypatch, evidence=[early] if mixed else [early, peer_span, whole],
+        current_repository_reads=[_wire_read(peer_span, peer), _wire_read(whole, target)] if mixed else [],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    winner = whole if advance else peer_span
+    assert len(responses) == 1 and result["git"]["compatibility"] == "matched"
+    assert [s for s in result["evidence"] if s["complete_file"]] == [winner]
+    assert result["complete_files"] == [winner["ref"]] and result["evidence_scope"] == "partial"
+    assert "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("marker_first", [False, True], ids=["blank-first", "marker-first"])
+@pytest.mark.parametrize("blank", ["", "  "], ids=["empty-local-slice", "spaces"])
+def test_whole_file_blank_excerpt_yields_to_prefix(transport, monkeypatch, marker_first, blank):
+    client, repo, store, responses = transport
+    fact = "RETRIES = 5"
+    trail = publish(client, repo, git=True, file_texts=["\n".join([fact, "#" * 16_100, blank, ""])])
+    source = trail.sources[0]
+    marker = {"ref": source.ref, "line": 1, "text": "?" * len(fact), "complete_file": True}
+    explicit = {**marker, "line": 3, "text": "?" * max(len(blank), 1), "complete_file": False}
+    first, last = (marker, explicit) if marker_first else (explicit, marker)
+    serve_citations(
+        store, monkeypatch, evidence=[first], current_repository_reads=[_wire_read(last, source)],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    expected = [{**marker, "text": fact, "complete_file": False}, {**explicit, "text": blank}]
+    assert len(responses) == 1 and result["evidence"] == (expected if marker_first else expected[::-1])
+    assert result["complete_files"] == [] and result["evidence_scope"] == "partial"
+    assert "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("whole_files", [False, True], ids=["focused", "whole-file"])
+def test_blank_marker_prefix_preserves_later_usable_width(transport, monkeypatch, whole_files):
+    client, repo, store, responses = transport
+    fact = "  RETRIES = 5"
+    trail = publish(client, repo, git=True, file_texts=[fact + "\n" + "#" * 16_100])
+    source = trail.sources[0]
+    first = {"ref": source.ref, "line": 1, "text": "?", "complete_file": True}
+    later = _wire_read({**first, "text": "?" * len(fact)}, source)
+    serve_citations(store, monkeypatch, evidence=[first], current_repository_reads=[later, later])
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=whole_files
+    )
+    assert len(responses) == 1 and result["evidence"] == [{**first, "text": fact, "complete_file": False}]
+    assert result["complete_files"] == [] and "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("blank", ["", "  "], ids=["empty-local-slice", "spaces"])
+def test_focused_blank_excerpts_leave_room_for_usable_evidence(transport, monkeypatch, blank):
+    client, repo, store, responses = transport
+    fact = "RETRIES = 5"
+    trail = publish(client, repo, git=True, file_texts=[fact, f"B\n{blank}\n", f"C\n{blank}\n"])
+    target, b, c = trail.sources
+    marker = {"ref": target.ref, "line": 1, "text": fact, "complete_file": True}
+    blanks = [
+        {**marker, "ref": s.ref, "line": 2, "text": "?" * max(len(blank), 1), "complete_file": False}
+        for s in (b, c)
+    ]
+    serve_citations(
+        store, monkeypatch, evidence=[marker],
+        current_repository_reads=[_wire_read(h, s) for h, s in zip(blanks, (b, c), strict=True)],
+    )
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    assert len(responses) == len(blocks) == 1
+    result = json.loads(blocks[0].text)
+    assert result["hit"] and result["evidence"] == [
+        {**blanks[0], "text": blank}, {**marker, "complete_file": False},
+    ]
+    assert blocks[0].text.count(fact) == 1
+    assert "current_repository_reads" not in result and "content" not in result
+
+
 @pytest.mark.parametrize("marker_in_reads", [False, True], ids=["marker-first", "excerpt-first"])
 def test_focused_git_research_prefers_explicit_excerpt(transport, monkeypatch, marker_in_reads):
     client, repo, store, responses = transport
