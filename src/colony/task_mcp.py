@@ -12,7 +12,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
-from mcp.types import ToolAnnotations
+from mcp.types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from pydantic_core import to_json
 
@@ -20,6 +20,7 @@ from colony.client import Client
 from colony.evidence_refs import EvidenceError, EvidenceSession
 from colony.models import ContextBudget
 from colony.task_reads import ReadAccess
+from colony.task_scope import SourceScope, containment_question
 from colony.workflow import Workflow
 
 ANSWER_POLICY = (
@@ -47,11 +48,12 @@ RESEARCH_GUIDANCE = (
 )
 READ_ROUTING = (
     "Read known paths directly. Batch independent reads within the host allowance. "
-    "Once sources answer the question, skip confirmation lookups. Investigate gaps or contradictions. "
+    "Once sources answer the question, skip confirmation lookups. Cite sufficient validated lookup lines directly. Investigate gaps or contradictions. "
 )
 PUBLICATION_CUE = (
-    "Publish a newly traced behavior directly with its conditions, result and supporting "
-    "evidence_refs. Skip unchanged reuse and unrequested value memories."
+    'For a new supported behavior, publish(content="result", applicability="conditions", '
+    'evidence_refs=[ref]) using the supporting refs from these reads. Skip confirmation lookups. '
+    'For a single value, cite and answer directly unless asked to remember it. Skip unchanged reuse.'
 )
 
 
@@ -70,7 +72,8 @@ class TaskMCP(FastMCP):
     def __init__(self, workflow, question: str, *, direct_path: str | None = None,
                  remember: bool = False, context_budget: ContextBudget | None = None,
                  empty_memory_routing: bool = True, trace_reads: bool = False,
-                 read_admission=None, read_path_allowed=None):
+                 read_admission=None, read_path_allowed=None, scope_files=None,
+                 scope_list_tool="source_files", remaining_units=None):
         if not isinstance(question, str) or not question.strip():
             raise ValueError("A focused task question is required")
         self.workflow = workflow
@@ -91,12 +94,16 @@ class TaskMCP(FastMCP):
             )
             context_budget = ContextBudget.model_validate(context_budget)
         self.evidence = EvidenceSession(workflow, path_allowed=read_path_allowed)
+        self._read_access = ReadAccess(self.evidence, read_admission)
+        self._scope = (SourceScope(self._read_access, scope_files, remaining_units)
+                       if scope_files is not None and direct_path is None
+                       and containment_question(question) else None)
+        self._scope_list_tool = scope_list_tool
         self._availability_enabled = False
-        self._empty_memory_routing = empty_memory_routing and direct_path is None
+        self._empty_memory_routing = empty_memory_routing and direct_path is None and self._scope is None
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._availability_generation = 0
-        self._read_access = ReadAccess(self.evidence, read_admission)
         # Trusted host classification; tool/source arguments cannot promote this.
         self._may_publish = not workflow.read_only and (remember or direct_path is None)
         self._remember = remember
@@ -107,6 +114,8 @@ class TaskMCP(FastMCP):
             "Start with read for the host's explicit path. Research further whenever needed. "
             if direct_path is not None else "Use research when saved findings could help. "
         )
+        if self._scope is not None:
+            routing = self._scope.routing(scope_list_tool) + " "
         instructions = routing + READ_ROUTING + ANSWER_POLICY
         if self._may_publish:
             instructions += " " + PUBLICATION_POLICY
@@ -126,6 +135,20 @@ class TaskMCP(FastMCP):
             # source, references and paging fields, including inside batches.
             return to_json(response).decode()
 
+        def deliver(paths, operation):
+            if self._scope is None:
+                response = operation()
+            else:
+                with self.evidence._lock:
+                    before = self._scope.versions(paths)
+                    with self.evidence.track_deliveries(file_positions=True) as pages:
+                        response = operation()
+                    delivered = self.evidence.delivered_pages(pages, response.get("results", [response]))
+                    receipt = self._scope.record(before, delivered)
+                    if receipt is not None:
+                        response["listed_scope"] = receipt
+            return observe(response.get("results", [response]), response)
+
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
@@ -139,14 +162,13 @@ class TaskMCP(FastMCP):
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
-                results = self.evidence.read_batch([request.model_dump() for request in batch])
-                return observe(results, {"results": results})
+                requests = [request.model_dump() for request in batch]
+                return deliver((r.path for r in batch), lambda: {"results": self.evidence.read_batch(requests)})
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
-                result = self.evidence.read(selected, start, end, offset=offset)
-                return observe([result], result)
+                return deliver([selected], lambda: self.evidence.read(selected, start, end, offset=offset))
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 
@@ -188,6 +210,12 @@ class TaskMCP(FastMCP):
             self.add_tool(function, name=name, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
                           structured_output=False)
 
+        if self._scope is not None and scope_list_tool == "source_files":
+            @self.tool(structured_output=False)
+            def source_files() -> str:
+                """List authorized task files and plan containment reads. Listing costs one unit."""
+                return "\n".join(self._read_access.invoke(self._scope.visible_paths))
+
         if trace_reads:
             from colony.task_reads import trace_read as read_bundle
 
@@ -198,8 +226,8 @@ class TaskMCP(FastMCP):
                 and injected implementations must be requested explicitly when relevant.
                 Continue partial pages using read and next_offset; coverage is not exhaustive.
                 """
-                result = read_bundle(self.evidence, self._read_access, paths, max_files)
-                return observe(result["results"], result)
+                candidates = self._scope.paths if self._scope is not None else paths
+                return deliver(candidates, lambda: read_bundle(self.evidence, self._read_access, paths, max_files))
 
             self.add_tool(trace_read, annotations=ToolAnnotations(readOnlyHint=True, openWorldHint=False),
                           structured_output=False)
@@ -306,7 +334,34 @@ class TaskMCP(FastMCP):
         before = (self._publication_ready, self._publication_attempted)
         try:
             result = await super().call_tool(name, arguments)
+            if self._scope is not None and name == self._scope_list_tool:
+                if isinstance(result, CallToolResult):
+                    blocks = result.content
+                else:
+                    blocks = result[0] if isinstance(result, tuple) else result
+                if (not getattr(result, "isError", False) and len(blocks) == 1
+                        and isinstance(blocks[0], TextContent)):
+                    with self.evidence._lock:
+                        try:
+                            plan = self._scope.plan(blocks[0].text.splitlines())
+                        except EvidenceError:
+                            # The host may independently authorize its listing.
+                            plan = self._scope.unverified_plan()
+                    planned = [*blocks, TextContent(type="text", text=to_json({"scope_read_plan": plan}).decode())]
+                    if isinstance(result, CallToolResult):
+                        result = result.model_copy(update={"content": planned})
+                    elif isinstance(result, tuple):
+                        result = (planned, *result[1:])
+                    else:
+                        result = planned
+                else:
+                    # A mixed, failed or unrecognized listing provides no current inventory.
+                    with self.evidence._lock:
+                        self._scope.unverified_plan()
         except ToolError:
+            if self._scope is not None and name == self._scope_list_tool:
+                with self.evidence._lock:
+                    self._scope.unverified_plan()
             # FastMCP/Pydantic errors can echo arbitrary rejected input.
             raise ToolError("Task tool failed; adjust the request or use other research tools") from None
         finally:
@@ -341,6 +396,8 @@ def main(argv=None):
     parser.add_argument("--read-only", action="store_true")
     parser.add_argument("--remember", action="store_true", help="Trusted explicit user request to remember")
     parser.add_argument("--repository-id")
+    parser.add_argument("--scope-file", action="append", dest="scope_files",
+                        help="Authorized file in a fixed task inventory (repeat for each file)")
     parser.add_argument("--no-empty-memory-routing", action="store_true")
     parser.add_argument("--trace-reads", action="store_true",
                         help="Enable bounded static-import bundles; external quota hosts need per-entry admission")
@@ -363,7 +420,10 @@ def main(argv=None):
             return True
     server = TaskMCP(workflow, args.question, direct_path=args.direct_path, remember=args.remember,
                      context_budget=budget, empty_memory_routing=not args.no_empty_memory_routing,
-                     trace_reads=args.trace_reads, read_admission=admit)
+                     trace_reads=args.trace_reads, read_admission=admit, scope_files=args.scope_files,
+                     read_path_allowed=(frozenset(args.scope_files).__contains__ if args.scope_files
+                                        else None),
+                     remaining_units=(lambda: remaining) if admit is not None else None)
     if args.read_unit_limit is not None:
         server._base_instructions += (
             f" Host source-read allowance: {args.read_unit_limit} units total, shared by "

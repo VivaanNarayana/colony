@@ -1,0 +1,636 @@
+"""Provider-free task-tool regressions using disposable, host-declared inventories."""
+
+import asyncio
+import json
+import os
+import sys
+from pathlib import Path
+
+import pytest
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from mcp.types import CallToolResult, TextContent
+from test_workflow import identity as identity
+
+from colony.task_mcp import TaskMCP
+from colony.workflow import Workflow
+
+QUESTION = "State whether this repository contains the pressure measurement."
+
+
+def blocks(server, tool, **args):
+    result = asyncio.run(server.call_tool(tool, args))
+    return result.content if hasattr(result, "content") else result
+
+
+def read(server, **args):
+    return json.loads(blocks(server, "read", **args)[0].text)
+
+
+def plan(server):
+    return json.loads(blocks(server, "source_files")[1].text)["scope_read_plan"]
+
+
+def create(identity, paths, question=QUESTION, **options):
+    client, repo, _ = identity
+    return TaskMCP(Workflow(client, "team", repo, read_only=True), question,
+                   scope_files=paths, **options)
+
+
+def test_cached_host_listing_gets_a_fresh_plan(identity):
+    server = create(identity, ["settings.py"], scope_list_tool="inventory", remaining_units=lambda: 1)
+    cached = CallToolResult(content=[TextContent(type="text", text="settings.py")])
+
+    @server.tool(structured_output=False)
+    def inventory() -> CallToolResult:
+        return cached
+
+    first = blocks(server, "inventory")
+    action = json.loads(first[1].text)["scope_read_plan"]
+    read(server, **action["arguments"])
+    second = blocks(server, "inventory")
+    assert json.loads(second[1].text)["scope_read_plan"] == {"status": "complete", "listed_files": 1}
+    assert len(cached.content) == 1 and "next_tool" in json.loads(first[1].text)["scope_read_plan"]
+    server.evidence.close()
+    unauthorized = blocks(server, "inventory")
+    assert unauthorized[0].text == "settings.py"
+    assert json.loads(unauthorized[1].text)["scope_read_plan"]["status"] == "unverified_scope"
+    assert not server._scope.listed and not server._scope.covered
+
+
+def test_unrecognized_host_listing_invalidates_previous_receipt(identity):
+    server = create(identity, ["settings.py"], scope_list_tool="inventory")
+    items = [TextContent(type="text", text="settings.py")]
+
+    @server.tool(structured_output=False)
+    def inventory() -> CallToolResult:
+        return CallToolResult(content=list(items))
+
+    assert len(blocks(server, "inventory")) == 2
+    assert read(server, path="settings.py")["listed_scope"]["status"] == "complete"
+    items.append(TextContent(type="text", text="Inventory unavailable"))
+    assert len(blocks(server, "inventory")) == 2
+    assert "listed_scope" not in read(server, path="settings.py")
+
+
+@pytest.mark.parametrize("last", ["The gauge registered ninety kilopascals.", "No sensor attached."])
+def test_five_files_fit_in_one_charged_batch_including_last_file(identity, last):
+    _, repo, _ = identity
+    paths = [f"part{i}.txt" for i in range(5)]
+    for path in paths:
+        (repo / path).write_text("Equipment inventory.")
+    (repo / paths[-1]).write_text(last)
+    units = list(range(6))
+    server = create(identity, paths, read_admission=lambda: bool(units) and units.pop() >= 0,
+                    remaining_units=lambda: len(units))
+    action = plan(server)
+    assert action == {"next_tool": "read", "arguments": {"batch": [{"path": p} for p in paths]}}
+    result = read(server, **action["arguments"])
+    assert result["listed_scope"] == {"status": "complete", "listed_files": 5}
+    assert result["results"][-1]["content"] == last
+    assert all(entry["evidence_ref"] for entry in result["results"])
+    assert not units
+
+
+def test_allowance_denial_preserves_gaps_and_research_can_find_positive_evidence(identity, monkeypatch):
+    client, _, _ = identity
+    paths = ["README.md", "settings.py"]
+    units = [True, True]
+    server = create(identity, paths, read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    monkeypatch.setattr(client, "ask", lambda *a, **k: {"hit": True, "answer": "current pointer"})
+    assert json.loads(blocks(server, "research")[0].text)["hit"]
+    assert plan(server)["status"] == "partial"
+    result = read(server, batch=[{"path": p} for p in paths])
+    assert result["results"][1]["error"]
+    assert result["listed_scope"]["unverified_paths"] == ["settings.py"]
+
+
+def test_opaque_quota_does_not_promise_a_full_batch(identity):
+    server = create(identity, ["README.md", "settings.py"], read_admission=lambda: True)
+    assert plan(server)["status"] == "partial"
+
+
+@pytest.mark.parametrize("known_budget", [True, False])
+def test_named_read_before_listing_completes_scope_in_three_units(identity, known_budget):
+    paths = ["settings.py", "README.md"]
+    units = [True] * 3
+    server = create(identity, paths, "Does the repository define RETRY_LIMIT? Start with settings.py.",
+                    read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=(lambda: len(units)) if known_budget else None)
+    first = read(server, path=paths[0])
+    assert first["complete_file"] and "listed_scope" not in first
+    action = plan(server)
+    if known_budget:
+        assert action == {"next_tool": "read", "arguments": {"batch": [{"path": paths[1]}]}}
+    else:
+        assert action["status"] == "partial"
+    assert read(server, path=paths[1])["listed_scope"] == {"status": "complete", "listed_files": 2}
+    assert not units
+
+
+@pytest.mark.parametrize("listed_first", [False, True])
+def test_listing_detects_an_equal_size_edit_with_restored_mtime(identity, listed_first):
+    _, repo, _ = identity
+    name = "settings.py"
+    file = repo / name
+    file.write_bytes(b"TIMEOUT = 30")
+    server = create(identity, [name])
+    if listed_first:
+        plan(server)
+    assert read(server, path=name)["content"] == "TIMEOUT = 30"
+    before = file.stat()
+    file.write_bytes(b"TIMEOUT = 60")
+    os.utime(file, ns=(before.st_atime_ns, before.st_mtime_ns))
+    assert file.stat().st_mtime_ns == before.st_mtime_ns
+    assert plan(server) == {"next_tool": "read", "arguments": {"batch": [{"path": name}]}}
+    current = read(server, path=name)
+    assert current["content"] == "TIMEOUT = 60" and current["listed_scope"]["status"] == "complete"
+
+
+def test_first_listing_revalidates_previously_read_pages(identity):
+    _, repo, _ = identity
+    paths = ["settings.py", "README.md"]
+    server = create(identity, paths)
+    assert "listed_scope" not in read(server, batch=[{"path": p} for p in paths])
+    (repo / paths[1]).write_text("A different version.")
+    assert plan(server)["arguments"] == {"batch": [{"path": paths[1]}]}
+    assert read(server, path=paths[1])["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows change-time query")
+def test_missing_change_time_leaves_coverage_unverified(identity, monkeypatch):
+    server = create(identity, ["settings.py"])
+    plan(server)
+    assert read(server, path="settings.py")["listed_scope"]["status"] == "complete"
+    monkeypatch.setattr("colony.validation._get_file_info", lambda *args: False)
+    page = read(server, path="settings.py")
+    assert page["content"] == "TIMEOUT = 30"
+    assert page["listed_scope"]["status"] == "partial" and page["listed_scope"]["unverified_count"] == 1
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows change-time query")
+@pytest.mark.parametrize("query_succeeds", [False, True], ids=["unavailable", "zero-change-time"])
+def test_discovery_keeps_readable_files_when_change_time_is_unknown(identity, monkeypatch, query_succeeds):
+    files = ["README.md", "settings.py"]
+    allowed = set(files)
+    server = create(identity, files, read_path_allowed=allowed.__contains__)
+    # A successful call with the zero-initialized FILE_BASIC_INFO is also inconclusive.
+    monkeypatch.setattr("colony.validation._get_file_info", lambda *args: query_succeeds)
+    listing, action = blocks(server, "source_files")
+    assert listing.text.splitlines() == files
+    assert json.loads(action.text)["scope_read_plan"]["status"] == "partial"
+    page = read(server, path="settings.py")
+    assert page["content"] == "TIMEOUT = 30" and page["listed_scope"]["status"] == "partial"
+    allowed.remove("settings.py")
+    assert blocks(server, "source_files")[0].text.splitlines() == ["README.md"]
+
+
+@pytest.mark.parametrize("spelling", ["settings.py", "./settings.py"])
+def test_prelisting_read_and_continuation_probe_only_the_requested_file(identity, monkeypatch, spelling):
+    _, repo, _ = identity
+    paths = ["settings.py", "README.md", *(f"part-{i}.txt" for i in range(254))]
+    (repo / paths[0]).write_text("x" * 17000)
+    for path in paths[2:]:
+        (repo / path).touch()
+    server = create(identity, paths)
+    probes = []
+    version = server._scope.version
+
+    def tracked(path):
+        probes.append(path)
+        return version(path)
+
+    monkeypatch.setattr(server._scope, "version", tracked)
+    first = read(server, path=spelling)
+    assert "listed_scope" not in first and first["next_offset"] == 16000
+    tail = read(server, path=spelling, offset=first["next_offset"])
+    assert "listed_scope" not in tail and tail["next_offset"] is None
+    assert probes == [paths[0]] * 4
+    assert plan(server)["status"] == "partial"
+    assert set(probes) == set(paths)
+    receipt = read(server, path="README.md")["listed_scope"]
+    assert receipt["listed_files"] == 256 and receipt["unverified_count"] == 254
+
+
+def test_repeated_prelisting_edits_keep_coverage_bounded_and_current(identity):
+    _, repo, _ = identity
+    paths = ["settings.py", "README.md"]
+    checked = []
+
+    def allowed(path):
+        checked.append(path)
+        return path in paths
+
+    server = create(identity, paths, read_path_allowed=allowed)
+    read(server, path="README.md")
+    checked.clear()
+    for size in range(1, 12):
+        (repo / "settings.py").write_text("x" * size)
+        read(server, path="settings.py")
+        assert len(server._scope.covered) <= 2 * len(paths)
+    assert set(checked) == {"settings.py"}
+    assert plan(server) == {"status": "complete", "listed_files": 2}
+
+
+def test_multi_batch_listing_counts_pages_after_publication_cache_fills(identity):
+    _, repo, _ = identity
+    paths = [f"part-{i}.txt" for i in range(10)]
+    for name in paths:
+        (repo / name).write_text("data")
+    server = create(identity, paths)
+    server.evidence._capacity = 1
+    assert plan(server)["status"] == "partial"
+    first = read(server, batch=[{"path": p} for p in paths[:8]])
+    assert first["results"][1]["evidence_ref"] is None
+    assert first["listed_scope"]["unverified_paths"] == paths[8:]
+    action = plan(server)
+    assert action["arguments"] == {"batch": [{"path": p} for p in paths[8:]]}
+    assert read(server, **action["arguments"])["listed_scope"] == {"status": "complete", "listed_files": 10}
+
+
+def test_mismatched_target_is_not_credited(identity, monkeypatch):
+    server = create(identity, ["settings.py"])
+    plan(server)
+    actual = server._scope.version("settings.py")
+    monkeypatch.setattr(server._scope, "version", lambda path: ("another-target", *actual[1:]))
+    result = read(server, path="settings.py")
+    assert result["content"] and result["listed_scope"]["status"] == "partial"
+
+
+def test_only_delivered_trace_pages_count(identity):
+    _, repo, _ = identity
+    (repo / "caller.py").write_text("import settings")
+    server = create(identity, ["caller.py", "settings.py"], trace_reads=True)
+    plan(server)
+    result = json.loads(blocks(server, "trace_read", paths=["caller.py"])[0].text)
+    assert [entry["path"] for entry in result["results"]] == ["caller.py", "settings.py"]
+    assert result["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.parametrize("listing", ["settings.py", "settings.py\nsettings.py"])
+def test_embedded_structured_listing_preserves_payload_and_adds_plan(identity, listing):
+    server = create(identity, ["settings.py"], scope_list_tool="files", remaining_units=lambda: 1)
+
+    @server.tool(structured_output=True)
+    def files() -> str:
+        return listing
+
+    content, structured = asyncio.run(server.call_tool("files", {}))
+    assert structured == {"result": listing} and content[0].text == listing
+    action = json.loads(content[1].text)["scope_read_plan"]
+    assert action["arguments"]["batch"] == [{"path": "settings.py"}]
+    receipt = read(server, **action["arguments"])["listed_scope"]
+    assert receipt == {"status": "complete", "listed_files": 1}
+    content, _ = asyncio.run(server.call_tool("files", {}))
+    assert json.loads(content[1].text)["scope_read_plan"] == receipt
+
+
+def test_coverage_only_joins_contiguous_pages_of_the_same_file_version(identity):
+    _, repo, _ = identity
+    path = repo / "long.txt"
+    path.write_text("a" * 17000)
+    server = create(identity, [path.name])
+    assert plan(server)["status"] == "partial"
+    page = read(server, path=path.name)
+    assert page["listed_scope"]["status"] == "partial"
+    path.write_text("b" * 17001)
+    tail = read(server, path=path.name, offset=page["next_offset"])
+    assert tail["listed_scope"]["status"] == "partial"
+    page = read(server, path=path.name)
+    assert page["listed_scope"]["status"] == "complete"
+    path.write_text("c" * 17002)
+    assert read(server, path=path.name)["listed_scope"]["status"] == "partial"
+    assert plan(server)["arguments"] == {"batch": [{"path": path.name, "offset": 16000}]}
+
+
+@pytest.mark.parametrize("offsets", [(0, 8000), (8000, 0)])
+def test_first_listing_credits_both_batch_pages_in_either_order(identity, offsets):
+    _, repo, _ = identity
+    path = repo / "notes.txt"
+    text = "a" * 8000 + "b" * 8000
+    path.write_text(text)
+    units = [True] * 3
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    result = read(server, batch=[{"path": path.name, "offset": offset} for offset in offsets])
+    pages = sorted(result["results"], key=lambda page: page["start_offset"])
+    assert "".join(page["content"] for page in pages) == text
+    assert "listed_scope" not in result
+    assert plan(server) == {"status": "complete", "listed_files": 1}
+    assert not units
+
+
+def test_later_reads_bridge_disjoint_multibyte_pages(identity):
+    _, repo, _ = identity
+    path = repo / "notes.txt"
+    path.write_bytes(("🌱" * 18000).encode("utf-8"))
+    server = create(identity, [path.name])
+    assert plan(server)["status"] == "partial"
+    # Fill the gaps between 4,000-character pages and plan the final suffix.
+    for offset in (12000, 4000, 0):
+        assert read(server, path=path.name, offset=offset)["listed_scope"]["status"] == "partial"
+    assert plan(server)["status"] == "partial"
+    assert read(server, path=path.name, offset=8000)["listed_scope"]["status"] == "partial"
+    assert plan(server)["arguments"] == {"batch": [{"path": path.name, "offset": 16000}]}
+    assert read(server, path=path.name, offset=16000)["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.parametrize("order", [(1, 3), (3, 1)])
+def test_adjacent_line_ranges_complete_scope_on_last_unit(identity, order):
+    _, repo, _ = identity
+    path = repo / "ranges.txt"
+    path.write_bytes("one\r\n\r\n水\r\nfour\r\n".encode())
+    units = [True] * 3
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    assert plan(server)["next_tool"] == "read"
+    first, second = [read(server, path=path.name, start=n, end=n + 1) for n in order]
+    assert {first["content"], second["content"]} == {"one\n", "水\nfour"}
+    assert first["listed_scope"]["status"] == "partial"
+    assert second["listed_scope"] == {"status": "complete", "listed_files": 1}
+    assert not units
+
+
+def test_missing_blank_line_and_clipped_range_stay_open_until_delivered(identity):
+    _, repo, _ = identity
+    path = repo / "ranges.txt"
+    path.write_bytes(("\r\n\r\n" + "水" * 6000 + "\r\nend").encode())
+    server = create(identity, [path.name])
+    plan(server)
+    for line in (1, 4):
+        assert read(server, path=path.name, start=line, end=line)["listed_scope"]["status"] == "partial"
+    first = read(server, path=path.name, start=3, end=3)
+    assert first["next_offset"] == 5333
+    assert read(server, path=path.name, start=3, end=3,
+                offset=first["next_offset"])["listed_scope"]["status"] == "partial"
+    assert read(server, path=path.name, start=2, end=2)["listed_scope"]["status"] == "complete"
+
+
+def test_range_continuation_uses_normalized_coordinates_and_one_version(identity):
+    _, repo, _ = identity
+    path = repo / "ranges.txt"
+    path.write_bytes(("水\r\n" + "z" * 14000 + "\r\nend").encode())
+    server = create(identity, [path.name])
+    plan(server)
+    read(server, path=path.name, start=1, end=1)
+    path.write_bytes(("🌱🌱\r\n" + "z" * 14000 + "\r\nend").encode())
+    assert read(server, path=path.name, start=3)["listed_scope"]["status"] == "partial"
+    assert plan(server)["arguments"] == {"batch": [{"path": path.name}]}
+    read(server, path=path.name, start=1, end=1)
+    action = plan(server)
+    assert action["arguments"] == {"batch": [{"path": path.name, "offset": 2}]}
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.parametrize("char,gap", [("a", 12000), ("🌱", 3000), ("a", 16000)])
+def test_plan_bridges_an_observed_tail_with_one_source_unit(identity, char, gap):
+    _, repo, _ = identity
+    path = repo / "tail.txt"
+    path.write_bytes((char * (24000 // len(char.encode()))).encode())
+    units = [True] * 3
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    read(server, path=path.name, offset=gap)
+    action = plan(server)
+    assert action == {"next_tool": "read", "arguments": {"batch": [{"path": path.name}]}}
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+    assert not units
+
+
+@pytest.mark.parametrize("gaps,fits", [((10000, 6000), False), ((8000, 8000), True)])
+def test_bridge_plan_respects_each_files_share_of_batch(identity, gaps, fits):
+    _, repo, _ = identity
+    paths = ["left.txt", "right.txt"]
+    server = create(identity, paths)
+    for path, gap in zip(paths, gaps, strict=True):
+        (repo / path).write_bytes(b"x" * 20000)
+        read(server, path=path, offset=gap)
+    action = plan(server)
+    if fits:
+        assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+    else:
+        assert action["status"] == "partial"
+        result = read(server, batch=[{"path": p} for p in paths])
+        assert result["listed_scope"]["unverified_paths"] == [paths[0]]
+
+
+def test_relisting_plans_only_the_undelivered_suffixes(identity):
+    _, repo, _ = identity
+    paths = ["README.md", "settings.py"]
+    for path in paths:
+        (repo / path).write_text("x" * 9500)
+    server = create(identity, paths)
+    assert plan(server)["status"] == "partial"
+    page = read(server, batch=[{"path": p} for p in paths])
+    assert page["listed_scope"]["status"] == "partial"
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": p, "offset": 8000} for p in paths]
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.parametrize("text", ["水" * 8000, "🌱" * 6000, "水\r\n" * 8000],
+                         ids=["three-byte", "four-byte", "normalized-lines"])
+@pytest.mark.parametrize("listed_first", [True, False], ids=["relisting", "first-listing"])
+def test_listing_plans_a_multibyte_continuation_with_one_unit_left(identity, text, listed_first):
+    _, repo, _ = identity
+    path = repo / "inventory.txt"
+    path.write_bytes(text.encode("utf-8"))
+    units = [True] * (4 if listed_first else 3)
+    server = create(identity, [path.name], read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=lambda: len(units))
+    if listed_first:
+        assert plan(server)["status"] == "partial"
+    first = read(server, path=path.name)
+    assert ("listed_scope" in first) == listed_first
+    action = plan(server)
+    assert len(units) == 1
+    assert action["arguments"] == {"batch": [{"path": path.name, "offset": first["next_offset"]}]}
+    tail = read(server, **action["arguments"])
+    assert tail["listed_scope"] == {"status": "complete", "listed_files": 1}
+    assert first["content"] + tail["results"][0]["content"] == "\n".join(text.splitlines())
+    assert not units
+
+
+def test_overlapping_multibyte_pages_do_not_double_count_delivered_bytes(identity):
+    _, repo, _ = identity
+    path = repo / "inventory.txt"
+    path.write_bytes(("🌱" * 12500).encode("utf-8"))
+    server = create(identity, [path.name])
+    assert plan(server)["status"] == "partial"
+    assert read(server, path=path.name)["next_offset"] == 4000
+    assert read(server, path=path.name, offset=3000)["next_offset"] == 7000
+    assert plan(server)["status"] == "partial"  # 22,000 bytes remain.
+    assert read(server, path=path.name, offset=6900)["next_offset"] == 10900
+    args = plan(server)["arguments"]
+    assert args == {"batch": [{"path": path.name, "offset": 10900}]}
+    assert read(server, **args)["listed_scope"]["status"] == "complete"
+
+
+@pytest.mark.parametrize("altered", [False, True])
+def test_host_copied_pages_need_intact_fields_for_coverage(identity, monkeypatch, altered):
+    paths = {"settings.py"}
+    server = create(identity, paths, read_path_allowed=paths.__contains__)
+    assert plan(server)["next_tool"] == "read"
+    original = server.evidence.read
+    def copy(*args, **kwargs):
+        page = dict(original(*args, **kwargs))
+        if altered:
+            page["end_line"] += 1
+        return page
+    monkeypatch.setattr(server.evidence, "read", copy)
+    status = read(server, path="settings.py")["listed_scope"]["status"]
+    assert status == ("partial" if altered else "complete")
+
+
+def test_redaction_revocation_and_changes_invalidate_coverage(identity):
+    _, repo, _ = identity
+    paths = ["README.md", "settings.py"]
+    allowed = set(paths)
+    server = create(identity, paths, read_path_allowed=allowed.__contains__)
+    assert read(server, **plan(server)["arguments"])["listed_scope"]["status"] == "complete"
+    (repo / paths[0]).write_text('password="never-disclose"')
+    result = read(server, path=paths[0])
+    assert "never-disclose" not in str(result)
+    assert result["listed_scope"]["unverified_paths"] == [paths[0]]
+    allowed.remove(paths[0])
+    result = read(server, path=paths[1])
+    assert result["listed_scope"] == {
+        "status": "partial", "listed_files": 2, "unverified_count": 1, "unverified_paths": [],
+    }
+    assert plan(server)["status"] == "unverified_scope"
+
+
+@pytest.mark.parametrize("tail_text", ["x" * 26000, "水" * 8500], ids=["ascii", "utf8"])
+def test_relisting_keeps_a_redacted_gap_and_plans_only_undelivered_content(identity, tail_text):
+    _, repo, _ = identity
+    path = repo / "example.env"
+    path.write_text('password="example-only"\n' + tail_text, encoding="utf-8")
+    other = "settings.py"
+    server = create(identity, [path.name, other])
+    assert plan(server)["status"] == "partial"
+    first = read(server, path=path.name)
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": path.name, "offset": first["next_offset"]}, {"path": other}]
+    tail = read(server, path=path.name, offset=first["next_offset"])
+    assert tail["next_offset"] is None and tail["listed_scope"]["status"] == "partial"
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": other}]
+    assert read(server, **action["arguments"])["listed_scope"]["unverified_paths"] == [path.name]
+    assert plan(server)["status"] == "partial"
+    path.write_text("Public settings")
+    action = plan(server)
+    assert action["arguments"]["batch"] == [{"path": path.name}]
+    assert read(server, **action["arguments"])["listed_scope"]["status"] == "complete"
+
+
+def test_incomplete_inventory_and_range_do_not_establish_scope_coverage(identity):
+    _, repo, _ = identity
+    paths = ["README.md", "settings.py"]
+    server = create(identity, [*paths, "missing"])
+    assert plan(server)["status"] == "unverified_scope"
+    server = create(identity, paths)
+    (repo / paths[0]).write_text("one\ntwo\nthree")
+    plan(server)
+    assert read(server, path=paths[0], start=2)["listed_scope"]["unverified_paths"] == paths
+    assert read(server, path=paths[1])["listed_scope"]["unverified_paths"] == [paths[0]]
+
+
+@pytest.mark.parametrize("question,direct", [
+    ("Explain how the limit is applied.", None), ("What is the timeout in this repo?", None),
+    ("Is the timeout in this repository applied before retry backoff?", None),
+    ("Does the project define its default before it reads the environment in settings.py?", None),
+    ("Does the project define its default in settings.py after loading overrides?", None),
+    ("Does the project define its default before the loader reads the environment?", None),
+    ("Does the project define its default after configuration is loaded?", None),
+    ("Does the project record the count before it submits the job?", None),
+    ("Does the project define the setting that callers use, but only after startup?", None),
+    ("Is the timeout in this repository (applied before retry backoff)?", None),
+    ("Is client.retry enabled. Explain the behavior in this repository.", None),
+    ("Is client.retry in this repository applied before backoff?", None),
+    ("Is client.retry in this project.config object enabled?", None),
+    ("Is the timeout in this repo, answer with details\nincluding the retry order", None),
+    ("Where does the project define the timeout?", None),
+    ("Where\ndoes the project define the timeout?", None),
+    ("Why does this repository include vendored dependencies?", None),
+    ("What happens if the project defines a timeout in settings.py?", None),
+    ("What should I check if this repository contains a timeout?", None),
+    ("Does the script check if the project defines a timeout?", None),
+    ("If the project defines a timeout, explain its retry behavior.", None),
+    ("Explain how settings.py handles retries regardless of whether the project defines a timeout.", None),
+    ("How does settings.py check whether the project defines a timeout?", None),
+    ("How does settings.py load and check whether the project defines a timeout?", None),
+    ("Read settings.py. How does the caller log and check whether the project defines a timeout?", None),
+    ("Whether the project defines a timeout or not, explain the retry order.", None),
+    (QUESTION, "settings.py"),
+])
+def test_ordinary_and_direct_routes_keep_their_tool_catalog(identity, question, direct):
+    units = [True]
+    server = create(identity, ["settings.py"], question, direct_path=direct,
+                    read_admission=lambda: bool(units) and units.pop())
+    assert {t.name for t in asyncio.run(server.list_tools())} == {"read", "research"}
+    page = read(server, path="settings.py")
+    assert "listed_scope" not in page and page["content"] == "TIMEOUT = 30"
+    assert not units
+
+
+@pytest.mark.parametrize("question", [
+    "Does the project define a timeout?", "Check if the project defines a timeout.",
+    "Can you check if the project defines a timeout?", "Please tell me if the repo contains a timeout.",
+    "Read the policy, then verify if this repository documents the default.",
+    "State whether the project defines a timeout.", "Could you tell me whether this repo defines a timeout?",
+    "I want to know whether the project defines a timeout.",
+    "Read settings.py and check whether this project defines a timeout.",
+    "Does the repository document how to validate the input before sending it?",
+    "Does the repository contain scripts that run after deployment?",
+    "Does the repository include a check which runs before deployment?",
+    "Explain the policy. Does this repository include a default?", "Is the timeout in the project?",
+    "Is client.retry in this repository?", "Is `settings.py` in this repository?",
+    "Are client.retry and settings.py in our codebase?",
+    "Is the timeout in this repository, yes or no?", "Is the timeout in this repo (please answer yes/no)?",
+    "Is the timeout in this repository (answer with yes or no)?",
+    "Is the timeout in this repository (answer before discussing the details)?",
+    "Is the timeout in this repository, cite settings.py and the line number?",
+    "Is the timeout in the project (please cite pkg/settings.py:2)?",
+])
+def test_containment_questions_keep_the_single_batch_route(identity, question):
+    server = create(identity, ["settings.py"], question)
+    assert plan(server) == {"next_tool": "read", "arguments": {"batch": [{"path": "settings.py"}]}}
+
+
+@pytest.mark.parametrize("report_allowance", [True, False])
+def test_named_file_uses_last_source_unit_for_evidence(identity, report_allowance):
+    units = [True]
+    server = create(identity, ["settings.py"], "Does this repository define TIMEOUT in settings.py?",
+                    read_admission=lambda: bool(units) and units.pop(),
+                    remaining_units=(lambda: len(units)) if report_allowance else None)
+    assert server.instructions.startswith("Read a file named in the question directly.")
+    result = read(server, path="settings.py")
+    assert result["content"] == "TIMEOUT = 30" and "listed_scope" not in result
+    assert not units
+
+
+def test_exhausted_allowance_does_not_direct_worker_to_list(identity):
+    server = create(identity, ["settings.py"], remaining_units=lambda: 0, read_admission=lambda: False)
+    assert server.instructions.startswith("No source units remain.")
+
+
+def test_cli_inventory_runs_over_stdio_and_restricts_unlisted_reads(identity):
+    client, repo, _ = identity
+
+    async def exercise():
+        args = ["-m", "colony.task_mcp", "--home", str(client.home), "--repo", str(repo),
+                "--ns", "team", "--question", QUESTION, "--scope-file", "settings.py",
+                "--read-unit-limit", "3", "--no-empty-memory-routing", "--read-only"]
+        params = StdioServerParameters(command=sys.executable, args=args, env={
+            **os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"),
+        })
+        async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
+            assert "source_files" in (await session.initialize()).instructions
+            listed = await session.call_tool("source_files", {})
+            action = json.loads(listed.content[1].text)["scope_read_plan"]
+            reply = await session.call_tool(action["next_tool"], action["arguments"])
+            assert json.loads(reply.content[0].text)["listed_scope"]["status"] == "complete"
+            assert (await session.call_tool("read", {"path": "README.md"})).isError
+
+    asyncio.run(exercise())

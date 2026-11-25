@@ -10,7 +10,7 @@ from pathlib import Path
 import sqlite_vec
 from cryptography.fernet import Fernet
 
-from colony.context import excerpts, source_chunks
+from colony.context import complete_source_bundle, excerpts, source_chunks
 from colony.git_context import capture as capture_git_context
 from colony.git_context import compare as compare_git_context
 from colony.memory import (
@@ -49,6 +49,7 @@ from colony.retrieval import (
     procedural_text,
     rank,
     requires_procedure,
+    terms,
 )
 from colony.retrieval_diagnostics import emit
 from colony.security import fingerprint, private_write, scrub
@@ -714,6 +715,7 @@ class Store:
                     include_evidence_files=include_evidence_files,
                     git_context=git_context,
                     **options,
+                    **({"source_set_threshold": threshold} if response_profile is not None else {}),
                 )
                 or answer
             )
@@ -763,6 +765,48 @@ class Store:
             return packed
         return result
 
+    @staticmethod
+    def _compound_sources(db, question, vector, candidates, threshold):
+        """Use a saved question to locate complementary current files, never its prose."""
+        if threshold is None or requires_procedure(question):
+            return
+        query_terms = terms(question)
+        by_trail = {}
+        for linked, text in candidates:
+            overlap = query_terms & terms(text)
+            if overlap:
+                for row in linked:
+                    _, files = by_trail.setdefault(row["id"], (row, {}))
+                    files.setdefault(row["ref"], set()).update(overlap)
+
+        # Cap distinct question embeddings/logits. Duplicate publications of a
+        # question share its score but retain their own source sets and lifecycle.
+        questions = {}
+        for row, files in by_trail.values():
+            matches = set.union(*files.values())
+            if len(matches) < 3 or matches in files.values():
+                continue
+            saved = row["question"]
+            if saved in questions or len(questions) < CANDIDATES:
+                questions.setdefault(saved, []).append(row)
+        if not questions:
+            return
+        examples = {rows[0]["trail_rowid"]: saved for saved, rows in questions.items()}
+        slots = ",".join("?" for _ in examples)
+        similarities = db.execute(
+            f"SELECT rowid, 1-vec_distance_cosine(embedding, ?) FROM trail_questions WHERE rowid IN ({slots})",
+            (vector, *examples),
+        )
+        eligible = {examples[rowid]: score for rowid, score in similarities
+                    if score is not None and score >= max(0.55, threshold)}
+        if eligible:
+            scores = rank(question, list(eligible))
+            ordered = sorted(((saved, fused_score(eligible[saved], logit))
+                              for saved, logit in zip(eligible, scores, strict=True) if logit >= -5.0),
+                             key=lambda item: item[1], reverse=True)
+            for saved, relevance in ordered:
+                yield questions[saved], relevance, True
+
     def find_evidence(
         self,
         question,
@@ -776,6 +820,7 @@ class Store:
         restricted_trail_id: str | None = None,
         required_source_identities: frozenset[tuple[str, str]] | None = None,
         expand_first_file: bool = False,
+        source_set_threshold: float | None = None,
     ):
         """Reuse previously cited sources, never index or search untouched repository files."""
         requested = self._git_request(git_context)
@@ -783,12 +828,13 @@ class Store:
             return None
         placeholders = ",".join("?" for _ in namespaces)
         restriction = " AND t.id=?" if restricted_trail_id is not None else ""
-        parameters = [embed(question, query=True), *namespaces, time.time() - max_age]
+        vector = embed(question, query=True)
+        parameters = [vector, *namespaces, time.time() - max_age]
         if restricted_trail_id is not None:
             parameters.append(restricted_trail_id)
         with self.connect() as db:
             rows = db.execute(
-                f"""SELECT t.*, c.ref, c.content_hash, c.line,
+                f"""SELECT t.*, t.rowid AS trail_rowid, c.ref, c.content_hash, c.line,
                 vec_distance_cosine(v.embedding, ?) AS distance
                 FROM source_chunks c JOIN source_vectors v ON c.id=v.rowid
                 JOIN trails t ON c.trail_id=t.id
@@ -836,6 +882,7 @@ class Store:
             # A lexical candidate can rescue evidence below the dense cutoff. Keep
             # the expensive cross-encoder bounded to at most 48 distinct passages.
             chosen = sorted(set(dense) | set(sparse))
+            all_candidates = candidates
             candidates = [candidates[i] for i in chosen]
             lexical = [lexical[i] for i in chosen]
             scores = rank(question, [text for _, text in candidates])
@@ -856,15 +903,20 @@ class Store:
                 key=lambda item: item[1],
                 reverse=True,
             )
-            # A candidate can be retired during reranking. Serialize the final state
-            # check with lifecycle writes before validating/returning current evidence.
-            db.execute("BEGIN IMMEDIATE")
+            # Only pay for question ranking when ordinary passage selection yields no evidence.
+            def selections():
+                for linked, relevance in ordered:
+                    yield linked, relevance, False
+                yield from self._compound_sources(db, question, vector, all_candidates, source_set_threshold)
+
             checked = set()
-            for linked, relevance in ordered:
+            bundles = {}
+            for linked, relevance, compound in selections():
                 for row in linked:
-                    if row["id"] in checked:
+                    key = (row["id"], compound)
+                    if key in checked:
                         continue
-                    checked.add(row["id"])
+                    checked.add(key)
                     if self.memory_metadata(db, row["id"])["state"] != "active":
                         continue
                     if requested is not None:
@@ -876,32 +928,51 @@ class Store:
                         (source.ref, source.content_hash) for source in sources
                     ) != required_source_identities:
                         continue
+                    if compound:
+                        identity = frozenset((s.kind, s.ref, s.content_hash, s.symbol, s.contains)
+                                             for s in sources)
+                        if identity not in bundles:
+                            if len(bundles) == CANDIDATES:
+                                continue
+                            bundles[identity] = complete_source_bundle(self.repo, sources, adaptive=True, max_files=8)
+                        evidence = bundles[identity]
+                        if not evidence:
+                            continue
                     status, checks = validate(self.repo, sources)
                     if status != "validated":
                         continue
-                    permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
-                    # Near-tied passages can describe different parts of an answer.
-                    # Supply a second distinct section within the existing token cap,
-                    # using only this validated trail's already-cited files.
-                    preferred = [
-                        (alternatives[0]["ref"], alternatives[0]["line"])
-                        for alternatives, score in ordered
-                        if score >= relevance - 0.15
-                        and (alternatives[0]["ref"], alternatives[0]["content_hash"]) in permitted
-                    ][:8]
-                    evidence = excerpts(
-                        self.repo,
-                        sources,
-                        question,
-                        preferred=preferred,
-                        whole_files=include_evidence_files,
-                        **({"expand_first_file": True} if expand_first_file
-                           and context_budget is not None and restricted_trail_id is not None
-                           and required_source_identities is not None else {}),
-                        **({"adaptive": True} if context_budget is not None else {}),
-                    )
-                    if evidence:
-                        break
+                    if not compound:
+                        permitted = {(s.ref, s.content_hash) for s in sources if s.kind == "file"}
+                        # Near-tied passages can describe different parts of an answer.
+                        # Supply a second distinct section within the existing token cap,
+                        # using only this validated trail's already-cited files.
+                        preferred = [
+                            (alternatives[0]["ref"], alternatives[0]["line"])
+                            for alternatives, score in ordered
+                            if score >= relevance - 0.15
+                            and (alternatives[0]["ref"], alternatives[0]["content_hash"]) in permitted
+                        ][:8]
+                        evidence = excerpts(
+                            self.repo,
+                            sources,
+                            question,
+                            preferred=preferred,
+                            whole_files=include_evidence_files,
+                            **({"expand_first_file": True} if expand_first_file
+                               and context_budget is not None and restricted_trail_id is not None
+                               and required_source_identities is not None else {}),
+                            **({"adaptive": True} if context_budget is not None else {}),
+                        )
+                    if not evidence:
+                        continue
+                    # Lifecycle writes may race ranking and file I/O. Serialize just
+                    # the winning state check and audit. A retired duplicate must not
+                    # hide an active sibling with the same saved question.
+                    db.execute("BEGIN IMMEDIATE")
+                    if self.memory_metadata(db, row["id"])["state"] != "active":
+                        db.rollback()
+                        continue
+                    break
                 else:
                     continue
                 now = time.time()

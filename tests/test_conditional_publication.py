@@ -222,7 +222,17 @@ def test_real_stdio_discovery_reference_publication_and_lookup(running_team):
             result = await s.call_tool("read", {})
             observed = json.loads(result.content[0].text)
             assert not result.isError and observed["content"].startswith("TIMEOUT = 30")
-            assert {t.name for t in (await s.list_tools()).tools} == {"read", "research", "publish"}
+            catalog = {t.name: t for t in (await s.list_tools()).tools}
+            assert set(catalog) == {"read", "research", "publish"}
+            required = catalog["publish"].inputSchema["required"]
+            assert required == ["content", "applicability", "evidence_refs"]
+            assert all(f"{name}=" in observed["publication_guidance"] for name in required)
+            for wrong in ("statement", "claim"):
+                malformed = await s.call_tool("publish", {
+                    wrong: "30", "evidence_refs": [observed["evidence_ref"]],
+                })
+                assert malformed.isError
+            assert "publish" in {t.name for t in (await s.list_tools()).tools}
             result = await s.call_tool("read", {"offset": observed["next_offset"]})
             final_page = json.loads(result.content[0].text)
             assert not result.isError and final_page["next_offset"] is None

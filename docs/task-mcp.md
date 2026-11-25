@@ -20,6 +20,19 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
+For a repository-wide containment question, a host can provide a fixed inventory
+using repeated `--scope-file PATH` arguments and a shared `--read-unit-limit N`.
+The listing costs one unit. When the remaining files fit, its second text block
+contains `scope_read_plan.arguments` for a single `read` batch. A
+`listed_scope.status` of `complete` covers the listed files at their observed
+versions. Partial, changed, inaccessible or redacted content leaves a coverage gap.
+
+When a read supports a new reusable behavior, its once-per-task cue shows the
+required publication arguments. A single default can be cited directly. A compact
+lookup can also return complete, current cited files for a compound follow-up
+whose saved answer or individual passages did not qualify. Such a result contains
+source evidence only and must fit the negotiated response budget.
+
 Answer guidance distinguishes concrete implementations from injected interfaces and total
 attempts from retries. For example, a concrete adapter allowing two attempts does not prove
 that an arbitrary injected transport has that limit; two total attempts permit one retry.

@@ -433,6 +433,26 @@ def _adaptive_excerpt(ref, lines, unit, whole_files):
     }
 
 
+def complete_source_bundle(root, sources, *, adaptive, max_files):
+    """Return the entire bounded, hash-checked source set or no bundle."""
+    unique = {s.ref: s for s in sources}
+    if not 1 <= len(unique) <= max_files:
+        return []
+    files, size = [], 0
+    for source in unique.values():
+        lines = source_lines(root, source)
+        text = "\n".join(lines)
+        size += len(text)
+        if not lines or len(text) > 16000 or size > (2800 if adaptive else 24000):
+            return []
+        files.append(
+            _adaptive_excerpt(source.ref, lines, (1, len(lines)), True)
+            if adaptive
+            else {"ref": source.ref, "line": 1, "text": text, "complete_file": True}
+        )
+    return files
+
+
 def excerpts(
     root: Path,
     sources: list[Source],
@@ -445,35 +465,14 @@ def excerpts(
     compact_bundle: bool = False,
     expand_first_file: bool = False,
 ) -> list[dict]:
-    unique = {s.ref: s for s in sources}
     if (
         (whole_files or (adaptive and compact_bundle))
-        and 1 <= len(unique) <= (8 if adaptive and compact_bundle else 4)
         and (not adaptive or (claims is not None and preferred is None))
     ):
-        files, size = [], 0
-        for source in unique.values():
-            lines = source_lines(root, source)
-            text = "\n".join(lines)
-            size += len(text)
-            if not lines or len(text) > 16000 or (adaptive and size > 2800):
-                break
-            files.append(
-                _adaptive_excerpt(source.ref, lines, (1, len(lines)), True)
-                if adaptive
-                else {"ref": source.ref, "line": 1, "text": text, "complete_file": True}
-            )
-        else:
-            # Complete small, redacted files remove the need to reread an identical
-            # file through another tool. The adaptive source-work ceiling is the
-            # same eight cited files used by source_chunks; file count alone must
-            # not discard a dependency from an otherwise small complete bundle.
-            # An explicit whole-file request must not lose a small published source
-            # bundle to the ranked two-passage cap. Adaptive bundles stay within the
-            # existing 2,800-character excerpt allowance; final protocol packing
-            # counts every file identity/byte and fails closed if the bundle cannot fit.
-            if sum(len(f["text"]) for f in files) <= (2800 if adaptive else 24000):
-                return files
+        files = complete_source_bundle(root, sources, adaptive=adaptive,
+                                       max_files=8 if adaptive and compact_bundle else 4)
+        if files:
+            return files
     candidates = source_chunks(root, sources)
     if preferred is not None:
         # A second reranking must not replace the globally selected passage

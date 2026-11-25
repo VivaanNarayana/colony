@@ -2,8 +2,70 @@ import uuid
 
 from conftest import auth
 
-from colony.models import Trail
+from colony.models import ContextBudget, Trail
 from colony.validation import snapshot
+
+
+def test_compound_reuse_returns_whole_citations_within_budget(team, monkeypatch):
+    from colony import store
+    from colony.compact import PROFILE
+
+    app, api, repo, _, key = team
+    question = "Describe cache expiration and the eviction limit."
+    learned = "What controls cache expiration and the eviction limit?"
+    files = {"clock.py": "CACHE_EXPIRATION = 900", "capacity.py": "EVICTION_LIMIT = 7"}
+    for path, text in files.items():
+        (repo / path).write_text(text + "\n")
+    sources = [snapshot(repo, path) for path in files]
+    for _ in range(3):
+        trail = Trail(id=uuid.uuid4().hex, namespace="team", question=learned,
+                      content="Historical interpretation.", sources=sources)
+        api.post("/trails", json=trail.model_dump(), headers=auth(key)).raise_for_status()
+
+    database = app.state.store
+    monkeypatch.setattr(database, "find_answer", lambda *a, **kw: {"hit": False})
+    ranked_questions = []
+    def can_write():
+        # Fail immediately if ranking or file reads hold SQLite's writer lock.
+        with database.connect() as other:
+            other.execute("PRAGMA busy_timeout=0")
+            other.execute("BEGIN IMMEDIATE")
+    def rank(query, passages):
+        can_write()
+        ranked_questions.extend(p for p in passages if p == learned)
+        return [-1.0 if p == learned else -9.0 for p in passages]
+    monkeypatch.setattr(store, "rank", rank)
+    original = store.complete_source_bundle
+    rendered = []
+    def bundle(*args, **kwargs):
+        can_write()
+        rendered.append(1)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(store, "complete_source_bundle", bundle)
+    def ask(query=question, ns="team", budget=3072):
+        return database.ask(query, [ns], 604800, 0.6, response_profile=PROFILE,
+                            context_budget=ContextBudget(encoding="utf8_bytes", max_tokens=budget))
+
+    hit = ask()
+    assert hit["match_kind"] == "evidence" and "content" not in hit
+    assert hit["evidence_scope"] == "cited_files"
+    assert ranked_questions == [learned] and rendered == [1]
+    reads = hit["current_repository_reads"]
+    assert {r["path"]: r["content"] for r in reads} == files
+    for read in reads:
+        assert read["complete_file"] and read["start_line"] == 1
+        assert read["sha256"] == snapshot(repo, read["path"]).content_hash
+    limited = ask(budget=256)
+    assert not limited["hit"] and limited["reason"] == "budget_limited"
+    assert not ask(ns="private")["hit"]
+    assert not ask("Which lunar minerals were measured?")["hit"]
+    # Duplicate unsuccessful source sets must not be rendered repeatedly.
+    rendered.clear()
+    monkeypatch.setattr(store, "complete_source_bundle", lambda *a, **k: rendered.append(1) or [])
+    assert not ask()["hit"] and rendered == [1]
+    monkeypatch.setattr(store, "complete_source_bundle", bundle)
+    (repo / "clock.py").write_text("CACHE_EXPIRATION = 30")
+    assert not ask()["hit"]
 
 
 def test_service_overview_is_not_a_procedure_but_remains_descriptive_evidence(team):

@@ -5,11 +5,30 @@ import re
 import secrets
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
+from itertools import islice
 
 from colony.models import Source
 from colony.security import PATTERNS, fingerprint, scrub, verify
 from colony.validation import MAX_SOURCE_BYTES, PinnedSourcePaths, repo_contents, repo_file
+
+BATCH_CONTENT_BYTES = 16_000
+
+
+def batch_allowances(sizes: list[int]) -> list[int]:
+    """Share the read budget in request order, redistributing unused bytes."""
+    allowances = [0] * len(sizes)
+    remaining = BATCH_CONTENT_BYTES
+    active = [i for i, size in enumerate(sizes) if size]
+    while active and remaining:
+        share, extra = divmod(remaining, len(active))
+        for position, i in enumerate(active):
+            amount = min(sizes[i] - allowances[i], share + (position < extra))
+            allowances[i] += amount
+            remaining -= amount
+        active = [i for i in active if allowances[i] < sizes[i]]
+    return allowances
 
 
 class EvidenceError(ValueError):
@@ -29,6 +48,25 @@ class _Observation:
 
 
 @dataclass(frozen=True)
+class _FilePosition:
+    """Absolute coordinates in the scrubbed, newline-normalized file."""
+
+    offset: int
+    byte_offset: int
+    length: int
+    byte_length: int
+
+    @classmethod
+    def for_range(cls, lines, start, offset, span, whole_range):
+        normalized = span if whole_range else "\n".join(lines)
+        absolute = offset + sum(len(line) + 1 for line in islice(lines, start - 1))
+        if normalized.isascii():
+            return cls(absolute, absolute, len(normalized), len(normalized))
+        return cls(absolute, len(normalized[:absolute].encode("utf-8")),
+                   len(normalized), len(normalized.encode("utf-8")))
+
+
+@dataclass(frozen=True)
 class _PreparedRead:
     owner: object
     ref: str
@@ -38,6 +76,8 @@ class _PreparedRead:
     offset: int
     span_length: int
     whole_range: bool
+    redacted: bool
+    position: _FilePosition | None
     content: bytes
     expires: float
     target: str | None
@@ -59,8 +99,22 @@ class EvidenceSession:
         self._binding = self._identity()
         self._ttl, self._capacity = ttl, capacity
         self._observations = {}
+        self._deliveries = None
+        self._track_file_positions = False
         self._closed = False
         self._lock = threading.RLock()
+
+    @contextmanager
+    def track_deliveries(self, *, file_positions=False):
+        """Observe only finalized pages in one local operation, even without a publish handle."""
+        with self._lock:
+            previous = self._deliveries, self._track_file_positions
+            self._deliveries = []
+            self._track_file_positions = file_positions
+            try:
+                yield self._deliveries
+            finally:
+                self._deliveries, self._track_file_positions = previous
 
     def _identity(self):
         w = self.workflow
@@ -82,7 +136,7 @@ class EvidenceSession:
             raise EvidenceError("Evidence session permission unavailable") from None
 
     def read(self, path: str, start: int = 1, end: int | None = None, *, offset: int = 0,
-             _max_bytes: int = 16000, _defer_reference: bool = False) -> dict | _PreparedRead:
+             _max_bytes: int = BATCH_CONTENT_BYTES, _defer_reference: bool = False) -> dict | _PreparedRead:
         """Read a bounded exact span; scrub whole-file secrets before slicing.
 
         Large spans return a UTF-8-safe page and next_offset. Offsets count
@@ -95,7 +149,7 @@ class EvidenceSession:
                 type(offset) is not int or offset < 0
                 or type(start) is not int or start < 1
                 or (end is not None and (type(end) is not int or end < start))
-                or type(_max_bytes) is not int or not 4 <= _max_bytes <= 16000
+                or type(_max_bytes) is not int or not 4 <= _max_bytes <= BATCH_CONTENT_BYTES
                 or type(_defer_reference) is not bool
             ):
                 raise EvidenceError("Invalid evidence range")
@@ -103,7 +157,7 @@ class EvidenceSession:
                 target, data = repo_contents(self.workflow.repo, path, path_allowed=self.path_allowed)
                 if len(data) > MAX_SOURCE_BYTES:
                     raise ValueError()
-                text = data.decode("utf-8")
+                original = text = data.decode("utf-8")
                 for pattern in PATTERNS:
                     text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
                 lines = text.splitlines()
@@ -125,10 +179,14 @@ class EvidenceSession:
                 raise
             except (OSError, ValueError, TypeError):
                 raise EvidenceError("Evidence file or range unavailable") from None
+            whole_range = start == 1 and last == len(lines)
+            position = (_FilePosition.for_range(lines, start, offset, span, whole_range)
+                        if self._track_file_positions else None)
             prepared = _PreparedRead(self, path, hashlib.sha256(data).hexdigest(), start, last,
-                                     offset, len(span), start == 1 and last == len(lines), content,
+                                     offset, len(span), whole_range, text != original,
+                                     position, content,
                                      time.monotonic() + self._ttl,
-                                     str(target) if self.path_allowed is not None else None)
+                                     str(target) if self.path_allowed is not None or self._deliveries is not None else None)
             if _defer_reference:
                 return prepared
             return self._complete_read(prepared, _max_bytes)
@@ -138,7 +196,7 @@ class EvidenceSession:
         with self._lock:
             self._authorize()
             if (not isinstance(prepared, _PreparedRead) or prepared.owner is not self
-                    or type(max_bytes) is not int or not 0 <= max_bytes <= 16000):
+                    or type(max_bytes) is not int or not 0 <= max_bytes <= BATCH_CONTENT_BYTES):
                 raise EvidenceError("Invalid prepared evidence")
             if prepared.target is not None or self.path_allowed is not None:
                 try:
@@ -171,6 +229,8 @@ class EvidenceSession:
             if prepared.offset or stop < prepared.span_length:
                 result.update(start_offset=prepared.offset, end_offset=stop,
                               next_offset=stop if stop < prepared.span_length else None)
+            if self._deliveries is not None:
+                self._deliveries.append((result.copy(), prepared, stop))
             return result
 
     def read_batch(self, requests: list[dict]) -> list[dict]:
@@ -190,18 +250,8 @@ class EvidenceSession:
                 except EvidenceError:
                     prepared.append(None)
             sizes = [len(p.content) if p is not None else 0 for p in prepared]
-            allowances = [0] * len(sizes)
-            remaining = 16000
-            active = [i for i, size in enumerate(sizes) if size]
-            while active and remaining:
-                share, extra = divmod(remaining, len(active))
-                for position, i in enumerate(active):
-                    amount = min(sizes[i] - allowances[i], share + (position < extra))
-                    allowances[i] += amount
-                    remaining -= amount
-                active = [i for i in active if allowances[i] < sizes[i]]
             results = []
-            for value, allowance in zip(prepared, allowances, strict=True):
+            for value, allowance in zip(prepared, batch_allowances(sizes), strict=True):
                 try:
                     if value is None:
                         raise EvidenceError("Evidence unavailable")
@@ -214,6 +264,21 @@ class EvidenceSession:
     def resolve(self, references: list[str]) -> list[Source]:
         """Resolve all references atomically or fail; never substitute new hashes."""
         return self._resolve(references, self.path_allowed)
+
+    @staticmethod
+    def delivered_pages(pages, results):
+        """Match immutable finalized fields; wrappers may copy a page or annotate it."""
+        delivered = []
+        for result in results:
+            if "error" in result:
+                continue
+            matches = [(page, stop) for receipt, page, stop in pages
+                       if all(result.get(k) == v for k, v in receipt.items() if k != "evidence_ref")
+                       and result.get("evidence_ref") in (None, receipt.get("evidence_ref"))
+                       and all(result.get(k) == receipt.get(k) for k in ("start_offset", "end_offset", "next_offset"))]
+            unique = len({(p.digest, p.target) for p, _ in matches}) == 1
+            delivered.extend((result, page, stop, unique) for page, stop in matches)
+        return delivered
 
     def _resolve(self, references, path_allowed):
         with self._lock:

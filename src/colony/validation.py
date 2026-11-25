@@ -2,12 +2,26 @@ import ast
 import hashlib
 import os
 import stat
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePosixPath
 
 from colony.models import Source
 
 MAX_SOURCE_BYTES = 2_000_000
+
+if os.name == "nt":
+    import ctypes
+    import msvcrt
+    from ctypes import wintypes
+
+    class _FileBasicInfo(ctypes.Structure):
+        _fields_ = [("CreationTime", ctypes.c_int64), ("LastAccessTime", ctypes.c_int64),
+                    ("LastWriteTime", ctypes.c_int64), ("ChangeTime", ctypes.c_int64),
+                    ("FileAttributes", wintypes.DWORD)]
+
+    _get_file_info = ctypes.WinDLL("kernel32", use_last_error=True).GetFileInformationByHandleEx
+    _get_file_info.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.POINTER(_FileBasicInfo), wintypes.DWORD)
+    _get_file_info.restype = wintypes.BOOL
 
 
 class SourcePathDenied(ValueError):
@@ -72,10 +86,6 @@ def repo_file(root: Path, ref: str, *, path_allowed=None, expected_target=None) 
 
 def _windows_handle_path(stream):
     """Get the normalized path of the already-open handle, before reading bytes."""
-    import ctypes
-    import msvcrt
-    from ctypes import wintypes
-
     final_path = ctypes.windll.kernel32.GetFinalPathNameByHandleW
     final_path.argtypes = (wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD)
     final_path.restype = wintypes.DWORD
@@ -86,22 +96,44 @@ def _windows_handle_path(stream):
     return buffer.value
 
 
-def repo_contents(root: Path, ref: str, *, path_allowed=None, expected_target=None) -> tuple[Path, bytes]:
-    """Authorize the requested and resolved names, then read the authorized object once."""
-    path = repo_file(root, ref, path_allowed=path_allowed, expected_target=expected_target)
-    if path_allowed is None:
-        return path, path.read_bytes()
+def _check_windows_handle_path(path, stream):
+    # Path equality folds case even in case-sensitive directories.
+    expected = str(path)
+    if not expected.startswith("\\\\?\\"):
+        expected = ("\\\\?\\UNC\\" + expected[2:] if expected.startswith("\\\\")
+                    else "\\\\?\\" + expected)
+    if _windows_handle_path(stream) != expected:
+        raise SourcePathDenied("Source path unavailable")
+
+
+def file_version(path: Path):
+    """Identify the authorized file and revision using metadata only."""
+    if os.name == "nt":
+        # Windows stat().st_ctime can be the creation time. Query ChangeTime
+        # on the same handle as the file identity, including after utime().
+        with path.open("rb") as stream:
+            _check_windows_handle_path(path, stream)
+            info = os.fstat(stream.fileno())
+            basic = _FileBasicInfo()
+            handle = msvcrt.get_osfhandle(stream.fileno())
+            if not _get_file_info(handle, 0, ctypes.byref(basic), ctypes.sizeof(basic)):  # FileBasicInfo
+                raise ctypes.WinError(ctypes.get_last_error())
+            changed = basic.ChangeTime
+            if changed <= 0:
+                raise ValueError("File change time unavailable")
+    else:
+        info = path.stat()
+        changed = info.st_ctime_ns
+    return (str(path), info.st_dev, info.st_ino, changed, info.st_mtime_ns, info.st_size)
+
+
+@contextmanager
+def open_source_file(path: Path):
+    """Open an authorized, resolved repo_file path and verify the readable object."""
     with ExitStack() as stack:
         if os.name == "nt":
             stream = stack.enter_context(path.open("rb"))
-            # Path equality on Windows folds case even in case-sensitive directories.
-            # Compare the normalized handle name with the exact approved spelling.
-            expected = str(path)
-            if not expected.startswith("\\\\?\\"):
-                expected = ("\\\\?\\UNC\\" + expected[2:] if expected.startswith("\\\\")
-                            else "\\\\?\\" + expected)
-            if _windows_handle_path(stream) != expected:
-                raise SourcePathDenied("Source path unavailable")
+            _check_windows_handle_path(path, stream)
         else:
             # Walk from the filesystem anchor with pinned directory descriptors.
             # A renamed/relinked parent cannot redirect the next component.
@@ -120,6 +152,15 @@ def repo_contents(root: Path, ref: str, *, path_allowed=None, expected_target=No
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_SOURCE_BYTES:
             raise ValueError("Source is missing or exceeds 2 MB")
+        yield stream
+
+
+def repo_contents(root: Path, ref: str, *, path_allowed=None, expected_target=None) -> tuple[Path, bytes]:
+    """Authorize the requested and resolved names, then read the authorized object once."""
+    path = repo_file(root, ref, path_allowed=path_allowed, expected_target=expected_target)
+    if path_allowed is None:
+        return path, path.read_bytes()
+    with open_source_file(path) as stream:
         data = stream.read(MAX_SOURCE_BYTES + 1)
         if len(data) > MAX_SOURCE_BYTES:
             raise ValueError("Source exceeds 2 MB")
