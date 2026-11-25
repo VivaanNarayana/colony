@@ -96,6 +96,13 @@ def _render_unbudgeted_lookup(result: dict) -> dict:
         evidence = []
     if evidence or reads:
         evidence = rendered["evidence"] = _task_lookup_spans(evidence, reads, result.get("sources"))
+    if "complete_files" in rendered or "evidence_scope" in rendered:
+        complete = list(dict.fromkeys(span["ref"] for span in evidence if span.get("complete_file")))
+        if "complete_files" in rendered:
+            rendered["complete_files"] = complete
+        if "evidence_scope" in rendered:
+            all_cited = bool(complete) and set(complete) == {s["ref"] for s in result["sources"]}
+            rendered["evidence_scope"] = "cited_files" if all_cited else "partial"
 
     status = result.get("status")
     if status in ("stale", "unverified"):

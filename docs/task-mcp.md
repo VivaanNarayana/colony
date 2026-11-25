@@ -21,6 +21,9 @@ the generated top-level `content` summary should read each entry's `text` and
 If a server returns citations in `current_repository_reads`, the task adapter
 joins them with `evidence` by source, start line and exact text. Duplicate spans
 share one entry, and identical text at different locations retains each citation.
+When supplied, `complete_files` lists the files delivered in full after the
+merge. An `evidence_scope` of `cited_files` means the result contains every
+cited file in full. Omitted files and partial coverage produce `partial`.
 Git-bound tasks use both formats as hints and rebuild the excerpts from the
 caller’s checkout. Repeated hints share one slot in the verifier’s selection
 limit, including whole-file markers with different prefix lengths. A focused
@@ -31,10 +34,9 @@ For whole-file requests, a complete
 hint in either format expands the first selected excerpt for that file when the
 verified contents fit the file and response limits. If the file exceeds either
 limit, the client prefers a locally verified explicit excerpt over the prefix
-suggested by an abbreviated whole-file hint. When present, `evidence_scope` is
-`cited_files` only if the client delivered every cited file in full. Omitted
-files and partial excerpts produce `partial`. When a path allowlist is
-configured, it applies to every cited file,
+suggested by an abbreviated whole-file hint. If the remaining budget can no
+longer fit any explicit excerpt for that file, its prefix competes at its
+original citation position. When a path allowlist is configured, it applies to every cited file,
 including reads supplied alongside `evidence: null`. A validated `answer` hit
 also carries the authored finding in `content`.
 Stale and unverified hits retain their status and source receipts.

@@ -284,6 +284,46 @@ def _wire_read(span, source):
     }
 
 
+@pytest.mark.parametrize("legacy_complete", [False, True], ids=["complete-in-reads", "complete-in-evidence"])
+@pytest.mark.parametrize(
+    ("metadata", "cite_peer", "kind"),
+    [
+        ({"complete_files": [], "evidence_scope": "partial"}, False, "evidence"),
+        ({"complete_files": [], "evidence_scope": "cited_files"}, True, "evidence"),
+        ({"evidence_scope": "partial"}, False, "answer"),
+        ({"complete_files": []}, False, "evidence"),
+        ({}, False, "evidence"),
+    ],
+    ids=["full", "omitted-peer", "scope-only", "list-only", "no-coverage-fields"],
+)
+def test_remote_task_reconciles_merged_coverage(
+    transport, monkeypatch, legacy_complete, metadata, cite_peer, kind
+):
+    client, repo, store, responses = transport
+    fact = "CACHE_WORKERS = 17"
+    trail = publish(client, repo, file_texts=[fact, "PEER = 2"] if cite_peer else [fact])
+    source = trail.sources[0]
+    span = {"ref": source.ref, "line": 1, "text": fact, "complete_file": legacy_complete}
+    read = _wire_read({**span, "complete_file": not legacy_complete}, source)
+    serve_citations(
+        store, monkeypatch, match_kind=kind, evidence=[span], current_repository_reads=[read],
+        content="Authored finding." if kind == "answer" else fact, **metadata,
+    )
+    task = TaskMCP(Workflow(client, "team", repo), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    assert len(responses) == len(blocks) == 1 and blocks[0].text.count(fact) == 1
+    result = json.loads(blocks[0].text)
+    assert result["evidence"] == [{**span, "complete_file": True}]
+    assert "current_repository_reads" not in result
+    assert result.get("content") == ("Authored finding." if kind == "answer" else None)
+    assert ("complete_files" in result) == ("complete_files" in metadata)
+    assert ("evidence_scope" in result) == ("evidence_scope" in metadata)
+    if "complete_files" in metadata:
+        assert result["complete_files"] == [source.ref]
+    if "evidence_scope" in metadata:
+        assert result["evidence_scope"] == ("partial" if cite_peer else "cited_files")
+
+
 @pytest.mark.parametrize("shape", ["mixed", "reads-only", "wrong-hash"])
 def test_git_client_rebuilds_alternate_citations(transport, monkeypatch, shape):
     client, repo, store, responses = transport
@@ -814,6 +854,40 @@ def test_whole_file_prefix_remains_available_when_later_excerpt_no_longer_fits(
     assert result["evidence"] == ([fallback, *peers] if remaining == 2 else [*peers, fallback])
     assert result["complete_files"] == [b.ref, c.ref]
     assert result["evidence_scope"] == "partial" and "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])
+@pytest.mark.parametrize(
+    "order", ["excerpt-first", "competitor-first", "shorter-excerpt-still-fits"],
+)
+def test_whole_file_retries_prefix_before_lower_ranked_reads(transport, monkeypatch, mixed, order):
+    client, repo, store, responses = transport
+    fact = "RETRIES = 5"
+    files = ["AA\n" + fact + "\nK\n" + "#" * 16_000, "B" * 16_000, "C" * 7_998, "D"]
+    trail = publish(client, repo, git=True, file_texts=files)
+    target, b, c, d = trail.sources
+    marker = {"ref": target.ref, "line": 1, "text": "??", "complete_file": True}
+    peers = [{**marker, "ref": s.ref, "text": t} for s, t in zip((b, c), files[1:3], strict=True)]
+    explicit = {**marker, "line": 2, "text": fact, "complete_file": False}
+    competitor = {**explicit, "ref": d.ref, "line": 1, "text": "D"}
+    tail = [competitor, explicit] if order == "competitor-first" else [explicit, competitor]
+    expected = [{**marker, "text": "AA", "complete_file": False}, *peers]
+    if order == "shorter-excerpt-still-fits":
+        short = {**explicit, "line": 3, "text": "K"}
+        tail.append(short)
+        expected = [*peers, competitor, short]
+    sources = {s.ref: s for s in trail.sources}
+    serve_citations(
+        store, monkeypatch, evidence=[marker, *peers, *([] if mixed else tail)],
+        current_repository_reads=[_wire_read(s, sources[s["ref"]]) for s in tail] if mixed else [],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    assert len(responses) == 1 and result["evidence"] == expected
+    assert result["complete_files"] == [b.ref, c.ref] and result["evidence_scope"] == "partial"
+    assert "current_repository_reads" not in result
 
 
 @pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])

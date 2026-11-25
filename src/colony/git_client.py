@@ -2,7 +2,6 @@
 
 import hashlib
 import re
-from itertools import chain
 from pathlib import Path
 from typing import Literal, NamedTuple
 
@@ -154,8 +153,10 @@ def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
     verified, used, occupied, selected = {}, set(), [], []
     complete_refs = set()
     budget, limit = (24000, 4) if whole_files else (4800, _MAX_FOCUSED_READS)
-    prefer_explicit, deferred_prefixes = {}, []
-    for index, hint in enumerate(chain(candidates, deferred_prefixes)):
+    shortest_explicit = {}
+    pending = iter(candidates)
+    retry_prefixes = False
+    while (hint := next(pending, None)) is not None:
         ref = hint.slot[0]
         if hint.slot in used or ref in complete_refs:
             continue
@@ -175,17 +176,15 @@ def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
             start, text = hint.line, tails[hint.line][:hint.length]
         if text is None or len(text) > budget:
             continue
-        if whole_files and hint.kind == "prefix" and index < len(candidates):
-            # This prefix can compete at its own wire position unless the same
-            # file still has a usable explicit citation. Let that citation compete
-            # at its own position, then retry the prefix if capacity remains.
-            if ref not in prefer_explicit:
-                prefer_explicit[ref] = any(
-                    line in tails and min(length, len(tails[line])) <= budget
-                    for line, length in hints.excerpts.get(ref, ())
+        if whole_files and hint.kind == "prefix":
+            if ref not in shortest_explicit:
+                lengths = (
+                    min(length, len(tails[line]))
+                    for line, length in hints.excerpts.get(ref, ()) if line in tails
                 )
-            if prefer_explicit[ref]:
-                deferred_prefixes.append(hint)
+                shortest_explicit[ref] = min(lengths, default=None)
+            if shortest_explicit[ref] is not None and shortest_explicit[ref] <= budget:
+                retry_prefixes = True
                 continue
         end = start + text.count("\n")
         if _overlaps(occupied, ref, start, end):
@@ -204,6 +203,11 @@ def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
         budget -= len(text)
         if len(selected) == limit:
             break
+        if retry_prefixes:
+            # A read may leave room for an earlier prefix but no longer for its
+            # preferred excerpt. Recheck in citation order before spending more.
+            pending = iter(candidates)
+            retry_prefixes = False
     return [read for _, read in sorted(selected, key=lambda entry: entry[0])]
 
 
