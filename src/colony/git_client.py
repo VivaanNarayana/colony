@@ -15,11 +15,11 @@ _MAX_EXCERPT_CHARS = 2400
 _MAX_FOCUSED_READS = 2
 
 
-def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
+def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str] | None:
     # Keep the caller path independent of the server's native retrieval stack.
     # Scrub the whole file before excerpting, preserving original line numbers.
     if source.kind != "file":
-        return []
+        return None
     try:
         _, data = repo_contents(root, source.ref, path_allowed=path_allowed)
         if hashlib.sha256(data).hexdigest() != source.content_hash:
@@ -28,7 +28,7 @@ def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]
     except (OSError, ValueError, UnicodeError):
         if path_allowed is not None:
             raise ValueError("Current source unavailable") from None
-        return []
+        return None
     for pattern in PATTERNS:
         text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
     return text.splitlines()
@@ -78,7 +78,7 @@ class _UnbudgetedHints:
                 prefixes = self.prefixes.setdefault(ref, {})
                 # A wider prefix may reach the first nonblank local character.
                 # Keep each bounded width at its own first citation position.
-                if 0 < length <= _MAX_EXCERPT_CHARS:
+                if length <= _MAX_EXCERPT_CHARS:
                     prefixes.setdefault(length, position)
 
         self.slots = set()
@@ -130,6 +130,8 @@ def _overlaps(occupied, ref, start, end):
 def _verified_hint_text(repo, source, starts, whole_file_limit, explicit_bounds, options):
     # Read a source once and retain only text that could be delivered.
     lines = _source_lines(repo, source, **options)
+    if lines is None:
+        return None
     file_text = "\n".join(lines)
     tails, offset = {}, 0
     for number, line in enumerate(lines, 1):
@@ -141,12 +143,17 @@ def _verified_hint_text(repo, source, starts, whole_file_limit, explicit_bounds,
     whole = file_text if whole_file_limit is not None and len(file_text) <= whole_file_limit else None
     excerpts = (tails[line][:length] for line, length in explicit_bounds if line in tails)
     shortest = min((len(text) for text in excerpts if text.strip()), default=None)
-    return whole, tails, shortest
+    return whole, tails, shortest, len(file_text)
 
 
 def _fitting_read(hint, verified, budget):
-    whole, tails, shortest = verified
+    if verified is None:
+        return None
+    whole, tails, shortest, file_length = verified
     if hint.line not in tails:
+        # A verified zero-byte file has no line to slice. Only its marker can cite it.
+        if file_length == 0 and hint.kind != "excerpt":
+            return 1, "", True
         return None
     excerpt = tails[hint.line][:hint.length]
     if (
@@ -156,8 +163,15 @@ def _fitting_read(hint, verified, budget):
         return 1, whole, True
     if hint.kind == "whole" or len(excerpt) > budget:
         return None
-    if hint.kind == "prefix" and shortest is not None and shortest <= budget:
-        return None
+    if hint.kind == "prefix":
+        if shortest is not None and shortest <= budget:
+            return None
+        # The local slice must reach EOF. A blank tail cut at the excerpt limit
+        # looks identical to a whole blank file until compared with its full length.
+        if len(excerpt) == file_length and not excerpt.strip():
+            return 1, excerpt, True
+        if not hint.length:
+            return None
     return hint.line, excerpt, False
 
 
@@ -193,15 +207,15 @@ def _unbudgeted_reads(repo, by_ref, hints, options, whole_files):
             end = start + text.count("\n")
             if _overlaps(occupied, ref, start, end):
                 continue
-            if complete or text.strip():
+            if text.strip() or (whole_files and complete):
                 break
-            if first_blank is None:
-                first_blank = hint, start, end, text
+            if first_blank is None or (complete and not first_blank[-1]):
+                first_blank = hint, start, end, text, complete
         else:
             if first_blank is None:
                 break
-            hint, start, end, text = first_blank
-            ref, complete = hint.slot[0], False
+            hint, start, end, text, complete = first_blank
+            ref = hint.slot[0]
         # Focused lookups display the first explicit excerpt at its earlier marker.
         # This affects presentation only, after admission at the excerpt's own rank.
         position = hint.position

@@ -322,6 +322,71 @@ def test_task_accepts_complete_blank_file(transport, monkeypatch, text):
     assert "current_repository_reads" not in result and "content" not in result
 
 
+@pytest.mark.parametrize("marker_in_reads", [False, True], ids=["legacy-marker", "alternate-marker"])
+@pytest.mark.parametrize(("local", "width", "complete"), [
+    (" \t", 2, True),
+    ("", 0, True),
+    (" \t\n\u2003\n", 4, True),
+    (" \t", 1, False),
+    (" \t\nFACT", 2, False),
+    (" " * 2400 + "X", 2400, False),
+], ids=["whole-blank", "empty-file", "normalized-lines", "short-blank", "hidden-fact", "width-limit"])
+def test_focused_git_blank_marker_coverage(transport, monkeypatch, marker_in_reads, local, width, complete):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, git=True, file_texts=[local, "PEER = 12"])
+    source = trail.sources[0]
+    # The remote hint supplies only a width. One format also marks it as a whole file.
+    marker = {"ref": source.ref, "line": 1, "text": "?" * width, "complete_file": True}
+    partial = {**marker, "complete_file": False}
+    legacy, alternate = (partial, marker) if marker_in_reads else (marker, partial)
+    serve_citations(store, monkeypatch, evidence=[legacy], current_repository_reads=[_wire_read(alternate, source)],
+                    evidence_scope="cited_files")
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    assert len(blocks) == len(responses) == 1
+    result = json.loads(blocks[0].text)
+    if complete:
+        assert result["hit"] and result["git"]["compatibility"] == "matched"
+        assert result["evidence"] == [{**marker, "text": "\n".join(local.splitlines())}]
+        assert result["complete_files"] == [source.ref] and result["evidence_scope"] == "partial"
+        assert "content" not in result and "current_repository_reads" not in result
+    else:
+        assert result == {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
+
+
+def test_focused_git_complete_blank_leaves_room_for_facts(transport, monkeypatch):
+    client, repo, store, responses = transport
+    texts = [" \t", "   ", "RETRIES = 5"]
+    trail = publish(client, repo, git=True, file_texts=texts)
+    markers = [{"ref": source.ref, "line": 1, "text": text, "complete_file": True}
+               for source, text in zip(trail.sources, texts, strict=True)]
+    serve_citations(store, monkeypatch, evidence=markers)
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    assert len(blocks) == len(responses) == 1 and blocks[0].text.count(texts[2]) == 1
+    result = json.loads(blocks[0].text)
+    assert result["evidence"] == [markers[0], {**markers[2], "complete_file": False}]
+    assert result["complete_files"] == [trail.sources[0].ref]
+    assert "content" not in result and "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("data", [b" ", b"\xff"], ids=["abbreviated-to-zero", "undecodable"])
+def test_focused_git_empty_marker_requires_a_verified_empty_file(transport, monkeypatch, data):
+    client, repo, store, responses = transport
+    (repo / "source.bin").write_bytes(data)
+    source = snapshot(repo, "source.bin")
+    trail = publish(client, repo, git=True, file_texts=["PEER = 12"])
+    marker = {"ref": source.ref, "line": 1, "text": "", "complete_file": True}
+    serve_citations(store, monkeypatch, sources=[source.model_dump()],
+                    current_repository_reads=[_wire_read(marker, source)])
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    result = json.loads(blocks[0].text)
+    assert len(blocks) == len(responses) == 1
+    assert not result["hit"] and result["reason"] == "git_local_evidence_not_verified"
+    assert "evidence" not in result and "content" not in result
+
+
 @pytest.mark.parametrize("legacy_complete", [False, True], ids=["complete-in-reads", "complete-in-evidence"])
 @pytest.mark.parametrize(
     ("metadata", "cite_peer", "kind"),

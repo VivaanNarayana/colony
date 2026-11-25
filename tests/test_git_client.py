@@ -497,4 +497,4 @@ def test_local_source_redaction_preserves_lines_and_rejects_changed_bytes(tmp_pa
     assert lines[0] == "before" and lines[4] == "after"
     assert "synthetic-private" not in "\n".join(lines) and "[REDACTED]" in lines[1]
     source_file.write_bytes(b"different")
-    assert git_client._source_lines(tmp_path, source) == []
+    assert git_client._source_lines(tmp_path, source) is None
