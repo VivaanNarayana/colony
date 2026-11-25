@@ -4,6 +4,7 @@ import hashlib
 import re
 from itertools import chain
 from pathlib import Path
+from typing import NamedTuple
 
 from colony.git_context import capture, compare
 from colony.models import ContextBudget, GitContext, Source
@@ -12,6 +13,11 @@ from colony.validation import PinnedSourcePaths, repo_contents, repo_file, valid
 
 _MAX_LOOKUP_HINTS = 8
 _MAX_EXCERPT_CHARS = 2400
+
+
+class _WholeFileFallbacks(NamedTuple):
+    explicit: tuple[tuple[int, int], ...]
+    reserved_excerpts: tuple[tuple[int, int], ...]
 
 
 def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
@@ -65,25 +71,34 @@ def _unbudgeted_hints(evidence, reads, sources, whole_files):
         # Validate all bindings, even after the local read slots are full.
         ref = span["ref"]
         line, length = span["line"], len(span["text"])
+        key = (ref, line, length)
+        if len(unique) < _MAX_LOOKUP_HINTS:
+            unique.setdefault(key, span)
         if whole_files:
             if span.get("complete_file"):
                 whole_file_refs.add(ref)
             elif 0 < length <= _MAX_EXCERPT_CHARS:
                 candidates = excerpt_bounds.setdefault(ref, {})
-                if len(candidates) < _MAX_LOOKUP_HINTS:
+                # A late explicit citation can also describe an already reserved slot.
+                if len(candidates) < _MAX_LOOKUP_HINTS or key in unique:
                     candidates[(line, length)] = None
-        if len(unique) < _MAX_LOOKUP_HINTS:
-            unique.setdefault((ref, line, length), span)
-    return list(unique.values()), {ref: tuple(excerpt_bounds.get(ref, ())) for ref in whole_file_refs}
+    fallbacks = {}
+    for ref in whole_file_refs:
+        explicit = tuple(excerpt_bounds.get(ref, ()))
+        reserved = tuple(bound for bound in explicit if (ref, *bound) in unique)
+        # If a marker occupies an explicit excerpt's slot, that slot can produce a
+        # different fallback. Serve the admitted explicit bounds in citation order.
+        marker_shares_slot = any(unique[(ref, *bound)].get("complete_file") for bound in reserved)
+        fallbacks[ref] = _WholeFileFallbacks(explicit, reserved if marker_shares_slot else ())
+    return list(unique.values()), fallbacks
 
 
-def _fitting_excerpt(lines, bounds, budget):
+def _fitting_excerpts(lines, bounds, budget):
     for line, length in bounds:
         if 1 <= line <= len(lines) and 0 < length <= _MAX_EXCERPT_CHARS:
             text = "\n".join(lines[line - 1 :])[:length]
             if len(text) <= budget:
-                return line, text
-    return None
+                yield line, text
 
 
 def _local_reads(
@@ -113,8 +128,9 @@ def _local_reads(
         expand = fallbacks is not None or item.get("complete_file") is True
         file_limit = 16000 if adaptive else min(16000, budget)
         complete = whole_files and expand and len(text) <= file_limit
-        start = 1 if complete else line
-        if not complete:
+        if complete:
+            candidates = ((1, text),)
+        else:
             hint = item.get("text")
             # A short Markdown section may exceed 32 lines. Preserve its selected
             # span, using only the bounded hint length and verified local text.
@@ -128,23 +144,23 @@ def _local_reads(
                 last_line = line + len(hint.split("\n")) - 1
                 if last_line > len(lines):
                     continue
-                text = "\n".join(lines[line - 1 : last_line])
+                candidates = ((line, "\n".join(lines[line - 1 : last_line])),)
             else:
-                bounds = ((line, len(hint)),) if isinstance(hint, str) else ()
-                if item.get("complete_file") and fallbacks:
+                own = (line, len(hint)) if isinstance(hint, str) else (line, 0)
+                bounds = (own,)
+                if fallbacks is not None and item.get("complete_file") and fallbacks.explicit:
                     if any(read["ref"] == ref for read in selected):
-                        continue
-                    # A whole-file marker can contain just one character. Use a supplied
-                    # excerpt at this slot before considering the marker's own prefix.
-                    bounds = chain(fallbacks, bounds)
-                excerpt = _fitting_excerpt(lines, bounds, budget)
-                if excerpt is None:
-                    continue
-                start, text = excerpt
-        end = start + text.count("\n")
-        # Separate sections of one file can supply different requested facts.
-        # Refuse overlapping reads, including duplicate complete-file hints.
-        if any(r == ref and start <= last and end >= first for r, first, last in occupied):
+                        bounds = fallbacks.reserved_excerpts
+                    else:
+                        bounds = chain(fallbacks.explicit, bounds)
+                elif fallbacks is not None and fallbacks.reserved_excerpts:
+                    bounds = fallbacks.reserved_excerpts
+                candidates = _fitting_excerpts(lines, bounds, budget)
+        for start, text in candidates:
+            end = start + text.count("\n")
+            if not any(r == ref and start <= last and end >= first for r, first, last in occupied):
+                break
+        else:
             continue
         read = {"ref": ref, "line": start, "text": text, "complete_file": complete}
         if adaptive:

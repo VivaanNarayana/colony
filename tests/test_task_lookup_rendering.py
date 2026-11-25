@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+from itertools import permutations
 from unittest.mock import Mock
 
 import pytest
@@ -499,6 +500,55 @@ def test_git_over_budget_complete_hint_preserves_explicit_excerpt(
     assert result["evidence"] == [peer_span, excerpt]
     assert result["complete_files"] == [peer.ref] and result["evidence_scope"] == "partial"
     assert "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize(
+    ("legacy_order", "read_order", "fill_window"),
+    [
+        *[
+            pytest.param(order, (), False, id="-".join(order))
+            for order in permutations(("whole", "first", "second"))
+        ],
+        pytest.param(("whole",), ("second", "first"), False, id="whole-in-evidence"),
+        pytest.param(("second", "first"), ("whole",), False, id="whole-in-reads"),
+        pytest.param(("whole", "second"), ("first",), True, id="explicit-after-window-fills"),
+    ],
+)
+def test_git_preserves_both_excerpts_when_whole_hint_matches_one(
+    transport, monkeypatch, legacy_order, read_order, fill_window
+):
+    client, repo, store, responses = transport
+    peer_text = "#" * 15_000
+    lines = ["VALUE = 42", "RETRY_LIMIT = 5", "#" * 10_000]
+    trail = publish(client, repo, git=True, file_texts=[peer_text, "\n".join(lines)])
+    peer, target = trail.sources
+    peer_span = {"ref": peer.ref, "line": 1, "text": peer_text, "complete_file": True}
+    first = {"ref": target.ref, "line": 1, "text": lines[0], "complete_file": False}
+    second = {**first, "line": 2, "text": lines[1]}
+    spans = {"first": first, "second": second, "whole": {**first, "complete_file": True}}
+    fields = {"evidence": [peer_span, *(spans[name] for name in legacy_order)]}
+    if fill_window:
+        fields["evidence"].extend({**first, "line": line} for line in range(10, 18))
+    if read_order:
+        fields["current_repository_reads"] = [
+            {
+                "path": target.ref,
+                "sha256": target.content_hash,
+                "start_line": span["line"],
+                "content": span["text"],
+                "complete_file": span["complete_file"],
+            }
+            for span in (spans[name] for name in read_order)
+        ]
+    serve_citations(store, monkeypatch, evidence_scope="cited_files", **fields)
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+
+    assert len(responses) == 1 and result["hit"] and result["git"]["compatibility"] == "matched"
+    expected = [spans[name] for name in (*legacy_order, *read_order) if name != "whole"]
+    assert result["evidence"] == [peer_span, *expected]
+    assert result["complete_files"] == [peer.ref] and result["evidence_scope"] == "partial"
 
 
 @pytest.mark.parametrize("policy", ["allow-both", "deny-second", "unbound-read"])
