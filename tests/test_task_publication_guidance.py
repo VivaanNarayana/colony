@@ -75,6 +75,7 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
                 "Count attempts separately from retries and trace exceptional exits.",
             ):
                 assert init.instructions.count(rule) == 1
+                assert rule in init.instructions[:245]  # Visible in the native namespace preview.
                 for message in (initial_catalog, result, updated_catalog, later):
                     assert rule not in message.model_dump_json()
     asyncio.run(check())
