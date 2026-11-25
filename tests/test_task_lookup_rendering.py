@@ -64,6 +64,78 @@ def test_evidence_only_retains_each_citation_once(identity, monkeypatch):
     )
 
 
+@pytest.mark.parametrize("kind", ["answer", "evidence"])
+@pytest.mark.parametrize("shape", ["reads-only", "null-evidence", "mixed"])
+def test_task_preserves_reads_in_one_citation_list(identity, monkeypatch, kind, shape):
+    sources = [source.model_dump() for source in identity[2]]
+    first, second = sources
+    read = {
+        "path": first["ref"],
+        "sha256": first["content_hash"],
+        "start_line": 3,
+        "content": "SAME_TEXT",
+        "complete_file": False,
+        "end_line": 99,  # A display hint. Derive the actual end from delivered text.
+    }
+    other = {**read, "path": second["ref"], "sha256": second["content_hash"]}
+    raw = {
+        "hit": True,
+        "status": "validated",
+        "match_kind": kind,
+        "sources": sources,
+        "content": "authored finding" if kind == "answer" else "SAME_TEXT",
+        "current_repository_reads": [read, other, read],
+        "tainted": True,
+    }
+    span = {"ref": first["ref"], "line": 3, "text": "SAME_TEXT"}
+    earlier = {**span, "line": 1}
+    if shape == "mixed":
+        raw["evidence"] = [
+            earlier,
+            {**span, "content": span["text"], "origin_detail": "legacy"},
+            earlier,
+        ]
+    elif shape == "null-evidence":
+        raw["evidence"] = None
+    result = task_lookup(identity, monkeypatch, raw)
+    assert result["hit"] and "current_repository_reads" not in result
+    merged = {**span, "end_line": 3, "complete_file": False}
+    expected = [earlier, {**merged, "origin_detail": "legacy"}] if shape == "mixed" else [merged]
+    assert result["evidence"] == [*expected, {**merged, "ref": second["ref"]}]
+    assert result["sources"] == sources
+    if kind == "answer":
+        assert result["content"] == "authored finding"
+    else:
+        assert "content" not in result
+
+
+@pytest.mark.parametrize("invalid", [{"sha256": "b" * 64}, {"text": "different"}])
+def test_task_rejects_conflicting_read(identity, monkeypatch, invalid):
+    source = identity[2][0].model_dump()
+    span = {"ref": source["ref"], "line": 1, "text": "supported"}
+    raw = {
+        "hit": True,
+        "status": "validated",
+        "match_kind": "evidence",
+        "sources": [source],
+        "evidence": [span],
+        "current_repository_reads": [
+            {
+                "path": source["ref"],
+                "sha256": source["content_hash"],
+                "start_line": 3,
+                "content": "unbound",
+                **invalid,
+            }
+        ],
+    }
+    assert task_lookup(identity, monkeypatch, raw) == {
+        "hit": False,
+        "reason": "lookup_unavailable",
+        "continue_research": True,
+    }
+
+
 @pytest.mark.parametrize("status", ["stale", "unverified"])
 @pytest.mark.parametrize("has_content", [True, False])
 def test_nonvalidated_hit_withholds_only_stored_prose(identity, monkeypatch, status, has_content):
@@ -152,7 +224,46 @@ def test_complete_empty_file_keeps_its_citation(identity, monkeypatch):
     assert "content" not in result
 
 
-def test_git_mismatch_retains_verified_local_excerpts(transport):
+def test_blank_excerpt_keeps_its_coordinates_alongside_usable_evidence(identity, monkeypatch):
+    source = identity[2][0].model_dump()
+    blank = {"ref": source["ref"], "line": 7, "text": "", "complete_file": False}
+    usable = {**blank, "line": 4, "text": "TIMEOUT = 30"}
+    raw = {
+        "hit": True,
+        "status": "validated",
+        "match_kind": "evidence",
+        "sources": [source],
+        "evidence": [blank, usable],
+        "content": "generated summary",
+    }
+    result = task_lookup(identity, monkeypatch, raw)
+    assert result["evidence"] == [blank, usable] and "content" not in result
+
+
+@pytest.mark.parametrize("legacy_complete", [False, True])
+def test_duplicate_preserves_complete_file_coverage(identity, monkeypatch, legacy_complete):
+    source = identity[2][0].model_dump()
+    span = {"ref": source["ref"], "line": 1, "text": "same bytes", "complete_file": legacy_complete}
+    raw = {
+        "hit": True,
+        "status": "validated",
+        "match_kind": "evidence",
+        "sources": [source],
+        "evidence": [span],
+        "current_repository_reads": [
+            {
+                "path": source["ref"],
+                "sha256": source["content_hash"],
+                "start_line": 1,
+                "content": span["text"],
+                "complete_file": not legacy_complete,
+            }
+        ],
+    }
+    assert task_lookup(identity, monkeypatch, raw)["evidence"] == [{**span, "complete_file": True}]
+
+
+def test_git_mismatch_retains_verified_local_excerpts(transport, monkeypatch):
     client, repo, _, _ = transport
     trail = publish(client, repo, git=True, content="Interpretation from the original branch")
     subprocess.run(
@@ -160,13 +271,31 @@ def test_git_mismatch_retains_verified_local_excerpts(transport):
     )
     original = client.ask(trail.question, "team", repo=repo, repository_id="project")
     assert original["match_kind"] == "evidence" and original["content"]
+    request = client.request
+
+    def with_server_read(route, payload):
+        response = request(route, payload)
+        if route == "/ask":
+            source = response["sources"][0]
+            response["current_repository_reads"] = [
+                {
+                    "path": source["ref"],
+                    "sha256": source["content_hash"],
+                    "start_line": 1,
+                    "content": "SERVER TEXT OUTSIDE THE CALLER READ",
+                }
+            ]
+        return response
+
+    monkeypatch.setattr(client, "request", with_server_read)
     server = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
     result = json.loads(asyncio.run(server.call_tool("research", {}))[0].text)
     assert result["git"] == original["git"] and result["git"]["compatibility"] != "matched"
     assert result["provenance"] == original["provenance"]
     assert result["sources"] == original["sources"]
     assert result["evidence"] == original["evidence"] and result["evidence"]
-    assert "content" not in result
+    assert "content" not in result and "current_repository_reads" not in result
+    assert "SERVER TEXT OUTSIDE THE CALLER READ" not in json.dumps(result)
 
 
 def test_stdio_evidence_answer_and_stale_lookup(running_team):

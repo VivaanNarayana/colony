@@ -71,36 +71,75 @@ class ReadRequest(BaseModel):
     offset: StrictInt = 0
 
 
-def _render_unbudgeted_lookup(result: dict) -> dict:
-    """Present the verified client result using the task tool's legacy citation fields."""
+def _task_lookup_span(item, hashes, *, read):
+    """Bind one citation to its source and put its text and coordinates in legacy fields."""
+    if not isinstance(item, dict):
+        raise ValueError("Invalid lookup evidence span")
+    span = item.copy()
+    for alias, field in (("path", "ref"), ("start_line", "line"), ("content", "text")):
+        if read or alias in span:
+            value = span.pop(alias)
+            if field in span and span[field] != value:
+                raise ValueError("Conflicting lookup evidence fields")
+            span[field] = value
+    ref, line, text = span["ref"], span["line"], span["text"]
+    complete = span.get("complete_file", False)
+    if (
+        not isinstance(ref, str) or ref not in hashes
+        or type(line) is not int or line < 1 or not isinstance(text, str)
+        or type(complete) is not bool or (complete and line != 1)
+    ):
+        raise ValueError("Invalid lookup evidence span")
+    if (read or "sha256" in span) and span.pop("sha256") != hashes[ref]:
+        raise ValueError("Invalid lookup source binding")
+    if "end_line" in span:
+        span["end_line"] = line + text.count("\n")
+    return span
+
+
+def _task_lookup_spans(evidence, reads, sources):
+    """Keep citation order and merge compatible annotations on the same source bytes."""
+    if not isinstance(evidence, list) or not isinstance(reads, list):
+        raise ValueError("Invalid lookup evidence list")
+    hashes = source_hashes(sources)
+    unique = {}
+    for items, read in ((evidence, False), (reads, True)):
+        for item in items:
+            span = _task_lookup_span(item, hashes, read=read)
+            key = (span["ref"], span["line"], span["text"])
+            previous = unique.setdefault(key, {})
+            # The same bytes can be returned as both an excerpt and a verified full file.
+            if previous.get("complete_file") or span.get("complete_file"):
+                previous["complete_file"] = span["complete_file"] = True
+            if any(previous[k] != v for k, v in span.items() if k in previous):
+                raise ValueError("Conflicting lookup evidence metadata")
+            previous.update(span)
+    return list(unique.values())
+
+
+def _render_unbudgeted_lookup(result: dict, *, git_bound: bool) -> dict:
     if not result.get("hit"):
         return result
+    rendered = result.copy()
+    reads = rendered.pop("current_repository_reads", [])
+    evidence = rendered.get("evidence", [])
+    if evidence is None:
+        evidence = []
+    if git_bound or reads is None:
+        # verify_lookup rebuilds only 'evidence' from the caller's checkout.
+        reads = []
+    if evidence or reads:
+        evidence = rendered["evidence"] = _task_lookup_spans(evidence, reads, result.get("sources"))
 
     status = result.get("status")
-    withhold = status in ("stale", "unverified")
-    if not withhold:
-        if result.get("match_kind") != "evidence":
-            return result  # A saved interpretation and its supporting spans are distinct.
-        spans = result.get("evidence")
-        if status != "validated" or not isinstance(spans, list) or not spans:
+    if status in ("stale", "unverified"):
+        if "content" in rendered:
+            rendered["content_withheld"] = status
+    elif result.get("match_kind") == "evidence":
+        if status != "validated" or not any(s["text"] or s.get("complete_file") for s in evidence):
             raise ValueError("Missing validated lookup evidence")
-        hashes = source_hashes(result.get("sources"))
-        for span in spans:
-            if not isinstance(span, dict):
-                raise ValueError("Invalid lookup evidence span")
-            ref, line, text = span.get("ref"), span.get("line"), span.get("text")
-            complete = span.get("complete_file", False)
-            if (
-                not isinstance(ref, str) or ref not in hashes
-                or type(line) is not int or line < 1
-                or type(complete) is not bool or (complete and line != 1)
-                or not isinstance(text, str) or (not text and not complete)
-            ):
-                raise ValueError("Invalid lookup evidence span")
-
-    rendered = result.copy()
-    if withhold and "content" in rendered:
-        rendered["content_withheld"] = status
+    else:
+        return rendered  # Keep authored answers alongside their citations.
     rendered.pop("content", None)
     rendered.pop("content_truncated", None)
     return rendered
@@ -199,7 +238,7 @@ class TaskMCP(FastMCP):
                 if read_path_allowed is not None:
                     options.update(repo=workflow.repo, path_allowed=read_path_allowed)
                 result = workflow.client.ask(self.question, workflow.namespace, **options)
-                return _render_unbudgeted_lookup(result)
+                return _render_unbudgeted_lookup(result, git_bound="repository_id" in options)
             except Exception:
                 return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
 

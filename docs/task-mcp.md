@@ -18,9 +18,13 @@ For `research()` without a context budget, a validated `match_kind: "evidence"`
 hit delivers each selected span in `evidence`. Consumers that previously read
 the generated top-level `content` summary should read each entry's `text` and
 `line` and join its `ref` to `sources[].ref` for the file's `content_hash`.
-Retain separate spans from the same file. A validated `answer` hit also carries
-the authored finding in `content`. Stale and unverified hits retain their status
-and source receipts. When a saved body is withheld, `content_withheld` gives the
+If a server returns citations in `current_repository_reads`, the task adapter
+joins them with `evidence` by source, start line and exact text. Duplicate spans
+share one entry, and identical text at different locations retains each citation.
+In Git-bound tasks only excerpts verified from the caller's checkout reach the
+task. A validated `answer` hit also carries the authored finding in `content`.
+Stale and unverified hits retain their status and source receipts.
+When a saved body is withheld, `content_withheld` gives the
 reason (`stale` or `unverified`). An evidence-only hit with unusable spans or
 missing source bindings yields `lookup_unavailable` so research can continue.
 Budgeted lookups use the adaptive `current_repository_reads` representation.
