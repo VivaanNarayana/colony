@@ -65,27 +65,32 @@ def _unbudgeted_hints(evidence, reads, sources):
     """Reserve up to eight local reads and associate whole-file requests with their fallback spans."""
     from colony.compact import bound_lookup_spans
 
-    unique = {}
     whole_prefixes = {}
-    excerpt_bounds = {}
     for span in bound_lookup_spans(evidence, reads, sources):
-        # Validate all bindings, even after the local read slots are full.
-        ref = span["ref"]
-        line, length = span["line"], len(span["text"])
-        key = (ref, line, length)
         if span.get("complete_file"):
-            first_marker = ref not in whole_prefixes
-            prefixes = whole_prefixes.setdefault(ref, [])
+            prefixes = whole_prefixes.setdefault(span["ref"], [])
+            length = len(span["text"])
             # Each marker requests the same verified file. Only a shorter prefix
             # can fit when an earlier usable prefix exceeds the remaining budget.
             if 0 < length <= _MAX_EXCERPT_CHARS and (not prefixes or length < prefixes[-1]):
                 prefixes.append(length)
-            if first_marker and (len(unique) < _MAX_LOOKUP_HINTS or key in unique):
+
+    def slot_key(ref, line, length):
+        # A complete hint can arrive in either field, after the eight-slot window.
+        # Its line-one alternatives can produce at most one non-overlapping read.
+        return (ref, line, None if line == 1 and ref in whole_prefixes else length)
+
+    unique = {}
+    excerpt_bounds = {}
+    for span in bound_lookup_spans(evidence, reads, sources):
+        ref, line, length = span["ref"], span["line"], len(span["text"])
+        key = slot_key(ref, line, length)
+        if key in unique or len(unique) < _MAX_LOOKUP_HINTS:
+            if span.get("complete_file"):
                 unique[key] = span
-            continue
-        if len(unique) < _MAX_LOOKUP_HINTS:
-            unique.setdefault(key, span)
-        if 0 < length <= _MAX_EXCERPT_CHARS:
+            else:
+                unique.setdefault(key, span)
+        if ref in whole_prefixes and not span.get("complete_file") and 0 < length <= _MAX_EXCERPT_CHARS:
             candidates = excerpt_bounds.setdefault(ref, {})
             # A late explicit citation can also describe an already reserved slot.
             if len(candidates) < _MAX_LOOKUP_HINTS or key in unique:
@@ -93,10 +98,10 @@ def _unbudgeted_hints(evidence, reads, sources):
     fallbacks = {}
     for ref, prefixes in whole_prefixes.items():
         explicit = tuple(excerpt_bounds.get(ref, ()))
-        reserved = tuple(bound for bound in explicit if (ref, *bound) in unique)
+        reserved = tuple(bound for bound in explicit if slot_key(ref, *bound) in unique)
         # If a marker occupies an explicit excerpt's slot, that slot can produce a
         # different fallback. Serve the admitted explicit bounds in citation order.
-        marker_shares_slot = any(unique[(ref, *bound)].get("complete_file") for bound in reserved)
+        marker_shares_slot = any(line == 1 for line, _ in reserved)
         fallbacks[ref] = _WholeFileFallbacks(
             explicit, reserved if marker_shares_slot else (), tuple((1, n) for n in prefixes)
         )

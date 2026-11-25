@@ -651,6 +651,31 @@ def test_git_groups_whole_markers_with_different_lengths(
     assert "current_repository_reads" not in result
 
 
+@pytest.mark.parametrize("widths", [(1, 10), (10, 1)], ids=["short-first", "matching-first"])
+def test_whole_marker_width_does_not_change_admission_at_limit(transport, monkeypatch, widths):
+    client, repo, store, responses = transport
+    lines = ["VALUE = 42", *"ABCDEF"]
+    target_text, peer_text = "\n".join(lines), "WORKERS = 12"
+    trail = publish(client, repo, git=True, file_texts=[target_text, peer_text])
+    target, peer = trail.sources
+    whole = {"ref": target.ref, "line": 1, "text": target_text, "complete_file": True}
+    peer_span = {**whole, "ref": peer.ref, "text": peer_text}
+    markers = [{**whole, "text": "?" * width} for width in widths]
+    explicit = [
+        {**whole, "line": line, "text": text, "complete_file": False}
+        for line, text in enumerate(lines, 1)
+    ]
+    serve_citations(
+        store, monkeypatch, evidence=[*markers, *explicit],
+        current_repository_reads=[_wire_read(peer_span, peer)], evidence_scope="partial",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    assert len(responses) == 1 and result["evidence"] == [whole, peer_span]
+    assert result["complete_files"] == [target.ref, peer.ref] and result["evidence_scope"] == "cited_files"
+
+
 @pytest.mark.parametrize("policy", ["allow-both", "deny-second", "unbound-read"])
 def test_client_checks_paths_with_null_legacy_evidence(transport, monkeypatch, policy):
     client, repo, store, responses = transport
