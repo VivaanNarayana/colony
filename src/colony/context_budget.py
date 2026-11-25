@@ -178,6 +178,8 @@ def with_citation_bounds(response: dict, budget) -> dict:
 
 def with_reuse_guidance(response: dict, budget) -> dict:
     """Spend spare bytes on a trusted cue; never repack or evict source evidence."""
+    from colony.compact import PROFILE
+
     budget = _budget(budget)
     counter = _counter(budget)
     base = copy.deepcopy(response)
@@ -189,11 +191,16 @@ def with_reuse_guidance(response: dict, budget) -> dict:
         raise ContextBudgetError("Reuse guidance requires a fitted response")
     if not base.get("hit") or base.get("status") != "validated" or not base.get("current_repository_reads"):
         return base
-    for cue in (
-        "Use current excerpts for covered claims; read only gaps or conflicting evidence. "
-        "Saved prose may be withheld; cited-file coverage is not whole-repository coverage.",
-        "Use reads; check gaps.",
-    ):
+    # The compact packer derives scope from the reads that actually fit. An
+    # excerpt, including one alongside a full read, still needs qualified wording.
+    full_reads = (
+        base.get("response_profile") == PROFILE and base.get("evidence_scope") == "cited_files"
+        and all(isinstance(read, dict) and read.get("complete_file") is True and read.get("start_line") == 1
+                for read in base["current_repository_reads"])
+    )
+    action = ("Cite these full reads of the cited files directly." if full_reads else
+              "Cite these excerpts for the claims they cover.")
+    for cue in (action + " Read only for missing or conflicting evidence.", "Use reads; check gaps."):
         annotated = copy.deepcopy(base)
         annotated["next_action"] = cue
         annotated = _receipt(annotated, budget, counter, limited)

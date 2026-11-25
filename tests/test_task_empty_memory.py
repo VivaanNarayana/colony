@@ -144,13 +144,14 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
         assert result["hit"] and len(asks) == 1
         server._availability_until = 0
         second = await server.list_tools()
-        assert "empty at last check" not in next(
-            t.description for t in second if t.name == "research"
-        )
+        present = next(t.description for t in second if t.name == "research")
+        assert "For follow-ups" in present and "empty at last check" not in present
         assert len(probes) == 2
         state[0] = "unknown"
         server._availability_until = 0
-        assert {t.name for t in await server.list_tools()} == {"read", "research"}
+        unknown = {t.name: t.description for t in await server.list_tools()}
+        assert set(unknown) == {"read", "research"}
+        assert "at last check" not in unknown["research"]
         assert json.loads((await server.call_tool("read", {"path": "settings.py"}))[0].text)[
             "content"
         ]

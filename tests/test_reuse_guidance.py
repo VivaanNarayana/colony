@@ -17,6 +17,8 @@ from test_integration import running_team as running_team
 from colony.context_budget import count_response, fit_response, with_reuse_guidance
 from colony.models import ContextBudget
 from colony.setup import setup_codex
+from colony.task_mcp import TaskMCP
+from colony.workflow import Workflow
 
 
 def test_actual_lookup_delivers_cue_without_changing_current_evidence(transport):
@@ -26,8 +28,8 @@ def test_actual_lookup_delivers_cue_without_changing_current_evidence(transport)
     value = ask_mcp(client, repo, budget)
     assert value["match_kind"] == "evidence" and "content" not in value
     assert value["context_budget"]["limited"]
-    assert "Use current excerpts for covered claims" in value["next_action"]
-    assert "not whole-repository coverage" in value["next_action"]
+    assert "full reads of the cited files" in value["next_action"]
+    assert "missing or conflicting evidence" in value["next_action"]
     assert "UNTRUSTED" in value["provenance"]
     upstream = responses[-1]
     for actual, original in zip(value["current_repository_reads"], upstream["current_repository_reads"], strict=True):
@@ -35,6 +37,43 @@ def test_actual_lookup_delivers_cue_without_changing_current_evidence(transport)
         assert actual["sha256"] == original["sha256"]
         assert actual["complete_file"] and actual["end_line"]
     assert value["context_budget"]["used"] == count_response(value, budget)
+
+
+def test_task_can_publish_then_cite_current_sources_in_one_followup_lookup(transport):
+    client, repo, _, asks = transport
+    files = {"gateway.py": "from settings import TIMEOUT\nrequest(timeout=TIMEOUT)",
+             "settings.py": "TIMEOUT = 1200"}
+    for path, content in files.items():
+        (repo / path).write_text(content, encoding="utf-8")
+    question = "How does the gateway set its request timeout?"
+    learning = TaskMCP(Workflow(client, "team", repo), question)
+    followup = TaskMCP(Workflow(client, "team", repo, read_only=True), question,
+                       context_budget=ContextBudget(max_tokens=4096))
+
+    def call(task, tool, **kwargs):
+        block, = asyncio.run(task.call_tool(tool, kwargs))
+        return json.loads(block.text)
+
+    try:
+        read = call(learning, "read", batch=[{"path": path} for path in files])
+        call(learning, "publish", applicability="When using the gateway",
+             content="The gateway passes the configured timeout of 1200 to request.",
+             evidence_refs=[r["evidence_ref"] for r in read["results"]])
+        assert not asks
+        value = call(followup, "research")
+        assert len(asks) == 1 and value["status"] == "validated"
+        assert "full reads of the cited files" in value["next_action"]
+        assert {r["path"]: (r["start_line"], r["end_line"], r["content"])
+                for r in value["current_repository_reads"]} == {
+            path: (1, len(content.splitlines()), content) for path, content in files.items()
+        }
+        (repo / "settings.py").write_text("TIMEOUT = 900", encoding="utf-8")
+        stale = call(followup, "research")
+        assert len(asks) == 2 and stale["status"] == "stale"
+        assert "next_action" not in stale and not stale.get("current_repository_reads")
+    finally:
+        learning.evidence.close()
+        followup.evidence.close()
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
@@ -86,9 +125,30 @@ def test_partial_sources_never_become_complete_or_authoritative(transport):
     (repo / "uncited.py").write_text("MISSING_DEPENDENCY = 2", encoding="utf-8")
     value = ask_mcp(client, repo, ContextBudget(max_tokens=4096))
     assert {r["path"] for r in value["current_repository_reads"]} == {s.ref for s in trail.sources}
-    assert "read only gaps or conflicting evidence" in value["next_action"]
+    assert "Read only for missing or conflicting evidence" in value["next_action"]
     assert value["evidence_scope"] == "cited_files"
     assert "uncited.py" not in str(value)
+
+
+@pytest.mark.parametrize("coverage", ["excerpt", "missing_citation", "mixed_spans"])
+def test_full_read_guidance_requires_complete_delivered_citations(coverage):
+    from colony.compact import PROFILE
+
+    sources = [{"ref": "policy", "content_hash": "a" * 64}]
+    read = {"path": "policy", "sha256": "a" * 64, "start_line": 1, "content": "limit = 3",
+            "complete_file": coverage != "excerpt"}
+    reads = [read]
+    if coverage == "missing_citation":
+        sources.append({"ref": "caller", "content_hash": "b" * 64})
+    elif coverage == "mixed_spans":
+        reads.append({**read, "complete_file": False})
+    budget = ContextBudget()
+    base = fit_response({"hit": True, "response_profile": PROFILE, "status": "validated",
+                         "sources": sources, "current_repository_reads": reads}, budget)
+    result = with_reuse_guidance(base, budget)
+    assert "excerpts" in result["next_action"]
+    assert result["current_repository_reads"] == base["current_repository_reads"]
+    assert result["sources"] == base["sources"]
 
 
 @pytest.mark.parametrize("encoding", ["utf8_bytes", "o200k_base"])
@@ -129,7 +189,7 @@ def test_installed_stdio_delivers_reuse_cue_and_all_sources(request, monkeypatch
             assert not result.isError and len(result.content) == 1
             text = result.content[0].text
             value = json.loads(text)
-            assert value["hit"] and "Use current excerpts" in value["next_action"]
+            assert value["hit"] and "full reads of the cited files" in value["next_action"]
             assert "UNTRUSTED" in value["provenance"]
             assert value["context_budget"]["used"] == count_response(value, budget) <= 4096
             assert {r["path"] for r in value["current_repository_reads"]} == set(files)

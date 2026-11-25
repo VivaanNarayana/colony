@@ -20,6 +20,32 @@ def make(identity, **options):
     return TaskMCP(Workflow(client, "team", repo), "Explain the behavior", **options)
 
 
+@pytest.mark.parametrize("tool,args", [
+    ("read", {"path": "café.txt"}),
+    ("read", {"batch": [{"path": "café.txt"}, {"path": "missing.txt"}]}),
+    ("trace_read", {"paths": ["café.txt"]}),
+    ("research", {}),
+])
+def test_task_returns_one_compact_json_object(identity, monkeypatch, tool, args):
+    client, repo, _ = identity
+    source = 'line one\n"café" 🐜'
+    (repo / "café.txt").write_text(source, encoding="utf-8")
+    saved = {"hit": True, "content": source, "sources": [{"ref": "café.txt"}]}
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: saved)
+    server = make(identity, trace_reads=True)
+    block, = asyncio.run(server.call_tool(tool, args))
+    value = json.loads(block.text)
+    assert block.text == json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if tool == "research":
+        assert value == saved
+    else:
+        first = value["results"][0] if "results" in value else value
+        assert first["content"] == source and first["complete_file"]
+        assert [s.ref for s in server.evidence.resolve([first["evidence_ref"]])] == ["café.txt"]
+        if "batch" in args:
+            assert value["results"][1]["evidence_ref"] is None
+
+
 def test_routing_is_shared_and_direct_task_can_promote_without_forced_lookup(identity, monkeypatch):
     client, _, _ = identity
     seen = []

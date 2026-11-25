@@ -46,7 +46,10 @@ For independent reads whose paths are already known, the same tool accepts a
 {"batch":[{"path":"settings.py"},{"path":"handler.py","start":5,"end":7}]}
 ```
 
-The response is `{"results":[...]}` in request order. Successful entries have
+The response is `{"results":[...]}` in request order. Single reads, batches,
+traces and ordinary lookups use compact JSON in one MCP text block. Source
+whitespace, citation coordinates and continuation offsets survive serialization.
+Successful entries have
 the same fields and evidence-reference semantics as individual reads; failed
 entries contain a fixed `error` and `evidence_ref: null` without echoing the
 rejected path. One failure does not discard other results. Malformed batches
@@ -183,6 +186,10 @@ result or its sanitized error. Explicit `research` always performs the normal cu
 lookup; it is never hidden and never returns a cached miss. The startup hint is
 historical ("empty at task startup"); it does not claim continued emptiness.
 Sources, other research and all requested answer detail remain available.
+When the last check found saved work, the research tool suggests looking up
+follow-ups before repeating source discovery. A validated adaptive lookup
+identifies full reads of the cited files when they fit. Use their paths and
+lines directly and investigate any missing or conflicting evidence.
 Use `--no-empty-memory-routing` to disable the probe. Explicit direct-file tasks
 already route to reads and do not make the startup probe. Embedded hosts can opt
 into the same lifecycle through the stdio runner; construction alone does no I/O.
