@@ -47,13 +47,15 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             assert init.instructions.count(ANSWER_POLICY) == 1
             assert init.instructions.count(READ_ROUTING) == 1
             assert init.instructions.count(PUBLICATION_POLICY) == int(eligible)
-            assert "publish" not in {t.name for t in (await session.list_tools()).tools}
+            initial_catalog = await session.list_tools()
+            assert "publish" not in {t.name for t in initial_catalog.tools}
             result = await session.call_tool("read", {"path": "settings.py"})
             assert not result.isError
             assert PUBLICATION_POLICY not in result.content[0].text
             page = json.loads(result.content[0].text)
             assert page.get("publication_guidance") == (PUBLICATION_CUE if eligible else None)
-            tools = (await session.list_tools()).tools
+            updated_catalog = await session.list_tools()
+            tools = updated_catalog.tools
             read = next(t for t in tools if t.name == "read")
             assert "Failed entries and partial pages leave coverage gaps" in read.description
             assert ("publish" in {t.name for t in tools}) == eligible
@@ -67,6 +69,14 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             later = await session.call_tool("read", {"path": "README.md"})
             assert not later.isError
             assert "publication_guidance" not in json.loads(later.content[0].text)
+            # The worker gets retry guidance once, even as the tool catalog changes.
+            for rule in (
+                "Qualify inner limits unless the implementation is selected.",
+                "Count attempts separately from retries and trace exceptional exits.",
+            ):
+                assert init.instructions.count(rule) == 1
+                for message in (initial_catalog, result, updated_catalog, later):
+                    assert rule not in message.model_dump_json()
     asyncio.run(check())
 
 

@@ -35,7 +35,7 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
         assert "required caller/dependency evidence" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
-        assert "injected interfaces and attempts from retries" in server.instructions
+        assert "Trace callers and dependencies." in server.instructions
         assert "detail, examples and citations" in server.instructions
         assert "Research and answer length are unrestricted by publication policy" in server.instructions
 

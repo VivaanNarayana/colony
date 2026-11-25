@@ -59,9 +59,9 @@ needed for requested claims (including callers and dependencies) before auxiliar
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-Answer guidance distinguishes concrete implementations from injected interfaces and total
-attempts from retries. For example, a concrete adapter allowing two attempts does not prove
-that an arbitrary injected transport has that limit; two total attempts permit one retry.
+Answer guidance qualifies inner limits until the caller or the question selects the implementation.
+For example, two attempts in a selected adapter permit one retry. If its final exception
+escapes the caller, that execution ends before the next outer attempt.
 Preserve useful explanations by stating their verified conditions. Failed entries, partial
 pages and literal search misses do not prove repository-wide absence. The read tool also
 exposes the coverage warning; it adds no repeated warning to source responses. These are
