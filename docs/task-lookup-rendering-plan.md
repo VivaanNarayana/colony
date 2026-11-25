@@ -1,6 +1,8 @@
 # Render task lookup results once
 
-Implementation plan for task-scoped MCP, based on `main` at `f027c9d`.
+Implementation plan for task-scoped MCP, written against `main` at `f027c9d`.
+PR #48 implements the response contract below. See [the task integration guide](task-mcp.md)
+for the consumer-facing fields. The replay figures in step 4 describe the original baseline experiment.
 
 ## Where to make the cut
 

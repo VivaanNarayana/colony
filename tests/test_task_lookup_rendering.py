@@ -169,17 +169,30 @@ def test_git_mismatch_retains_verified_local_excerpts(transport):
     assert "content" not in result
 
 
-def test_stdio_validated_then_stale_lookup(running_team):
+def test_stdio_evidence_answer_and_stale_lookup(running_team):
     _, homes, repo, _ = running_team
     client = Client(homes["a"])
-    trail = Trail(
+    guide = repo / "guide.md"
+    guide.write_text(
+        "# Worker\n\nThe local processing worker is a background service that executes queued jobs.\n"
+    )
+    source = snapshot(repo, "guide.md")
+    question = "What is the local processing worker?"
+    earlier = Trail(
         id="a" * 32,
         namespace="team",
-        question="How is the timeout configured?",
-        content="The configured timeout is thirty.",
-        sources=[snapshot(repo, "settings.py")],
+        question="Audit retention period",
+        content="Keep audit records for fourteen days.",
+        sources=[source],
     )
-    assert client.push(trail)["stored"]
+    assert client.push(earlier)["stored"]
+
+    async def research(session):
+        reply = await session.call_tool("research", {})
+        assert not reply.isError and reply.structuredContent is None
+        assert len(reply.content) == 1 and reply.content[0].type == "text"
+        assert "publish" not in {tool.name for tool in (await session.list_tools()).tools}
+        return json.loads(reply.content[0].text)
 
     async def exercise():
         params = StdioServerParameters(
@@ -195,7 +208,7 @@ def test_stdio_validated_then_stale_lookup(running_team):
                 "--ns",
                 "team",
                 "--question",
-                trail.question,
+                question,
             ],
         )
         async with (
@@ -203,23 +216,29 @@ def test_stdio_validated_then_stale_lookup(running_team):
             ClientSession(reader, writer) as session,
         ):
             await session.initialize()
-            for status in ("validated", "stale"):
-                if status == "stale":
-                    (repo / "settings.py").write_text("TIMEOUT = 60\n")
-                raw = client.ask(trail.question, "team")
-                assert raw["status"] == status and raw["content"] == trail.content
-                reply = await session.call_tool("research", {})
-                assert not reply.isError and reply.structuredContent is None
-                assert len(reply.content) == 1 and reply.content[0].type == "text"
-                value = json.loads(reply.content[0].text)
-                assert value["status"] == status and value["id"] == raw["id"]
-                if status == "validated":
-                    assert (
-                        value["content"] == trail.content and value["evidence"] == raw["evidence"]
-                    )
-                else:
-                    assert value["content_withheld"] == "stale" and "content" not in value
-                    assert trail.content not in reply.content[0].text
-                assert "publish" not in {tool.name for tool in (await session.list_tools()).tools}
+            raw = client.ask(question, "team")
+            assert raw["match_kind"] == "evidence" and raw["evidence"][0]["text"] in raw["content"]
+            evidence = await research(session)
+            assert evidence["status"] == "validated" and evidence["match_kind"] == "evidence"
+            assert "content" not in evidence and evidence["sources"] == raw["sources"]
+            assert evidence["evidence"] == raw["evidence"]
+
+            finding = Trail(
+                id="b" * 32,
+                namespace="team",
+                question=question,
+                content="The worker processes queued jobs in the background.",
+                sources=[source],
+            )
+            assert client.push(finding)["stored"]
+            answer = await research(session)
+            assert answer["match_kind"] == "answer" and answer["content"] == finding.content
+            assert answer["status"] == "validated" and answer["evidence"]
+
+            guide.write_text("# Worker\n\nRemoved.\n")
+            stale = await research(session)
+            assert stale["status"] == stale["content_withheld"] == "stale"
+            assert stale["id"] == finding.id and "content" not in stale
+            assert client.ask(question, "team")["content"] == finding.content
 
     asyncio.run(asyncio.wait_for(exercise(), timeout=30))
