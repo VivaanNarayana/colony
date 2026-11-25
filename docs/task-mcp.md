@@ -53,8 +53,9 @@ reason (`stale` or `unverified`). An evidence-only hit needs a complete file
 Unusable evidence or missing source bindings yield `lookup_unavailable` so research can continue.
 Budgeted lookups use the adaptive `current_repository_reads` representation.
 
-Ordinary and adaptive lookup share the same routing guidance: look up saved findings
-when useful, read known paths directly, and batch independent reads. Prioritize evidence
+Ordinary and adaptive lookup share the same routing guidance. The startup preview tells
+workers to read likely files together and search to fill gaps. An explicit path takes
+priority. Workers can look up saved findings when useful. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.

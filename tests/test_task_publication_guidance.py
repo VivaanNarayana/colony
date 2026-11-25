@@ -44,6 +44,8 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")})
         async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:
             init = await session.initialize()
+            lead = "Read the requested path first." if direct else "Use research when saved findings could help."
+            assert init.instructions.startswith(lead)
             assert init.instructions.count(ANSWER_POLICY) == 1
             assert init.instructions.count(READ_ROUTING) == 1
             assert init.instructions.count(PUBLICATION_POLICY) == int(eligible)
@@ -69,8 +71,9 @@ def test_policy_delivered_once_over_stdio(identity, direct, remember, readonly, 
             later = await session.call_tool("read", {"path": "README.md"})
             assert not later.isError
             assert "publication_guidance" not in json.loads(later.content[0].text)
-            # The worker gets retry guidance once, even as the tool catalog changes.
+            # Discovery and reads must not repeat the startup guidance.
             for rule in (
+                "Read likely files together. Search to fill gaps.",
                 "Qualify inner limits unless the implementation is selected.",
                 "Count attempts separately from retries and trace exceptional exits.",
             ):

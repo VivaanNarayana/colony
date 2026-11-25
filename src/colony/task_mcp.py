@@ -53,11 +53,7 @@ RESEARCH_GUIDANCE = (
     "Look up the original task when saved findings could help, including gaps in a direct-read task. "
     "Use sufficient current evidence; research gaps or contradictions."
 )
-READ_ROUTING = (
-    "Read known paths directly; batch independent reads, prioritizing evidence for requested "
-    "claims before auxiliary searches. Size batches to any host research allowance. "
-    "Use available research to close gaps and contradictions; explain remaining limitations. "
-)
+READ_ROUTING = "Read likely files together. Search to fill gaps. "
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
     "evidence_refs, or skip. Isolated values require an explicit remember request. "
@@ -160,16 +156,14 @@ class TaskMCP(FastMCP):
         self._publication_ready = False
         self._publication_attempted = False
         self._publication_lock = threading.RLock()
-        routing = (
-            "Start with read for the host's explicit path. Research further whenever needed. "
-            if direct_path is not None else "Use research when saved findings could help. "
+        self._base_instructions = (
+            READ_ROUTING + RETRY_GUIDANCE
+            + "Prioritize requested evidence within the host allowance. "
+            "Investigate contradictions and explain remaining limitations. " + ANSWER_POLICY
         )
-        # Native hosts may show only a short namespace preview before tool discovery.
-        instructions = routing + RETRY_GUIDANCE + READ_ROUTING + ANSWER_POLICY
         if self._may_publish:
-            instructions += " " + PUBLICATION_POLICY
-        super().__init__("Colony task", instructions=instructions)
-        self._base_instructions = instructions
+            self._base_instructions += " " + PUBLICATION_POLICY
+        super().__init__("Colony task", instructions=self._startup_instructions())
 
         def observe(results, response):
             if self._may_publish and any(result["evidence_ref"] for result in results):
@@ -333,14 +327,19 @@ class TaskMCP(FastMCP):
             self._publication_ready and self._may_publish and not self._publication_attempted
         )]
 
+    def _startup_instructions(self):
+        # Keep the route, batch cue and both retry rules in the native namespace preview.
+        if self.direct_path is not None:
+            return "Read the requested path first. " + self._base_instructions
+        if self._availability_state == "empty":
+            return ("Memory was empty at task startup. " + self._base_instructions
+                    + " Explicit research remains available and always checks current memory.")
+        return "Use research when saved findings could help. " + self._base_instructions
+
     async def run_stdio_async(self):
         self._availability_enabled = self._empty_memory_routing
         await self._refresh_availability()
-        if self._availability_state == "empty":
-            self._mcp_server.instructions = (
-                "Memory was empty at task startup; start with source reads. "
-                + self._base_instructions
-                + " Explicit research remains available and always checks current memory.")
+        self._mcp_server.instructions = self._startup_instructions()
         # Advertise dynamic discovery; supported hosts refresh on the notification.
         async with stdio_server() as (reader, writer):
             await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options(
@@ -421,7 +420,6 @@ def main(argv=None):
         server._base_instructions += (
             f" Host source-read allowance: {args.read_unit_limit} units total, shared by "
             "single reads, each batch/trace entry and continuation, including failures.")
-        server._mcp_server.instructions = server._base_instructions
     try:
         server.run(transport="stdio")
     finally:
