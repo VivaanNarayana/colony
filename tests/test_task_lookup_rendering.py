@@ -323,6 +323,72 @@ def test_git_client_rebuilds_alternate_citations(transport, monkeypatch, shape):
         assert reads[0]["content"] not in json.dumps(result)
 
 
+@pytest.mark.parametrize(
+    "alternate",
+    [{}, {"current_repository_reads": None}, {"current_repository_reads": []}],
+    ids=["omitted", "null", "empty"],
+)
+def test_git_deduplicates_legacy_hints_before_the_limit(transport, monkeypatch, alternate):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, count=2, git=True)
+    spans = [
+        {
+            "ref": s.ref,
+            "line": 2,
+            "text": (repo / s.ref).read_text(encoding="utf-8").splitlines()[1],
+            "complete_file": False,
+        }
+        for s in trail.sources
+    ]
+    serve_citations(store, monkeypatch, evidence=[spans[0]] * 8 + [spans[1]], **alternate)
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    result = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1 and result["hit"]
+    assert result["evidence"] == spans
+    assert "evidence_scope" not in result
+
+
+@pytest.mark.parametrize(
+    ("count", "whole_files", "advertised", "delivered", "scope"),
+    [
+        (3, False, "cited_files", 2, "partial"),
+        (2, False, "cited_files", 2, "partial"),
+        (3, True, "partial", 3, "cited_files"),
+        (5, True, "cited_files", 4, "partial"),
+    ],
+    ids=["omitted-file", "all-files-excerpted", "all-files-complete", "whole-file-limit"],
+)
+def test_git_scope_reflects_locally_delivered_files(
+    transport, monkeypatch, count, whole_files, advertised, delivered, scope
+):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, count=count, git=True)
+    reads = [
+        {
+            "path": s.ref,
+            "sha256": s.content_hash,
+            "start_line": 1,
+            "complete_file": True,
+            "content": (repo / s.ref).read_text(encoding="utf-8").rstrip("\n"),
+        }
+        for s in trail.sources
+    ]
+    serve_citations(store, monkeypatch, current_repository_reads=reads, evidence_scope=advertised)
+    if whole_files:
+        result = client.ask(
+            trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+        )
+    else:
+        task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+        result = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1 and result["hit"]
+    refs = [s.ref for s in trail.sources]
+    assert [s["ref"] for s in result["sources"]] == refs
+    assert [s["ref"] for s in result["evidence"]] == refs[:delivered]
+    assert result["complete_files"] == (refs[:delivered] if whole_files else [])
+    assert result["evidence_scope"] == scope
+
+
 @pytest.mark.parametrize("policy", ["allow-both", "deny-second", "unbound-read"])
 def test_client_checks_paths_with_null_legacy_evidence(transport, monkeypatch, policy):
     client, repo, store, responses = transport

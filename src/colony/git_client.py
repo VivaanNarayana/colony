@@ -165,11 +165,11 @@ def verify_lookup(
         sources = [Source.model_validate(source) for source in raw_sources]
         checked_sources(repo, sources, path_allowed=path_allowed)
         hints = result.get("evidence")
-        if context_budget is None and result.get("current_repository_reads") is not None:
+        if context_budget is None:
             # Only the coordinates and requested length determine what is reread locally.
             # Repeated wire entries must not consume the bounded verifier's hint slots.
             unique = {}
-            for span in bound_lookup_spans(hints, result["current_repository_reads"], raw_sources):
+            for span in bound_lookup_spans(hints, result.get("current_repository_reads"), raw_sources):
                 # Validate every supplied binding, including those beyond the local read limit.
                 if len(unique) < _MAX_LOOKUP_HINTS:
                     complete = whole_files and span.get("complete_file", False)
@@ -202,6 +202,9 @@ def verify_lookup(
     answer["git"] = compact_receipt(context, reason, origin)
     answer["evidence"] = evidence
     answer["complete_files"] = [item["ref"] for item in evidence if item["complete_file"]]
+    if context_budget is None and "evidence_scope" in answer:
+        cited = {source.ref for source in sources}
+        answer["evidence_scope"] = "cited_files" if set(answer["complete_files"]) == cited else "partial"
     answer["provenance"] = "Caller worktree file hashes verified. Git origin is producer-reported."
     if reason not in {"matched", "not_applicable"} or result.get("match_kind") == "evidence":
         answer["match_kind"] = "evidence"
