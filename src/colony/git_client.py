@@ -2,6 +2,7 @@
 
 import hashlib
 import re
+from itertools import chain
 from pathlib import Path
 
 from colony.git_context import capture, compare
@@ -10,6 +11,7 @@ from colony.security import PATTERNS, scrub
 from colony.validation import PinnedSourcePaths, repo_contents, repo_file, validate
 
 _MAX_LOOKUP_HINTS = 8
+_MAX_EXCERPT_CHARS = 2400
 
 
 def _source_lines(root: Path, source: Source, *, path_allowed=None) -> list[str]:
@@ -52,8 +54,40 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
     return result
 
 
+def _unbudgeted_hints(evidence, reads, sources, whole_files):
+    """Reserve up to eight local reads and associate whole-file requests with their fallback spans."""
+    from colony.compact import bound_lookup_spans
+
+    unique = {}
+    whole_file_refs = set()
+    excerpt_bounds = {}
+    for span in bound_lookup_spans(evidence, reads, sources):
+        # Validate all bindings, even after the local read slots are full.
+        ref = span["ref"]
+        line, length = span["line"], len(span["text"])
+        if whole_files:
+            if span.get("complete_file"):
+                whole_file_refs.add(ref)
+            elif 0 < length <= _MAX_EXCERPT_CHARS:
+                candidates = excerpt_bounds.setdefault(ref, {})
+                if len(candidates) < _MAX_LOOKUP_HINTS:
+                    candidates[(line, length)] = None
+        if len(unique) < _MAX_LOOKUP_HINTS:
+            unique.setdefault((ref, line, length), span)
+    return list(unique.values()), {ref: tuple(excerpt_bounds.get(ref, ())) for ref in whole_file_refs}
+
+
+def _fitting_excerpt(lines, bounds, budget):
+    for line, length in bounds:
+        if 1 <= line <= len(lines) and 0 < length <= _MAX_EXCERPT_CHARS:
+            text = "\n".join(lines[line - 1 :])[:length]
+            if len(text) <= budget:
+                return line, text
+    return None
+
+
 def _local_reads(
-    repo, sources, remote_evidence, whole_files, *, whole_file_refs=(), adaptive=False,
+    repo, sources, remote_evidence, whole_files, *, whole_file_fallbacks=None, adaptive=False,
     compact_bundle=False, path_allowed=None,
 ):
     by_ref = {source.ref: source for source in sources}
@@ -75,17 +109,18 @@ def _local_reads(
         if not lines or line > len(lines):
             continue
         text = "\n".join(lines)
-        expand = ref in whole_file_refs or item.get("complete_file") is True
+        fallbacks = whole_file_fallbacks.get(ref) if whole_file_fallbacks else None
+        expand = fallbacks is not None or item.get("complete_file") is True
         file_limit = 16000 if adaptive else min(16000, budget)
         complete = whole_files and expand and len(text) <= file_limit
         start = 1 if complete else line
         if not complete:
             hint = item.get("text")
-            if not isinstance(hint, str) or not hint or (not adaptive and len(hint) > 2400):
-                continue
             # A short Markdown section may exceed 32 lines. Preserve its selected
             # span, using only the bounded hint length and verified local text.
             if adaptive:
+                if not isinstance(hint, str) or not hint:
+                    continue
                 # Budgeted source units are indivisible. A remote character count
                 # must never turn a verified local command into a partial command.
                 # Excerpts use canonical '\n' separators. splitlines() would
@@ -95,9 +130,17 @@ def _local_reads(
                     continue
                 text = "\n".join(lines[line - 1 : last_line])
             else:
-                text = "\n".join(lines[line - 1 :])[: len(hint)]
-        if not adaptive and len(text) > budget:
-            continue
+                bounds = ((line, len(hint)),) if isinstance(hint, str) else ()
+                if item.get("complete_file") and fallbacks:
+                    if any(read["ref"] == ref for read in selected):
+                        continue
+                    # A whole-file marker can contain just one character. Use a supplied
+                    # excerpt at this slot before considering the marker's own prefix.
+                    bounds = chain(fallbacks, bounds)
+                excerpt = _fitting_excerpt(lines, bounds, budget)
+                if excerpt is None:
+                    continue
+                start, text = excerpt
         end = start + text.count("\n")
         # Separate sections of one file can supply different requested facts.
         # Refuse overlapping reads, including duplicate complete-file hints.
@@ -154,7 +197,7 @@ def verify_lookup(
         reason = compare(origin, context)
         if reason == "repository_mismatch" or result.get("status") != "validated":
             raise ValueError()
-        from colony.compact import PROFILE, bound_lookup_spans, legacy_evidence
+        from colony.compact import PROFILE, legacy_evidence
 
         profile = result.get("response_profile")
         if profile is not None and (profile != PROFILE or context_budget is None):
@@ -168,27 +211,17 @@ def verify_lookup(
         sources = [Source.model_validate(source) for source in raw_sources]
         checked_sources(repo, sources, path_allowed=path_allowed)
         hints = result.get("evidence")
-        whole_file_refs = set()
+        whole_file_fallbacks = None
         if context_budget is None:
-            # Only the coordinates and requested length determine what is reread locally.
-            # Repeated wire entries must not consume the bounded verifier's hint slots.
-            unique = {}
-            for span in bound_lookup_spans(hints, result.get("current_repository_reads"), raw_sources):
-                # Validate every supplied binding, including those beyond the local read limit.
-                # A whole-file hint upgrades that file's first eligible excerpt in place.
-                # Keep its original coordinates and length as a fallback if expansion won't fit.
-                if whole_files and span.get("complete_file"):
-                    whole_file_refs.add(span["ref"])
-                if len(unique) < _MAX_LOOKUP_HINTS:
-                    key = (span["ref"], span["line"], len(span["text"]))
-                    unique.setdefault(key, span)
-            hints = list(unique.values())
+            hints, whole_file_fallbacks = _unbudgeted_hints(
+                hints, result.get("current_repository_reads"), raw_sources, whole_files
+            )
         evidence = _local_reads(
             repo,
             sources,
             hints,
             whole_files or compact,
-            whole_file_refs=whole_file_refs,
+            whole_file_fallbacks=whole_file_fallbacks,
             **({"compact_bundle": True} if compact else {}),
             **({"adaptive": True} if context_budget is not None else {}),
             **({"path_allowed": path_allowed} if path_allowed is not None else {}),

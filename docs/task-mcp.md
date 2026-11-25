@@ -25,7 +25,9 @@ Git-bound tasks use both formats as hints and rebuild the excerpts from the
 caller’s checkout. Repeated hints share one slot in the verifier’s selection
 limit, including in legacy-only responses. For whole-file requests, a complete
 hint in either format expands the first selected excerpt for that file when the
-verified contents fit the file and response limits. When present, `evidence_scope` is
+verified contents fit the file and response limits. If the file exceeds either
+limit, the client prefers a locally verified explicit excerpt over the prefix
+suggested by an abbreviated whole-file hint. When present, `evidence_scope` is
 `cited_files` only if the client delivered every cited file in full. Omitted
 files and partial excerpts produce `partial`. When a path allowlist is
 configured, it applies to every cited file,
