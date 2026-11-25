@@ -23,9 +23,11 @@ joins them with `evidence` by source, start line and exact text. Duplicate spans
 share one entry, and identical text at different locations retains each citation.
 Git-bound tasks use both formats as hints and rebuild the excerpts from the
 caller’s checkout. Repeated hints share one slot in the verifier’s selection
-limit, including whole-file markers with different prefix lengths. Focused
-lookups prioritize explicit excerpts. A disjoint marker prefix can use a
-remaining read slot. For whole-file requests, a complete
+limit, including whole-file markers with different prefix lengths. A focused
+lookup selects up to two explicit excerpts in citation order across all files.
+Usable marker prefixes can fill any remaining slots. The first selected excerpt
+for a file can appear at its earlier marker position in the response.
+For whole-file requests, a complete
 hint in either format expands the first selected excerpt for that file when the
 verified contents fit the file and response limits. If the file exceeds either
 limit, the client prefers a locally verified explicit excerpt over the prefix

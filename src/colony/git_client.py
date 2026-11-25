@@ -13,6 +13,7 @@ from colony.validation import PinnedSourcePaths, repo_contents, repo_file, valid
 
 _MAX_LOOKUP_HINTS = 8
 _MAX_EXCERPT_CHARS = 2400
+_MAX_FOCUSED_READS = 2
 
 
 class _WholeFileFallbacks(NamedTuple):
@@ -61,51 +62,77 @@ def compact_receipt(context: GitContext, reason: str, origin: GitContext | None 
     return result
 
 
-def _unbudgeted_hints(evidence, reads, sources):
-    """Reserve up to eight local reads and associate whole-file requests with their fallback spans."""
-    from colony.compact import bound_lookup_spans
+class _FocusedHint(NamedTuple):
+    prefix: bool
+    position: int
+    slot: tuple[str, int, int | None]
+    line: int
+    length: int
 
-    whole_prefixes = {}
-    for span in bound_lookup_spans(evidence, reads, sources):
-        if span.get("complete_file"):
-            prefixes = whole_prefixes.setdefault(span["ref"], [])
-            length = len(span["text"])
-            # Each marker requests the same verified file. Only a shorter prefix
-            # can fit when an earlier usable prefix exceeds the remaining budget.
-            if 0 < length <= _MAX_EXCERPT_CHARS and (not prefixes or length < prefixes[-1]):
-                prefixes.append(length)
 
-    def slot_key(ref, line, length):
-        # A complete hint can arrive in either field, after the eight-slot window.
-        # Its line-one alternatives can produce at most one non-overlapping read.
-        return (ref, line, None if line == 1 and ref in whole_prefixes else length)
+class _UnbudgetedHints:
+    """Keep verification slots bounded and retain the wire order of their alternatives."""
 
-    unique = {}
-    excerpt_bounds = {}
-    for span in bound_lookup_spans(evidence, reads, sources):
-        ref, line, length = span["ref"], span["line"], len(span["text"])
-        key = slot_key(ref, line, length)
-        if key in unique or len(unique) < _MAX_LOOKUP_HINTS:
+    def __init__(self, evidence, reads, sources):
+        from colony.compact import bound_lookup_spans
+
+        self.marker_positions = {}
+        self.prefixes = {}
+        for position, span in enumerate(bound_lookup_spans(evidence, reads, sources)):
             if span.get("complete_file"):
-                unique[key] = span
-            else:
-                unique.setdefault(key, span)
-        if ref in whole_prefixes and not span.get("complete_file") and 0 < length <= _MAX_EXCERPT_CHARS:
-            candidates = excerpt_bounds.setdefault(ref, {})
-            # A late explicit citation can also describe an already reserved slot.
-            if len(candidates) < _MAX_LOOKUP_HINTS or key in unique:
-                candidates[(line, length)] = None
-    fallbacks = {}
-    for ref, prefixes in whole_prefixes.items():
-        explicit = tuple(excerpt_bounds.get(ref, ()))
-        reserved = tuple(bound for bound in explicit if slot_key(ref, *bound) in unique)
-        # If a marker occupies an explicit excerpt's slot, that slot can produce a
-        # different fallback. Serve the admitted explicit bounds in citation order.
-        marker_shares_slot = any(line == 1 for line, _ in reserved)
-        fallbacks[ref] = _WholeFileFallbacks(
-            explicit, reserved if marker_shares_slot else (), tuple((1, n) for n in prefixes)
-        )
-    return list(unique.values()), fallbacks
+                ref, length = span["ref"], len(span["text"])
+                self.marker_positions.setdefault(ref, position)
+                prefixes = self.prefixes.setdefault(ref, [])
+                # Only a shorter prefix can fit if an earlier prefix exceeds the
+                # remaining budget or overlaps an already delivered excerpt.
+                if 0 < length <= _MAX_EXCERPT_CHARS and (not prefixes or length < prefixes[-1][1]):
+                    prefixes.append((position, length))
+
+        self.slots = {}
+        self.excerpts = {}
+        for position, span in enumerate(bound_lookup_spans(evidence, reads, sources)):
+            ref, line, length = span["ref"], span["line"], len(span["text"])
+            key = self.slot_key(ref, line, length)
+            if key in self.slots or len(self.slots) < _MAX_LOOKUP_HINTS:
+                if span.get("complete_file"):
+                    self.slots[key] = span
+                else:
+                    self.slots.setdefault(key, span)
+            if not span.get("complete_file") and 0 < length <= _MAX_EXCERPT_CHARS:
+                bounds = self.excerpts.setdefault(ref, {})
+                if key in self.slots or (ref in self.prefixes and len(bounds) < _MAX_LOOKUP_HINTS):
+                    bounds.setdefault((line, length), position)
+
+    def slot_key(self, ref, line, length):
+        # A marker and its line-one alternatives can produce at most one read.
+        return (ref, line, None if line == 1 and ref in self.prefixes else length)
+
+    def whole_file_fallbacks(self):
+        fallbacks = {}
+        for ref, prefixes in self.prefixes.items():
+            explicit = tuple(self.excerpts.get(ref, ()))
+            reserved = tuple(bound for bound in explicit if self.slot_key(ref, *bound) in self.slots)
+            marker_shares_slot = any(line == 1 for line, _ in reserved)
+            fallbacks[ref] = _WholeFileFallbacks(
+                explicit, reserved if marker_shares_slot else (), tuple((1, n) for _, n in prefixes)
+            )
+        return fallbacks
+
+    def focused_candidates(self):
+        candidates = []
+        for ref, bounds in self.excerpts.items():
+            for (line, length), position in bounds.items():
+                key = self.slot_key(ref, line, length)
+                if key not in self.slots:
+                    # A late explicit excerpt may use this file's admitted marker slot.
+                    key = (ref, 1, None)
+                if key in self.slots:
+                    candidates.append(_FocusedHint(False, position, key, line, length))
+        for ref, prefixes in self.prefixes.items():
+            key = (ref, 1, None)
+            if key in self.slots:
+                candidates.extend(_FocusedHint(True, pos, key, 1, n) for pos, n in prefixes)
+        return sorted(candidates, key=lambda hint: (hint.prefix, hint.position))
 
 
 def _fitting_excerpts(lines, file_text, bounds, budget):
@@ -124,18 +151,61 @@ def _unoccupied(ref, candidates, occupied):
     return None
 
 
+def _focused_reads(repo, by_ref, hints, options):
+    candidates = hints.focused_candidates()
+    starts = {}
+    for hint in candidates:
+        starts.setdefault(hint.slot[0], set()).add(hint.line)
+
+    verified, used, occupied, selected = {}, set(), [], []
+    for hint in candidates:
+        if hint.slot in used:
+            continue
+        ref = hint.slot[0]
+        if ref not in verified:
+            # Read a source once. Retain only the bounded text needed at each cited line.
+            lines = _source_lines(repo, by_ref[ref], **options)
+            bounds = ((line, _MAX_EXCERPT_CHARS) for line in starts[ref])
+            verified[ref] = dict(_fitting_excerpts(lines, "\n".join(lines), bounds, _MAX_EXCERPT_CHARS))
+        tail = verified[ref].get(hint.line)
+        if tail is None:
+            continue
+        excerpt = _unoccupied(ref, [(hint.line, tail[:hint.length])], occupied)
+        if excerpt is None:
+            continue
+        start, end, text = excerpt
+        # Keep the first displayed excerpt at an earlier marker when both survive
+        # selection. The marker never changes which explicit citations win the slots.
+        position = hint.position
+        if not hint.prefix and not any(r == ref for r, _, _ in occupied):
+            position = min(position, hints.marker_positions.get(ref, position))
+        read = {"ref": ref, "line": start, "text": text, "complete_file": False}
+        selected.append(((hint.prefix, position), read))
+        occupied.append((ref, start, end))
+        used.add(hint.slot)
+        if len(selected) == _MAX_FOCUSED_READS:
+            break
+    return [read for _, read in sorted(selected, key=lambda entry: entry[0])]
+
+
 def _local_reads(
-    repo, sources, remote_evidence, whole_files, *, whole_file_fallbacks=None, adaptive=False,
+    repo, sources, remote_evidence, whole_files, *, adaptive=False,
     compact_bundle=False, path_allowed=None,
 ):
     by_ref = {source.ref: source for source in sources}
-    hints = remote_evidence if isinstance(remote_evidence, list) else []
+    options = {"path_allowed": path_allowed} if path_allowed is not None else {}
+    if isinstance(remote_evidence, _UnbudgetedHints):
+        if not whole_files:
+            return _focused_reads(repo, by_ref, remote_evidence, options)
+        hints = list(remote_evidence.slots.values())
+        whole_file_fallbacks = remote_evidence.whole_file_fallbacks()
+    else:
+        hints = remote_evidence if isinstance(remote_evidence, list) else []
+        whole_file_fallbacks = {}
     selected, occupied, budget = [], [], 24000 if whole_files else 4800
-    deferred_prefixes = {}
     # Compact adaptive responses can require all eight bounded source cores.
     # Legacy focused/whole-file requests retain their two/four-read limits.
-    limit = 8 if adaptive and compact_bundle else (4 if whole_files else 2)
-    options = {"path_allowed": path_allowed} if path_allowed is not None else {}
+    limit = 8 if adaptive and compact_bundle else (4 if whole_files else _MAX_FOCUSED_READS)
     for item in hints[:_MAX_LOOKUP_HINTS]:
         if not isinstance(item, dict):
             continue
@@ -148,7 +218,7 @@ def _local_reads(
         if not lines or line > len(lines):
             continue
         text = "\n".join(lines)
-        fallbacks = whole_file_fallbacks.get(ref) if whole_file_fallbacks else None
+        fallbacks = whole_file_fallbacks.get(ref)
         expand = fallbacks is not None or item.get("complete_file") is True
         file_limit = 16000 if adaptive else min(16000, budget)
         complete = whole_files and expand and len(text) <= file_limit
@@ -181,10 +251,6 @@ def _local_reads(
                 candidates = _fitting_excerpts(lines, text, bounds, budget)
         excerpt = _unoccupied(ref, candidates, occupied)
         if excerpt is None:
-            if not whole_files and fallbacks and fallbacks.explicit and fallbacks.prefixes:
-                # An unused focused slot may still contribute a disjoint prefix,
-                # after all explicit citations have had a chance at the read limit.
-                deferred_prefixes.setdefault(ref, (text[:_MAX_EXCERPT_CHARS], fallbacks.prefixes))
             continue
         start, end, text = excerpt
         read = {"ref": ref, "line": start, "text": text, "complete_file": complete}
@@ -199,16 +265,6 @@ def _local_reads(
         budget -= len(text)
         if len(selected) >= limit:
             break
-    for ref, (prefix, bounds) in deferred_prefixes.items():
-        if len(selected) >= limit:
-            break
-        candidates = ((1, prefix[:length]) for _, length in bounds if min(len(prefix), length) <= budget)
-        excerpt = _unoccupied(ref, candidates, occupied)
-        if excerpt is not None:
-            start, end, text = excerpt
-            selected.append({"ref": ref, "line": start, "text": text, "complete_file": False})
-            occupied.append((ref, start, end))
-            budget -= len(text)
     return selected
 
 
@@ -262,17 +318,13 @@ def verify_lookup(
         sources = [Source.model_validate(source) for source in raw_sources]
         checked_sources(repo, sources, path_allowed=path_allowed)
         hints = result.get("evidence")
-        whole_file_fallbacks = None
         if context_budget is None:
-            hints, whole_file_fallbacks = _unbudgeted_hints(
-                hints, result.get("current_repository_reads"), raw_sources
-            )
+            hints = _UnbudgetedHints(hints, result.get("current_repository_reads"), raw_sources)
         evidence = _local_reads(
             repo,
             sources,
             hints,
             whole_files or compact,
-            whole_file_fallbacks=whole_file_fallbacks,
             **({"compact_bundle": True} if compact else {}),
             **({"adaptive": True} if context_budget is not None else {}),
             **({"path_allowed": path_allowed} if path_allowed is not None else {}),

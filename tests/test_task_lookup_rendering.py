@@ -651,6 +651,82 @@ def test_git_groups_whole_markers_with_different_lengths(
     assert "current_repository_reads" not in result
 
 
+@pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])
+@pytest.mark.parametrize(
+    ("order", "expected"),
+    [
+        pytest.param(("whole", "workers", "timeout", "prefix"), ("workers", "timeout"), id="defer-prefix"),
+        pytest.param(("retry", "whole", "workers", "alpha"), ("retry", "workers"), id="keep-peer-rank"),
+        pytest.param(("whole", "workers", "timeout", "alpha"), ("workers", "timeout"), id="late-explicit"),
+        pytest.param(("whole", "workers", "prefix"), ("workers", "prefix"), id="spare-prefix"),
+        pytest.param(("retry", "whole", "alpha"), ("retry", "alpha"), id="spare-explicit"),
+    ],
+)
+def test_focused_git_research_respects_cross_file_priority(
+    transport, monkeypatch, order, expected, mixed
+):
+    client, repo, store, responses = transport
+    alpha, retry, workers, timeout = "ALPHA = 1", "RETRIES = 5", "WORKERS = 12", "TIMEOUT = 30"
+    full_text = "\n".join([alpha, retry, "#" * 2500])
+    trail = publish(client, repo, git=True, file_texts=[full_text, workers, timeout])
+    a, b, c = trail.sources
+    first = {"ref": a.ref, "line": 1, "text": alpha, "complete_file": False}
+    spans = {
+        "alpha": first, "retry": {**first, "line": 2, "text": retry},
+        "workers": {**first, "ref": b.ref, "text": workers},
+        "timeout": {**first, "ref": c.ref, "text": timeout},
+        "whole": {**first, "text": full_text, "complete_file": True},
+        "prefix": {**first, "text": "A", "complete_file": True},
+    }
+    hints = [spans[name] for name in order]
+    split = 2 if mixed else len(hints)
+    sources = {s.ref: s for s in trail.sources}
+    serve_citations(
+        store, monkeypatch, evidence=hints[:split], evidence_scope="cited_files",
+        current_repository_reads=[_wire_read(h, sources[h["ref"]]) for h in hints[split:]],
+    )
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    blocks = asyncio.run(task.call_tool("research", {}))
+    assert len(responses) == len(blocks) == 1
+    result = json.loads(blocks[0].text)
+    assert result["git"]["compatibility"] == "matched" and result["hit"]
+    assert result["evidence"] == [{**spans[name], "complete_file": False} for name in expected]
+    assert result["evidence_scope"] == "partial" and result["complete_files"] == []
+    assert "content" not in result and "current_repository_reads" not in result
+    for name in expected:
+        if name != "prefix":
+            assert blocks[0].text.count(spans[name]["text"]) == 1
+
+
+@pytest.mark.parametrize("valid_binding", [True, False], ids=["one-slot", "reject-late-hash"])
+def test_focused_git_research_uses_one_reserved_marker_slot(transport, monkeypatch, valid_binding):
+    client, repo, store, responses = transport
+    lines = ["ALPHA = 1", "RETRIES = 5", "TIMEOUT = 30"]
+    trail = publish(client, repo, git=True, file_texts=["\n".join(lines), "WORKERS = 12"])
+    target, peer = trail.sources
+    marker = {"ref": target.ref, "line": 1, "text": "A", "complete_file": True}
+    # Fill all eight slots. Only the target's marker can supply a late excerpt.
+    unavailable = [
+        {"ref": peer.ref, "line": line, "text": "?", "complete_file": False} for line in range(2, 9)
+    ]
+    late = [
+        {**marker, "line": line, "text": lines[line - 1], "complete_file": False} for line in (2, 3)
+    ]
+    reads = [_wire_read(span, target) for span in late]
+    if not valid_binding:
+        reads[-1]["sha256"] = "0" * 64
+    serve_citations(store, monkeypatch, evidence=[marker, *unavailable], current_repository_reads=reads)
+    task = TaskMCP(Workflow(client, "team", repo, repository_id="project"), trail.question)
+    result = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1
+    if valid_binding:
+        assert result["hit"] and result["evidence"] == late[:1]
+        assert result["complete_files"] == [] and "content" not in result
+    else:
+        assert not result["hit"] and result["reason"] == "git_local_evidence_not_verified"
+        assert "evidence" not in result
+
+
 @pytest.mark.parametrize("widths", [(1, 10), (10, 1)], ids=["short-first", "matching-first"])
 def test_whole_marker_width_does_not_change_admission_at_limit(transport, monkeypatch, widths):
     client, repo, store, responses = transport
