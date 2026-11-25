@@ -300,6 +300,34 @@ def test_explicit_lookup_skips_probe_and_outage_checks_back_off(identity, monkey
     asyncio.run(check())
 
 
+@pytest.mark.parametrize("snapshot", ["empty", "present", "unknown"])
+def test_lookup_notifies_only_when_it_clears_a_cached_route(identity, monkeypatch, snapshot):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    client, repo, _ = identity
+    server = TaskMCP(Workflow(client, "team", repo, read_only=True), "Follow up on the gateway")
+    server._availability_enabled = True
+    probes = []
+    monkeypatch.setattr(client, "memory_availability", lambda *a: probes.append(1) or snapshot)
+    monkeypatch.setattr(client, "ask", lambda *a, **kw: {"hit": False})
+    notify = AsyncMock()
+    context = SimpleNamespace(session=SimpleNamespace(send_tool_list_changed=notify))
+    monkeypatch.setattr(server, "get_context", lambda: SimpleNamespace(request_context=context))
+
+    async def check():
+        before = await server.list_tools()
+        await server.call_tool("research", {})
+        after = await server.list_tools()
+        assert (before != after) == (snapshot != "unknown")
+        assert notify.await_count == int(before != after)
+        await server.call_tool("research", {})
+        assert notify.await_count == int(before != after)
+        assert probes == [1]
+
+    asyncio.run(check())
+
+
 @pytest.mark.parametrize("name,arguments", [
     ("read", {"path": "missing.py"}),
     ("read", {"offset": "invalid"}),

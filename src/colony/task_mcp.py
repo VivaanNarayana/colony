@@ -298,7 +298,7 @@ class TaskMCP(FastMCP):
         if name == "research":
             # An explicit current lookup needs no preliminary availability request.
             self._availability_generation += 1
-            availability_changed = self._availability_state == "empty"
+            availability_changed = self._availability_state != "unknown"
             self._availability_state = "unknown"
             self._availability_until = time.monotonic() + 30
         else:
