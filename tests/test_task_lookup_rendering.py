@@ -752,6 +752,99 @@ def test_whole_marker_width_does_not_change_admission_at_limit(transport, monkey
     assert result["complete_files"] == [target.ref, peer.ref] and result["evidence_scope"] == "cited_files"
 
 
+@pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])
+@pytest.mark.parametrize(
+    ("spare", "early", "invalid_excerpt"),
+    [(0, False, False), (1, False, False), (0, True, False), (0, True, True)],
+    ids=["exact-budget", "room-for-prefix", "early-prefix", "unusable-late-excerpt"],
+)
+def test_whole_file_prefix_spends_budget_at_its_own_position(
+    transport, monkeypatch, mixed, spare, early, invalid_excerpt
+):
+    client, repo, store, responses = transport
+    files = ["A" * 16_100, "B" * 16_000, "C" * (8_000 - spare)]
+    trail = publish(client, repo, git=True, file_texts=files)
+    whole = [
+        {"ref": source.ref, "line": 1, "text": text, "complete_file": True}
+        for source, text in zip(trail.sources, files, strict=True)
+    ]
+    prefix = {**whole[0], "text": "?"}
+    hints = [whole[0], prefix, *whole[1:]] if early else [*whole, prefix]
+    if invalid_excerpt:
+        hints.append({**prefix, "line": 2, "complete_file": False})
+    split = 1 if mixed else len(hints)
+    sources = {s.ref: s for s in trail.sources}
+    serve_citations(
+        store, monkeypatch, evidence=hints[:split],
+        current_repository_reads=[_wire_read(h, sources[h["ref"]]) for h in hints[split:]],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    local_prefix = {**prefix, "text": "A", "complete_file": False}
+    expected = [local_prefix, whole[1]] if early else whole[1:] + ([local_prefix] if spare else [])
+    assert len(responses) == 1 and result["evidence"] == expected
+    assert result["complete_files"] == [s["ref"] for s in expected if s["complete_file"]]
+    assert result["evidence_scope"] == "partial" and "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("remaining", [1, 2], ids=["only-short-prefix-fits", "first-prefix-fits"])
+def test_whole_file_prefix_remains_available_when_later_excerpt_no_longer_fits(
+    transport, monkeypatch, remaining
+):
+    client, repo, store, responses = transport
+    fact = "RETRIES = 5"
+    files = ["AA\n" + fact + "\n" + "#" * 16_000, "B" * 16_000, "C" * (8_000 - remaining)]
+    trail = publish(client, repo, git=True, file_texts=files)
+    target, b, c = trail.sources
+    marker = {"ref": target.ref, "line": 1, "text": "??", "complete_file": True}
+    peers = [{**marker, "ref": s.ref, "text": t} for s, t in zip((b, c), files[1:], strict=True)]
+    explicit = {**marker, "line": 2, "text": fact, "complete_file": False}
+    serve_citations(
+        store, monkeypatch, evidence=[marker, *peers],
+        current_repository_reads=[_wire_read({**marker, "text": "?"}, target), _wire_read(explicit, target)],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    fallback = {**marker, "text": "A" * remaining, "complete_file": False}
+    assert len(responses) == 1
+    assert result["evidence"] == ([fallback, *peers] if remaining == 2 else [*peers, fallback])
+    assert result["complete_files"] == [b.ref, c.ref]
+    assert result["evidence_scope"] == "partial" and "current_repository_reads" not in result
+
+
+@pytest.mark.parametrize("mixed", [False, True], ids=["legacy", "mixed-fields"])
+@pytest.mark.parametrize("peer_count", [2, 3], ids=["spare-slot", "four-read-limit"])
+def test_whole_file_marker_keeps_global_excerpt_order(transport, monkeypatch, mixed, peer_count):
+    client, repo, store, responses = transport
+    alpha, retry = "ALPHA = 1", "RETRIES = 5"
+    peer_texts = ["WORKERS = 12", "TIMEOUT = 30", "BATCH = 4"][:peer_count]
+    files = ["\n".join([alpha, retry, "#" * 16_000]), *peer_texts]
+    trail = publish(client, repo, git=True, file_texts=files)
+    target, *peers = trail.sources
+    first = {"ref": target.ref, "line": 1, "text": alpha, "complete_file": False}
+    second = {**first, "line": 2, "text": retry}
+    marker = {**first, "text": "?", "complete_file": True}
+    peer_spans = [
+        {**first, "ref": s.ref, "text": text} for s, text in zip(peers, peer_texts, strict=True)
+    ]
+    legacy = [second, marker, *peer_spans]
+    serve_citations(
+        store, monkeypatch, evidence=legacy if mixed else [*legacy, first],
+        current_repository_reads=[_wire_read(first, target)] if mixed else [],
+        evidence_scope="cited_files",
+    )
+    result = client.ask(
+        trail.question, "team", repo=repo, repository_id="project", include_evidence_files=True
+    )
+    assert len(responses) == 1 and result["evidence"] == [second, *peer_spans, first][:4]
+    assert result["complete_files"] == [] and result["evidence_scope"] == "partial"
+    assert "current_repository_reads" not in result
+
+
 @pytest.mark.parametrize("policy", ["allow-both", "deny-second", "unbound-read"])
 def test_client_checks_paths_with_null_legacy_evidence(transport, monkeypatch, policy):
     client, repo, store, responses = transport
