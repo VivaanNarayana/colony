@@ -210,10 +210,11 @@ On stdio startup, a non-direct task makes a short authenticated
 `POST /memory/availability` request. The response contains only a contract,
 namespace, configured repository identity and `empty`/`present` state. Only a
 zero active-row result in the authorized namespace enables the confirmed-empty hint.
-Stale, unverified and unrelated active memories conservatively count as present;
-a search miss never becomes an empty-store proof. Repository-ID mismatch, old
-servers, denied/expired credentials and transport failures yield `unknown` and
-lead with source batching while keeping explicit research available. An unchanged,
+Stale, unverified and unrelated active memories conservatively count as present.
+With a populated store, batch the needed files before searching if they fit.
+Use memory for recall or evidence gaps. A search miss never becomes an empty-store
+proof. Repository-ID mismatch, old servers, denied/expired credentials and transport
+failures yield `unknown` and lead with source batching while keeping explicit research available. An unchanged,
 verified grant reuses its existing registration without taking a database writer lock.
 
 The hint is explicitly a snapshot, not a guarantee about subsequent publications.

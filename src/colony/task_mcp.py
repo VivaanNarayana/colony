@@ -51,8 +51,8 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up the original task when saved findings could help, including gaps in a direct-read task. "
-    "Use sufficient current evidence; research gaps or contradictions."
+    "Look up prior findings or evidence gaps, including on direct reads. "
+    "Check conflicting claims against current sources."
 )
 READ_ROUTING = "If needed files fit, batch before searching. "
 PUBLICATION_CUE = (
@@ -346,7 +346,8 @@ class TaskMCP(FastMCP):
             return ("Read files first. Batch before searching if they fit. "
                     "Memory was empty. Recheck on request or after a save. " + self._base_instructions)
         if self._availability_state == "present":
-            return lookup + " " + READ_ROUTING + self._base_instructions
+            return ("Batch needed files before searching if they fit. Use memory for recall or gaps. "
+                    + self._base_instructions)
         return READ_ROUTING + lookup + " " + self._base_instructions
 
     async def run_stdio_async(self):

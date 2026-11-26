@@ -51,7 +51,7 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             "--ns",
             "team",
             "--question",
-            "Trace handler",
+            "What is the timeout?" if route == "present" else "Trace handler",
             "--trace-reads",
             "--read-only",
             "--read-unit-limit",
@@ -76,7 +76,8 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             batch = "If needed files fit, batch before searching."
             lookup = "Use research when saved findings could help."
             leads = {
-                "empty": EMPTY_ROUTE, "present": f"{lookup} {batch}", "direct": f"Read the requested path first. {batch}",
+                "empty": EMPTY_ROUTE, "present": "Batch needed files before searching if they fit. Use memory for recall or gaps.",
+                "direct": f"Read the requested path first. {batch}",
                 "unknown": f"{batch} {lookup}", "disabled": f"{batch} {lookup}",
             }
             assert preview.startswith(leads[route])
@@ -86,6 +87,12 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
             assert tools["research"].description.startswith("Read files first") == (route == "empty")
+            if route == "present":
+                assert tools["research"].description.startswith("Look up prior findings or evidence gaps")
+                recalled = await session.call_tool("research", {})
+                hit = json.loads(recalled.content[0].text)
+                assert hit["hit"] and hit["status"] == "validated"
+                assert hit["id"] == json.loads(saved.stdout)["id"] and "30" in hit["content"]
             if route == "unknown":
                 live = await session.call_tool("research", {})
                 assert json.loads(live.content[0].text) == {"hit": False, "reason": "no_relevant_trail"}

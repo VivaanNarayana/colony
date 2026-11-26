@@ -334,11 +334,13 @@ def test_real_client_batches_within_remaining_units(bench_team, searches, oversi
     asyncio.run(exercise())
 
 
-@pytest.mark.parametrize('workload', ['gateway', 'worker'])
-def test_real_client_absence_evidence_through_observed_adapter(bench_team, workload, tmp_path):
+@pytest.mark.parametrize('workload,populated', [('gateway', False), ('gateway', True), ('worker', False)])
+def test_real_client_absence_evidence_through_observed_adapter(bench_team, workload, populated, tmp_path):
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
     from colony.client import Client
+    from colony.models import Trail
+    from colony.validation import snapshot
 
     homes, repo = bench_team
     fixtures = Path(__file__).parent / 'fixtures'
@@ -348,6 +350,10 @@ def test_real_client_absence_evidence_through_observed_adapter(bench_team, workl
     files = next(s['files'] for s in suite['snapshots'] if s['id'] == task['snapshot'])
     for name in files:
         (repo / name).write_bytes((fixtures / workload / task['snapshot'] / name).read_bytes())
+    if populated:
+        unrelated = Trail(id='a' * 32, namespace='bench', question='What does the gateway handle?',
+                          content='Inventory requests.', sources=[snapshot(repo, 'README.txt')])
+        assert Client(homes['a']).push(unrelated)['stored']
     Client(homes['b']).request('/join', {})
     scripts = Path(__file__).resolve().parents[2] / 'scripts'
     params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=[
@@ -359,10 +365,13 @@ def test_real_client_absence_evidence_through_observed_adapter(bench_team, workl
     async def exercise():
         async with stdio_client(params) as streams, ClientSession(*streams) as session:
             preview = (await session.initialize()).instructions[:245]
-            assert preview.startswith('Read files first. Batch before searching if they fit.')
+            lead = ('Batch needed files before searching if they fit. Use memory for recall or gaps.'
+                    if populated else 'Read files first. Batch before searching if they fit.')
+            assert preview.startswith(lead)
             assert 'trace exceptional exits.' in preview
             tools = {t.name: t for t in (await session.list_tools()).tools}
-            assert tools['research'].description.startswith('Read files first')
+            assert tools['research'].description.startswith(
+                'Look up prior findings or evidence gaps' if populated else 'Read files first')
             listed = await session.call_tool('fixture_files', {})
             paths = listed.content[0].text.splitlines()
             assert paths == sorted(files) and len(paths) == 5
