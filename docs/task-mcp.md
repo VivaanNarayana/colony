@@ -219,8 +219,11 @@ recall-first route, `evidence[].end_line` identifies the last displayed line, wh
 can be partial. `complete_file` records verified whole-file coverage.
 An optional `suggested_read` gives arguments for one ordinary read when a visible
 Python import and call point to a single validated source without usable excerpts.
-The hint fits within 128 serialized bytes. It neither reads the file nor establishes
-a runtime binding. Other paths and missing lines remain readable. A search miss never becomes an empty-store
+The hint fits within 128 serialized bytes. On this route the first tool catalog
+shows how to pass the hint directly to `read`. Batch other paths when another
+requested fact needs them. Cite the code or configuration that selects an
+implementation before attributing its behavior to a particular request.
+Other paths and missing lines remain readable. A search miss never becomes an empty-store
 proof. Repository-ID mismatch, old servers, denied/expired credentials and transport
 failures yield `unknown` and lead with source batching while keeping explicit research available. An unchanged,
 verified grant reuses its existing registration without taking a database writer lock.
