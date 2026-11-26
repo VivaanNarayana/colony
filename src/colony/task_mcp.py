@@ -83,10 +83,13 @@ _FINDING = (
     r"(?:(?:previously\s+)?(?:saved|stored|prior|previous)\s+(?:[\w-]+\s+){0,2}findings?"
     r"|findings?\s+(?:that\s+)?(?:we|you|I)\s+(?:saved|stored))"
 )
-_FINDING_END = r"(?=[’']s\b|\s+(?:id|identifier|about|for|from|on|and|after|earlier|first)\b|\s*[.!?;,]|\s*$)"
+_FINDING_END = (
+    r"(?=(?:[’']s)?\s+(?:id|identifier|contents?|rule|summary)\b|\s+(?:about|for|from|on|and|after|earlier|first)\b"
+    r"|\s*[.!?;,]|\s*$)"
+)
 _RECALL_REQUEST = re.compile(
     rf"""(?:^|[.!?;,\n])\s*(?:and\s+)?(?:(?:can|could)\s+you\s+)?(?:please\s+)?
-    (?:(?:trace|compare|verify)\b[^.!?;,\n]*?\s+and\s+(?=(?:also\s+)?(?:include|provide)\b)(?:also\s+)?)?
+    (?:(?:trace|compare|verify)\s+(?:[^\s.!?;,]+\s+){{1,60}}and\s+(?:also\s+)?(?=include\b|provide\b))?
     (?:
         (?:include|give(?:\s+me)?|provide|return|show(?:\s+me)?|report|recall|summarize|describe|quote)\s+
         (?:the\s+(?:id|identifier|content|rule|summary)\s+of\s+)?{_FINDING}{_FINDING_END}
@@ -99,7 +102,7 @@ _RECALL_REQUEST = re.compile(
 )
 _FILE_FIRST = re.compile(
     r"(?:(?:^|[.!?;,\n])\s*first[, ]+|\bstart by\s+|\bafter\s+)(?:you\s+)?(?:read|check|inspect|open)(?:ing)?\b"
-    r"|\b(?:read|check|inspect|open)\b[^!?;\n]{0,100}?\s+(?:first\b|before\b)"
+    r"|\b(?:read|check|inspect|open)\b[^!?;\n]{0,100}?\s+(?:first\b|before\s+(?:recall|look|research|retriev|summari))"
     r"|\b(?:read|check|inspect|open)\b[^!?;\n]{0,100}?,?\s+then\s+(?:recall|summarize|include|return|give|report|show|describe|quote)\b",
     re.IGNORECASE,
 )
@@ -108,7 +111,15 @@ _FILE_FIRST = re.compile(
 def _requests_saved_finding(question: str) -> bool:
     # Quoted examples and literal code are data. Keep a placeholder at their position.
     prose = re.sub(r"`+[^`]*`+|\"[^\"]*\"|“[^”]*”|(?<!\w)'[^'\n]+'(?!\w)|‘[^’]*’", "…", question)
-    return bool(_RECALL_REQUEST.search(prose) and not _FILE_FIRST.search(prose))
+    if _FILE_FIRST.search(prose):
+        return False
+    # Conditional instructions and examples do not request an unconditional first lookup.
+    sentences = re.split(r"(?<=[.!?;])\s+|\n+", prose)
+    return any(
+        _RECALL_REQUEST.search(sentence)
+        for sentence in sentences
+        if not re.match(r"\s*(?:if|unless|when|for example)\b", sentence, re.IGNORECASE)
+    )
 
 
 def _task_lookup_spans(evidence, reads, sources):
