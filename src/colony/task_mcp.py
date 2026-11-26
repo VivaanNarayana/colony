@@ -243,7 +243,7 @@ class TaskMCP(FastMCP):
 
         research.__doc__ = RESEARCH_GUIDANCE + budget_guidance
         self._empty_research_description = (
-            "Scoped memory was empty at last check. Checks current saved findings for the original task."
+            "Read files first unless asked or memory changed. Empty at last check."
             + budget_guidance
         )
         for name, function in (("read", read), ("research", research)):
@@ -343,7 +343,8 @@ class TaskMCP(FastMCP):
         if self.direct_path is not None:
             return "Read the requested path first. " + READ_ROUTING + self._base_instructions + " " + lookup
         if self._availability_state == "empty":
-            return "Memory started empty. Recheck on request or after a save. " + READ_ROUTING + self._base_instructions
+            return ("Read files first. Batch before searching if they fit. "
+                    "Memory was empty. Recheck on request or after a save. " + self._base_instructions)
         if self._availability_state == "present":
             return lookup + " " + READ_ROUTING + self._base_instructions
         return READ_ROUTING + lookup + " " + self._base_instructions

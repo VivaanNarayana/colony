@@ -293,7 +293,7 @@ def test_real_client_batches_within_remaining_units(bench_team, searches, oversi
     async def exercise():
         async with stdio_client(params) as streams, ClientSession(*streams) as session:
             init = await session.initialize()
-            assert 'If needed files fit, batch before searching.' in init.instructions[:245]
+            assert 'batch before searching' in init.instructions[:245].lower()
             description = next(t.description for t in (await session.list_tools()).tools if t.name == 'read')
             assert 'Batch known callers and dependencies within remaining units (one per entry)' in description
             assert 'cover listed scope if it fits' in description and 'Follow new dependencies' in description
@@ -330,6 +330,66 @@ def test_real_client_batches_within_remaining_units(bench_team, searches, oversi
                 assert json.loads(follow.content[0].text)['content'] == files['leaf.py']
                 assert json.loads(follow.content[1].text)['research_budget'] == {
                     'admitted': 1, 'denied': 0, 'succeeded': 1, 'remaining': 2}
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize('workload', ['gateway', 'worker'])
+def test_real_client_absence_evidence_through_observed_adapter(bench_team, workload, tmp_path):
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+    from colony.client import Client
+
+    homes, repo = bench_team
+    fixtures = Path(__file__).parent / 'fixtures'
+    catalog = json.loads((fixtures / 'task-adapter-catalog.json').read_bytes())
+    suite = next(w for w in catalog['workloads'] if w['id'] == workload)
+    task = next(t for t in suite['tasks'] if t['id'] == 'miss')
+    files = next(s['files'] for s in suite['snapshots'] if s['id'] == task['snapshot'])
+    for name in files:
+        (repo / name).write_bytes((fixtures / workload / task['snapshot'] / name).read_bytes())
+    Client(homes['b']).request('/join', {})
+    scripts = Path(__file__).resolve().parents[2] / 'scripts'
+    params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=[
+        str(scripts / 'native_host_trace.py'), '--output', str(tmp_path / 'observer.jsonl'), '--',
+        sys.executable, str(scripts / 'token_evaluation/task_adapter.py'), '--home', str(homes['b']),
+        '--repo', str(repo), '--read-only', '--question', task['question'],
+        '--files', json.dumps(list(files)), '--max-calls', '6'])
+
+    async def exercise():
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            preview = (await session.initialize()).instructions[:245]
+            assert preview.startswith('Read files first. Batch before searching if they fit.')
+            assert 'trace exceptional exits.' in preview
+            tools = {t.name: t for t in (await session.list_tools()).tools}
+            assert tools['research'].description.startswith('Read files first')
+            listed = await session.call_tool('fixture_files', {})
+            paths = listed.content[0].text.splitlines()
+            assert paths == sorted(files) and len(paths) == 5
+            assert json.loads(listed.content[1].text)['research_budget']['remaining'] == 5
+            if workload == 'gateway':
+                result = await session.call_tool('read', {'batch': [{'path': name} for name in paths]})
+                assert not result.isError
+                pages = json.loads(result.content[0].text)['results']
+                for page, name in zip(pages, paths, strict=True):
+                    lines = (repo / name).read_text(encoding='utf-8').splitlines()
+                    assert (page['path'], page['start_line'], page['end_line']) == (name, 1, len(lines))
+                    assert page['complete_file'] and page['content'] == '\n'.join(lines)
+                    assert page['evidence_ref']
+                assert len({p['evidence_ref'] for p in pages}) == 5
+                assert json.loads(result.content[1].text)['research_budget'] == {
+                    'admitted': 5, 'succeeded': 5, 'denied': 0, 'remaining': 0}
+            else:
+                # The worker trace used these three literal searches and one live memory check.
+                for query, remaining in [('76535', 4), ('mineral', 3), ('Apollo', 2)]:
+                    found = await session.call_tool('fixture_search', {'query': query})
+                    assert not found.isError and len(found.content) == 1
+                    assert json.loads(found.content[0].text) == {'research_budget': {
+                        'admitted': 1, 'succeeded': 1, 'denied': 0, 'remaining': remaining}}
+                    if query == '76535':
+                        lookup = await session.call_tool('research', {})
+                        assert not lookup.isError and len(lookup.content) == 1
+                        assert json.loads(lookup.content[0].text) == {'hit': False, 'reason': 'no_relevant_trail'}
 
     asyncio.run(exercise())
 

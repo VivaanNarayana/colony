@@ -21,7 +21,7 @@ from colony.validation import snapshot
 
 
 EMPTY_ROUTE = (
-    "Memory started empty. Recheck on request or after a save. If needed files fit, batch before searching."
+    "Read files first. Batch before searching if they fit. Memory was empty. Recheck on request or after a save."
 )
 
 
@@ -85,7 +85,7 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
-            assert ("empty at last check" in tools["research"].description) == (route == "empty")
+            assert tools["research"].description.startswith("Read files first") == (route == "empty")
             if route == "unknown":
                 live = await session.call_tool("research", {})
                 assert json.loads(live.content[0].text) == {"hit": False, "reason": "no_relevant_trail"}
@@ -179,7 +179,7 @@ def test_empty_catalog_and_live_lookup_after_another_client_saves(running_team, 
             catalog = await session.list_tools()
             research = next(t for t in catalog.tools if t.name == "research")
             assert research.description.startswith(
-                "Scoped memory was empty at last check. Checks current saved findings for the original task."
+                "Read files first unless asked or memory changed. Empty at last check."
             )
             assert RESEARCH_GUIDANCE not in research.description
             page = await session.call_tool("read", {"batch": [{"path": "settings.py", "end": 1}]})
