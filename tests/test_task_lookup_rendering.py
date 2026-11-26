@@ -177,8 +177,16 @@ def test_real_client_bounds_recall_dependency(transport, monkeypatch, case):
     assert ordinary["id"] == wire["id"] == finding.id and wire["content"] == finding.content
     assert wire["checks"] == ordinary["checks"] and wire["sources"] == ordinary["sources"]
     assert [e["ref"] for e in ordinary["evidence"]] == ["caller.py", "peer.py"]
-    assert responses[-1]["evidence"][:2] == ordinary["evidence"]
     if case == "complete":
+        assert responses[-1]["evidence"][:2] == [
+            {**span, "complete_file": True} for span in ordinary["evidence"]
+        ]
+        assert list(wire)[:8] == [
+            "hit", "match_kind", "id", "status", "tainted", "provenance", "evidence", "content",
+        ]
+        assert {k: v for k, v in wire.items() if k not in {"evidence", "provenance"}} == {
+            k: v for k, v in ordinary.items() if k not in {"evidence", "provenance"}
+        }
         assert wire["evidence"][-1] == {
             "ref": "policy.py", "line": 1, "end_line": 4, "complete_file": True,
             "text": "from other import load\ndef select():\n    return load()\n# [REDACTED]",
@@ -188,6 +196,70 @@ def test_real_client_bounds_recall_dependency(transport, monkeypatch, case):
     else:
         assert responses[-1]["evidence"] == ordinary["evidence"]
         assert wire["suggested_read"] == {"path": "policy.py"}
+
+
+@pytest.mark.parametrize("peer_ref,peer_text,expected_line,expected_text,complete", [
+    ("notes.txt", "# peer\r\npassword=privatevalue\r\n\r\n", 1, "# peer\n[REDACTED]\n", True),
+    ("notes.md", "# peer\nfirst\n\n# More\nlast", 1, "# peer\nfirst\n", False),
+    ("notes.md", "# More\nfirst\n\n# peer\nlast", 4, "# peer\nlast", False),
+    ("notes.txt", "# peer " + "x" * 2500, 1, "# peer " + "x" * 2393, False),
+    ("notes.txt", "# peer\npassword=" + "x" * 512, 1, "# peer\n[REDACTED]", False),
+], ids=["scrubbed-crlf-and-blank-line", "first-section", "later-section", "clipped-line", "uncached"])
+def test_real_client_completed_recall_only_promotes_exact_cached_text(
+    transport, monkeypatch, peer_ref, peer_text, expected_line, expected_text, complete,
+):
+    from colony import context
+
+    client, repo, _, responses = transport
+    caller = "from policy import select\ndef caller():\n    return select()"
+    texts = {"caller.py": caller, peer_ref: peer_text, "policy.py": "def select(): return 1"}
+    for ref, text in texts.items():
+        (repo / ref).write_bytes(text.encode())
+    finding = Trail(id="a" * 32, namespace="team", question="Recall the saved policy finding.",
+                    content="The caller delegates selection.", sources=[snapshot(repo, ref) for ref in texts])
+    assert client.push(finding)["stored"]
+    monkeypatch.setattr(context, "keyword_coverage", lambda q, passages: [
+        float("def caller" in text or "# peer" in text) for text in passages])
+    task = TaskMCP(Workflow(client, "team", repo, read_only=True), finding.question)
+    task._recall_first = True
+    wire = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1 and wire["id"] == finding.id and wire["content"] == finding.content
+    assert [(e["ref"], e["line"], e["text"], e["complete_file"]) for e in wire["evidence"]] == [
+        ("caller.py", 1, caller, True),
+        (peer_ref, expected_line, expected_text, complete),
+        ("policy.py", 1, texts["policy.py"], True),
+    ]
+    assert "suggested_read" not in wire and "privatevalue" not in json.dumps(wire)
+    keys = list(wire)
+    assert (keys.index("evidence") < keys.index("content")) is complete
+    assert ("Answer from sufficient excerpts." in wire["provenance"]) is complete
+
+
+def test_real_client_completed_recall_keeps_disjoint_ranked_passages(transport, monkeypatch):
+    from colony import context
+
+    client, repo, _, responses = transport
+    header = "from policy import select\ndef caller():\n    return select()"
+    filler = "\n\n".join("# " + "x" * 80 for _ in range(40))
+    caller = f"{header}\n\n{filler}\n\n# final policy note"
+    (repo / "caller.py").write_text(caller, encoding="utf-8")
+    (repo / "policy.py").write_text("def select(): return 1", encoding="utf-8")
+    finding = Trail(id="b" * 32, namespace="team", question="Recall the saved policy note.",
+                    content="The caller delegates selection.",
+                    sources=[snapshot(repo, ref) for ref in ("caller.py", "policy.py")])
+    assert client.push(finding)["stored"]
+    monkeypatch.setattr(context, "keyword_coverage", lambda q, passages: [
+        float("def caller" in text or "final policy note" in text) for text in passages])
+    task = TaskMCP(Workflow(client, "team", repo, read_only=True), finding.question)
+    task._recall_first = True
+    wire = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert len(responses) == 1 and wire["content"] == finding.content
+    first, last, dependency = wire["evidence"]
+    assert first["ref"] == last["ref"] == "caller.py" and first["end_line"] < last["line"]
+    assert header in first["text"] and "final policy note" in last["text"]
+    assert not first["complete_file"] and not last["complete_file"]
+    assert dependency["ref"] == "policy.py" and dependency["complete_file"]
+    assert "suggested_read" not in wire and "Answer from sufficient excerpts." not in wire["provenance"]
 
 
 def test_evidence_only_retains_each_citation_once(identity, monkeypatch):

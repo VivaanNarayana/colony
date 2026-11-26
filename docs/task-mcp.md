@@ -217,6 +217,10 @@ After a lookup, reuse the current excerpts for claims they support and read miss
 evidence directly by path when known. For ordinary validated saved answers on the
 recall-first route, `evidence[].end_line` identifies the last displayed line, which
 can be partial. `complete_file` records verified whole-file coverage.
+A read-only recall hit can include a small dependency already verified during lookup.
+When it does, each ranked excerpt that exactly matches its complete cached file also
+carries `complete_file: true`. If every delivered span is whole, the task response
+places current citations before the saved finding and its attachment metadata.
 An optional `suggested_read` gives arguments for one ordinary read when a visible
 Python import and call point to a single validated source without usable excerpts.
 The hint fits within 128 serialized bytes. On this route the first tool catalog

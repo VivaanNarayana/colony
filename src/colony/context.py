@@ -600,5 +600,10 @@ def excerpts(
             # Count the list separator and the end coordinate added at task delivery.
             size = 1 + len(to_json({**span, "end_line": 1 + text.count("\n")}))
             if len(text) <= budget and size <= MAX_RECALL_BYTES:
+                # Compare the final displayed excerpt, after windowing and clipping.
+                for ranked in selected:
+                    ranked["complete_file"] = (
+                        ranked["line"] == 1 and ranked["text"] == small_files.get(ranked["ref"])
+                    )
                 selected.append(span)
     return selected
