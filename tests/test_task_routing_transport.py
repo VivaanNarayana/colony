@@ -13,7 +13,7 @@ from test_integration import running_team as running_team
 
 from colony.client import Client
 from colony.models import Trail
-from colony.task_mcp import RESEARCH_GUIDANCE
+from colony.task_mcp import PUBLICATION_CUE, RESEARCH_GUIDANCE
 from colony.validation import snapshot
 
 
@@ -88,9 +88,63 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
 
 
 @pytest.mark.parametrize("adaptive", [False, True])
+def test_compact_task_read_pages_and_lookup_miss(running_team, adaptive):
+    _, homes, repo, _ = running_team
+    quoted = '  café "one"\nsecond\\line'
+    large = "a" * 17000
+    for name, content in [("blank.txt", ""), ("quoted.txt", quoted), ("large.txt", large)]:
+        (repo / name).write_text(content, encoding="utf-8")
+    args = ["-m", "colony.task_mcp", "--home", str(homes["a"]), "--repo", str(repo),
+            "--ns", "team", "--question", "Which sources set the timeout?"]
+    if adaptive:
+        args += ["--context-budget", "8192", "--context-encoding", "utf8_bytes"]
+    params = StdioServerParameters(command=sys.executable, args=args, env=dict(os.environ))
+
+    def compact(reply):
+        assert not reply.isError and reply.structuredContent is None
+        assert len(reply.content) == 1 and reply.content[0].type == "text"
+        text = reply.content[0].text
+        value = json.loads(text)
+        assert text == json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        return value
+
+    async def check():
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            await session.initialize()
+            miss = await session.call_tool("research", {})
+            if adaptive:
+                value = json.loads(miss.content[0].text)
+                assert value["context_budget"]["used"] == len(miss.content[0].text.encode())
+            else:
+                value = compact(miss)
+            assert value["hit"] is False
+            batch = compact(await session.call_tool("read", {"batch": [
+                {"path": path} for path in ("blank.txt", "quoted.txt", "missing.txt", "large.txt")
+            ]}))
+            assert batch["publication_guidance"] == PUBLICATION_CUE
+            blank, quoted_page, error, first = batch["results"]
+            assert blank["complete_file"] and blank["content"] == "" and blank["evidence_ref"]
+            assert (quoted_page["path"], quoted_page["content"], quoted_page["start_line"],
+                    quoted_page["end_line"]) == ("quoted.txt", quoted, 1, 2)
+            assert quoted_page["complete_file"] and quoted_page["evidence_ref"]
+            assert error == {"error": "Source read failed; adjust path or range", "evidence_ref": None}
+            assert not first["complete_file"] and first["next_offset"] == len(first["content"])
+            tail = compact(await session.call_tool("read", {"path": "large.txt", "offset": first["next_offset"]}))
+            assert first["content"] + tail["content"] == large and tail["next_offset"] is None
+            assert "publication_guidance" not in tail
+            assert tail["evidence_ref"] and tail["evidence_ref"] != first["evidence_ref"]
+            assert (await session.call_tool("read", {"path": "missing.txt"})).isError
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
 def test_empty_catalog_and_live_lookup_after_another_client_saves(running_team, adaptive):
     _, homes, repo, _ = running_team
     question = "What is the configured timeout?"
+    # The last line is outside the saved excerpt and needs a subsequent source read.
+    settings = "TIMEOUT = 30\n" + "# configuration\n" * 100 + "DEFAULT_MODE = 'local'\n"
+    (repo / "settings.py").write_text(settings, encoding="utf-8")
     source = snapshot(repo, "settings.py")
     finding = Trail(id="a" * 32, namespace="team", question=question,
                     content="The configured timeout is 30.", sources=[source])
@@ -110,7 +164,7 @@ def test_empty_catalog_and_live_lookup_after_another_client_saves(running_team, 
                 "Scoped memory was empty at last check. Checks current saved findings for the original task."
             )
             assert RESEARCH_GUIDANCE not in research.description
-            page = await session.call_tool("read", {"batch": [{"path": "settings.py"}]})
+            page = await session.call_tool("read", {"batch": [{"path": "settings.py", "end": 1}]})
             assert not page.isError
             assert json.loads(page.content[0].text)["results"][0]["evidence_ref"]
             assert EMPTY_ROUTE not in page.content[0].text
@@ -129,5 +183,12 @@ def test_empty_catalog_and_live_lookup_after_another_client_saves(running_team, 
             suffix = restored.description.removeprefix(RESEARCH_GUIDANCE)
             assert ("max_context_tokens" in suffix) == adaptive
             assert research.description.endswith(suffix)
+            if not adaptive:
+                assert hit["evidence"] and all(not span.get("complete_file") for span in hit["evidence"])
+                assert all("DEFAULT_MODE" not in span["text"] for span in hit["evidence"])
+                gap = await session.call_tool("read", {"path": "settings.py", "start": 102})
+                observed = json.loads(gap.content[0].text)
+                assert (observed["start_line"], observed["end_line"], observed["content"]) == (
+                    102, 102, "DEFAULT_MODE = 'local'")
 
     asyncio.run(check())

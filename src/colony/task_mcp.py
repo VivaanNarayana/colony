@@ -14,6 +14,7 @@ from mcp.server.lowlevel import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic_core import to_json
 
 from colony.client import Client
 from colony.compact import bound_lookup_spans
@@ -68,6 +69,11 @@ class ReadRequest(BaseModel):
     start: StrictInt = 1
     end: StrictInt | None = None
     offset: StrictInt = 0
+
+
+def _compact_json(result: dict) -> str:
+    # FastMCP forwards strings as one text block. Use its JSON encoder without indentation.
+    return to_json(result, fallback=str).decode("utf-8")
 
 
 def _task_lookup_spans(evidence, reads, sources):
@@ -179,7 +185,7 @@ class TaskMCP(FastMCP):
         def read(path: str | None = None, start: int = 1, end: int | None = None,
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
-                 ) -> dict:
+                 ) -> str:
             """Omit end for EOF (longer ranges clip), path for direct reads.
             Batch known callers and dependencies within remaining units (one per entry).
             For absence, cover listed scope if it fits. Follow new dependencies.
@@ -190,17 +196,17 @@ class TaskMCP(FastMCP):
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
                 results = self.evidence.read_batch([request.model_dump() for request in batch])
-                return observe(results, {"results": results})
+                return _compact_json(observe(results, {"results": results}))
             selected = path if path is not None else self.direct_path
             if selected is None:
                 raise ToolError("A repository-relative path is required")
             try:
                 result = self.evidence.read(selected, start, end, offset=offset)
-                return observe([result], result)
+                return _compact_json(observe([result], result))
             except EvidenceError as exc:
                 raise ToolError(str(exc)) from None
 
-        def research() -> dict:
+        def research() -> str:
             """Look up the original task when useful, including gaps in a direct-read task."""
             # A direct route never forbids promotion or independent source tools.
             try:
@@ -209,9 +215,10 @@ class TaskMCP(FastMCP):
                 if read_path_allowed is not None:
                     options.update(repo=workflow.repo, path_allowed=read_path_allowed)
                 result = workflow.client.ask(self.question, workflow.namespace, **options)
-                return _render_unbudgeted_lookup(result)
+                result = _render_unbudgeted_lookup(result)
             except Exception:
-                return {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
+                result = {"hit": False, "reason": "lookup_unavailable", "continue_research": True}
+            return _compact_json(result)
 
         budget_guidance = ""
         if lookup is not None:

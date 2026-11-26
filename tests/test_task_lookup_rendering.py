@@ -1297,6 +1297,7 @@ def test_stdio_evidence_answer_and_stale_lookup(running_team):
         reply = await session.call_tool("research", {})
         assert not reply.isError and reply.structuredContent is None
         assert len(reply.content) == 1 and reply.content[0].type == "text"
+        assert "\n" not in reply.content[0].text and '"hit":true' in reply.content[0].text
         assert "publish" not in {tool.name for tool in (await session.list_tools()).tools}
         return json.loads(reply.content[0].text)
 

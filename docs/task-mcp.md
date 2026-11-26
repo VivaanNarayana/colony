@@ -14,6 +14,9 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
+Successful `read` and unbudgeted `research` calls each return one compact JSON text block.
+Parse that block for source text, citation bounds and evidence references.
+
 For `research()` without a context budget, a validated `match_kind: "evidence"`
 hit delivers each selected span in `evidence`. Consumers that previously read
 the generated top-level `content` summary should read each entry's `text` and
