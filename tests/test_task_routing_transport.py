@@ -148,6 +148,46 @@ def test_populated_startup_routes_only_requested_recall(running_team):
     asyncio.run(check())
 
 
+def test_recall_partial_file_and_oversized_missing_source_hint(running_team):
+    _, homes, repo, _ = running_team
+    question = "Summarize the saved finding about the default timeout."
+    lines = ["# Timeout", "The default timeout is 30 seconds.", "", "# Rollout", "Deploy on Monday.",
+             "", "# Ownership", "Operations owns the release."]
+    name = "release.md"
+    long_ref = "é" * 60 + ".txt"
+    refs = [name, "extra.txt", long_ref]
+    (repo / name).write_text("\n".join(lines), encoding="utf-8")
+    for ref in refs[1:]:
+        (repo / ref).write_bytes(b"")
+    saved = Trail(id="b" * 32, namespace="team", question=question, content=lines[1],
+                  sources=[snapshot(repo, ref) for ref in refs])
+    assert Client(homes["a"]).push(saved)["stored"]
+    params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=[
+        "-m", "colony.task_mcp", "--home", str(homes["b"]), "--repo", str(repo),
+        "--ns", "team", "--question", question, "--read-only"])
+
+    async def check():
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            assert (await session.initialize()).instructions.startswith("Call research() first.")
+            reply = await session.call_tool("research", {})
+            hit = json.loads(reply.content[0].text)
+            assert not reply.isError and hit["id"] == saved.id and hit["status"] == "validated"
+            assert [s["ref"] for s in hit["sources"]] == refs
+            assert "sources_without_excerpts" not in hit
+            delivered = set()
+            for span in hit["evidence"]:
+                assert span["ref"] == name and not span["complete_file"]
+                start, end = span["line"], span["end_line"]
+                assert span["text"] == "\n".join(lines[start - 1:end])
+                delivered.update(range(start, end + 1))
+            assert delivered
+            missing_line = next(i for i in (2, 5, 8) if i not in delivered)
+            read = await session.call_tool("read", {"path": name, "start": missing_line, "end": missing_line})
+            assert not read.isError and json.loads(read.content[0].text)["content"] == lines[missing_line - 1]
+
+    asyncio.run(check())
+
+
 @pytest.mark.parametrize("adaptive", [False, True])
 def test_compact_task_read_pages_and_lookup_miss(running_team, adaptive):
     _, homes, repo, _ = running_team

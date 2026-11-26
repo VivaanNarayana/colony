@@ -18,7 +18,7 @@ from test_workflow import identity as identity
 from colony.client import Client
 from colony.compact import SAVED_ANSWER_PROVENANCE
 from colony.models import Trail
-from colony.task_mcp import TaskMCP
+from colony.task_mcp import TaskMCP, _render_unbudgeted_lookup
 from colony.validation import snapshot
 from colony.workflow import Workflow
 from scripts.token_evaluation.task_evidence import lookup_value
@@ -36,6 +36,24 @@ def task_lookup(identity, monkeypatch, raw):
     assert "publish" not in {tool.name for tool in asyncio.run(server.list_tools())}
     assert raw == original
     return json.loads(blocks[0].text)
+
+
+def test_recall_hint_uses_deduplicated_bound_evidence():
+    sources = [{"ref": ref, "content_hash": "a" * 64} for ref in ("partial", "blank", "empty", "blank")]
+    spans = [
+        {"ref": "partial", "line": 4, "text": "four\nfive"},
+        {"ref": "partial", "line": 12, "text": "tw"},
+        {"ref": "blank", "line": 8, "text": " \t"},
+        {"ref": "empty", "line": 1, "text": "", "complete_file": True},
+    ]
+    raw = {"hit": True, "status": "validated", "match_kind": "answer", "content": "Saved rule.",
+           "provenance": SAVED_ANSWER_PROVENANCE, "sources": sources, "evidence": [spans[0], *spans]}
+    original = copy.deepcopy(raw)
+    result = _render_unbudgeted_lookup(raw, recall_first=True)
+    assert raw == original and result["sources"] == sources
+    assert result["sources_without_excerpts"] == ["blank"]
+    assert result["evidence"] == [{**span, "end_line": end}
+                                  for span, end in zip(spans, [5, 12, 8, 1], strict=True)]
 
 
 def test_evidence_only_retains_each_citation_once(identity, monkeypatch):
