@@ -16,6 +16,7 @@ from test_integration import running_team as running_team
 from test_workflow import identity as identity
 
 from colony.client import Client
+from colony.compact import SAVED_ANSWER_PROVENANCE
 from colony.models import Trail
 from colony.task_mcp import TaskMCP
 from colony.validation import snapshot
@@ -282,6 +283,23 @@ def _wire_read(span, source):
         "path": source.ref, "sha256": source.content_hash, "start_line": span["line"],
         "content": span["text"], "complete_file": span["complete_file"],
     }
+
+
+@pytest.mark.parametrize(("provenance", "text"), [
+    ("Caller-supplied provenance with additional restrictions.", "TIMEOUT = 30"),
+    (SAVED_ANSWER_PROVENANCE, None),
+    (SAVED_ANSWER_PROVENANCE, " \t"),
+], ids=["custom-provenance", "no-excerpts", "blank-partial-excerpt"])
+def test_task_recall_preserves_other_answer_provenance(transport, monkeypatch, provenance, text):
+    client, repo, store, responses = transport
+    trail = publish(client, repo, file_texts=["TIMEOUT = 30\n"])
+    spans = [] if text is None else [{"ref": trail.sources[0].ref, "line": 1, "text": text}]
+    serve_citations(store, monkeypatch, match_kind="answer", content=trail.content, evidence=spans,
+                    provenance=provenance, recommendation="Check deployment scope", memory_warning="Disputed")
+    task = TaskMCP(Workflow(client, "team", repo), trail.question)
+    block, = asyncio.run(task.call_tool("research", {}))
+    raw, = responses
+    assert json.loads(block.text) == raw
 
 
 @pytest.mark.parametrize("git", [False, True], ids=["remote", "git"])
@@ -1329,6 +1347,7 @@ def test_stdio_evidence_answer_and_stale_lookup(running_team):
             assert evidence["status"] == "validated" and evidence["match_kind"] == "evidence"
             assert "content" not in evidence and evidence["sources"] == raw["sources"]
             assert evidence["evidence"] == raw["evidence"]
+            assert evidence["provenance"] == raw["provenance"]
 
             finding = Trail(
                 id="b" * 32,
@@ -1341,11 +1360,14 @@ def test_stdio_evidence_answer_and_stale_lookup(running_team):
             answer = await research(session)
             assert answer["match_kind"] == "answer" and answer["content"] == finding.content
             assert answer["status"] == "validated" and answer["evidence"]
+            assert "Cite current excerpts directly." in answer["provenance"]
+            assert client.ask(question, "team")["provenance"] == SAVED_ANSWER_PROVENANCE
 
             guide.write_text("# Worker\n\nRemoved.\n")
             stale = await research(session)
             assert stale["status"] == stale["content_withheld"] == "stale"
             assert stale["id"] == finding.id and "content" not in stale
+            assert stale["provenance"] == SAVED_ANSWER_PROVENANCE
             assert client.ask(question, "team")["content"] == finding.content
 
     asyncio.run(asyncio.wait_for(exercise(), timeout=30))

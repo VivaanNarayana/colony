@@ -77,7 +77,7 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             lookup = "Use research when saved findings could help."
             leads = {
                 "empty": EMPTY_ROUTE,
-                "present": "Use research() first for requested recall. Otherwise batch files that fit before searching.",
+                "present": "Read files first unless asked for saved findings. Batch what fits before searching.",
                 "direct": f"Read the requested path first. {batch}",
                 "unknown": f"{batch} {lookup}", "disabled": f"{batch} {lookup}",
             }
