@@ -54,7 +54,7 @@ RESEARCH_GUIDANCE = (
     "Look up the original task when saved findings could help, including gaps in a direct-read task. "
     "Use sufficient current evidence; research gaps or contradictions."
 )
-READ_ROUTING = "Read likely files together. Search to fill gaps. "
+READ_ROUTING = "If needed files fit, batch before searching. "
 PUBLICATION_CUE = (
     "Before final, publish one eligible new reusable finding using all supporting observed "
     "evidence_refs, or skip. Isolated values require an explicit remember request. "
@@ -343,9 +343,10 @@ class TaskMCP(FastMCP):
         if self.direct_path is not None:
             return "Read the requested path first. " + READ_ROUTING + self._base_instructions + " " + lookup
         if self._availability_state == "empty":
-            return ("Memory started empty. Batch likely source reads. Search files for gaps. "
-                    "Recheck memory on request or after a save. " + self._base_instructions)
-        return lookup + " " + READ_ROUTING + self._base_instructions
+            return "Memory started empty. Recheck on request or after a save. " + READ_ROUTING + self._base_instructions
+        if self._availability_state == "present":
+            return lookup + " " + READ_ROUTING + self._base_instructions
+        return READ_ROUTING + lookup + " " + self._base_instructions
 
     async def run_stdio_async(self):
         self._availability_enabled = self._empty_memory_routing

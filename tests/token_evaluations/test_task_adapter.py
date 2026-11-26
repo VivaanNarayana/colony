@@ -272,8 +272,10 @@ def bench_team(running_team):
     return homes, repo
 
 
-@pytest.mark.parametrize('absence', [True, False], ids=['five-file-absence', 'discovered-dependency'])
-def test_real_client_batches_within_remaining_units(bench_team, absence):
+@pytest.mark.parametrize('searches,oversize', [
+    (0, False), (1, False), (2, False), (1, True), (2, True), (None, False),
+], ids=['full-scope', 'four-left', 'three-left', 'four-left-overflow', 'three-left-overflow', 'discovered-dependency'])
+def test_real_client_batches_within_remaining_units(bench_team, searches, oversize):
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
 
@@ -282,7 +284,7 @@ def test_real_client_batches_within_remaining_units(bench_team, absence):
              'leaf.py': 'def run(): return 42', 'notes.txt': 'See caller.py', 'settings.py': 'TIMEOUT = 30'}
     for name, content in files.items():
         (repo / name).write_text(content, encoding='utf8')
-    question = 'Does this repository use a semaphore?' if absence else 'Trace caller.py and dependency.py'
+    question = 'Trace caller.py and dependency.py' if searches is None else 'Does this repository use a semaphore?'
     params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=[
         str(Path(__file__).resolve().parents[2] / 'scripts/token_evaluation/task_adapter.py'),
         '--home', str(homes['b']), '--repo', str(repo), '--question', question, '--read-only',
@@ -290,23 +292,39 @@ def test_real_client_batches_within_remaining_units(bench_team, absence):
 
     async def exercise():
         async with stdio_client(params) as streams, ClientSession(*streams) as session:
-            await session.initialize()
+            init = await session.initialize()
+            assert 'If needed files fit, batch before searching.' in init.instructions[:245]
             description = next(t.description for t in (await session.list_tools()).tools if t.name == 'read')
             assert 'Batch known callers and dependencies within remaining units (one per entry)' in description
             assert 'cover listed scope if it fits' in description and 'Follow new dependencies' in description
             listed = await session.call_tool('fixture_files', {})
             inventory = listed.content[0].text.splitlines()
             assert set(inventory) == files.keys()
-            assert json.loads(listed.content[1].text)['research_budget']['remaining'] == 5
-            paths = inventory if absence else ['caller.py', 'dependency.py']
-            read = await session.call_tool('read', {'batch': [{'path': name} for name in paths]})
+            remaining = json.loads(listed.content[-1].text)['research_budget']['remaining']
+            assert remaining == 5
+            for query in ['TIMEOUT', 'semaphore'][:searches or 0]:
+                found = await session.call_tool('fixture_search', {'query': query})
+                assert not found.isError
+                budget = json.loads(found.content[-1].text)['research_budget']
+                assert budget['remaining'] == remaining - 1
+                remaining = budget['remaining']
+            requested = inventory if oversize else inventory[:remaining]
+            if searches is None:
+                requested = ['caller.py', 'dependency.py']
+            read = await session.call_tool('read', {'batch': [{'path': name} for name in requested]})
             assert not read.isError and len(read.content) == 2
             pages = json.loads(read.content[0].text)['results']
-            assert [(p['path'], p['content']) for p in pages] == [(name, files[name]) for name in paths]
-            assert all(p['complete_file'] and p['evidence_ref'] for p in pages)
+            paths = requested[:remaining]
+            observed = pages[:len(paths)]
+            assert [(p['path'], p['content']) for p in observed] == [(name, files[name]) for name in paths]
+            assert all(p['complete_file'] and p['evidence_ref'] for p in observed)
+            assert len({p['evidence_ref'] for p in observed}) == len(paths)
+            assert (set(paths) == set(inventory)) == (searches == 0)
+            denied = len(requested) - len(paths)
+            assert pages[len(paths):] == [{'error': 'Research call limit reached', 'evidence_ref': None}] * denied
             assert json.loads(read.content[1].text)['research_budget'] == {
-                'admitted': len(paths), 'denied': 0, 'succeeded': len(paths), 'remaining': 5 - len(paths)}
-            if not absence:
+                'admitted': len(paths), 'denied': denied, 'succeeded': len(paths), 'remaining': remaining - len(paths)}
+            if searches is None:
                 dependency = pages[1]['content'].split()[1] + '.py'
                 follow = await session.call_tool('read', {'path': dependency})
                 assert json.loads(follow.content[0].text)['content'] == files['leaf.py']

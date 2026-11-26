@@ -57,7 +57,7 @@ Unusable evidence or missing source bindings yield `lookup_unavailable` so resea
 Budgeted lookups use the adaptive `current_repository_reads` representation.
 
 Ordinary and adaptive lookup share the same routing guidance. The startup preview tells
-workers to read likely files together and search to fill gaps. An explicit path takes
+workers to batch the needed files before searching when they fit. An explicit path takes
 priority. Workers can look up saved findings when useful. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
@@ -209,11 +209,12 @@ Local transport tests establish delivery and capability, not model compliance or
 On stdio startup, a non-direct task makes a short authenticated
 `POST /memory/availability` request. The response contains only a contract,
 namespace, configured repository identity and `empty`/`present` state. Only a
-zero active-row result in the authorized namespace enables the source-first hint.
+zero active-row result in the authorized namespace enables the confirmed-empty hint.
 Stale, unverified and unrelated active memories conservatively count as present;
 a search miss never becomes an empty-store proof. Repository-ID mismatch, old
 servers, denied/expired credentials and transport failures yield `unknown` and
-retain normal research. No embedding, ranking or source reading occurs in this probe.
+lead with source batching while keeping explicit research available. An unchanged,
+verified grant reuses its existing registration without taking a database writer lock.
 
 The hint is explicitly a snapshot, not a guarantee about subsequent publications.
 An empty hint has a three-second local lifetime; tool-list and source-tool requests
@@ -224,8 +225,8 @@ snapshot, including failed/unknown write outcomes. Catalog changes are notified
 even when a tool call fails. Notification transport errors cannot replace a tool
 result or its sanitized error. Explicit `research` always performs the normal current
 lookup; it is never hidden and never returns a cached miss. The startup hint is
-historical. When memory starts empty, the preview directs workers to batch likely
-source reads and search files for gaps. The `research` tool checks current saved
+historical. When memory starts empty, the preview directs workers to recheck on
+request or after a save. The `research` tool checks current saved
 findings for the original task, including findings published after startup.
 Sources, other research and all requested answer detail remain available.
 Use `--no-empty-memory-routing` to disable the probe. Explicit direct-file tasks

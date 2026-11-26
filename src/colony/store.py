@@ -333,10 +333,16 @@ class Store:
 
     def register(self, keyfile: Keyfile):
         grant = keyfile.grant
+        keyfile_hash = fingerprint(keyfile)
         with self.connect() as db:
+            # The member and its signed scopes are replaced in the same transaction.
+            # Reusing that registration lets a verified reader proceed during a write.
+            if db.execute("SELECT 1 FROM members WHERE id=? AND keyfile_hash=?",
+                          (grant.member_id, keyfile_hash)).fetchone():
+                return
             db.execute(
                 "INSERT OR REPLACE INTO members VALUES (?,?,?,?)",
-                (grant.member_id, grant.name, "agent", fingerprint(keyfile)),
+                (grant.member_id, grant.name, "agent", keyfile_hash),
             )
             db.execute("DELETE FROM scopes WHERE member_id=?", (grant.member_id,))
             db.executemany(

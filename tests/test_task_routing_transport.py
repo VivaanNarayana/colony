@@ -3,7 +3,9 @@
 import asyncio
 import json
 import os
+import sqlite3
 import sys
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -12,27 +14,33 @@ from mcp.client.stdio import stdio_client
 from test_integration import running_team as running_team
 
 from colony.client import Client
-from colony.models import Trail
+from colony.models import Scope, Trail
+from colony.security import issue
 from colony.task_mcp import PUBLICATION_CUE, RESEARCH_GUIDANCE
 from colony.validation import snapshot
 
 
 EMPTY_ROUTE = (
-    "Memory started empty. Batch likely source reads. Search files for gaps. "
-    "Recheck memory on request or after a save."
+    "Memory started empty. Recheck on request or after a save. If needed files fit, batch before searching."
 )
 
 
-@pytest.mark.parametrize("route", ["empty", "present", "direct", "unknown"])
+@pytest.mark.parametrize("route", ["empty", "present", "direct", "unknown", "disabled"])
 def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
-    cli, homes, repo, _ = running_team
+    cli, homes, repo, root = running_team
     (repo / "handler.py").write_text("import settings\nimport missing\n")
     if route == "present":
         saved = cli("--home", homes["a"], "run", "--ns", "team", "--question", "What is the timeout?",
                     "--repo", repo, "--source", "settings.py", "--", sys.executable, "-c", "print('30')")
         assert json.loads(saved.stdout)["stored"]
+    if route == "unknown":
+        # A rotated grant really needs the writer lock at registration.
+        grant = Client(homes["b"]).keyfile.grant.model_copy(update={
+            "scopes": [Scope(namespace="team", pull=True, push=False)]})
+        rotated = issue(root / "admin/issuer.pem", grant)
+        (homes["b"] / "identity.json").write_text(rotated.model_dump_json(), encoding="utf-8")
 
-    async def check():
+    async def check(db):
         args = [
             "-m",
             "colony.task_mcp",
@@ -51,7 +59,7 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
         ]
         if route == "direct":
             args += ["--direct-path", "handler.py"]
-        if route == "unknown":
+        if route == "disabled":
             args += ["--no-empty-memory-routing"]
         params = StdioServerParameters(
             command=sys.executable,
@@ -63,18 +71,26 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             ClientSession(reader, writer) as session,
         ):
             init = await session.initialize()
+            db.rollback()
             preview = init.instructions[:245]
-            if route == "empty":
-                assert preview.startswith(EMPTY_ROUTE)
-            else:
-                lead = "Read the requested path first." if route == "direct" else "Use research when saved findings could help."
-                assert preview.startswith(lead + " Read likely files together. Search to fill gaps.")
+            batch = "If needed files fit, batch before searching."
+            lookup = "Use research when saved findings could help."
+            leads = {
+                "empty": EMPTY_ROUTE, "present": f"{lookup} {batch}", "direct": f"Read the requested path first. {batch}",
+                "unknown": f"{batch} {lookup}", "disabled": f"{batch} {lookup}",
+            }
+            assert preview.startswith(leads[route])
             assert "Qualify inner limits unless the implementation is selected." in preview
             assert "Count attempts separately from retries and trace exceptional exits." in preview
             assert "allowance: 2 units total" in init.instructions
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert set(tools) == {"read", "research", "trace_read"}
             assert ("empty at last check" in tools["research"].description) == (route == "empty")
+            if route == "unknown":
+                live = await session.call_tool("research", {})
+                assert json.loads(live.content[0].text) == {"hit": False, "reason": "no_relevant_trail"}
+                assert db.execute("SELECT namespace,can_push,can_pull FROM scopes WHERE member_id=?",
+                                  (grant.member_id,)).fetchall() == [("team", 0, 1)]
             result = await session.call_tool("trace_read", {"paths": ["handler.py", "settings.py", "missing.py"]})
             assert not result.isError
             value = json.loads(result.content[0].text)
@@ -84,7 +100,10 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             denied = await session.call_tool("read", {"path": "settings.py"})
             assert denied.isError
 
-    asyncio.run(check())
+    # Hold an unrelated WAL writer before starting the real stdio server.
+    with closing(sqlite3.connect(root / "data/colony.db")) as db:
+        db.execute("BEGIN IMMEDIATE")
+        asyncio.run(check(db))
 
 
 @pytest.mark.parametrize("adaptive", [False, True])
