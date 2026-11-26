@@ -142,9 +142,8 @@ def test_compact_task_read_pages_and_lookup_miss(running_team, adaptive):
 def test_empty_catalog_and_live_lookup_after_another_client_saves(running_team, adaptive):
     _, homes, repo, _ = running_team
     question = "What is the configured timeout?"
-    # The last line is outside the saved excerpt and needs a subsequent source read.
-    settings = "TIMEOUT = 30\n" + "# configuration\n" * 100 + "DEFAULT_MODE = 'local'\n"
-    (repo / "settings.py").write_text(settings, encoding="utf-8")
+    (repo / "settings.py").write_text("TIMEOUT = 30\nfrom mode import DEFAULT_MODE\n", encoding="utf-8")
+    (repo / "mode.py").write_text("DEFAULT_MODE = 'local'\n", encoding="utf-8")
     source = snapshot(repo, "settings.py")
     finding = Trail(id="a" * 32, namespace="team", question=question,
                     content="The configured timeout is 30.", sources=[source])
@@ -185,10 +184,11 @@ def test_empty_catalog_and_live_lookup_after_another_client_saves(running_team, 
             assert research.description.endswith(suffix)
             if not adaptive:
                 assert hit["evidence"] and all(not span.get("complete_file") for span in hit["evidence"])
-                assert all("DEFAULT_MODE" not in span["text"] for span in hit["evidence"])
-                gap = await session.call_tool("read", {"path": "settings.py", "start": 102})
+                assert all(span["ref"] == "settings.py" for span in hit["evidence"])
+                assert all("'local'" not in span["text"] for span in hit["evidence"])
+                gap = await session.call_tool("read", {"path": "mode.py"})
                 observed = json.loads(gap.content[0].text)
                 assert (observed["start_line"], observed["end_line"], observed["content"]) == (
-                    102, 102, "DEFAULT_MODE = 'local'")
+                    1, 1, "DEFAULT_MODE = 'local'")
 
     asyncio.run(check())
