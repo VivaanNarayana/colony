@@ -51,9 +51,53 @@ def test_recall_hint_uses_deduplicated_bound_evidence():
     original = copy.deepcopy(raw)
     result = _render_unbudgeted_lookup(raw, recall_first=True)
     assert raw == original and result["sources"] == sources
-    assert result["sources_without_excerpts"] == ["blank"]
+    assert "suggested_read" not in result and "sources_without_excerpts" not in result
     assert result["evidence"] == [{**span, "end_line": end}
                                   for span, end in zip(spans, [5, 12, 8, 1], strict=True)]
+
+
+@pytest.mark.parametrize("source,targets,expected", [
+    ("from policy import select as pick\ndef caller():\n    return pick()", ["policy.py"], "policy.py"),
+    ("from policy import pick\ndef caller(pick):\n    return pick()", ["policy.py"], None),
+    ("from policy import pick\ndef caller():\n    pick = impl\n    return pick()", ["policy.py"], None),
+    ("from policy import pick\ndef caller():\n    return pick(", ["policy.py"], None),
+    ("from .policy import pick\ndef caller():\n    return pick()", ["policy.py"], None),
+    ("from policy import pick\ndef caller():\n    return pick()", ["../policy.py"], None),
+    ("from policy import pick\ndef caller():\n    return pick()", ["policy.py", "policy/__init__.py"], None),
+    ("from policy import pick\nfrom other import load\ndef caller():\n    v = load()\n    return pick(v)",
+     ["policy.py", "other.py"], None),
+    ("from policy import pick\ndef caller():\n    return impl()", ["policy.py"], None),
+    ("from " + "é" * 60 + " import pick\ndef caller():\n    return pick()", ["é" * 60 + ".py"], None),
+])
+def test_recall_suggests_one_validated_called_dependency(source, targets, expected):
+    refs = ["entry.py", *targets]
+    raw = {"hit": True, "status": "validated", "match_kind": "answer", "content": "Saved rule.",
+           "provenance": SAVED_ANSWER_PROVENANCE, "checks": [{"ref": r, "result": "validated"} for r in refs],
+           "sources": [{"ref": r, "content_hash": "a" * 64} for r in refs],
+           "evidence": [{"ref": refs[0], "line": 1, "text": source}]}
+    result = _render_unbudgeted_lookup(raw, recall_first=True)
+    if expected:
+        assert result["suggested_read"] == {"path": expected}
+        for check in raw["checks"]:
+            check["result"] = "unverified"
+            assert "suggested_read" not in _render_unbudgeted_lookup(raw, recall_first=True)
+            check["result"] = "validated"
+    else:
+        assert "suggested_read" not in result
+
+
+@pytest.mark.parametrize("checks", [None, "validated", [{"ref": "policy.py", "result": "unverified"}]])
+def test_unsupported_recall_checks_preserve_the_saved_answer(checks):
+    source = "from policy import pick\ndef caller():\n    return pick()"
+    result = {"hit": True, "status": "validated", "match_kind": "answer", "content": "Saved rule.",
+              "provenance": SAVED_ANSWER_PROVENANCE, "checks": checks,
+              "sources": [{"ref": r, "content_hash": "a" * 64} for r in ["entry.py", "policy.py"]],
+              "evidence": [{"ref": "entry.py", "line": 1, "text": source}],
+              "suggested_read": {"path": "unverified.py"}}
+    for recall_first in (True, False):
+        wire = _render_unbudgeted_lookup(result, recall_first=recall_first)
+        assert wire["content"] == result["content"] and wire["evidence"][0]["text"] == source
+        assert "suggested_read" not in wire
 
 
 def test_evidence_only_retains_each_citation_once(identity, monkeypatch):

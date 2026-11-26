@@ -148,7 +148,7 @@ def test_populated_startup_routes_only_requested_recall(running_team):
     asyncio.run(check())
 
 
-def test_recall_partial_file_and_oversized_missing_source_hint(running_team):
+def test_recall_partial_file_allows_reading_missing_lines(running_team):
     _, homes, repo, _ = running_team
     question = "Summarize the saved finding about the default timeout."
     lines = ["# Timeout", "The default timeout is 30 seconds.", "", "# Rollout", "Deploy on Monday.",
@@ -174,6 +174,7 @@ def test_recall_partial_file_and_oversized_missing_source_hint(running_team):
             assert not reply.isError and hit["id"] == saved.id and hit["status"] == "validated"
             assert [s["ref"] for s in hit["sources"]] == refs
             assert "sources_without_excerpts" not in hit
+            assert "suggested_read" not in hit
             delivered = set()
             for span in hit["evidence"]:
                 assert span["ref"] == name and not span["complete_file"]
