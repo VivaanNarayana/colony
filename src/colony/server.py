@@ -19,6 +19,7 @@ from colony.models import (
     MemoryInspect,
     Trail,
 )
+from colony.recall import RECALL_PREFERENCE
 from colony.security import verify
 from colony.store import Store
 
@@ -118,13 +119,15 @@ def create_app(
             raise HTTPException(409, "Trail ID conflict") from None
 
     @app.post("/ask")
-    def ask(query: Ask, grant: Annotated[Grant, Depends(member)]):
+    def ask(query: Ask, grant: Annotated[Grant, Depends(member)], prefer: str = Header(default="")):
         namespaces = [s.namespace for s in grant.scopes if s.pull]
         if query.namespace is not None:
             if query.namespace not in namespaces:
                 raise HTTPException(403, "Namespace pull denied")
             namespaces = [query.namespace]
         options = {}
+        if prefer == RECALL_PREFERENCE:
+            options["complete_recall"] = True
         if query.context_budget is not None:
             from colony.context_budget import (
                 ContextBudgetError,

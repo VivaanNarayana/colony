@@ -103,55 +103,6 @@ def _public_path(path):
     return path if safe else None
 
 
-def called_import_paths(span):
-    """Find direct calls to imported functions in a small, visible module prefix.
-
-    Only flat modules and straight-line function bodies are supported. This is a
-    navigation hint, so ambiguous syntax can be skipped without fetching bytes.
-    """
-    ref, text = span["ref"], span["text"]
-    if (span["line"] != 1 or len(text) > 4096 or not ref.endswith(".py")
-            or not ref.removesuffix(".py").isidentifier()):
-        return set()
-    try:
-        body = ast.parse(text).body
-    except (SyntaxError, ValueError, RecursionError):
-        return set()
-
-    imports = {}
-    functions = []
-    defined = set()
-    for node in body:
-        if isinstance(node, ast.ImportFrom) and not node.level and node.module.isidentifier():
-            for alias in node.names:
-                name = alias.asname or alias.name
-                if name == "*" or name in defined:
-                    return set()
-                defined.add(name)
-                imports[name] = node.module + ".py"
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name not in defined:
-            defined.add(node.name)
-            functions.append(node)
-        else:
-            return set()
-
-    paths = set()
-    for fn in functions:
-        if not all(isinstance(stmt, (ast.Assign, ast.Expr, ast.Return)) for stmt in fn.body):
-            continue
-        # Function parameters and assignments can shadow a module-level import.
-        local = {arg.arg for arg in ast.walk(fn.args) if isinstance(arg, ast.arg)}
-        local.update(n.id for n in ast.walk(fn)
-                     if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store))
-        for stmt in fn.body:
-            call = stmt.value
-            if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
-                name = call.func.id
-                if name in imports and name not in local:
-                    paths.add(imports[name])
-    return paths
-
-
 def _local_candidate(access, path):
     """Select exact repo-file candidates using authorized metadata, never source bytes.
 

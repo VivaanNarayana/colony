@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from itertools import permutations
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -67,7 +68,7 @@ def test_recall_hint_uses_deduplicated_bound_evidence():
     ("from policy import pick\nfrom other import load\ndef caller():\n    v = load()\n    return pick(v)",
      ["policy.py", "other.py"], None),
     ("from policy import pick\ndef caller():\n    return impl()", ["policy.py"], None),
-    ("from " + "é" * 60 + " import pick\ndef caller():\n    return pick()", ["é" * 60 + ".py"], None),
+    ("from " + "Ã©" * 60 + " import pick\ndef caller():\n    return pick()", ["Ã©" * 60 + ".py"], None),
 ])
 def test_recall_suggests_one_validated_called_dependency(source, targets, expected):
     refs = ["entry.py", *targets]
@@ -100,10 +101,99 @@ def test_unsupported_recall_checks_preserve_the_saved_answer(checks):
         assert "suggested_read" not in wire
 
 
+@pytest.mark.parametrize("case", [
+    "complete", "older-server", "denied-path", "stale", "raw-size", "wire-size",
+    "blank", "outside-scan", "remaining-budget",
+])
+def test_real_client_bounds_recall_dependency(transport, monkeypatch, case):
+    import httpx
+
+    from colony import context
+    from colony.recall import RECALL_PREFERENCE
+
+    client, repo, _, responses = transport
+    caller = "from policy import select\ndef caller():\n    return select()"
+    dependency = "from other import load\r\ndef select():\r\n    return load()\r\n# password=privatevalue"
+    files = {"caller.py": caller, "peer.py": "# peer", "other.py": "def load(): return 42"}
+    if case == "raw-size":
+        dependency += "x" * 513  # The raw secret exceeds the cap even after scrubbing makes it small.
+    if case == "wire-size":
+        dependency = "#" + '"' * 250
+    if case == "blank":
+        dependency = " \r\n"
+    if case == "outside-scan":
+        files.update({f"item{i}.py": "# incidental" for i in range(5)})
+    if case == "remaining-budget":
+        files["caller.py"] += "\n#" + "c" * (1497 - len(caller))
+        files["peer.py"] += "p" * 1260
+    files["policy.py"] = dependency
+    for ref, text in files.items():
+        (repo / ref).write_bytes(text.encode())
+    question = "Recall the saved finding about policy selection."
+    sources = [snapshot(repo, ref) for ref in files]
+    finding = Trail(id="b" * 32, namespace="team", question=question, content="Selection rule.", sources=sources)
+    assert client.push(finding)["stored"]
+    if case == "stale":
+        (repo / "policy.py").write_bytes(b"# changed")
+    # Pin only the retrieval scores. The actual reads, validation, selection and wire delivery run.
+    monkeypatch.setattr(context, "keyword_coverage", lambda q, texts: [
+        float("def caller" in text or "# peer" in text) for text in texts])
+    visited = []
+    read_bytes = Path.read_bytes
+
+    def observe(path):
+        if path.parent == repo:
+            visited.append(path.name)
+        return read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", observe)
+    ordinary = client.ask(question, "team")
+    original_reads = visited.copy()
+    visited.clear()
+    requests = []
+    post = httpx.post
+
+    def forward(url, **kwargs):
+        requests.append((url, kwargs["json"].copy(), kwargs["headers"].get("Prefer")))
+        if case == "older-server":
+            kwargs["headers"] = {k: v for k, v in kwargs["headers"].items() if k != "Prefer"}
+        return post(url, **kwargs)
+
+    monkeypatch.setattr(httpx, "post", forward)
+    task = TaskMCP(Workflow(client, "team", repo, read_only=True), question,
+                   read_path_allowed=lambda ref: case != "denied-path" or ref != "policy.py")
+    task._recall_first = True  # The stdio regression exercises populated-store startup.
+    wire = json.loads(asyncio.run(task.call_tool("research", {}))[0].text)
+    assert requests == [(client.url + "/ask", {"question": question, "namespace": "team"}, RECALL_PREFERENCE)]
+    assert len(responses) == 2 and visited == original_reads
+    if case == "denied-path":
+        assert wire == {"hit": False, "reason": "lookup_unavailable"}
+        return
+    if case == "stale":
+        assert responses[-1] == ordinary and "suggested_read" not in wire
+        assert all(not s.get("complete_file") for s in wire.get("evidence", []))
+        return
+
+    assert ordinary["id"] == wire["id"] == finding.id and wire["content"] == finding.content
+    assert wire["checks"] == ordinary["checks"] and wire["sources"] == ordinary["sources"]
+    assert [e["ref"] for e in ordinary["evidence"]] == ["caller.py", "peer.py"]
+    assert responses[-1]["evidence"][:2] == ordinary["evidence"]
+    if case == "complete":
+        assert wire["evidence"][-1] == {
+            "ref": "policy.py", "line": 1, "end_line": 4, "complete_file": True,
+            "text": "from other import load\ndef select():\n    return load()\n# [REDACTED]",
+        }
+        assert len(wire["evidence"]) == 3 and "suggested_read" not in wire
+        assert "privatevalue" not in json.dumps(wire) and "suggested_read" not in wire["provenance"]
+    else:
+        assert responses[-1]["evidence"] == ordinary["evidence"]
+        assert wire["suggested_read"] == {"path": "policy.py"}
+
+
 def test_evidence_only_retains_each_citation_once(identity, monkeypatch):
     _, _, sources = identity
     evidence = [
-        {"ref": "settings.py", "line": 2, "text": "café [REDACTED]"},
+        {"ref": "settings.py", "line": 2, "text": "cafÃ© [REDACTED]"},
         {"ref": "settings.py", "line": 7, "text": "SECOND_SPAN", "complete_file": False},
         {"ref": "README.md", "line": 1, "text": "SECOND_SPAN", "complete_file": True},
     ]

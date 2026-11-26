@@ -685,6 +685,7 @@ class Store:
         git_context: GitContext | None = None,
         context_budget: ContextBudget | None = None,
         response_profile: str | None = None,
+        complete_recall: bool = False,
         diagnostics=None,
     ):
         options = {}
@@ -707,6 +708,7 @@ class Store:
             threshold,
             include_evidence_files=include_evidence_files,
             git_context=git_context,
+            **({"complete_recall": True} if complete_recall else {}),
             **options,
             **({"diagnostics": diagnostics} if diagnostics is not None else {}),
         )
@@ -962,6 +964,7 @@ class Store:
         git_context: GitContext | None = None,
         context_budget: ContextBudget | None = None,
         compact_bundle: bool = False,
+        complete_recall: bool = False,
         diagnostics=None,
     ):
         emit(diagnostics, "lookup_started")
@@ -1142,6 +1145,8 @@ class Store:
                     sources,
                     question,
                     claims=content,
+                    **({"complete_recall": True} if complete_recall and requested is None
+                       and context_budget is None and not include_evidence_files and not compact_bundle else {}),
                     whole_files=include_evidence_files,
                     **({"compact_bundle": True} if compact_bundle else {}),
                     **({"adaptive": True} if context_budget is not None else {}),
