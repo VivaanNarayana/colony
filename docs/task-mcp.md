@@ -57,7 +57,8 @@ Unusable evidence or missing source bindings yield `lookup_unavailable` so resea
 Budgeted lookups use the adaptive `current_repository_reads` representation.
 
 Ordinary and adaptive lookup use the original task question. On a populated store,
-read files first unless the task asks for saved findings. Cite current excerpts from
+an explicit request for a saved finding's ID or content directs the worker to call
+`research()` first. Source questions and explicit file-first requests start with reads. Cite current excerpts from
 a validated answer directly and read missing lines by path. For repository-wide absence,
 batch the listed files before searching when they fit. An explicit direct path takes priority. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,

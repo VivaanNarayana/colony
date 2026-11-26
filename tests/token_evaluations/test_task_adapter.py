@@ -338,6 +338,7 @@ def test_real_client_batches_within_remaining_units(bench_team, searches, oversi
 def test_real_client_requested_recall_reuses_current_evidence(bench_team, adaptive):
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
+
     from colony.client import Client
     from colony.models import Trail
     from colony.validation import snapshot
@@ -368,20 +369,26 @@ def test_real_client_requested_recall_reuses_current_evidence(bench_team, adapti
     params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=args)
 
     async def exercise():
-        route = 'Read files first unless asked for saved findings. Batch what fits before searching.'
+        source_route = 'Read files first unless asked for saved findings. Batch what fits before searching.'
+        route = 'Call research() first. Use validated excerpts and read missing lines by path.'
         # The same populated store also serves an ordinary current-source question.
         source_args = args.copy()
         source_args[source_args.index('--question') + 1] = 'What timeout is configured for production?'
         source_params = params.model_copy(update={'args': source_args})
         async with stdio_client(source_params) as streams, ClientSession(*streams) as source:
-            assert (await source.initialize()).instructions[:245].startswith(route)
+            source_instructions = (await source.initialize()).instructions
+            assert source_instructions.startswith(source_route)
+            source_catalog = await source.list_tools()
             first = await source.call_tool('read', {'path': 'settings.py'})
             assert not first.isError and json.loads(first.content[0].text)['complete_file']
 
         async with stdio_client(params) as streams, ClientSession(*streams) as session:
             instructions = (await session.initialize()).instructions
-            assert instructions[:245].startswith(route) and instructions.count(route) == 1
-            tools = {t.name: t for t in (await session.list_tools()).tools}
+            assert instructions == route + source_instructions[len(source_route):]
+            assert 'trace exceptional exits.' in instructions[:245]
+            catalog = await session.list_tools()
+            assert catalog == source_catalog
+            tools = {t.name: t for t in catalog.tools}
             guidance = 'Uses the task question, no query argument. Reuse current excerpts and read missing evidence by path.'
             assert tools['research'].description.count(guidance) == 1
             assert set(tools['research'].inputSchema['properties']) == ({'max_context_tokens'} if adaptive else set())
@@ -432,6 +439,7 @@ def test_real_client_requested_recall_reuses_current_evidence(bench_team, adapti
 def test_real_client_absence_evidence_through_observed_adapter(bench_team, workload, populated, tmp_path):
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
+
     from colony.client import Client
     from colony.models import Trail
     from colony.validation import snapshot
@@ -501,6 +509,7 @@ def test_real_client_absence_evidence_through_observed_adapter(bench_team, workl
 @pytest.mark.parametrize('lookup_outage', [False, True])
 def test_real_stdio_preflight_discovery_and_readonly_direct_roles(bench_team, monkeypatch, lookup_outage):
     from mcp import ClientSession
+
     from scripts.token_evaluation.task_preflight import check
     homes, repo = bench_team
     protocol = {'target': {'adapter': 'task', 'python': sys.executable, 'mcp_args': []},

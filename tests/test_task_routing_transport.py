@@ -19,7 +19,6 @@ from colony.security import issue
 from colony.task_mcp import PUBLICATION_CUE, RESEARCH_GUIDANCE
 from colony.validation import snapshot
 
-
 EMPTY_ROUTE = (
     "Read files first. Batch before searching if they fit. Memory was empty. Recheck on request or after a save."
 )
@@ -51,7 +50,7 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             "--ns",
             "team",
             "--question",
-            "What is the timeout?" if route == "present" else "Trace handler",
+            "What is the timeout?" if route == "present" else "Summarize the finding we saved earlier.",
             "--trace-reads",
             "--read-only",
             "--read-unit-limit",
@@ -112,6 +111,38 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
     with closing(sqlite3.connect(root / "data/colony.db")) as db:
         db.execute("BEGIN IMMEDIATE")
         asyncio.run(check(db))
+
+
+def test_populated_startup_routes_only_requested_recall(running_team):
+    _, homes, repo, _ = running_team
+    saved = Trail(id="a" * 32, namespace="team", question="What sets the timeout?",
+                  content="Summarize the saved finding.", sources=[snapshot(repo, "settings.py")])
+    assert Client(homes["a"]).push(saved)["stored"]
+    source = "Read files first unless asked for saved findings."
+    recall = "Call research() first. Use validated excerpts and read missing lines by path."
+    questions = [
+        ("Trace the timeout. Please summarize the finding we saved earlier.", recall),
+        ("What did the saved timeout finding say?", recall),
+        ("What is the saved finding's ID?", recall),
+        ("Trace the timeout and include the ID of the saved finding.", recall),
+        ("Does the same timeout apply when memory is low?", source),
+        ("Describe how the code stores saved findings. Save a new finding about it.", source),
+        ('Explain this example “Trace the timeout. Summarize the saved finding.”', source),
+        ("Does the help text say `Include the ID of the saved finding`?", source),
+        ("Do not include the ID of the saved finding. Trace the timeout.", source),
+        ("Read settings.py first. Summarize the saved finding.", source),
+        ("Summarize the saved finding after reading settings.py.", source),
+    ]
+
+    async def check():
+        for question, lead in questions:
+            params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=[
+                "-m", "colony.task_mcp", "--home", str(homes["b"]), "--repo", str(repo),
+                "--ns", "team", "--question", question, "--read-only"])
+            async with stdio_client(params) as streams, ClientSession(*streams) as session:
+                assert (await session.initialize()).instructions.startswith(lead), question
+
+    asyncio.run(check())
 
 
 @pytest.mark.parametrize("adaptive", [False, True])
