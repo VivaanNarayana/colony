@@ -76,7 +76,8 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             batch = "If needed files fit, batch before searching."
             lookup = "Use research when saved findings could help."
             leads = {
-                "empty": EMPTY_ROUTE, "present": "Batch needed files before searching if they fit. Use memory for recall or gaps.",
+                "empty": EMPTY_ROUTE,
+                "present": "Use research() first for requested recall. Otherwise batch files that fit before searching.",
                 "direct": f"Read the requested path first. {batch}",
                 "unknown": f"{batch} {lookup}", "disabled": f"{batch} {lookup}",
             }
@@ -88,7 +89,7 @@ def test_live_routing_preview_bundle_quota_and_readonly(running_team, route):
             assert set(tools) == {"read", "research", "trace_read"}
             assert tools["research"].description.startswith("Read files first") == (route == "empty")
             if route == "present":
-                assert tools["research"].description.startswith("Look up prior findings or evidence gaps")
+                assert tools["research"].description.startswith("Uses the task question, no query argument.")
                 recalled = await session.call_tool("research", {})
                 hit = json.loads(recalled.content[0].text)
                 assert hit["hit"] and hit["status"] == "validated"

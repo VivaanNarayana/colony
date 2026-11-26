@@ -56,9 +56,9 @@ reason (`stale` or `unverified`). An evidence-only hit needs a complete file
 Unusable evidence or missing source bindings yield `lookup_unavailable` so research can continue.
 Budgeted lookups use the adaptive `current_repository_reads` representation.
 
-Ordinary and adaptive lookup share the same routing guidance. The startup preview tells
-workers to batch the needed files before searching when they fit. An explicit path takes
-priority. Workers can look up saved findings when useful. Prioritize evidence
+Ordinary and adaptive lookup use the original task question. On a populated store,
+start with `research()` when the task requests recall. Otherwise, batch needed files before
+searching when they fit. An explicit direct path takes priority. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
@@ -211,8 +211,8 @@ On stdio startup, a non-direct task makes a short authenticated
 namespace, configured repository identity and `empty`/`present` state. Only a
 zero active-row result in the authorized namespace enables the confirmed-empty hint.
 Stale, unverified and unrelated active memories conservatively count as present.
-With a populated store, batch the needed files before searching if they fit.
-Use memory for recall or evidence gaps. A search miss never becomes an empty-store
+After a lookup, reuse the current excerpts for claims they support and read missing
+evidence directly by path when known. A search miss never becomes an empty-store
 proof. Repository-ID mismatch, old servers, denied/expired credentials and transport
 failures yield `unknown` and lead with source batching while keeping explicit research available. An unchanged,
 verified grant reuses its existing registration without taking a database writer lock.

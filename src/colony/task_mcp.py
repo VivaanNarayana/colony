@@ -51,8 +51,7 @@ PUBLICATION_POLICY = (
 )
 
 RESEARCH_GUIDANCE = (
-    "Look up prior findings or evidence gaps, including on direct reads. "
-    "Check conflicting claims against current sources."
+    "Uses the task question, no query argument. Reuse current excerpts and read missing evidence by path."
 )
 READ_ROUTING = "If needed files fit, batch before searching. "
 PUBLICATION_CUE = (
@@ -346,7 +345,7 @@ class TaskMCP(FastMCP):
             return ("Read files first. Batch before searching if they fit. "
                     "Memory was empty. Recheck on request or after a save. " + self._base_instructions)
         if self._availability_state == "present":
-            return ("Batch needed files before searching if they fit. Use memory for recall or gaps. "
+            return ("Use research() first for requested recall. Otherwise batch files that fit before searching. "
                     + self._base_instructions)
         return READ_ROUTING + lookup + " " + self._base_instructions
 

@@ -334,6 +334,84 @@ def test_real_client_batches_within_remaining_units(bench_team, searches, oversi
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize('adaptive', [False, True], ids=['ordinary', 'budgeted'])
+def test_real_client_requested_recall_reuses_current_evidence(bench_team, adaptive):
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+    from colony.client import Client
+    from colony.models import Trail
+    from colony.validation import snapshot
+
+    homes, repo = bench_team
+    fixture = Path(__file__).parent / 'fixtures/gateway/v1'
+    paths = ['transport.py', 'client.py', 'settings.py', 'handler.py']
+    for path in paths:
+        (repo / path).write_bytes((fixture / path).read_bytes())
+    question = ('Trace a production request with no overrides through this gateway. '
+                'If all responses are 503, how many requests occur and which timeout does each use? '
+                'Cite configuration precedence and retry termination.')
+    rule = ('Inventory gateway request configuration and 503 handling\n'
+            'The handler merges defaults, environment settings, then request overrides, so later sources '
+            'take precedence; fetch reuses the resolved timeout for each attempt and returns immediately '
+            'when a response is not 503 or the final attempt is reached. The concrete transport separately '
+            'retries only ConnectionError and reuses the supplied timeout.')
+    finding = Trail(id='310afdfbb67a3d8c4b4d4c5a914f4ce1', namespace='bench', question=question,
+                    content=rule, sources=[snapshot(repo, path) for path in paths])
+    assert Client(homes['a']).push(finding)['stored']
+    recall = question + (' Include the ID of the saved gateway finding and summarize its stored rule '
+                         'about configuration precedence and 503 handling.')
+    args = [str(Path(__file__).resolve().parents[2] / 'scripts/token_evaluation/task_adapter.py'),
+            '--home', str(homes['b']), '--repo', str(repo), '--question', recall, '--read-only',
+            '--files', json.dumps(paths), '--max-calls', '1']
+    if adaptive:
+        args += ['--context-budget', '8192', '--context-encoding', 'utf8_bytes']
+    params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=args)
+
+    async def exercise():
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            instructions = (await session.initialize()).instructions
+            route = 'Use research() first for requested recall. Otherwise batch files that fit before searching.'
+            assert instructions[:245].startswith(route) and instructions.count(route) == 1
+            tools = {t.name: t for t in (await session.list_tools()).tools}
+            guidance = 'Uses the task question, no query argument. Reuse current excerpts and read missing evidence by path.'
+            assert tools['research'].description.count(guidance) == 1
+            assert set(tools['research'].inputSchema['properties']) == ({'max_context_tokens'} if adaptive else set())
+            assert ('max_context_tokens' in tools['research'].description) == adaptive
+
+            recalled = await session.call_tool('research', {})
+            assert not recalled.isError and len(recalled.content) == 1
+            hit = lookup_value(json.loads(recalled.content[0].text))
+            assert hit['hit'] and hit['status'] == 'validated' and hit['id'] == finding.id
+            assert hit['content'] == rule
+            assert {s['ref'] for s in hit['sources']} == set(paths)
+            excerpts = {e['path']: e for e in hit['current_repository_reads']}
+            for path in ('handler.py', 'client.py'):
+                span = excerpts[path]
+                assert span['start_line'] == 1
+                assert span['content'] == (fixture / path).read_text().rstrip('\n')
+            assert route not in recalled.content[0].text and guidance not in recalled.content[0].text
+            settings = (fixture / 'settings.py').read_text().rstrip('\n')
+            if adaptive:
+                # The larger adaptive response already supplies the missing numeric settings.
+                span = excerpts['settings.py']
+                assert span['complete_file'] and span['start_line'] == 1 and span['content'] == settings
+                return
+            assert 'settings.py' not in excerpts
+            assert all(not span['complete_file'] for span in excerpts.values())
+
+            gap = await session.call_tool('read', {'path': 'settings.py'})
+            assert not gap.isError
+            page = json.loads(gap.content[0].text)
+            assert (page['path'], page['start_line'], page['end_line']) == ('settings.py', 1, 5)
+            assert page['evidence_ref'] and page['complete_file']
+            assert page['content'] == settings
+            assert json.loads(gap.content[1].text)['research_budget'] == {
+                'admitted': 1, 'succeeded': 1, 'denied': 0, 'remaining': 0}
+            assert all(guidance not in block.text and route not in block.text for block in gap.content)
+
+    asyncio.run(exercise())
+
+
 @pytest.mark.parametrize('workload,populated', [('gateway', False), ('gateway', True), ('worker', False)])
 def test_real_client_absence_evidence_through_observed_adapter(bench_team, workload, populated, tmp_path):
     from mcp import ClientSession, StdioServerParameters
@@ -365,13 +443,13 @@ def test_real_client_absence_evidence_through_observed_adapter(bench_team, workl
     async def exercise():
         async with stdio_client(params) as streams, ClientSession(*streams) as session:
             preview = (await session.initialize()).instructions[:245]
-            lead = ('Batch needed files before searching if they fit. Use memory for recall or gaps.'
+            lead = ('Use research() first for requested recall. Otherwise batch files that fit before searching.'
                     if populated else 'Read files first. Batch before searching if they fit.')
             assert preview.startswith(lead)
             assert 'trace exceptional exits.' in preview
             tools = {t.name: t for t in (await session.list_tools()).tools}
             assert tools['research'].description.startswith(
-                'Look up prior findings or evidence gaps' if populated else 'Read files first')
+                'Uses the task question, no query argument.' if populated else 'Read files first')
             listed = await session.call_tool('fixture_files', {})
             paths = listed.content[0].text.splitlines()
             assert paths == sorted(files) and len(paths) == 5
