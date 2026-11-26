@@ -231,21 +231,6 @@ def _render_unbudgeted_lookup(result: dict, *, recall_first: bool) -> dict:
     return rendered
 
 
-def _read_description(*, recall: bool) -> str:
-    if recall:
-        batch = "Pass suggested_read directly to read. Batch for other requested facts."
-        absence = "For absence, batch listed files that fit (one unit per entry)."
-    else:
-        batch = "Batch known callers and dependencies within remaining units (one per entry)."
-        absence = "For absence, batch listed files first if they fit. Follow dependencies."
-    return f"""Omit end for EOF (longer ranges clip), path for direct reads.
-            {batch}
-            {absence}
-            Use batch alone. Results/errors are ordered. Continue at next_offset with the
-            same path/start/end. Failed entries and partial pages leave coverage gaps.
-            """
-
-
 class TaskMCP(FastMCP):
     """The host supplies task intent; source text cannot select a cheaper mode."""
 
@@ -278,7 +263,6 @@ class TaskMCP(FastMCP):
         self._availability_until = 0.0
         self._availability_state = "unknown"
         self._recall_first = False
-        self._recall_read_description = _read_description(recall=True) if context_budget is None else None
         self._availability_generation = 0
         self._read_access = ReadAccess(self.evidence, read_admission)
         # Trusted host classification; tool/source arguments cannot promote this.
@@ -311,6 +295,12 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> str:
+            """Omit end for EOF (longer ranges clip), path for direct reads.
+            {batch}
+            {absence}
+            Use batch alone. Results/errors are ordered. Continue at next_offset with the
+            same path/start/end. Failed entries and partial pages leave coverage gaps.
+            """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:
                     raise ToolError("Batch and single-read arguments cannot be combined")
@@ -360,7 +350,16 @@ class TaskMCP(FastMCP):
             )
             research = adaptive_research
 
-        read.__doc__ = _read_description(recall=False)
+        # Use the compiled docstring so each supported Python keeps its native whitespace.
+        read_template = read.__doc__ or ""
+        read.__doc__ = read_template.format(
+            batch="Batch known callers and dependencies within remaining units (one per entry).",
+            absence="For absence, batch listed files first if they fit. Follow dependencies.",
+        )
+        self._recall_read_description = read_template.format(
+            batch="Pass suggested_read directly to read. Batch for other requested facts.",
+            absence="For absence, batch listed files that fit (one unit per entry).",
+        ) if context_budget is None else None
         research.__doc__ = RESEARCH_GUIDANCE + budget_guidance
         self._empty_research_description = (
             "Read files first unless asked or memory changed. Empty at last check."

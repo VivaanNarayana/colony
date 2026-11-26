@@ -380,6 +380,15 @@ def test_real_client_requested_recall_reuses_current_evidence(bench_team, varian
     params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=args)
 
     async def exercise():
+        # Python 3.13+ dedents compiled docstrings. Pin the original wire text on both layouts.
+        def source_read_help():
+            """Omit end for EOF (longer ranges clip), path for direct reads.
+            Batch known callers and dependencies within remaining units (one per entry).
+            For absence, batch listed files first if they fit. Follow dependencies.
+            Use batch alone. Results/errors are ordered. Continue at next_offset with the
+            same path/start/end. Failed entries and partial pages leave coverage gaps.
+            """
+
         source_route = 'Read files first unless asked for saved findings. Batch what fits before searching.'
         route = 'Call research() first. Use validated excerpts and read missing lines by path.'
         # The same populated store also serves an ordinary current-source question.
@@ -390,6 +399,7 @@ def test_real_client_requested_recall_reuses_current_evidence(bench_team, varian
             source_instructions = (await source.initialize()).instructions
             assert source_instructions.startswith(source_route)
             source_catalog = await source.list_tools()
+            assert next(t.description for t in source_catalog.tools if t.name == 'read') == source_read_help.__doc__
             first = await source.call_tool('read', {'path': config_path})
             assert not first.isError and json.loads(first.content[0].text)['complete_file']
             source_hit = json.loads((await source.call_tool('research', {})).content[0].text)
