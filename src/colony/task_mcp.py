@@ -180,11 +180,11 @@ class TaskMCP(FastMCP):
                  offset: StrictInt = 0,
                  batch: Annotated[list[ReadRequest], Field(min_length=1, max_length=8)] | None = None,
                  ) -> dict:
-            """Read source; omit end for ordinary reads (end beyond EOF is clipped).
-            Omit path for direct path. Use batch for independent reads instead of
-            single-read arguments; results/errors are ordered. Continue each at next_offset
-            with the same path/start/end. Prioritize required caller/dependency evidence
-            within any host allowance. Failed entries and partial pages leave coverage gaps.
+            """Omit end for EOF (longer ranges clip), path for direct reads.
+            Batch known callers and dependencies within remaining units (one per entry).
+            For absence, cover listed scope if it fits. Follow new dependencies.
+            Use batch alone. Results/errors are ordered. Continue at next_offset with the
+            same path/start/end. Failed entries and partial pages leave coverage gaps.
             """
             if batch is not None:
                 if path is not None or start != 1 or end is not None or offset != 0:

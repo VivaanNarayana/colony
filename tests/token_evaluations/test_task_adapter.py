@@ -258,20 +258,69 @@ def test_task_publication_binds_only_prior_verified_task_references(trace):
     assert not evaluate()['learn']['publication']
 
 
-@pytest.mark.parametrize('lookup_outage', [False, True])
-def test_real_stdio_preflight_discovery_and_readonly_direct_roles(running_team, monkeypatch, lookup_outage):
-    from mcp import ClientSession
-
+@pytest.fixture
+def bench_team(running_team):
     from colony.client import Client
     from colony.models import Scope
     from colony.security import issue
-    from scripts.token_evaluation.task_preflight import check
     _, homes, repo, root = running_team
     for role, home in homes.items():
         client = Client(home)
         grant = client.keyfile.grant.model_copy(update={
             'scopes': [Scope(namespace='bench', pull=True, push=role == 'a')]})
         (home / 'identity.json').write_bytes(issue(root / 'admin/issuer.pem', grant).model_dump_json().encode())
+    return homes, repo
+
+
+@pytest.mark.parametrize('absence', [True, False], ids=['five-file-absence', 'discovered-dependency'])
+def test_real_client_batches_within_remaining_units(bench_team, absence):
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    homes, repo = bench_team
+    files = {'caller.py': 'from dependency import run', 'dependency.py': 'from leaf import run',
+             'leaf.py': 'def run(): return 42', 'notes.txt': 'See caller.py', 'settings.py': 'TIMEOUT = 30'}
+    for name, content in files.items():
+        (repo / name).write_text(content, encoding='utf8')
+    question = 'Does this repository use a semaphore?' if absence else 'Trace caller.py and dependency.py'
+    params = StdioServerParameters(command=sys.executable, env=dict(os.environ), args=[
+        str(Path(__file__).resolve().parents[2] / 'scripts/token_evaluation/task_adapter.py'),
+        '--home', str(homes['b']), '--repo', str(repo), '--question', question, '--read-only',
+        '--files', json.dumps(list(files)), '--max-calls', '6'])
+
+    async def exercise():
+        async with stdio_client(params) as streams, ClientSession(*streams) as session:
+            await session.initialize()
+            description = next(t.description for t in (await session.list_tools()).tools if t.name == 'read')
+            assert 'Batch known callers and dependencies within remaining units (one per entry)' in description
+            assert 'cover listed scope if it fits' in description and 'Follow new dependencies' in description
+            listed = await session.call_tool('fixture_files', {})
+            inventory = listed.content[0].text.splitlines()
+            assert set(inventory) == files.keys()
+            assert json.loads(listed.content[1].text)['research_budget']['remaining'] == 5
+            paths = inventory if absence else ['caller.py', 'dependency.py']
+            read = await session.call_tool('read', {'batch': [{'path': name} for name in paths]})
+            assert not read.isError and len(read.content) == 2
+            pages = json.loads(read.content[0].text)['results']
+            assert [(p['path'], p['content']) for p in pages] == [(name, files[name]) for name in paths]
+            assert all(p['complete_file'] and p['evidence_ref'] for p in pages)
+            assert json.loads(read.content[1].text)['research_budget'] == {
+                'admitted': len(paths), 'denied': 0, 'succeeded': len(paths), 'remaining': 5 - len(paths)}
+            if not absence:
+                dependency = pages[1]['content'].split()[1] + '.py'
+                follow = await session.call_tool('read', {'path': dependency})
+                assert json.loads(follow.content[0].text)['content'] == files['leaf.py']
+                assert json.loads(follow.content[1].text)['research_budget'] == {
+                    'admitted': 1, 'denied': 0, 'succeeded': 1, 'remaining': 2}
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize('lookup_outage', [False, True])
+def test_real_stdio_preflight_discovery_and_readonly_direct_roles(bench_team, monkeypatch, lookup_outage):
+    from mcp import ClientSession
+    from scripts.token_evaluation.task_preflight import check
+    homes, repo = bench_team
     protocol = {'target': {'adapter': 'task', 'python': sys.executable, 'mcp_args': []},
                 'research': {'max_calls': 2},
                 'workloads': [{'id': 'repo', 'snapshots': [{'files': {'settings.py': 'unused'}}]}]}

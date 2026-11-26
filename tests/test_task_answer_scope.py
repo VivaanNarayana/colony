@@ -32,7 +32,7 @@ def test_scope_guidance_preserves_failed_and_partial_evidence(identity, monkeypa
     async def check():
         tools = {t.name: t for t in await server.list_tools()}
         assert "Failed entries and partial pages leave coverage gaps" in tools["read"].description
-        assert "required caller/dependency evidence" in tools["read"].description
+        assert "Batch known callers and dependencies" in tools["read"].description
         assert server.instructions.count(ANSWER_POLICY) == 1
         assert server.instructions.count(READ_ROUTING) == 1
         assert "Trace callers and dependencies." in server.instructions
