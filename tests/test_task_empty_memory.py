@@ -137,14 +137,14 @@ def test_snapshot_expires_and_explicit_lookup_never_uses_cached_empty(identity, 
 
     async def check():
         first = await server.list_tools()
-        assert "empty at last check" in next(t.description for t in first if t.name == "research")
+        assert "Empty at last check" in next(t.description for t in first if t.name == "research")
         assert len(probes) == 1 and not asks
         state[0] = "present"  # Concurrent publication after snapshot, before TTL.
         result = json.loads((await server.call_tool("research", {}))[0].text)
         assert result["hit"] and len(asks) == 1
         server._availability_until = 0
         second = await server.list_tools()
-        assert "empty at last check" not in next(
+        assert "Empty at last check" not in next(
             t.description for t in second if t.name == "research"
         )
         assert len(probes) == 2
@@ -271,7 +271,7 @@ def test_newer_probe_wins_and_catalog_hints_do_not_accumulate(identity, monkeypa
         b = await server.list_tools()
         assert [t.model_dump() for t in a] == [t.model_dump() for t in b]
         assert (
-            next(t.description for t in b if t.name == "research").count("empty at last check") == 1
+            next(t.description for t in b if t.name == "research").count("Empty at last check") == 1
         )
 
     asyncio.run(check())
@@ -329,7 +329,7 @@ def test_failed_tool_still_notifies_changed_availability(identity, monkeypatch, 
         with pytest.raises(ToolError, match="Task tool failed"):
             await server.call_tool(name, arguments)
         assert notifications == [1]
-        assert not any("empty at last check" in (t.description or "")
+        assert not any("Empty at last check" in (t.description or "")
                        for t in await server.list_tools())
         await server.call_tool("read", {"path": "settings.py"})
         assert notifications == [1]  # No redundant catalog event for unchanged state.

@@ -24,6 +24,7 @@ from colony.models import (
     Source,
     Trail,
 )
+from colony.recall import RECALL_PREFERENCE
 from colony.security import fingerprint, private_write, scrub, token, verify
 from colony.usage import UsageJournal
 from colony.validation import PinnedSourcePaths, repo_file
@@ -265,8 +266,9 @@ class Client:
         private_write(home / "identity.json", key.model_dump_json().encode())
         return response.json()
 
-    def request(self, route: str, payload: dict):
-        response = httpx.post(self.url + route, json=payload, headers=self.headers, timeout=5)
+    def request(self, route: str, payload: dict, *, prefer: str | None = None):
+        headers = {**self.headers, "Prefer": prefer} if prefer else self.headers
+        response = httpx.post(self.url + route, json=payload, headers=headers, timeout=5)
         if response.status_code >= 500:
             raise httpx.ConnectError("Colony unavailable")
         response.raise_for_status()
@@ -331,6 +333,7 @@ class Client:
         context_budget: ContextBudget | None = None,
         response_profile: str | None = None,
         path_allowed=None,
+        complete_recall: bool = False,
     ):
         budget = None
         negotiated_profile = False
@@ -400,7 +403,8 @@ class Client:
                 except ValueError:
                     return finish({"hit": False, "reason": "git_context_unsupported"})
                 payload["git_context"] = context.model_dump()
-            result = self.request("/ask", payload)
+            preference = {"prefer": RECALL_PREFERENCE} if complete_recall else {}
+            result = self.request("/ask", payload, **preference)
             expected_profile = response_profile if negotiated_profile else None
             if (
                 (negotiated_profile and not isinstance(result, dict))
@@ -448,7 +452,10 @@ class Client:
                     for ref in refs.union(path_allowed.targets):
                         repo_file(repo, ref, path_allowed=path_allowed)
                     for field, key in (("evidence", "ref"), ("current_repository_reads", "path")):
-                        if any(item[key] not in refs for item in result.get(field, [])):
+                        items = result.get(field)
+                        if items is None:
+                            continue
+                        if not isinstance(items, list) or any(item[key] not in refs for item in items):
                             raise ValueError()
                 except (KeyError, TypeError, ValueError, OSError):
                     return finish({"hit": False, "reason": "lookup_unavailable"})

@@ -5,7 +5,10 @@ import hashlib
 import re
 from pathlib import Path
 
+from pydantic_core import to_json
+
 from colony.models import Source
+from colony.recall import MAX_RECALL_BYTES, suggested_path
 from colony.retrieval import fused_score, keyword_coverage, rank
 from colony.security import PATTERNS
 from colony.validation import repo_file
@@ -65,7 +68,7 @@ def _closes_fence(text, match, opening):
     )
 
 
-def source_lines(root: Path, source: Source) -> list[str]:
+def source_lines(root: Path, source: Source, *, small_files: dict[str, str] | None = None) -> list[str]:
     if source.kind != "file":
         return []
     try:
@@ -79,14 +82,22 @@ def source_lines(root: Path, source: Source) -> list[str]:
     # Preserve original line numbers even when replacing a private key block.
     for pattern in PATTERNS:
         text = re.sub(pattern, lambda m: "[REDACTED]" + "\n" * m[0].count("\n"), text)
-    return text.splitlines()
+    lines = text.splitlines()
+    if small_files is not None and len(data) <= MAX_RECALL_BYTES and text.strip():
+        normalized = "\n".join(lines)
+        if len(normalized.encode("utf-8")) <= MAX_RECALL_BYTES:
+            small_files[source.ref] = normalized
+    return lines
 
 
-def source_chunks(root: Path, sources: list[Source]) -> list[tuple[str, int, str]]:
+def source_chunks(
+    root: Path, sources: list[Source], *, small_files: dict[str, str] | None = None,
+) -> list[tuple[str, int, str]]:
     candidates = []
     # Only explicitly attached, matching files supply context. Never crawl uncited files.
+    cache_option = {"small_files": small_files} if small_files is not None else {}
     for source in sources[:8]:
-        lines = source_lines(root, source)[:2000]
+        lines = source_lines(root, source, **cache_option)[:2000]
         headings, stack, fenced = {}, [], False
         if Path(source.ref).suffix.lower() in {".md", ".markdown"}:
             for i, text in enumerate(lines):
@@ -444,6 +455,7 @@ def excerpts(
     adaptive: bool = False,
     compact_bundle: bool = False,
     expand_first_file: bool = False,
+    complete_recall: bool = False,
 ) -> list[dict]:
     unique = {s.ref: s for s in sources}
     if (
@@ -474,7 +486,8 @@ def excerpts(
             # counts every file identity/byte and fails closed if the bundle cannot fit.
             if sum(len(f["text"]) for f in files) <= (2800 if adaptive else 24000):
                 return files
-    candidates = source_chunks(root, sources)
+    small_files = {} if complete_recall else None
+    candidates = source_chunks(root, sources, small_files=small_files)
     if preferred is not None:
         # A second reranking must not replace the globally selected passage
         # with unrelated text from the same file.
@@ -576,4 +589,21 @@ def excerpts(
                     text="\n".join(cache[item["ref"]][first - 1 : last]),
                     complete_file=False,
                 )
+    if small_files:
+        # In this mode all attachments passed validation. Use only the bounded
+        # files fingerprinted again during this same ranking pass.
+        refs = set(by_ref)
+        path = suggested_path(selected, refs, refs)
+        if path in small_files and all(span["ref"] != path for span in selected):
+            text = small_files[path]
+            span = {"ref": path, "line": 1, "text": text, "complete_file": True}
+            # Count the list separator and the end coordinate added at task delivery.
+            size = 1 + len(to_json({**span, "end_line": 1 + text.count("\n")}))
+            if len(text) <= budget and size <= MAX_RECALL_BYTES:
+                # Compare the final displayed excerpt, after windowing and clipping.
+                for ranked in selected:
+                    ranked["complete_file"] = (
+                        ranked["line"] == 1 and ranked["text"] == small_files.get(ranked["ref"])
+                    )
+                selected.append(span)
     return selected

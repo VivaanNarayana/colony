@@ -14,15 +14,61 @@ Reading uses trusted evidence references and makes no Colony lookup or push.
 read; direct routing never prevents deeper research, contradictions, examples or
 requested answer detail. The host's other authorized research tools remain usable.
 
-Ordinary and adaptive lookup share the same routing guidance: look up saved findings
-when useful, read known paths directly, and batch independent reads. Prioritize evidence
+Successful `read` and unbudgeted `research` calls each return one compact JSON text block.
+Parse that block for source text, citation bounds and evidence references.
+
+For `research()` without a context budget, a validated `match_kind: "evidence"`
+hit delivers each selected span in `evidence`. Consumers that previously read
+the generated top-level `content` summary should read each entry's `text` and
+`line` and join its `ref` to `sources[].ref` for the file's `content_hash`.
+If a server returns citations in `current_repository_reads`, the task adapter
+joins them with `evidence` by source, start line and exact text. Duplicate spans
+share one entry, and identical text at different locations retains each citation.
+When supplied, `complete_files` lists the files delivered in full after the
+merge. An `evidence_scope` of `cited_files` means the result contains every
+cited file in full. Omitted files and partial coverage produce `partial`.
+Git-bound tasks use both formats as hints and rebuild the excerpts from the
+caller’s checkout. All excerpt widths at the same path and start line share
+one verification slot. A late excerpt can use its file’s admitted whole-file
+marker slot even when duplicate blanks appeared earlier. A focused
+lookup selects up to two explicit excerpts in citation order across all files.
+Usable marker prefixes can fill any remaining slots. The first selected excerpt
+for a file can appear at its earlier marker position in the response.
+A focused lookup keeps a blank file marked complete when its bounded prefix
+covers the entire locally verified, newline-normalized file, including an empty file.
+An abbreviated blank prefix alone yields a miss.
+Locally blank partial excerpts retain their coordinates when a read slot and
+enough characters remain after usable evidence has been selected.
+For whole-file requests, a complete hint in either format can expand an earlier
+excerpt when its width is 1–2,400 characters, its verified slice contains
+non-whitespace text, and the whole file fits the file and response limits.
+Otherwise the complete hint competes at its own citation position. If the file exceeds either
+limit, the client prefers a locally verified explicit excerpt over the prefix
+suggested by an abbreviated whole-file hint. If the remaining budget can no
+longer fit any explicit excerpt for that file, its prefix competes at its
+original citation position. When a path allowlist is configured, it applies to every cited file,
+including reads supplied alongside `evidence: null`. A validated `answer` hit
+also carries the authored finding in `content`.
+A stale answer can still return `hit: true` and `match_kind: "answer"`.
+Check `status` before reusing saved prose. Stale and unverified hits retain their source receipts.
+When a saved body is withheld, `content_withheld` gives the
+reason (`stale` or `unverified`). An evidence-only hit needs a complete file
+(including an empty file) or a partial excerpt with non-whitespace text.
+Unusable evidence or missing source bindings yield `lookup_unavailable` so research can continue.
+Budgeted lookups use the adaptive `current_repository_reads` representation.
+
+Ordinary and adaptive lookup use the original task question. On a populated store,
+an explicit request for a saved finding's ID or content directs the worker to call
+`research()` first. Source questions and explicit file-first requests start with reads. Cite current excerpts from
+a validated answer directly and read missing lines by path. For repository-wide absence,
+batch the listed files before searching when they fit. An explicit direct path takes priority. Prioritize evidence
 needed for requested claims (including callers and dependencies) before auxiliary searches,
 and size batches to any allowance imposed by the host. Use available research to close gaps
 and contradictions, then explain remaining limitations. No source quota is imposed unless the host configures one.
 
-Answer guidance distinguishes concrete implementations from injected interfaces and total
-attempts from retries. For example, a concrete adapter allowing two attempts does not prove
-that an arbitrary injected transport has that limit; two total attempts permit one retry.
+Answer guidance qualifies inner limits until the caller or the question selects the implementation.
+For example, two attempts in a selected adapter permit one retry. If its final exception
+escapes the caller, that execution ends before the next outer attempt.
 Preserve useful explanations by stating their verified conditions. Failed entries, partial
 pages and literal search misses do not prove repository-wide absence. The read tool also
 exposes the coverage warning; it adds no repeated warning to source responses. These are
@@ -147,8 +193,8 @@ configured units. No automatic retry or budget escalation occurs. This is a
 lookup-response limit, never an answer-length or source-research limit. Missing,
 limited or unavailable memories leave source reads and fuller answers available.
 Direct reads, continuation offsets and publication eligibility are unchanged.
-Without a budget, the legacy lookup interface and representation are unchanged.
-This does not change retrieval. End-to-end gross savings remain unproven.
+Without a budget, call `research()` with no arguments and read the unbudgeted
+result fields described above. End-to-end gross savings remain unmeasured here.
 
 Writable eligible tasks receive a conditional before-final publication instruction and
 an evidence-reference payload example once in MCP initialization. Direct tasks without
@@ -166,11 +212,26 @@ Local transport tests establish delivery and capability, not model compliance or
 On stdio startup, a non-direct task makes a short authenticated
 `POST /memory/availability` request. The response contains only a contract,
 namespace, configured repository identity and `empty`/`present` state. Only a
-zero active-row result in the authorized namespace enables the source-first hint.
-Stale, unverified and unrelated active memories conservatively count as present;
-a search miss never becomes an empty-store proof. Repository-ID mismatch, old
-servers, denied/expired credentials and transport failures yield `unknown` and
-retain normal research. No embedding, ranking or source reading occurs in this probe.
+zero active-row result in the authorized namespace enables the confirmed-empty hint.
+Stale, unverified and unrelated active memories conservatively count as present.
+After a lookup, reuse the current excerpts for claims they support and read missing
+evidence directly by path when known. For ordinary validated saved answers on the
+recall-first route, `evidence[].end_line` identifies the last displayed line, which
+can be partial. `complete_file` records verified whole-file coverage.
+A read-only recall hit can include a small dependency already verified during lookup.
+When it does, each ranked excerpt that exactly matches its complete cached file also
+carries `complete_file: true`. If every delivered span is whole, the task response
+places current citations before the saved finding and its attachment metadata.
+An optional `suggested_read` gives arguments for one ordinary read when a visible
+Python import and call point to a single validated source without usable excerpts.
+The hint fits within 128 serialized bytes. On this route the first tool catalog
+shows how to pass the hint directly to `read`. Batch other paths when another
+requested fact needs them. Cite the code or configuration that selects an
+implementation before attributing its behavior to a particular request.
+Other paths and missing lines remain readable. A search miss never becomes an empty-store
+proof. Repository-ID mismatch, old servers, denied/expired credentials and transport
+failures yield `unknown` and lead with source batching while keeping explicit research available. An unchanged,
+verified grant reuses its existing registration without taking a database writer lock.
 
 The hint is explicitly a snapshot, not a guarantee about subsequent publications.
 An empty hint has a three-second local lifetime; tool-list and source-tool requests
@@ -181,7 +242,10 @@ snapshot, including failed/unknown write outcomes. Catalog changes are notified
 even when a tool call fails. Notification transport errors cannot replace a tool
 result or its sanitized error. Explicit `research` always performs the normal current
 lookup; it is never hidden and never returns a cached miss. The startup hint is
-historical ("empty at task startup"); it does not claim continued emptiness.
+historical. When memory starts empty, both the startup preview and the research
+description direct workers to read files first. Recheck memory on request or
+after a save. The `research` tool checks current saved
+findings for the original task, including findings published after startup.
 Sources, other research and all requested answer detail remain available.
 Use `--no-empty-memory-routing` to disable the probe. Explicit direct-file tasks
 already route to reads and do not make the startup probe. Embedded hosts can opt

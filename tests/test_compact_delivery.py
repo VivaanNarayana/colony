@@ -58,12 +58,14 @@ def transport(tmp_path, monkeypatch):
     return client, repo, app.state.store, responses
 
 
-def publish(client, repo, count=3, *, ending="\n", content="Finding. " * 200, git=False):
-    for index in range(count):
-        (repo / f"part{index}.py").write_bytes(
-            f"# café 🐜 {index}\nVALUE_{index} = {index}\n".replace("\n", ending).encode("utf-8")
-        )
-    sources = [snapshot(repo, f"part{index}.py") for index in range(count)]
+def publish(client, repo, count=3, *, ending="\n", content="Finding. " * 200, git=False, file_texts=None):
+    if file_texts is None:
+        file_texts = [f"# café 🐜 {i}\nVALUE_{i} = {i}\n" for i in range(count)]
+    sources = []
+    for index, text in enumerate(file_texts):
+        ref = f"part{index}.py"
+        (repo / ref).write_bytes(text.replace("\n", ending).encode("utf-8"))
+        sources.append(snapshot(repo, ref))
     trail = Trail(id="a" * 32, namespace="team", question="Explain the configured values",
                   content=content, sources=sources)
     if git:

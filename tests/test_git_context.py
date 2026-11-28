@@ -124,7 +124,7 @@ def test_sha256_repository_when_supported(tmp_path):
     assert context.state == "git" and len(context.commit) == 64
 
 
-def test_inherited_git_overrides_are_cleared(repository, tmp_path, monkeypatch):
+def test_inherited_git_overrides_are_cleared(repository, tmp_path):
     hostile = {
         "GIT_DIR": str(tmp_path / "wrong"),
         "GIT_WORK_TREE": str(tmp_path),
@@ -137,9 +137,20 @@ def test_inherited_git_overrides_are_cleared(repository, tmp_path, monkeypatch):
         "GIT_TRACE": str(tmp_path / "unintended-trace"),
         "GIT_CONFIG_GLOBAL": str(tmp_path / "untrusted-global"),
     }
-    for key, value in hostile.items():
-        monkeypatch.setenv(key, value)
-    context = git_context.capture(repository, "project")
+    # On Windows, restoring an empty environment value can unset it for later Git processes.
+    probe = subprocess.run(
+        [
+            sys.executable, "-c",
+            "import sys\nfrom pathlib import Path\nfrom colony.git_context import capture\n"
+            "print(capture(Path(sys.argv[1]), 'project').model_dump_json())",
+            str(repository),
+        ],
+        env={**os.environ, **hostile},
+        capture_output=True,
+        check=True,
+        timeout=15,
+    )
+    context = GitContext.model_validate_json(probe.stdout)
     assert context.state == "git" and context.branch == "main" and context.dirty is False
     assert not (tmp_path / "unintended-index").exists()
     assert not (tmp_path / "unintended-trace").exists()

@@ -28,8 +28,12 @@ def test_export_refuses_existing_and_repository_outputs(tmp_path):
     marker.write_text("retained", encoding="utf-8")
     with pytest.raises(ValueError, match="new and outside"):
         pr15_evaluation.prepare(existing)
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    forbidden = repository / "forbidden-export"
     with pytest.raises(ValueError, match="new and outside"):
-        pr15_evaluation.prepare(pr15_evaluation.ROOT / "forbidden-export")
+        pr15_evaluation.prepare(forbidden, repo=repository)
+    assert not forbidden.exists()
     assert marker.read_text(encoding="utf-8") == "retained"
 
 
