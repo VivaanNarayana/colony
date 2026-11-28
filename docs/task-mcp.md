@@ -49,7 +49,8 @@ longer fit any explicit excerpt for that file, its prefix competes at its
 original citation position. When a path allowlist is configured, it applies to every cited file,
 including reads supplied alongside `evidence: null`. A validated `answer` hit
 also carries the authored finding in `content`.
-Stale and unverified hits retain their status and source receipts.
+A stale answer can still return `hit: true` and `match_kind: "answer"`.
+Check `status` before reusing saved prose. Stale and unverified hits retain their source receipts.
 When a saved body is withheld, `content_withheld` gives the
 reason (`stale` or `unverified`). An evidence-only hit needs a complete file
 (including an empty file) or a partial excerpt with non-whitespace text.

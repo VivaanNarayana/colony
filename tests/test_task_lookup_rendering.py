@@ -1589,6 +1589,7 @@ def test_stdio_evidence_answer_and_stale_lookup(running_team):
 
             guide.write_text("# Worker\n\nRemoved.\n")
             stale = await research(session)
+            assert stale["match_kind"] == "answer"
             assert stale["status"] == stale["content_withheld"] == "stale"
             assert stale["id"] == finding.id and "content" not in stale
             assert stale["provenance"] == SAVED_ANSWER_PROVENANCE
